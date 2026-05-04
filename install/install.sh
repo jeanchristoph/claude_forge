@@ -28,9 +28,11 @@ try { s = JSON.parse(fs.readFileSync(sp, 'utf8')); } catch(e) {}
 s.permissions = s.permissions || {};
 s.permissions.allow = s.permissions.allow || [];
 
-const rule    = 'Read(' + H + '/.claude/skills/forge/**)';
-const oldRule = 'Read(' + H + '/.claude/skills/forge)';
-s.permissions.allow = s.permissions.allow.filter(r => r !== rule && r !== oldRule).concat(rule);
+const ruleFwdSlash = 'Read(' + H + '/.claude/skills/forge/**)';
+const oldRule      = 'Read(' + H + '/.claude/skills/forge)';
+s.permissions.allow = s.permissions.allow
+  .filter(r => r !== ruleFwdSlash && r !== oldRule)
+  .concat(ruleFwdSlash);
 
 s.hooks = s.hooks || {};
 s.hooks.PreCompact = s.hooks.PreCompact || [];

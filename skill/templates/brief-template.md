@@ -1,4 +1,4 @@
-# Brief — <nom-de-branche>
+# Brief — <branch-name>
 
-## Objectif
-[Ce qui doit être vrai à la fin.]
+## Objective
+[What must be true at the end.]

@@ -9,8 +9,8 @@ Lister le contenu du dossier racine avec le Glob tool (pattern `*`) — ignorer 
 ⚠️ Ne pas utiliser de commande Bash/PowerShell pour lister — les patterns `Where-Object` avec regex déclenchent un blocage sécurité.
 
 Si le dossier est vide (rien en dehors des éléments ignorés) :
-- Écrire `.claude/project.md` vide (contenu : chaîne vide).
-- Dire : "Projet vide détecté. `project.md` initialisé. Enchaîne avec le brief quand tu es prêt."
+- Écrire `.claude/project.md` avec le contenu : `<!-- pending -->`
+- Dire : "Empty project detected. `project.md` initialized. Start with the brief when ready."
 - Enchaîner automatiquement sur `phases/bootstrap.md`.
 - STOP — ne pas continuer l'exploration.
 
@@ -65,7 +65,7 @@ Si le dossier est vide (rien en dehors des éléments ignorés) :
 
 ## Après génération ou mise à jour
 - Présenter le fichier à l'humain.
-- Demander : "Ce `project.md` te semble correct ? Des éléments à corriger ?"
+- Demander : "Does this `project.md` look right? Anything to fix?"
 - Itérer si corrections demandées.
 - Écrire `.claude/project.md` avec le Write tool uniquement après validation explicite.
   ⚠️ Ne jamais utiliser `mkdir` sur les chemins `.claude/` — Write tool crée les dossiers parents automatiquement.

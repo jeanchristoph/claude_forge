@@ -7,17 +7,17 @@
 3. Reformuler l'objectif en 1 phrase pour confirmer la lecture.
 4. Si plusieurs approches architecturales viables, les présenter :
    ```
-   J'ai [N] approches possibles :
-   **Option A — [Nom]** : [1-2 phrases] | + ... | - ...
-   **Option B — [Nom]** : [1-2 phrases] | + ... | - ...
-   Laquelle on choisit ?
+   I have [N] possible approaches:
+   **Option A — [Name]** : [1-2 sentences] | + ... | - ...
+   **Option B — [Name]** : [1-2 sentences] | + ... | - ...
+   Which one do we go with?
    ```
    Attendre le choix avant de continuer.
 5. Générer le plan (format ci-dessous) et le présenter.
 6. Itérer si ajustements demandés.
 7. Écrire `.claude/branch/<BRANCH>/plan.md` après validation.
-8. Demander : "Le plan est gravé. On allume le feu ?" — attendre confirmation.
-9. Si `project.md` est vide → le compléter (stack, périmètre, conventions du plan).
+8. Demander : "Plan is set. Ready to start?" — attendre confirmation.
+9. Si `project.md` contient uniquement `<!-- pending -->` → le compléter (stack, périmètre, conventions du plan).
 10. Enchaîner sur `phases/resume.md`.
 
 ---

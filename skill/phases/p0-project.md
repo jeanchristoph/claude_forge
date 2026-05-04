@@ -5,7 +5,8 @@ Générer `.claude/project.md` — connaissance stable du projet, commune à tou
 
 ## Garde — Projet vide
 
-Lister le contenu du dossier racine en ignorant tous les dossiers et fichiers commençant par `.` (dotfiles et dotfolders : `.claude`, `.idea`, `.git`, `.env`, etc.).
+Lister le contenu du dossier racine avec le Glob tool (pattern `*`) — ignorer tous les résultats dont le nom commence par `.` (dotfiles et dotfolders : `.claude`, `.idea`, `.git`, `.env`, etc.).
+⚠️ Ne pas utiliser de commande Bash/PowerShell pour lister — les patterns `Where-Object` avec regex déclenchent un blocage sécurité.
 
 Si le dossier est vide (rien en dehors des éléments ignorés) :
 - Écrire `.claude/project.md` avec ce contenu minimal :
@@ -25,7 +26,7 @@ Si le dossier est vide (rien en dehors des éléments ignorés) :
 - `.nvmrc` / `.tool-versions` / `runtime.txt` — versions imposées
 
 ### Structure
-- Lister les dossiers à la racine
+- Lister les dossiers à la racine avec Glob tool (pattern `*/`)
 - Repérer `src/`, `app/`, `lib/`, `modules/`, `packages/`
 - Identifier les points d'entrée (`index.ts`, `main.py`, `Program.cs`, `app.php`…)
 - Lire `README.md` en priorité si présent

@@ -31,7 +31,7 @@ s.permissions.allow = s.permissions.allow || [];
 const rulePosix = 'Read(~/.claude/skills/forge/**)';
 const oldFwd    = 'Read(' + H + '/.claude/skills/forge/**)';
 const oldRule   = 'Read(' + H + '/.claude/skills/forge)';
-const projectRules = ['Read(/.claude/**)', 'Edit(/.claude/**)', 'Write(/.claude/**)', 'Bash(git branch:*)', 'Bash(ls:*)'];
+const projectRules = ['Read(/.claude/**)', 'Edit(/.claude/**)', 'Write(/.claude/**)', 'Bash(git branch:*)'];
 s.permissions.allow = s.permissions.allow
   .filter(r => r !== rulePosix && r !== oldFwd && r !== oldRule && !projectRules.includes(r))
   .concat(rulePosix, ...projectRules);

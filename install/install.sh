@@ -28,11 +28,13 @@ try { s = JSON.parse(fs.readFileSync(sp, 'utf8')); } catch(e) {}
 s.permissions = s.permissions || {};
 s.permissions.allow = s.permissions.allow || [];
 
-const ruleFwdSlash = 'Read(' + H + '/.claude/skills/forge/**)';
-const oldRule      = 'Read(' + H + '/.claude/skills/forge)';
+const rulePosix = 'Read(~/.claude/skills/forge/**)';
+const oldFwd    = 'Read(' + H + '/.claude/skills/forge/**)';
+const oldRule   = 'Read(' + H + '/.claude/skills/forge)';
+const projectRules = ['Read(/.claude/**)', 'Edit(/.claude/**)', 'Write(/.claude/**)'];
 s.permissions.allow = s.permissions.allow
-  .filter(r => r !== ruleFwdSlash && r !== oldRule)
-  .concat(ruleFwdSlash);
+  .filter(r => r !== rulePosix && r !== oldFwd && r !== oldRule && !projectRules.includes(r))
+  .concat(rulePosix, ...projectRules);
 
 s.hooks = s.hooks || {};
 s.hooks.PreCompact = s.hooks.PreCompact || [];

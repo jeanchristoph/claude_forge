@@ -17,7 +17,8 @@
 6. Itérer si ajustements demandés.
 7. Écrire `.claude/branch/<BRANCH>/plan.md` après validation.
 8. Demander : "Le plan est gravé. On allume le feu ?" — attendre confirmation.
-9. Enchaîner sur `phases/resume.md`.
+9. Si `project.md` est vide → le compléter (stack, périmètre, conventions du plan).
+10. Enchaîner sur `phases/resume.md`.
 
 ---
 

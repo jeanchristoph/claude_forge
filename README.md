@@ -1,7 +1,22 @@
-# forge
+# Claude_forge
 
-Workflow de développement par branche pour Claude Code.  
-Brief validé → plan structuré → suivi d'avancement.
+**Claude_forge** est un système pour Claude Code composé du skill **forge** (invoqué via `/forge`) et d'un hook `PreCompact`. Ensemble, ils imposent un workflow de développement structuré, branche par branche.
+
+Là où Claude Code part directement dans le code dès qu'on lui décrit un problème, le skill forge intercale trois étapes obligatoires avant la moindre ligne :
+
+1. **Brief** — clarifier l'objectif, les contraintes, le périmètre
+2. **Plan** — décomposer en tâches estimées, attendre une validation explicite
+3. **Actif** — exécuter avec suivi d'avancement en temps réel
+
+Le résultat : moins de mauvaises surprises, des implémentations qui restent dans le périmètre défini, et un historique par branche qui survit aux compactions de contexte.
+
+### Ce que Claude_forge apporte concrètement
+
+- **Zéro code sans validation** — la règle absolue : silence ≠ accord. Le skill attend un "ok" explicite avant d'écrire quoi que ce soit.
+- **Contexte persistant par branche** — `brief.md` et `plan.md` sont stockés dans `.claude/branch/<BRANCH>/` et relus à chaque `/forge`.
+- **Garde main/master** — sur les branches protégées, forge demande soit un identifiant de ticket, soit un nom de branche avant de continuer.
+- **Survie à la compaction** — le hook `PreCompact` injecte l'état forge (branche, objectif, statut des tâches) dans le résumé de contexte compacté.
+- **Cross-platform** — détection automatique Unix/Windows, installeurs séparés.
 
 ---
 

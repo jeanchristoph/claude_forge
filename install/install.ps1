@@ -27,8 +27,9 @@ if (-not ($s.PSObject.Properties.Name -contains "permissions")) {
 if (-not ($s.permissions.PSObject.Properties.Name -contains "allow")) {
     $s.permissions | Add-Member -NotePropertyName allow -NotePropertyValue @()
 }
-$rule = "Read($homeDir\.claude\skills\forge)"
-$s.permissions.allow = @($s.permissions.allow | Where-Object { $_ -ne $rule }) + $rule
+$rule    = "Read($homeDir\.claude\skills\forge\**)"
+$oldRule = "Read($homeDir\.claude\skills\forge)"
+$s.permissions.allow = @($s.permissions.allow | Where-Object { $_ -ne $rule -and $_ -ne $oldRule }) + $rule
 
 # hooks.PreCompact — retire toutes les entrées forge (bash + ps1), ajoute uniquement ps1
 if (-not ($s.PSObject.Properties.Name -contains "hooks")) {

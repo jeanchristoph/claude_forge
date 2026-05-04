@@ -47,8 +47,6 @@ forge/
 │   │   └── forge-precompact.sh
 │   └── ps1/                  → copié dans ~/.claude/hooks/forge/ par install.ps1 (Windows)
 │       └── forge-precompact.ps1
-├── config/
-│   └── settings-fragment.json  (référence des clés ajoutées à settings.json)
 ├── install/
 │   ├── install.sh
 │   └── install.ps1
@@ -104,6 +102,38 @@ Sans dépôt git : demande un nom de code utilisé comme `<BRANCH>`.
 Sur `main` ou `master`, propose :
 1. Rester sur la branche → fournir un identifiant ticket (ex: `CU-123`)
 2. Créer une branche → fournir un nom
+
+---
+
+## Clés ajoutées à settings.json
+
+**Unix (`install.sh`) :**
+```json
+{
+  "permissions": {
+    "allow": ["Read({HOME}/.claude/skills/forge/**)"]
+  },
+  "hooks": {
+    "PreCompact": [{
+      "hooks": [{ "type": "command", "command": "bash ~/.claude/hooks/forge/forge-precompact.sh", "shell": "bash" }]
+    }]
+  }
+}
+```
+
+**Windows (`install.ps1`) :**
+```json
+{
+  "permissions": {
+    "allow": ["Read(C:\\Users\\{USER}\\.claude\\skills\\forge\\**)"]
+  },
+  "hooks": {
+    "PreCompact": [{
+      "hooks": [{ "type": "command", "command": "powershell -File C:\\Users\\{USER}\\.claude\\hooks\\forge\\forge-precompact.ps1", "shell": "powershell" }]
+    }]
+  }
+}
+```
 
 ---
 

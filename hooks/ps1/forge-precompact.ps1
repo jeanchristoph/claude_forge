@@ -1,5 +1,3 @@
-if ($env:OS -ne "Windows_NT") { exit 0 }
-
 $branch = git branch --show-current 2>$null
 if (-not $branch) { exit 0 }
 

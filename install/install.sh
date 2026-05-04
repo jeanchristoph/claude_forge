@@ -10,10 +10,11 @@ mkdir -p "$SKILL_DIR"
 rm -rf "$SKILL_DIR"
 cp -r "$ROOT/skill/" "$SKILL_DIR"
 
-echo "► Hooks..."
-mkdir -p "$CLAUDE_DIR/hooks"
-cp "$ROOT/hooks/"* "$CLAUDE_DIR/hooks/"
-chmod +x "$CLAUDE_DIR/hooks/forge-precompact.sh"
+echo "► Hook..."
+HOOK_DIR="$CLAUDE_DIR/hooks/forge"
+mkdir -p "$HOOK_DIR"
+cp "$ROOT/hooks/bash/forge-precompact.sh" "$HOOK_DIR/"
+chmod +x "$HOOK_DIR/forge-precompact.sh"
 
 echo "► Settings..."
 node -e "
@@ -33,13 +34,13 @@ s.permissions.allow = s.permissions.allow.filter(r => r !== rule).concat(rule);
 s.hooks = s.hooks || {};
 s.hooks.PreCompact = s.hooks.PreCompact || [];
 
-for (const { cmd, shell } of [
-  { cmd: 'bash ~/.claude/hooks/forge-precompact.sh', shell: 'bash' },
-  { cmd: 'powershell -File ~/.claude/hooks/forge-precompact.ps1', shell: 'powershell' }
-]) {
-  s.hooks.PreCompact = s.hooks.PreCompact.filter(g => !g.hooks || !g.hooks.some(h => h.command === cmd));
-  s.hooks.PreCompact.push({ hooks: [{ type: 'command', command: cmd, shell }] });
-}
+// Retire toutes les entrées forge (bash + ps1), ajoute uniquement bash
+s.hooks.PreCompact = s.hooks.PreCompact.filter(g =>
+  !g.hooks || !g.hooks.some(h => h.command && h.command.includes('forge-precompact'))
+);
+
+const cmd = 'bash ~/.claude/hooks/forge/forge-precompact.sh';
+s.hooks.PreCompact.push({ hooks: [{ type: 'command', command: cmd, shell: 'bash' }] });
 
 fs.writeFileSync(sp, JSON.stringify(s, null, 2));
 console.log('Settings OK.');

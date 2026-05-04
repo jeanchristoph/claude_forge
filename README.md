@@ -42,9 +42,11 @@ forge/
 │   │   └── resume.md
 │   └── templates/
 │       └── brief-template.md
-├── hooks/                    → copié dans ~/.claude/hooks/
-│   ├── forge-precompact.sh   (Unix)
-│   └── forge-precompact.ps1  (Windows)
+├── hooks/
+│   ├── bash/                 → copié dans ~/.claude/hooks/forge/ par install.sh (Unix)
+│   │   └── forge-precompact.sh
+│   └── ps1/                  → copié dans ~/.claude/hooks/forge/ par install.ps1 (Windows)
+│       └── forge-precompact.ps1
 ├── config/
 │   └── settings-fragment.json  (référence des clés ajoutées à settings.json)
 ├── install/
@@ -109,8 +111,10 @@ Sur `main` ou `master`, propose :
 
 Injecte l'état forge dans la compaction du contexte pour préserver branche, objectif et statut des tâches.
 
-- `forge-precompact.sh` → Unix (exit silencieux sur Windows)
-- `forge-precompact.ps1` → Windows (exit silencieux sur Unix)
+- `install.sh` → déploie `forge-precompact.sh` dans `~/.claude/hooks/forge/`, ajoute uniquement l'entrée bash dans `settings.json`
+- `install.ps1` → déploie `forge-precompact.ps1` dans `~/.claude/hooks/forge/`, ajoute uniquement l'entrée powershell dans `settings.json`
+
+Chaque installeur retire toutes les entrées forge existantes avant d'ajouter la sienne — pas de doublon même en cas de réinstall.
 
 ---
 

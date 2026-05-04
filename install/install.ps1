@@ -9,10 +9,11 @@ $skillDir = "$claudeDir\skills\forge"
 New-Item -ItemType Directory -Path $skillDir -Force | Out-Null
 Copy-Item "$root\skill\*" $skillDir -Recurse -Force
 
-# ── Hooks ─────────────────────────────────────────────────────────────────────
-Write-Host "Hooks..."
-New-Item -ItemType Directory -Path "$claudeDir\hooks" -Force | Out-Null
-Copy-Item "$root\hooks\*" "$claudeDir\hooks\" -Force
+# ── Hook ──────────────────────────────────────────────────────────────────────
+Write-Host "Hook..."
+$hookDir = "$claudeDir\hooks\forge"
+New-Item -ItemType Directory -Path $hookDir -Force | Out-Null
+Copy-Item "$root\hooks\ps1\forge-precompact.ps1" "$hookDir\" -Force
 
 # ── Settings (merge idempotent) ───────────────────────────────────────────────
 Write-Host "Settings..."
@@ -29,7 +30,7 @@ if (-not ($s.permissions.PSObject.Properties.Name -contains "allow")) {
 $rule = "Read($homeDir\.claude\skills\forge)"
 $s.permissions.allow = @($s.permissions.allow | Where-Object { $_ -ne $rule }) + $rule
 
-# hooks.PreCompact
+# hooks.PreCompact — retire toutes les entrées forge (bash + ps1), ajoute uniquement ps1
 if (-not ($s.PSObject.Properties.Name -contains "hooks")) {
     $s | Add-Member -NotePropertyName hooks -NotePropertyValue ([PSCustomObject]@{})
 }
@@ -37,16 +38,14 @@ if (-not ($s.hooks.PSObject.Properties.Name -contains "PreCompact")) {
     $s.hooks | Add-Member -NotePropertyName PreCompact -NotePropertyValue @()
 }
 
-$entries = @(
-    @{ cmd = "bash ~/.claude/hooks/forge-precompact.sh";                          shell = "bash" },
-    @{ cmd = "powershell -File $homeDir\.claude\hooks\forge-precompact.ps1"; shell = "powershell" }
-)
-foreach ($e in $entries) {
-    $s.hooks.PreCompact = @($s.hooks.PreCompact | Where-Object {
-        -not (@($_.hooks) | Where-Object { $_.command -eq $e.cmd })
-    }) + [PSCustomObject]@{
-        hooks = @([PSCustomObject]@{ type = "command"; command = $e.cmd; shell = $e.shell })
-    }
+$forgePattern = "forge-precompact"
+$s.hooks.PreCompact = @($s.hooks.PreCompact | Where-Object {
+    -not (@($_.hooks) | Where-Object { $_.command -like "*$forgePattern*" })
+})
+
+$cmd = "powershell -File $homeDir\.claude\hooks\forge\forge-precompact.ps1"
+$s.hooks.PreCompact = $s.hooks.PreCompact + [PSCustomObject]@{
+    hooks = @([PSCustomObject]@{ type = "command"; command = $cmd; shell = "powershell" })
 }
 
 $s | ConvertTo-Json -Depth 10 | Set-Content $sp -Encoding UTF8

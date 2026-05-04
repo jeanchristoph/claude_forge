@@ -70,7 +70,8 @@ Si le dossier est vide (rien en dehors des éléments ignorés) :
 - Présenter le fichier à l'humain.
 - Demander : "Ce `project.md` te semble correct ? Des éléments à corriger ?"
 - Itérer si corrections demandées.
-- Écrire `.claude/project.md` uniquement après validation explicite.
+- Écrire `.claude/project.md` avec le Write tool uniquement après validation explicite.
+  ⚠️ Ne jamais utiliser `mkdir` sur les chemins `.claude/` — Write tool crée les dossiers parents automatiquement.
 - Enchaîner automatiquement sur `phases/bootstrap.md`.
 
 ---

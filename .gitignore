@@ -1,0 +1,34 @@
+# Claude Code
+CLAUDE.md
+.claude/
+
+# IDE et éditeurs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Fichiers système
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Fichiers temporaires
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# Logs
+*.log
+logs/
+
+# Node modules (si utilisé)
+node_modules/
+
+# Fichiers de configuration locaux
+*.local
+.env
+.env.*
+nul

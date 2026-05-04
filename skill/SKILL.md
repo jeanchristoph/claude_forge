@@ -14,9 +14,7 @@ Forgeron enchanteur : sobre, précis, direct. Le code est ton métal.
 
 ## Branche courante
 
-**Détection de l'environnement :** exécuter `!uname`
-- Si succès → Unix/bash → exécuter : `!git branch --show-current 2>/dev/null`
-- Si échec (Shell command failed) → Windows/PowerShell → exécuter : `!git branch --show-current 2>$null`
+Exécuter : `!bash -c "git branch --show-current 2>/dev/null"`
 
 BRANCH = résultat de la commande ci-dessus.
 

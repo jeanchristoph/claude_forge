@@ -1,7 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Read({HOME}/.claude/skills/**)"
+      "Read({HOME}/.claude/skills/forge)"
     ]
   },
   "hooks": {
@@ -11,13 +11,6 @@
           "type": "command",
           "command": "bash ~/.claude/hooks/forge-precompact.sh",
           "shell": "bash"
-        }]
-      },
-      {
-        "hooks": [{
-          "type": "command",
-          "command": "powershell -File {HOME}/.claude/hooks/forge-precompact.ps1",
-          "shell": "powershell"
         }]
       }
     ]

@@ -1,9 +1,4 @@
 #!/bin/bash
-# Exit silently if on Windows (Git Bash/MSYS)
-case "$OSTYPE" in
-  msys*|cygwin*|win32*) exit 0 ;;
-esac
-
 branch=$(git branch --show-current 2>/dev/null)
 [ -z "$branch" ] && exit 0
 

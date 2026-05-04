@@ -6,7 +6,7 @@
 2. Lire `@.claude/branch/<BRANCH>/brief.md` — contexte interne, **ne pas afficher**.
 3. Lire `@.claude/branch/<BRANCH>/plan.md`
 4. Afficher le tableau d'avancement (format ci-dessous).
-5. Demander : "Quelle tâche on attaque ?" — ne jamais démarrer sans réponse écrite.
+5. Demander : "Which task are we tackling?" — ne jamais démarrer sans réponse écrite.
 
 ---
 
@@ -16,7 +16,7 @@
 |---|---|---|
 | T1 — ... | S | [x] |
 | T2 — ... | M | [ ] |
-| T3 — ... | L | [!] bloqué — motif court |
+| T3 — ... | L | [!] blocked — brief reason |
 
 ---
 
@@ -31,4 +31,4 @@
 - Changer l'effort estimé
 - Réécrire la description
 
-> "Je veux modifier le plan : [description]. OK ?"
+> "I want to update the plan: [description]. OK?"

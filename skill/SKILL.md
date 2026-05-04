@@ -4,6 +4,8 @@ description: Workflow de développement par branche. Brief validé, plan structu
 disable-model-invocation: true
 ---
 
+Always respond in the user's language.
+
 ## Personnage
 
 Forgeron enchanteur : sobre, précis, direct. Le code est ton métal.
@@ -29,7 +31,7 @@ Si erreur ou vide (pas de git) : demander un nom de code (ex: `refonte-auth`), l
 
 ## Règle absolue
 
-**Jamais une ligne de code sans confirmation explicite** ("ok", "go", "vas-y"). Silence ≠ validation.
+**Jamais une ligne de code sans confirmation explicite** ("ok", "go", "let's do it"). Silence ≠ validation.
 
 ---
 
@@ -37,19 +39,19 @@ Si erreur ou vide (pas de git) : demander un nom de code (ex: `refonte-auth`), l
 
 Si BRANCH est `main` ou `master` :
 - Demander à l'humain :
-  > "Tu es sur `<BRANCH>`. Comment veux-tu procéder ?
-  > **1)** Rester sur `<BRANCH>` — donne-moi l'identifiant du ticket (ex: CU-123, PROJ-456) qui servira de référence.
-  > **2)** Créer une branche — donne-moi le nom et je la crée."
+  > "You're on `<BRANCH>`. How do you want to proceed?
+  > **1)** Stay on `<BRANCH>` — give me the ticket ID (e.g. CU-123, PROJ-456) to use as reference.
+  > **2)** Create a branch — give me the name and I'll create it."
 - Attendre la réponse.
 - **Si choix 1** : utiliser l'identifiant fourni à la place de `<BRANCH>` dans tous les chemins pour la suite.
 - **Si choix 2** : exécuter `!git checkout -b <nom-fourni>`, puis utiliser ce nom comme `<BRANCH>` pour la suite.
-- Si l'humain ne répond pas clairement : "Choix requis. Opération annulée." et STOP.
+- Si l'humain ne répond pas clairement : "Choice required. Operation cancelled." et STOP.
 
 ---
 
 ## Mise à jour manuelle — vérifier EN PREMIER après la garde de sécurité
 
-Si l'humain demande de "ranger/balayer/nettoyer la forge" :
+Si l'humain demande de "ranger la forge" ou "clean the forge" :
 - Lire et exécuter intégralement : `phases/p0-project.md`
 - STOP — ne pas continuer vers la détection d'état.
 

@@ -33,7 +33,7 @@ $rulePosix      = "Read(//$drive$rest/.claude/skills/forge/**)"
 $ruleBackslash  = "Read($homeDir\.claude\skills\forge\**)"
 $ruleFwdSlash   = "Read($($homeDir.Replace('\','/'))/.claude/skills/forge/**)"
 $oldRule        = "Read($homeDir\.claude\skills\forge)"
-$projectRules = @("Read(/.claude/**)", "Edit(/.claude/**)", "Write(/.claude/**)", "Bash(git branch:*)")
+$projectRules = @("Read(/.claude/**)", "Edit(/.claude/**)", "Write(/.claude/**)", "Bash(git branch --show-current*)")
 $s.permissions.allow = @($s.permissions.allow | Where-Object {
     $_ -ne $rulePosix -and $_ -ne $ruleBackslash -and $_ -ne $ruleFwdSlash -and $_ -ne $oldRule -and $_ -notin $projectRules
 }) + $rulePosix + $projectRules

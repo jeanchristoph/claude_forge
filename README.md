@@ -1,5 +1,222 @@
 # Claude_forge
 
+**Claude_forge** is a Claude Code system made of the **forge** skill (invoked via `/forge`) and a `PreCompact` hook. Together, they enforce a structured, branch-by-branch development workflow.
+
+Where Claude Code jumps straight into code as soon as you describe a problem, the forge skill inserts three mandatory steps before a single line is written:
+
+1. **Brief** — clarify the goal, constraints, and scope
+2. **Plan** — break down into estimated tasks, wait for explicit validation
+3. **Active** — execute with real-time progress tracking
+
+The result: fewer surprises, implementations that stay within the defined scope, and a per-branch history that survives context compaction.
+
+### What Claude_forge brings concretely
+
+- **Zero code without validation** — the absolute rule: silence ≠ agreement. The skill waits for an explicit "ok" before writing anything.
+- **Persistent per-branch context** — `brief.md` and `plan.md` are stored in `.claude/branch/<BRANCH>/` and re-read on every `/forge`.
+- **main/master guard** — on protected branches, forge asks for either a ticket ID or a branch name before continuing.
+- **Compaction survival** — the `PreCompact` hook injects the forge state (branch, goal, task statuses) into the compacted context summary.
+- **Cross-platform** — automatic Unix/Windows detection, separate installers.
+
+---
+
+## Installation
+
+**Windows (PowerShell):**
+```powershell
+powershell -File install/install.ps1
+```
+
+**Unix (bash):**
+```bash
+bash install/install.sh
+```
+
+Scripts are idempotent — re-running after an update overwrites cleanly without duplicates.
+
+---
+
+## Usage
+
+```
+/forge
+```
+
+---
+
+## Repo structure
+
+```
+forge/
+├── skill/                    → copied to ~/.claude/skills/forge/
+│   ├── SKILL.md
+│   ├── phases/
+│   │   ├── p0-project.md
+│   │   ├── bootstrap.md
+│   │   ├── plan.md
+│   │   └── resume.md
+│   └── templates/
+│       └── brief-template.md
+├── hooks/
+│   ├── bash/                 → copied to ~/.claude/hooks/forge/ by install.sh (Unix)
+│   │   └── forge-precompact.sh
+│   └── ps1/                  → copied to ~/.claude/hooks/forge/ by install.ps1 (Windows)
+│       └── forge-precompact.ps1
+├── install/
+│   ├── install.sh
+│   └── install.ps1
+└── .gitignore
+```
+
+Files generated in each project:
+
+```
+.claude/
+├── project.md
+└── branch/<BRANCH>/
+    ├── brief.md
+    └── plan.md
+```
+
+---
+
+## State behaviour
+
+### State 0 — Project Init
+**Condition:** `.claude/project.md` absent
+
+- Empty project (excluding dotfiles/dotfolders) → `project.md` placeholder created, continues.
+- Otherwise → explores stack, structure, conventions, writes `project.md` after validation.
+
+### State 1 — Bootstrap
+**Condition:** brief absent
+
+Creates `.claude/branch/<BRANCH>/brief.md`, clarifies the goal, continues to plan.
+
+### State 2 — Plan
+**Condition:** brief present, plan absent
+
+Generates `plan.md`, waits for validation before any implementation.
+
+### State 3 — Active
+**Condition:** brief + plan present
+
+Reads files silently, displays the progress table, waits for instructions.
+
+---
+
+## Branch detection
+
+Cross-platform via `uname`: `2>/dev/null` on Unix, `2>$null` on PowerShell.  
+Without a git repo: asks for a code name used as `<BRANCH>`.
+
+---
+
+## Safety guard — main / master
+
+On `main` or `master`, offers:
+1. Stay on the branch → provide a ticket ID (e.g. `CU-123`)
+2. Create a branch → provide a name
+
+---
+
+## Keys added to settings.json
+
+**Unix (`install.sh`):**
+```json
+{
+  "permissions": {
+    "allow": [
+      "Read(~/.claude/skills/forge/**)",
+      "Read(/.claude/**)", "Edit(/.claude/**)", "Write(/.claude/**)",
+      "Bash(git branch --show-current*)"
+    ]
+  },
+  "hooks": {
+    "PreCompact": [{
+      "hooks": [{ "type": "command", "command": "bash ~/.claude/hooks/forge/forge-precompact.sh", "shell": "bash" }]
+    }]
+  }
+}
+```
+
+**Windows (`install.ps1`):**
+```json
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/{USER}/.claude/skills/forge/**)",
+      "Read(/.claude/**)", "Edit(/.claude/**)", "Write(/.claude/**)",
+      "Bash(git branch --show-current*)"
+    ]
+  },
+  "hooks": {
+    "PreCompact": [{
+      "hooks": [{ "type": "command", "command": "powershell -File C:\\Users\\{USER}\\.claude\\hooks\\forge\\forge-precompact.ps1", "shell": "powershell" }]
+    }]
+  }
+}
+```
+
+---
+
+## PreCompact hook
+
+Injects the forge state into context compaction to preserve branch, goal, and task statuses.
+
+- `install.sh` → deploys `forge-precompact.sh` to `~/.claude/hooks/forge/`, adds only the bash entry to `settings.json`
+- `install.ps1` → deploys `forge-precompact.ps1` to `~/.claude/hooks/forge/`, adds only the powershell entry to `settings.json`
+
+Each installer removes all existing forge entries before adding its own — no duplicates even on reinstall.
+
+---
+
+## Plan updates
+
+**Silent** (automatic): check `[x]`, short note, `[!]` if blocked.  
+**Substantial** (confirmation required): add/remove task, order, effort, description.
+
+---
+
+## Updating project.md
+
+```
+"ranger la forge" / "clean the forge"
+```
+
+---
+
+## Plan format
+
+```markdown
+# Plan — <BRANCH>
+**Goal:** ...
+**Date:** ...
+
+## Tasks
+
+### T1 — Title
+**Effort:** S
+**Files:** `src/...`
+**Description:** ...
+[ ]
+
+## Summary
+| Task | Effort | Status |
+|---|---|---|
+| T1 | S | [ ] |
+| **Total** | **2h** | |
+```
+
+**Statuses:** `[ ]` to do · `[x]` done · `[!]` blocked  
+**Effort:** XS <30min · S 30min-2h · M 2-4h · L 4-8h · XL >1d → split
+
+---
+
+---
+
+# Claude_forge (français)
+
 **Claude_forge** est un système pour Claude Code composé du skill **forge** (invoqué via `/forge`) et d'un hook `PreCompact`. Ensemble, ils imposent un workflow de développement structuré, branche par branche.
 
 Là où Claude Code part directement dans le code dès qu'on lui décrit un problème, le skill forge intercale trois étapes obligatoires avant la moindre ligne :
@@ -85,7 +302,7 @@ Fichiers générés dans chaque projet :
 ### État 0 — Project Init
 **Condition :** `.claude/project.md` absent
 
-- Projet vide (hors dotfiles/dotfolders) → `project.md` minimal créé, enchaîne.
+- Projet vide (hors dotfiles/dotfolders) → `project.md` placeholder créé, enchaîne.
 - Sinon → explore stack, structure, conventions, écrit `project.md` après validation.
 
 ### État 1 — Bootstrap
@@ -129,7 +346,7 @@ Sur `main` ou `master`, propose :
     "allow": [
       "Read(~/.claude/skills/forge/**)",
       "Read(/.claude/**)", "Edit(/.claude/**)", "Write(/.claude/**)",
-      "Bash(git branch:*)"
+      "Bash(git branch --show-current*)"
     ]
   },
   "hooks": {
@@ -147,7 +364,7 @@ Sur `main` ou `master`, propose :
     "allow": [
       "Read(//c/Users/{USER}/.claude/skills/forge/**)",
       "Read(/.claude/**)", "Edit(/.claude/**)", "Write(/.claude/**)",
-      "Bash(git branch:*)"
+      "Bash(git branch --show-current*)"
     ]
   },
   "hooks": {
@@ -181,7 +398,7 @@ Chaque installeur retire toutes les entrées forge existantes avant d'ajouter la
 ## Mise à jour de project.md
 
 ```
-"range/balaie/nettoie la forge"
+"ranger la forge" / "clean the forge"
 ```
 
 ---

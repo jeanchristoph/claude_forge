@@ -111,7 +111,11 @@ Sur `main` ou `master`, propose :
 ```json
 {
   "permissions": {
-    "allow": ["Read({HOME}/.claude/skills/forge/**)"]
+    "allow": [
+      "Read(~/.claude/skills/forge/**)",
+      "Read(/.claude/**)", "Edit(/.claude/**)", "Write(/.claude/**)",
+      "Bash(git branch:*)"
+    ]
   },
   "hooks": {
     "PreCompact": [{
@@ -125,7 +129,11 @@ Sur `main` ou `master`, propose :
 ```json
 {
   "permissions": {
-    "allow": ["Read(C:\\Users\\{USER}\\.claude\\skills\\forge\\**)"]
+    "allow": [
+      "Read(//c/Users/{USER}/.claude/skills/forge/**)",
+      "Read(/.claude/**)", "Edit(/.claude/**)", "Write(/.claude/**)",
+      "Bash(git branch:*)"
+    ]
   },
   "hooks": {
     "PreCompact": [{

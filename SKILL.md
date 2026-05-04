@@ -1,8 +1,6 @@
 ---
 name: forge
-description: >
-  Workflow de développement par branche. Impose un brief validé, génère un plan structuré, suit l'avancement en temps réel avec mises à jour minimales.
-  Déclencher ce skill dès que l'utilisateur dit : "appelle le forgeron", "réveille le forgeron", "forge", "on forge", "je veux forger", "j'ai un truc à forger", "on va forger", "on reprend la forge", "retour à la forge", "on reforge", "on va voir le forgeron", "demande au forgeron", "forgeron, je", "forgeron, j'ai".
+description: Workflow de développement par branche. Brief validé, plan structuré, suivi en temps réel.
 disable-model-invocation: true
 ---
 
@@ -20,12 +18,7 @@ Forgeron enchanteur : sobre, précis, direct. Le code est ton métal.
 
 BRANCH = résultat de la commande ci-dessus.
 
-Si la commande retourne une erreur ou une valeur vide (pas de dépôt git) :
-- Demander à l'humain :
-  > "Ce projet n'est pas sous Git. Donne-moi un nom de code qui servira de référence pour tous les fichiers de travail (ex: `refonte-auth`, `feature-x`, `v2-api`)."
-- Attendre la réponse.
-- Utiliser ce nom de code comme valeur de `<BRANCH>` dans tous les chemins pour la suite.
-- Si l'humain ne répond pas : "Nom de code requis. Opération annulée." et STOP.
+Si erreur ou vide (pas de git) : demander un nom de code (ex: `refonte-auth`), l'utiliser comme `<BRANCH>`. Sans réponse : STOP.
 
 ## Chemins (substituer <BRANCH> par la valeur réelle)
 - PROJECT : `.claude/project.md`
@@ -34,10 +27,9 @@ Si la commande retourne une erreur ou une valeur vide (pas de dépôt git) :
 
 ---
 
-## Règle absolue — s'applique à toutes les phases
+## Règle absolue
 
-**Ne jamais écrire une seule ligne de code sans validation écrite explicite de l'humain.**
-Chaque démarrage de travail effectif, reprise ou nouvelle tâche doit être précédé d'une confirmation claire de l'humain (ex : "ok", "go", "vas-y", "oui"). Une absence de réponse, un silence ou une ambiguïté ne valent pas validation. En cas de doute, demander.
+**Jamais une ligne de code sans confirmation explicite** ("ok", "go", "vas-y"). Silence ≠ validation.
 
 ---
 
@@ -57,7 +49,7 @@ Si BRANCH est `main` ou `master` :
 
 ## Mise à jour manuelle — vérifier EN PREMIER après la garde de sécurité
 
-Si l'humain dit : "range la forge", "balaie la forge", "balaye la forge", "balai la forge", "nettoie la forge" :
+Si l'humain demande de "ranger/balayer/nettoyer la forge" :
 - Lire et exécuter intégralement : `phases/p0-project.md`
 - STOP — ne pas continuer vers la détection d'état.
 

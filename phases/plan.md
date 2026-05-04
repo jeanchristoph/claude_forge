@@ -4,31 +4,20 @@
 
 1. Lire `@.claude/project.md`
 2. Lire `@.claude/branch/<BRANCH>/brief.md`
-3. Confirmer la lecture en reformulant l'objectif en 1 phrase.
-4. Analyser s'il existe plusieurs approches architecturales viables pour atteindre l'objectif.
-   - Si **une seule approche** évidente : continuer directement.
-   - Si **plusieurs approches** possibles : les présenter avant de forger le plan.
-     Format de présentation :
-     ```
-     Avant de forger le plan, j'ai [N] approches possibles :
-
-     **Option A — [Nom court]**
-     [1-2 phrases] | Avantages : ... | Inconvénients : ...
-
-     **Option B — [Nom court]**
-     [1-2 phrases] | Avantages : ... | Inconvénients : ...
-
-     Laquelle on choisit ?
-     ```
-     Attendre le choix de l'humain avant de continuer.
-5. Générer `.claude/branch/<BRANCH>/plan.md` avec le format défini ci-dessous.
-5. Présenter le plan à l'humain.
+3. Reformuler l'objectif en 1 phrase pour confirmer la lecture.
+4. Si plusieurs approches architecturales viables, les présenter :
+   ```
+   J'ai [N] approches possibles :
+   **Option A — [Nom]** : [1-2 phrases] | + ... | - ...
+   **Option B — [Nom]** : [1-2 phrases] | + ... | - ...
+   Laquelle on choisit ?
+   ```
+   Attendre le choix avant de continuer.
+5. Générer le plan (format ci-dessous) et le présenter.
 6. Itérer si ajustements demandés.
-7. Écrire `.claude/branch/<BRANCH>/plan.md` après validation explicite.
-8. Confirmer l'écriture du plan, puis demander explicitement :
-   > "Le plan est gravé dans le métal. On allume le feu et on commence à forger ?"
-   Attendre la confirmation de l'humain avant de continuer.
-9. Lire et enchaîner sur `phases/resume.md` uniquement après confirmation.
+7. Écrire `.claude/branch/<BRANCH>/plan.md` après validation.
+8. Demander : "Le plan est gravé. On allume le feu ?" — attendre confirmation.
+9. Enchaîner sur `phases/resume.md`.
 
 ---
 
@@ -47,31 +36,14 @@
 **Description :** [Ce qui doit être fait, comment, avec quels patterns]
 [ ]
 
-### T2 — [Titre]
-**Effort :** ...
-**Fichiers :** `...`
-**Description :** ...
-[ ]
-
 ## Risques
-- [Point d'attention si applicable, sinon omettre cette section]
+- [Point d'attention si applicable, sinon omettre]
 
 ## Récapitulatif
 | Tâche | Effort | Statut |
 |---|---|---|
 | T1 — ... | S | [ ] |
-| T2 — ... | M | [ ] |
 | **Total estimé** | **[somme]** | |
 ```
 
----
-
-## Échelle d'effort
-
-| Taille | Durée estimée |
-|---|---|
-| XS | < 30 min |
-| S | 30 min – 2h |
-| M | 2h – 4h |
-| L | 4h – 1 jour |
-| XL | > 1 jour → envisager de découper |
+**Effort :** XS <30min · S 30min-2h · M 2-4h · L 4h-1j · XL >1j → découper

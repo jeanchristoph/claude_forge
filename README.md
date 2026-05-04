@@ -7,9 +7,17 @@ Brief validé → plan structuré → suivi d'avancement.
 
 ## Installation
 
+**Windows (PowerShell) :**
+```powershell
+powershell -File install/install.ps1
 ```
-~/.claude/skills/forge/
+
+**Unix (bash) :**
+```bash
+bash install/install.sh
 ```
+
+Les scripts sont idempotents — relancer après une mise à jour écrase proprement sans doublon.
 
 ---
 
@@ -21,23 +29,59 @@ Brief validé → plan structuré → suivi d'avancement.
 
 ---
 
+## Structure du repo
+
+```
+forge/
+├── skill/                    → copié dans ~/.claude/skills/forge/
+│   ├── SKILL.md
+│   ├── phases/
+│   │   ├── p0-project.md
+│   │   ├── bootstrap.md
+│   │   ├── plan.md
+│   │   └── resume.md
+│   └── templates/
+│       └── brief-template.md
+├── hooks/                    → copié dans ~/.claude/hooks/
+│   ├── forge-precompact.sh   (Unix)
+│   └── forge-precompact.ps1  (Windows)
+├── config/
+│   └── settings-fragment.json  (référence des clés ajoutées à settings.json)
+├── install/
+│   ├── install.sh
+│   └── install.ps1
+└── .gitignore
+```
+
+Fichiers générés dans chaque projet :
+
+```
+.claude/
+├── project.md
+└── branch/<BRANCH>/
+    ├── brief.md
+    └── plan.md
+```
+
+---
+
 ## Comportement par état
 
 ### État 0 — Project Init
 **Condition :** `.claude/project.md` absent
 
-- Si le projet est vide (hors dotfiles/dotfolders) → crée un `project.md` minimal et enchaîne.
+- Projet vide (hors dotfiles/dotfolders) → `project.md` minimal créé, enchaîne.
 - Sinon → explore stack, structure, conventions, écrit `project.md` après validation.
 
 ### État 1 — Bootstrap
 **Condition :** brief absent
 
-Crée `.claude/branch/<BRANCH>/brief.md`, clarifie l'objectif avec l'humain, enchaîne sur le plan.
+Crée `.claude/branch/<BRANCH>/brief.md`, clarifie l'objectif, enchaîne sur le plan.
 
 ### État 2 — Plan
 **Condition :** brief présent, plan absent
 
-Lit `project.md` + `brief.md`, génère `plan.md`, attend validation avant toute implémentation.
+Génère `plan.md`, attend validation avant toute implémentation.
 
 ### État 3 — Actif
 **Condition :** brief + plan présents
@@ -48,7 +92,7 @@ Lit les fichiers en silence, affiche le tableau d'avancement, attend les instruc
 
 ## Détection de branche
 
-Cross-platform : détecte Unix/bash via `uname`, utilise `2>/dev/null` ou `2>$null` selon l'environnement.  
+Cross-platform via `uname` : `2>/dev/null` sur Unix, `2>$null` sur PowerShell.  
 Sans dépôt git : demande un nom de code utilisé comme `<BRANCH>`.
 
 ---
@@ -61,6 +105,15 @@ Sur `main` ou `master`, propose :
 
 ---
 
+## Hook PreCompact
+
+Injecte l'état forge dans la compaction du contexte pour préserver branche, objectif et statut des tâches.
+
+- `forge-precompact.sh` → Unix (exit silencieux sur Windows)
+- `forge-precompact.ps1` → Windows (exit silencieux sur Unix)
+
+---
+
 ## Mise à jour du plan
 
 **Silencieuse** (automatique) : cocher `[x]`, note courte, `[!]` si bloqué.  
@@ -70,36 +123,8 @@ Sur `main` ou `master`, propose :
 
 ## Mise à jour de project.md
 
-Déclencher manuellement si la stack ou la structure a évolué :
-
 ```
 "range/balaie/nettoie la forge"
-```
-
----
-
-## Structure
-
-```
-forge/
-├── SKILL.md
-├── phases/
-│   ├── p0-project.md
-│   ├── bootstrap.md
-│   ├── plan.md
-│   └── resume.md
-└── templates/
-    └── brief-template.md
-```
-
-Fichiers générés dans le projet :
-
-```
-.claude/
-├── project.md
-└── branch/<BRANCH>/
-    ├── brief.md
-    └── plan.md
 ```
 
 ---

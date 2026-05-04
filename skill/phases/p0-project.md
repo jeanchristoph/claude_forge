@@ -9,11 +9,7 @@ Lister le contenu du dossier racine avec le Glob tool (pattern `*`) — ignorer 
 ⚠️ Ne pas utiliser de commande Bash/PowerShell pour lister — les patterns `Where-Object` avec regex déclenchent un blocage sécurité.
 
 Si le dossier est vide (rien en dehors des éléments ignorés) :
-- Écrire `.claude/project.md` avec ce contenu minimal :
-  ```markdown
-  # Project — [à compléter]
-  **Généré le :** [date]
-  ```
+- Écrire `.claude/project.md` vide (contenu : chaîne vide).
 - Dire : "Projet vide détecté. `project.md` initialisé. Enchaîne avec le brief quand tu es prêt."
 - Enchaîner automatiquement sur `phases/bootstrap.md`.
 - STOP — ne pas continuer l'exploration.

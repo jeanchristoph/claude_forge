@@ -1,15 +1,22 @@
 # Bootstrap
 
+## Format du brief
+
+```markdown
+# Brief — <BRANCH>
+
+## Objectif
+```
+⚠️ Ne jamais utiliser `mkdir` sur les chemins `.claude/` — Write tool crée les dossiers parents automatiquement.
+
 ## Actions — dans l'ordre
 
-1. Créer `.claude/branch/<BRANCH>/brief.md` depuis `templates/brief-template.md` avec le Write tool.
-   ⚠️ Ne jamais utiliser `mkdir` sur les chemins `.claude/` — utiliser Write tool directement, il crée les dossiers parents automatiquement.
-3. Pré-remplir `## Objectif` si l'intention est exprimée dans le trigger ou la conversation.
-4. Si `## Objectif` ne peut pas être pré-rempli :
+1. Pré-remplir `## Objectif` si l'intention est exprimée dans le trigger ou la conversation.
+2. Si `## Objectif` ne peut pas être pré-rempli :
    - Poser la question : "What's the goal of this task?"
    - Reformuler en 2-3 phrases claires, demander validation, itérer.
    - Écrire `## Objectif` uniquement après validation explicite.
-   - Écrire `.claude/branch/<BRANCH>/brief.md`.
+3. Écrire `.claude/branch/<BRANCH>/brief.md`.
 
 ## Analyse
 

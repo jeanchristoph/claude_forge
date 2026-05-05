@@ -107,8 +107,8 @@ Reads files silently, displays the progress table, waits for instructions.
 
 ## Branch detection
 
-Cross-platform via `uname`: `2>/dev/null` on Unix, `2>$null` on PowerShell.  
-Without a git repo: asks for a code name used as `<BRANCH>`.
+Via `bash -c "git branch --show-current 2>/dev/null"` — works on both Unix and Windows.  
+Error or empty result (no git repo): asks for a code name used as `<BRANCH>`. No answer → STOP.
 
 ---
 
@@ -324,8 +324,8 @@ Lit les fichiers en silence, affiche le tableau d'avancement, attend les instruc
 
 ## Détection de branche
 
-Cross-platform via `uname` : `2>/dev/null` sur Unix, `2>$null` sur PowerShell.  
-Sans dépôt git : demande un nom de code utilisé comme `<BRANCH>`.
+Via `bash -c "git branch --show-current 2>/dev/null"` — fonctionne sur Unix et Windows.  
+Erreur ou résultat vide (pas de dépôt git) : demande un nom de code utilisé comme `<BRANCH>`. Sans réponse : STOP.
 
 ---
 

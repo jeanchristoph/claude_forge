@@ -15,6 +15,7 @@
 2. Si `## Objectif` ne peut pas être pré-rempli :
    - Poser la question : "What's the goal of this task?"
    - Reformuler en 2-3 phrases claires, demander validation, itérer.
+   - Questions sur les points flous → attendre réponse ; relancer si flou persiste.
    - Écrire `## Objectif` uniquement après validation explicite.
 3. Écrire `.claude/branch/<BRANCH>/brief.md`.
 

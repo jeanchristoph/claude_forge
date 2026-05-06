@@ -6,7 +6,7 @@
 2. Lire `@.claude/branch/<BRANCH>/brief.md` — contexte interne, **ne pas afficher**.
 3. Lire `@.claude/branch/<BRANCH>/plan.md`
 4. Afficher le tableau d'avancement (format ci-dessous).
-5. Demander : "Which task are we tackling?" — ne jamais démarrer sans réponse écrite.
+5. Toutes `[ ]` → "Ready to start with T1?" · sinon → "Which task are we tackling?" — ne jamais démarrer sans réponse.
 
 ---
 

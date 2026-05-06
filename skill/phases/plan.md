@@ -16,9 +16,8 @@
 5. Générer le plan (format ci-dessous) et le présenter.
 6. Itérer si ajustements demandés.
 7. Écrire `.claude/branch/<BRANCH>/plan.md` après validation.
-8. Demander : "Plan is set. Ready to start?" — attendre confirmation.
-9. Si `project.md` contient uniquement `<!-- pending -->` → le compléter (stack, périmètre, conventions du plan).
-10. Enchaîner sur `phases/resume.md`.
+8. Si `project.md` contient uniquement `<!-- pending -->` → le compléter (stack, périmètre, conventions du plan).
+9. Enchaîner sur `phases/resume.md`.
 
 ---
 

@@ -4,6 +4,7 @@
 
 1. Lire `@.claude/project.md` — contexte interne, **ne pas afficher**.
 2. Lire `@.claude/branch/<BRANCH>/brief.md` — contexte interne, **ne pas afficher**.
+   - Si `## Décisions & Contraintes` contient des entrées → afficher un résumé en tête : "**Last session :** [points clés]"
 3. Lire `@.claude/branch/<BRANCH>/plan.md`
 4. Afficher le tableau d'avancement (format ci-dessous).
 5. Toutes `[ ]` → "Ready to start with T1?" · sinon → "Which task are we tackling?" — ne jamais démarrer sans réponse.
@@ -32,6 +33,21 @@
 - Réécrire la description
 
 > "I want to update the plan: [description]. OK?"
+
+**Tâche L/XL** — avant de démarrer, décomposer en micro-étapes et écrire `plan.md` :
+`[ ] T2.1 — ...` · `[ ] T2.2 — ...`
+
+---
+
+## Mise à jour du brief
+
+Le brief est vivant. Les changements de scope sont gérés par la **Surveillance** ci-dessous.
+
+Écrire silencieusement sous `## Décisions & Contraintes` (format : `- [date] [1 ligne]`) :
+- Remarque ou contrainte utilisateur précisant le périmètre
+- Contrainte technique découverte en cours de tâche
+- Choix d'implémentation mineur acté sans discussion
+- **Choix utilisateur quand Claude a proposé plusieurs options** (ex: "Option B retenue — raison")
 
 ---
 

@@ -6,6 +6,8 @@
 # Brief — <BRANCH>
 
 ## Objectif
+
+## Décisions & Contraintes
 ```
 ⚠️ Ne jamais utiliser `mkdir` sur les chemins `.claude/` — Write tool crée les dossiers parents automatiquement.
 

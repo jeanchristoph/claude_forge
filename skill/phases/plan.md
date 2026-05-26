@@ -36,6 +36,11 @@
 **Description :** [Ce qui doit être fait, comment, avec quels patterns]
 [ ]
 
+<!-- Tâche L ou XL : décomposer en micro-étapes avant de démarrer
+[ ] T1.1 — ...
+[ ] T1.2 — ...
+-->
+
 ## Risques
 - [Point d'attention si applicable, sinon omettre]
 

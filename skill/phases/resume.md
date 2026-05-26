@@ -32,3 +32,30 @@
 - Réécrire la description
 
 > "I want to update the plan: [description]. OK?"
+
+---
+
+## Surveillance des demandes complémentaires
+
+**À chaque input utilisateur**, après l'exécution du skill (reprise ou nouveau projet), évaluer si la demande correspond à une tâche existante du plan ou non.
+
+### Demande hors périmètre — détecter si :
+- La demande concerne une fonctionnalité absente du plan
+- Elle introduit un nouveau cas d'usage, un nouveau module, ou un nouveau comportement
+- Elle modifie une contrainte technique ou fonctionnelle implicitement acceptée
+
+### Réaction — dans l'ordre :
+
+1. **Signaler** la détection clairement :
+   > "This request isn't in the current plan. Want me to add it?"
+
+2. **Si confirmation** ("ok", "yes", "oui") :
+   - Appliquer la mise à jour **substantielle** du plan (tâche ajoutée, effort estimé, position dans la séquence)
+   - Si la demande change significativement le scope global → proposer aussi de mettre à jour le brief :
+     > "This also changes the project scope. Should I update the brief?"
+   - Écrire `.claude/branch/<BRANCH>/plan.md` après validation
+   - Écrire `.claude/branch/<BRANCH>/brief.md` si scope mis à jour
+
+3. **Si refus** ("non", "no", "ignore") :
+   - Traiter la demande sans modifier le plan
+   - Continuer normalement

@@ -14,6 +14,10 @@ The result: fewer surprises, implementations that stay within the defined scope,
 
 - **Zero code without validation** — the absolute rule: silence ≠ agreement. The skill waits for an explicit "ok" before writing anything.
 - **Persistent per-branch context** — `brief.md` and `plan.md` are stored in `.claude/branch/<BRANCH>/` and re-read on every `/forge`.
+- **Living brief** — decisions, constraints, and user choices are logged silently under `## Decisions & Constraints` in the brief, without interrupting the workflow.
+- **Last session summary** — on resume, if `## Decisions & Constraints` has entries, a one-line recap is displayed before the progress table.
+- **L/XL task decomposition** — large tasks are broken into micro-steps in `plan.md` before implementation starts.
+- **Out-of-scope detection** — requests outside the current plan are flagged; user confirms whether to add them or ignore them.
 - **main/master guard** — on protected branches, forge asks for either a ticket ID or a branch name before continuing.
 - **Compaction survival** — the `PreCompact` hook injects the forge state (branch, goal, task statuses) into the compacted context summary.
 - **Cross-platform** — automatic Unix/Windows detection, separate installers.
@@ -74,7 +78,7 @@ Files generated in each project:
 .claude/
 ├── project.md
 └── branch/<BRANCH>/
-    ├── brief.md
+    ├── brief.md       ← Objective + Decisions & Constraints (living log)
     └── plan.md
 ```
 
@@ -91,17 +95,18 @@ Files generated in each project:
 ### State 1 — Bootstrap
 **Condition:** brief absent
 
-Creates `.claude/branch/<BRANCH>/brief.md`, clarifies the goal, continues to plan.
+Creates `.claude/branch/<BRANCH>/brief.md` with `## Objective` and `## Decisions & Constraints` sections, clarifies the goal, continues to plan.
 
 ### State 2 — Plan
 **Condition:** brief present, plan absent
 
-Generates `plan.md`, waits for validation before any implementation.
+Generates `plan.md`, waits for validation before any implementation.  
+L/XL tasks include a commented decomposition block (`T1.1`, `T1.2`, …) to fill in before starting.
 
 ### State 3 — Active
 **Condition:** brief + plan present
 
-Reads files silently, displays the progress table, waits for instructions.
+Reads files silently. If `## Decisions & Constraints` has entries, displays a one-line "**Last session:**" recap first, then the progress table. Waits for instructions.
 
 ---
 
@@ -178,6 +183,34 @@ Each installer removes all existing forge entries before adding its own — no d
 
 ---
 
+## Brief updates
+
+The brief is a living document. Changes of scope go through **Out-of-scope detection** (see below).
+
+The following are written silently under `## Decisions & Constraints` (`- [date] [1 line]`):
+- User remark or constraint narrowing the scope
+- Technical constraint discovered mid-task
+- Minor implementation choice made without discussion
+- User's choice when Claude presented several options (e.g. "Option B chosen — reason")
+
+---
+
+## Out-of-scope detection
+
+After each user input, forge checks whether the request falls inside the current plan or not.
+
+**Detected when the request:**
+- Concerns a feature not in the plan
+- Introduces a new use case, module, or behaviour
+- Changes an implicitly accepted technical or functional constraint
+
+**Reaction:**
+1. Flag it: `"This request isn't in the current plan. Want me to add it?"`
+2. On confirmation → apply a substantial plan update; if scope changes significantly, offer to update the brief too.
+3. On refusal → handle the request without touching the plan.
+
+---
+
 ## Updating project.md
 
 ```
@@ -200,6 +233,11 @@ Each installer removes all existing forge entries before adding its own — no d
 **Files:** `src/...`
 **Description:** ...
 [ ]
+
+<!-- L or XL task: decompose into micro-steps before starting
+[ ] T1.1 — ...
+[ ] T1.2 — ...
+-->
 
 ## Summary
 | Task | Effort | Status |
@@ -231,6 +269,10 @@ Le résultat : moins de mauvaises surprises, des implémentations qui restent da
 
 - **Zéro code sans validation** — la règle absolue : silence ≠ accord. Le skill attend un "ok" explicite avant d'écrire quoi que ce soit.
 - **Contexte persistant par branche** — `brief.md` et `plan.md` sont stockés dans `.claude/branch/<BRANCH>/` et relus à chaque `/forge`.
+- **Brief vivant** — les décisions, contraintes et choix utilisateur sont enregistrés silencieusement sous `## Décisions & Contraintes` dans le brief, sans interrompre le flux de travail.
+- **Résumé "Last session"** — à la reprise, si `## Décisions & Contraintes` contient des entrées, un récapitulatif en une ligne est affiché avant le tableau d'avancement.
+- **Décomposition des tâches L/XL** — les grandes tâches sont découpées en micro-étapes dans `plan.md` avant de démarrer l'implémentation.
+- **Détection hors périmètre** — les demandes hors plan sont signalées ; l'utilisateur confirme si elles doivent être ajoutées ou ignorées.
 - **Garde main/master** — sur les branches protégées, forge demande soit un identifiant de ticket, soit un nom de branche avant de continuer.
 - **Survie à la compaction** — le hook `PreCompact` injecte l'état forge (branche, objectif, statut des tâches) dans le résumé de contexte compacté.
 - **Cross-platform** — détection automatique Unix/Windows, installeurs séparés.
@@ -291,7 +333,7 @@ Fichiers générés dans chaque projet :
 .claude/
 ├── project.md
 └── branch/<BRANCH>/
-    ├── brief.md
+    ├── brief.md       ← Objectif + Décisions & Contraintes (journal vivant)
     └── plan.md
 ```
 
@@ -308,17 +350,18 @@ Fichiers générés dans chaque projet :
 ### État 1 — Bootstrap
 **Condition :** brief absent
 
-Crée `.claude/branch/<BRANCH>/brief.md`, clarifie l'objectif, enchaîne sur le plan.
+Crée `.claude/branch/<BRANCH>/brief.md` avec les sections `## Objectif` et `## Décisions & Contraintes`, clarifie l'objectif, enchaîne sur le plan.
 
 ### État 2 — Plan
 **Condition :** brief présent, plan absent
 
-Génère `plan.md`, attend validation avant toute implémentation.
+Génère `plan.md`, attend validation avant toute implémentation.  
+Les tâches L/XL incluent un bloc de décomposition commenté (`T1.1`, `T1.2`, …) à remplir avant de démarrer.
 
 ### État 3 — Actif
 **Condition :** brief + plan présents
 
-Lit les fichiers en silence, affiche le tableau d'avancement, attend les instructions.
+Lit les fichiers en silence. Si `## Décisions & Contraintes` contient des entrées, affiche d'abord un récapitulatif "**Last session :**" en une ligne, puis le tableau d'avancement. Attend les instructions.
 
 ---
 
@@ -395,6 +438,34 @@ Chaque installeur retire toutes les entrées forge existantes avant d'ajouter la
 
 ---
 
+## Mise à jour du brief
+
+Le brief est un document vivant. Les changements de scope passent par la **Détection hors périmètre** (voir ci-dessous).
+
+Les éléments suivants sont écrits silencieusement sous `## Décisions & Contraintes` (format : `- [date] [1 ligne]`) :
+- Remarque ou contrainte utilisateur précisant le périmètre
+- Contrainte technique découverte en cours de tâche
+- Choix d'implémentation mineur acté sans discussion
+- Choix utilisateur quand Claude a proposé plusieurs options (ex : "Option B retenue — raison")
+
+---
+
+## Détection hors périmètre
+
+Après chaque input utilisateur, forge vérifie si la demande est dans le plan courant ou non.
+
+**Détecté si la demande :**
+- Concerne une fonctionnalité absente du plan
+- Introduit un nouveau cas d'usage, module ou comportement
+- Modifie une contrainte technique ou fonctionnelle implicitement acceptée
+
+**Réaction :**
+1. Signaler : `"This request isn't in the current plan. Want me to add it?"`
+2. Sur confirmation → appliquer une mise à jour substantielle du plan ; si le scope change significativement, proposer aussi de mettre à jour le brief.
+3. Sur refus → traiter la demande sans toucher au plan.
+
+---
+
 ## Mise à jour de project.md
 
 ```
@@ -417,6 +488,11 @@ Chaque installeur retire toutes les entrées forge existantes avant d'ajouter la
 **Fichiers :** `src/...`
 **Description :** ...
 [ ]
+
+<!-- Tâche L ou XL : décomposer en micro-étapes avant de démarrer
+[ ] T1.1 — ...
+[ ] T1.2 — ...
+-->
 
 ## Récapitulatif
 | Tâche | Effort | Statut |

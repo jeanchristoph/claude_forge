@@ -13,7 +13,7 @@ The result: fewer surprises, implementations that stay within the defined scope,
 ### What Claude_forge brings concretely
 
 - **Zero code without validation** — the absolute rule: silence ≠ agreement. The skill waits for an explicit "ok" before writing anything.
-- **Persistent per-branch context** — `brief.md` and `plan.md` are stored in `.claude/branch/<BRANCH>/` and re-read on every `/forge`.
+- **Persistent per-branch context** — `brief.md` and `plan.md` are stored in `.forge/branch/<BRANCH>/` (gitignored) and re-read on every `/forge`.
 - **Living brief** — decisions, constraints, and user choices are logged silently under `## Decisions & Constraints` in the brief, without interrupting the workflow.
 - **Last session summary** — on resume, if `## Decisions & Constraints` has entries, a one-line recap is displayed before the progress table.
 - **L/XL task decomposition** — large tasks are broken into micro-steps in `plan.md` before implementation starts.
@@ -75,19 +75,23 @@ forge/
 Files generated in each project:
 
 ```
-.claude/
+.forge/                  ← gitignored, added automatically on first run
 ├── project.md
 └── branch/<BRANCH>/
-    ├── brief.md       ← Objective + Decisions & Constraints (living log)
-    └── plan.md
+    ├── brief.md         ← Objective + Decisions & Constraints (living log)
+    ├── plan.md
+    ├── rapport.txt      ← generated on task closure
+    └── cours-*.md       ← generated when a technical concept is explained
 ```
+
+A legacy `.claude/project.md` / `.claude/branch/` is migrated to `.forge/` automatically on first run.
 
 ---
 
 ## State behaviour
 
 ### State 0 — Project Init
-**Condition:** `.claude/project.md` absent
+**Condition:** `.forge/project.md` absent
 
 - Empty project (excluding dotfiles/dotfolders) → `project.md` placeholder created, continues.
 - Otherwise → explores stack, structure, conventions, writes `project.md` after validation.
@@ -95,7 +99,7 @@ Files generated in each project:
 ### State 1 — Bootstrap
 **Condition:** brief absent
 
-Creates `.claude/branch/<BRANCH>/brief.md` with `## Objective` and `## Decisions & Constraints` sections, clarifies the goal, continues to plan.
+Ensures `/.forge` is in the project's `.gitignore`, creates `.forge/branch/<BRANCH>/brief.md` with `## Objective` and `## Decisions & Constraints` sections, clarifies the goal, continues to plan.
 
 ### State 2 — Plan
 **Condition:** brief present, plan absent
@@ -134,6 +138,7 @@ On `main` or `master`, offers:
     "allow": [
       "Read(~/.claude/skills/forge/**)",
       "Read(/.claude/**)", "Edit(/.claude/**)", "Write(/.claude/**)",
+      "Read(/.forge/**)", "Edit(/.forge/**)", "Write(/.forge/**)",
       "Bash(git branch --show-current*)"
     ]
   },
@@ -152,6 +157,7 @@ On `main` or `master`, offers:
     "allow": [
       "Read(//c/Users/{USER}/.claude/skills/forge/**)",
       "Read(/.claude/**)", "Edit(/.claude/**)", "Write(/.claude/**)",
+      "Read(/.forge/**)", "Edit(/.forge/**)", "Write(/.forge/**)",
       "Bash(git branch --show-current*)"
     ]
   },
@@ -268,7 +274,7 @@ Le résultat : moins de mauvaises surprises, des implémentations qui restent da
 ### Ce que Claude_forge apporte concrètement
 
 - **Zéro code sans validation** — la règle absolue : silence ≠ accord. Le skill attend un "ok" explicite avant d'écrire quoi que ce soit.
-- **Contexte persistant par branche** — `brief.md` et `plan.md` sont stockés dans `.claude/branch/<BRANCH>/` et relus à chaque `/forge`.
+- **Contexte persistant par branche** — `brief.md` et `plan.md` sont stockés dans `.forge/branch/<BRANCH>/` (gitignoré) et relus à chaque `/forge`.
 - **Brief vivant** — les décisions, contraintes et choix utilisateur sont enregistrés silencieusement sous `## Décisions & Contraintes` dans le brief, sans interrompre le flux de travail.
 - **Résumé "Last session"** — à la reprise, si `## Décisions & Contraintes` contient des entrées, un récapitulatif en une ligne est affiché avant le tableau d'avancement.
 - **Décomposition des tâches L/XL** — les grandes tâches sont découpées en micro-étapes dans `plan.md` avant de démarrer l'implémentation.
@@ -330,19 +336,23 @@ forge/
 Fichiers générés dans chaque projet :
 
 ```
-.claude/
+.forge/                  ← gitignoré, ajouté automatiquement au premier lancement
 ├── project.md
 └── branch/<BRANCH>/
-    ├── brief.md       ← Objectif + Décisions & Contraintes (journal vivant)
-    └── plan.md
+    ├── brief.md         ← Objectif + Décisions & Contraintes (journal vivant)
+    ├── plan.md
+    ├── rapport.txt      ← généré à la clôture de tâche
+    └── cours-*.md       ← généré lors d'une explication de concept
 ```
+
+Un `.claude/project.md` / `.claude/branch/` legacy est migré automatiquement vers `.forge/` au premier lancement.
 
 ---
 
 ## Comportement par état
 
 ### État 0 — Project Init
-**Condition :** `.claude/project.md` absent
+**Condition :** `.forge/project.md` absent
 
 - Projet vide (hors dotfiles/dotfolders) → `project.md` placeholder créé, enchaîne.
 - Sinon → explore stack, structure, conventions, écrit `project.md` après validation.
@@ -350,7 +360,7 @@ Fichiers générés dans chaque projet :
 ### État 1 — Bootstrap
 **Condition :** brief absent
 
-Crée `.claude/branch/<BRANCH>/brief.md` avec les sections `## Objectif` et `## Décisions & Contraintes`, clarifie l'objectif, enchaîne sur le plan.
+S'assure que `/.forge` figure dans le `.gitignore` du projet, crée `.forge/branch/<BRANCH>/brief.md` avec les sections `## Objectif` et `## Décisions & Contraintes`, clarifie l'objectif, enchaîne sur le plan.
 
 ### État 2 — Plan
 **Condition :** brief présent, plan absent
@@ -389,6 +399,7 @@ Sur `main` ou `master`, propose :
     "allow": [
       "Read(~/.claude/skills/forge/**)",
       "Read(/.claude/**)", "Edit(/.claude/**)", "Write(/.claude/**)",
+      "Read(/.forge/**)", "Edit(/.forge/**)", "Write(/.forge/**)",
       "Bash(git branch --show-current*)"
     ]
   },
@@ -407,6 +418,7 @@ Sur `main` ou `master`, propose :
     "allow": [
       "Read(//c/Users/{USER}/.claude/skills/forge/**)",
       "Read(/.claude/**)", "Edit(/.claude/**)", "Write(/.claude/**)",
+      "Read(/.forge/**)", "Edit(/.forge/**)", "Write(/.forge/**)",
       "Bash(git branch --show-current*)"
     ]
   },

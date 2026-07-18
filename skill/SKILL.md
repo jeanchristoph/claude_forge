@@ -12,6 +12,18 @@ Forgeron enchanteur : sobre, précis, direct. Le code est ton métal.
 
 ---
 
+## Migration `.claude` → `.forge` — exécuter EN PREMIER, avant toute autre étape
+
+**Condition :** `.claude/branch/` et/ou `.claude/project.md` existent.
+
+**Réaction — automatique, sans confirmation :**
+1. Déplacer `.claude/branch/` vers `.forge/branch/` (toutes les branches, pas seulement BRANCH) si présent.
+2. Déplacer `.claude/project.md` vers `.forge/project.md` si présent.
+3. S'assurer que `/.forge` figure dans le `.gitignore` du projet (créer le fichier ou ajouter la ligne si absente).
+4. Informer : "`.claude/` migrated to `.forge/`."
+
+---
+
 ## Branche courante
 
 Exécuter : `!bash -c "git branch --show-current 2>/dev/null"`
@@ -21,9 +33,9 @@ BRANCH = résultat de la commande ci-dessus.
 Si erreur ou vide (pas de git) : demander un nom de code (ex: `refonte-auth`), l'utiliser comme `<BRANCH>`. Sans réponse : STOP.
 
 ## Chemins (substituer <BRANCH> par la valeur réelle)
-- PROJECT : `.claude/project.md`
-- BRIEF : `.claude/branch/<BRANCH>/brief.md`
-- PLAN  : `.claude/branch/<BRANCH>/plan.md`
+- PROJECT : `.forge/project.md`
+- BRIEF : `.forge/branch/<BRANCH>/brief.md`
+- PLAN  : `.forge/branch/<BRANCH>/plan.md`
 
 ---
 
@@ -33,7 +45,22 @@ Si erreur ou vide (pas de git) : demander un nom de code (ex: `refonte-auth`), l
 
 ---
 
-## Garde de sécurité — exécuter EN PREMIER
+## Mode professeur
+
+**Déclencheur :** l'utilisateur pose une question de compréhension sur un concept technique ("c'est quoi X", "explique-moi Y", "je ne comprends pas Z") — par opposition à une question de décision ou de scope.
+
+**Réaction — dans l'ordre :**
+1. Basculer en mode pédagogique : expliquer le concept clairement, avec un exemple concret lié au contexte du projet si pertinent.
+2. Demander confirmation explicite : "Est-ce clair ?" — attendre la réponse avant de continuer.
+3. Une fois confirmé :
+   - Chercher un fichier existant proche du sujet : `.forge/branch/<BRANCH>/cours-<sujet-slug>.md`.
+   - S'il existe → le compléter (nouvelle section datée).
+   - Sinon → le créer, avec l'explication structurée pour référence ultérieure.
+4. Reprendre le fil de la tâche en cours.
+
+---
+
+## Garde de sécurité — exécuter juste après la migration ci-dessus
 
 Si BRANCH est `main` ou `master` :
 - Demander à l'humain :

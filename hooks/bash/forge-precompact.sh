@@ -2,7 +2,7 @@
 branch=$(git branch --show-current 2>/dev/null)
 [ -z "$branch" ] && exit 0
 
-plan=".claude/branch/$branch/plan.md"
+plan=".forge/branch/$branch/plan.md"
 [ ! -f "$plan" ] && exit 0
 
 node -e "

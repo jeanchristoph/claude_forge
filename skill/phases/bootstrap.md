@@ -9,7 +9,7 @@
 
 ## Décisions & Contraintes
 ```
-⚠️ Ne jamais utiliser `mkdir` sur les chemins `.claude/` — Write tool crée les dossiers parents automatiquement.
+⚠️ Ne jamais utiliser `mkdir` sur les chemins `.forge/` — Write tool crée les dossiers parents automatiquement.
 
 ## Actions — dans l'ordre
 
@@ -19,8 +19,9 @@
    - Reformuler en 2-3 phrases claires, demander validation, itérer.
    - Questions sur les points flous → attendre réponse ; relancer si flou persiste.
    - Écrire `## Objectif` uniquement après validation explicite.
-3. Écrire `.claude/branch/<BRANCH>/brief.md`.
+3. S'assurer que `/.forge` figure dans le `.gitignore` du projet (créer le fichier ou ajouter la ligne si absente — silencieux, pas de confirmation requise).
+4. Écrire `.forge/branch/<BRANCH>/brief.md`.
 
 ## Analyse
 
-Croiser `@.claude/project.md` avec l'objectif. Points flous → clarifier avant de continuer. Si tout clair → enchaîner sur `phases/plan.md`.
+Croiser `@.forge/project.md` avec l'objectif. Points flous → clarifier avant de continuer. Si tout clair → enchaîner sur `phases/plan.md`.

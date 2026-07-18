@@ -2,10 +2,10 @@
 
 ## Actions — dans l'ordre
 
-1. Lire `@.claude/project.md` — contexte interne, **ne pas afficher**.
-2. Lire `@.claude/branch/<BRANCH>/brief.md` — contexte interne, **ne pas afficher**.
+1. Lire `@.forge/project.md` — contexte interne, **ne pas afficher**.
+2. Lire `@.forge/branch/<BRANCH>/brief.md` — contexte interne, **ne pas afficher**.
    - Si `## Décisions & Contraintes` contient des entrées → afficher un résumé en tête : "**Last session :** [points clés]"
-3. Lire `@.claude/branch/<BRANCH>/plan.md`
+3. Lire `@.forge/branch/<BRANCH>/plan.md`
 4. Afficher le tableau d'avancement (format ci-dessous).
 5. Toutes `[ ]` → "Ready to start with T1?" · sinon → "Which task are we tackling?" — ne jamais démarrer sans réponse.
 
@@ -51,6 +51,44 @@ Le brief est vivant. Les changements de scope sont gérés par la **Surveillance
 
 ---
 
+## Historisation
+
+**Seuils :** brief.md 30 000 car · plan.md 60 000 car. Vérifier après chaque écriture réelle.
+
+**Si dépassé** → proposer, confirmation obligatoire :
+> "`<fichier>` dépasse <N> caractères. Historiser vers `<fichier>_AAAAMMJJ.md` ? OK ?"
+
+**Sur confirmation** → déléguer à un agent en tâche de fond (`run_in_background: true`) : lecture, tri, écriture (archive + fichier allégé), sans bloquer le développement en cours.
+
+**plan.md** — par tâche `[x]` sans sous-élément `[ ]`/`[~]`/`[!]` :
+- Déplacer intégralement (Fichiers à créer, Description, corrections, checklist, ligne du tableau) — rien ne reste.
+- Sous-élément non coché → ne jamais archiver.
+- Règle absolue, dépendances, risques majeurs → toujours dans plan.md.
+
+**brief.md** — sous `## Décisions & Contraintes` :
+- Archiver uniquement l'historique d'opérations (entrées datées closes) — jamais une règle/contrainte active.
+- Déplacement verbatim — aucune reformulation.
+- Doute sur la nature d'une entrée → garder dans brief.md.
+
+**Nommage :** `plan_AAAAMMJJ.md` / `brief_AAAAMMJJ.md`, même dossier. Fichier du jour existant → compléter, jamais dupliquer. Toujours au-dessus du seuil après → archiver l'entrée suivante par ancienneté.
+
+---
+
+## Choix d'infrastructure → propagation vers CLAUDE.md global
+
+**Déclencheur :**
+- Un choix d'infrastructure se pose (techno, lib, pattern, service)
+- L'utilisateur revient sur un choix fait instinctivement par Claude (le corrige, l'invalide)
+
+**Réaction — dans l'ordre :**
+1. Logger le choix retenu sous `## Décisions & Contraintes` (règle ci-dessus).
+2. Si le choix dépasse le périmètre de cette branche (règle générale, pas spécifique au ticket) → en tirer une règle concise et programmatique, puis proposer :
+   > "This choice looks reusable beyond this branch. Add as a rule to global CLAUDE.md? → [règle proposée]"
+3. **Sur confirmation** → ajouter la règle à `~/.claude/CLAUDE.md` (section existante pertinente ou nouvelle section courte). Jamais d'écriture sans validation explicite.
+4. **Sur refus** → rester local au brief, ne jamais reproposer plus tard pour la même décision.
+
+---
+
 ## Surveillance des demandes complémentaires
 
 **À chaque input utilisateur**, après l'exécution du skill (reprise ou nouveau projet), évaluer si la demande correspond à une tâche existante du plan ou non.
@@ -69,9 +107,30 @@ Le brief est vivant. Les changements de scope sont gérés par la **Surveillance
    - Appliquer la mise à jour **substantielle** du plan (tâche ajoutée, effort estimé, position dans la séquence)
    - Si la demande change significativement le scope global → proposer aussi de mettre à jour le brief :
      > "This also changes the project scope. Should I update the brief?"
-   - Écrire `.claude/branch/<BRANCH>/plan.md` après validation
-   - Écrire `.claude/branch/<BRANCH>/brief.md` si scope mis à jour
+   - Écrire `.forge/branch/<BRANCH>/plan.md` après validation
+   - Écrire `.forge/branch/<BRANCH>/brief.md` si scope mis à jour
 
 3. **Si refus** ("non", "no", "ignore") :
    - Traiter la demande sans modifier le plan
    - Continuer normalement
+
+---
+
+## Clôture de tâche — rapport & réponse client
+
+**Déclencheur :**
+- Toutes les tâches du plan sont `[x]` ET l'utilisateur a validé les tests, OU
+- L'utilisateur emploie un terme de clôture ("terminé", "end", "pb résolu", ou équivalent)
+
+**Réaction — dans l'ordre :**
+
+1. **Confirmer** que le problème initial (tel que décrit dans `## Objectif` du brief) est bien résolu :
+   > "Le problème initial est-il bien résolu ?"
+   Ne pas continuer sans confirmation explicite.
+
+2. **Sur confirmation :**
+   - Générer le rapport interne (ou le mettre à jour si `rapport.txt` existe déjà pour cette branche) : texte brut structuré, concis, logique, schématique — labels courts (ex: PROBLÈME / SOLUTION / IMPACT). **Exclure** : détails d'itérations, mentions de branche, de tests, de fichiers modifiés.
+   - Présenter le rapport, demander confirmation, puis écrire `.forge/branch/<BRANCH>/rapport.txt`.
+   - Proposer ensuite : "Dois-je générer une réponse à un mail ?"
+     - Si oui → attendre que l'utilisateur colle le mail auquel répondre, générer une réponse au ton fluide, professionnel et pédagogique.
+     - Si non → terminer.

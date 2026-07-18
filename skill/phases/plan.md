@@ -2,8 +2,8 @@
 
 ## Étapes — dans l'ordre
 
-1. Lire `@.claude/project.md`
-2. Lire `@.claude/branch/<BRANCH>/brief.md`
+1. Lire `@.forge/project.md`
+2. Lire `@.forge/branch/<BRANCH>/brief.md`
 3. Reformuler l'objectif en 1 phrase pour confirmer la lecture.
 4. Si plusieurs approches architecturales viables, les présenter :
    ```
@@ -15,7 +15,7 @@
    Attendre le choix avant de continuer.
 5. Générer le plan (format ci-dessous) et le présenter.
 6. Itérer si ajustements demandés.
-7. Écrire `.claude/branch/<BRANCH>/plan.md` après validation.
+7. Écrire `.forge/branch/<BRANCH>/plan.md` après validation.
 8. Si `project.md` contient uniquement `<!-- pending -->` → le compléter (stack, périmètre, conventions du plan).
 9. Enchaîner sur `phases/resume.md`.
 

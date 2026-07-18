@@ -1,15 +1,15 @@
 # Project Init
 
 ## Objectif
-Générer `.claude/project.md` — connaissance stable du projet, commune à toutes les branches.
+Générer `.forge/project.md` — connaissance stable du projet, commune à toutes les branches.
 
 ## Garde — Projet vide
 
-Lister le contenu du dossier racine avec le Glob tool (pattern `*`) — ignorer tous les résultats dont le nom commence par `.` (dotfiles et dotfolders : `.claude`, `.idea`, `.git`, `.env`, etc.).
+Lister le contenu du dossier racine avec le Glob tool (pattern `*`) — ignorer tous les résultats dont le nom commence par `.` (dotfiles et dotfolders : `.forge`, `.idea`, `.git`, `.env`, etc.).
 ⚠️ Ne pas utiliser de commande Bash/PowerShell pour lister — les patterns `Where-Object` avec regex déclenchent un blocage sécurité.
 
 Si le dossier est vide (rien en dehors des éléments ignorés) :
-- Écrire `.claude/project.md` avec le contenu : `<!-- pending -->`
+- Écrire `.forge/project.md` avec le contenu : `<!-- pending -->`
 - Dire : "Empty project detected. `project.md` initialized. Start with the brief when ready."
 - Enchaîner automatiquement sur `phases/bootstrap.md`.
 - STOP — ne pas continuer l'exploration.
@@ -67,15 +67,15 @@ Si le dossier est vide (rien en dehors des éléments ignorés) :
 - Présenter le fichier à l'humain.
 - Demander : "Does this `project.md` look right? Anything to fix?"
 - Itérer si corrections demandées.
-- Écrire `.claude/project.md` avec le Write tool uniquement après validation explicite.
-  ⚠️ Ne jamais utiliser `mkdir` sur les chemins `.claude/` — Write tool crée les dossiers parents automatiquement.
+- Écrire `.forge/project.md` avec le Write tool uniquement après validation explicite.
+  ⚠️ Ne jamais utiliser `mkdir` sur les chemins `.forge/` — Write tool crée les dossiers parents automatiquement.
 - Enchaîner automatiquement sur `phases/bootstrap.md`.
 
 ---
 
 ## Mode mise à jour (project.md déjà existant)
 Ne pas réécrire intégralement — modifier uniquement ce qui a changé :
-- Lire l'existant `@.claude/project.md`
+- Lire l'existant `@.forge/project.md`
 - Identifier les sections obsolètes ou incomplètes
 - Proposer les modifications à l'humain avant d'écrire
 - Conserver ce qui est toujours valide tel quel

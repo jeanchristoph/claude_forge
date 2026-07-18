@@ -45,6 +45,14 @@ Si erreur ou vide (pas de git) : demander un nom de code (ex: `refonte-auth`), l
 
 ---
 
+## PAS DE COPYRIGHT CLAUDE NULLE PART
+- Pas de copyright CLAUDE dans git ni dans le code généré
+
+## COMMITS GIT
+- Message de commit : max 150 caractères, pas de copyright/mention Claude (ni ligne Co-Authored-By)
+
+---
+
 ## Mode professeur
 
 **Déclencheur :** l'utilisateur pose une question de compréhension sur un concept technique ("c'est quoi X", "explique-moi Y", "je ne comprends pas Z") — par opposition à une question de décision ou de scope.

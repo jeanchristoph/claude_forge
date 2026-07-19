@@ -15,7 +15,7 @@ The result: fewer surprises, implementations that stay within the defined scope,
 ### What Claude_forge brings concretely
 
 - **Zero code without validation** — the absolute rule: silence ≠ agreement. The skill waits for an explicit "ok" before writing anything.
-- **Persistent per-branch context** — `brief.md` and `plan.md` are stored in `.forge/branch/<BRANCH>/` (gitignored) and re-read on every `/forge`.
+- **Persistent per-branch context** — `brief.md` and `plan.md` are stored in `.forge/branch/<BRANCH>/`, tracked in git, and re-read on every `/forge`.
 - **Living brief** — decisions, constraints, and user choices are logged silently under `## Decisions & Constraints` in the brief, without interrupting the workflow.
 - **Last session summary** — on resume, if `## Decisions & Constraints` has entries, a one-line recap is displayed before the progress table.
 - **L/XL task decomposition** — large tasks are broken into micro-steps in `plan.md` before implementation starts.
@@ -77,7 +77,7 @@ forge/
 Files generated in each project:
 
 ```
-.forge/                  ← gitignored, added automatically on first run
+.forge/                  ← tracked in git, added automatically on first run
 ├── project.md
 └── branch/<BRANCH>/
     ├── brief.md         ← Objective + Decisions & Constraints (living log)
@@ -86,7 +86,7 @@ Files generated in each project:
     └── cours-*.md       ← generated when a technical concept is explained
 ```
 
-A legacy `.claude/project.md` / `.claude/branch/` is migrated to `.forge/` automatically on first run.
+A legacy `.claude/project.md` / `.claude/branch/` is migrated to `.forge/` automatically on first run — the migration also adds the `.gitignore` block that keeps `.forge/` tracked.
 
 ---
 
@@ -101,7 +101,7 @@ A legacy `.claude/project.md` / `.claude/branch/` is migrated to `.forge/` autom
 ### State 1 — Bootstrap
 **Condition:** brief absent
 
-Ensures `/.forge` is in the project's `.gitignore`, creates `.forge/branch/<BRANCH>/brief.md` with `## Objective` and `## Decisions & Constraints` sections, clarifies the goal, continues to plan.
+Creates `.forge/branch/<BRANCH>/brief.md` with `## Objective` and `## Decisions & Constraints` sections, clarifies the goal, continues to plan.
 
 ### State 2 — Plan
 **Condition:** brief present, plan absent
@@ -278,7 +278,7 @@ Le résultat : moins de mauvaises surprises, des implémentations qui restent da
 ### Ce que Claude_forge apporte concrètement
 
 - **Zéro code sans validation** — la règle absolue : silence ≠ accord. Le skill attend un "ok" explicite avant d'écrire quoi que ce soit.
-- **Contexte persistant par branche** — `brief.md` et `plan.md` sont stockés dans `.forge/branch/<BRANCH>/` (gitignoré) et relus à chaque `/forge`.
+- **Contexte persistant par branche** — `brief.md` et `plan.md` sont stockés dans `.forge/branch/<BRANCH>/`, suivis en git, et relus à chaque `/forge`.
 - **Brief vivant** — les décisions, contraintes et choix utilisateur sont enregistrés silencieusement sous `## Décisions & Contraintes` dans le brief, sans interrompre le flux de travail.
 - **Résumé "Last session"** — à la reprise, si `## Décisions & Contraintes` contient des entrées, un récapitulatif en une ligne est affiché avant le tableau d'avancement.
 - **Décomposition des tâches L/XL** — les grandes tâches sont découpées en micro-étapes dans `plan.md` avant de démarrer l'implémentation.
@@ -340,7 +340,7 @@ forge/
 Fichiers générés dans chaque projet :
 
 ```
-.forge/                  ← gitignoré, ajouté automatiquement au premier lancement
+.forge/                  ← suivi en git, ajouté automatiquement au premier lancement
 ├── project.md
 └── branch/<BRANCH>/
     ├── brief.md         ← Objectif + Décisions & Contraintes (journal vivant)
@@ -349,7 +349,7 @@ Fichiers générés dans chaque projet :
     └── cours-*.md       ← généré lors d'une explication de concept
 ```
 
-Un `.claude/project.md` / `.claude/branch/` legacy est migré automatiquement vers `.forge/` au premier lancement.
+Un `.claude/project.md` / `.claude/branch/` legacy est migré automatiquement vers `.forge/` au premier lancement — la migration ajoute aussi le bloc `.gitignore` qui garde `.forge/` suivi en git.
 
 ---
 
@@ -364,7 +364,7 @@ Un `.claude/project.md` / `.claude/branch/` legacy est migré automatiquement ve
 ### État 1 — Bootstrap
 **Condition :** brief absent
 
-S'assure que `/.forge` figure dans le `.gitignore` du projet, crée `.forge/branch/<BRANCH>/brief.md` avec les sections `## Objectif` et `## Décisions & Contraintes`, clarifie l'objectif, enchaîne sur le plan.
+Crée `.forge/branch/<BRANCH>/brief.md` avec les sections `## Objectif` et `## Décisions & Contraintes`, clarifie l'objectif, enchaîne sur le plan.
 
 ### État 2 — Plan
 **Condition :** brief présent, plan absent

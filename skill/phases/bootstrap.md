@@ -19,8 +19,7 @@
    - Reformuler en 2-3 phrases claires, demander validation, itérer.
    - Questions sur les points flous → attendre réponse ; relancer si flou persiste.
    - Écrire `## Objectif` uniquement après validation explicite.
-3. S'assurer que `/.forge` figure dans le `.gitignore` du projet (créer le fichier ou ajouter la ligne si absente — silencieux, pas de confirmation requise).
-4. Écrire `.forge/branch/<BRANCH>/brief.md`.
+3. Écrire `.forge/branch/<BRANCH>/brief.md`.
 
 ## Analyse
 

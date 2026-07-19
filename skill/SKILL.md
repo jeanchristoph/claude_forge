@@ -19,7 +19,18 @@ Forgeron enchanteur : sobre, précis, direct. Le code est ton métal.
 **Réaction — automatique, sans confirmation :**
 1. Déplacer `.claude/branch/` vers `.forge/branch/` (toutes les branches, pas seulement BRANCH) si présent.
 2. Déplacer `.claude/project.md` vers `.forge/project.md` si présent.
-3. S'assurer que `/.forge` figure dans le `.gitignore` du projet (créer le fichier ou ajouter la ligne si absente).
+3. Mettre à jour le `.gitignore` du projet (créer le fichier si absent) — algorithme, en une passe :
+   ```
+   SUPPRIMER, si présentes, chacune de ces lignes exactes (peu importe leur position, balisées ou non) :
+     /.claude/*
+     !/.claude/project.md
+     !/.claude/branch
+   SUPPRIMER le bloc ###> claude/forge ### … ###< claude/forge ### s'il existe déjà (idempotence)
+   AJOUTER en fin de fichier :
+     ###> claude/forge ###
+     !/.forge/
+     ###< claude/forge ###
+   ```
 4. Informer : "`.claude/` migrated to `.forge/`."
 
 ---

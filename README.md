@@ -1,5 +1,7 @@
 # Claude_forge
 
+**Version:** 1.1
+
 **Claude_forge** is a Claude Code system made of the **forge** skill (invoked via `/forge`) and a `PreCompact` hook. Together, they enforce a structured, branch-by-branch development workflow.
 
 Where Claude Code jumps straight into code as soon as you describe a problem, the forge skill inserts three mandatory steps before a single line is written:
@@ -260,6 +262,8 @@ After each user input, forge checks whether the request falls inside the current
 ---
 
 # Claude_forge (français)
+
+**Version :** 1.1
 
 **Claude_forge** est un système pour Claude Code composé du skill **forge** (invoqué via `/forge`) et d'un hook `PreCompact`. Ensemble, ils imposent un workflow de développement structuré, branche par branche.
 

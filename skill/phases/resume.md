@@ -3,11 +3,12 @@
 ## Actions — dans l'ordre
 
 1. Lire `@.forge/project.md` — contexte interne, **ne pas afficher**.
-2. Lire `@.forge/branch/<BRANCH>/brief.md` — contexte interne, **ne pas afficher**.
+2. Lire `.forge/coding_standards.md` — contexte interne, **ne pas afficher**.
+3. Lire `@.forge/branch/<BRANCH>/brief.md` — contexte interne, **ne pas afficher**.
    - Si `## Décisions & Contraintes` contient des entrées → afficher un résumé en tête : "**Last session :** [points clés]"
-3. Lire `@.forge/branch/<BRANCH>/plan.md`
-4. Afficher le tableau d'avancement (format ci-dessous).
-5. Toutes `[ ]` → "Ready to start with T1?" · sinon → "Which task are we tackling?" — ne jamais démarrer sans réponse.
+4. Lire `@.forge/branch/<BRANCH>/plan.md`
+5. Afficher le tableau d'avancement (format ci-dessous).
+6. Toutes `[ ]` → "Ready to start with T1?" · sinon → "Which task are we tackling?" — ne jamais démarrer sans réponse.
 
 ---
 

@@ -45,17 +45,17 @@ Si erreur ou vide (pas de git) : demander un nom de code (ex: `refonte-auth`), l
 
 ## Chemins (substituer <BRANCH> par la valeur réelle)
 - PROJECT : `.forge/project.md`
-- CODING_STANDARD : `.forge/coding_standards.md`
+- CODING_STANDARDS : `.forge/coding_standards.md`
 - BRIEF : `.forge/branch/<BRANCH>/brief.md`
 - PLAN  : `.forge/branch/<BRANCH>/plan.md`
 
 ---
 
-## Modèle CODING_STANDARD — créé en même temps que PROJECT (`phases/p0-project.md`)
+## Modèle CODING_STANDARDS — créé en même temps que PROJECT (`phases/p0-project.md`)
 
 Le créer (Write tool) dans la langue de l'utilisateur, avec :
 - Un titre : nom du projet
-- Une courte explication (2-3 lignes) précisant que ce fichier contient les conventions de code (structure, nommage, principes) à appliquer au moment d'écrire du code — une norme continue, pas un audit ponctuel — à compléter au fil du projet.
+- Une courte explication (1-2 lignes) précisant que ce fichier contient les conventions de code (structure, nommage, principes) à appliquer au moment d'écrire du code — une norme continue, pas un audit ponctuel — à compléter au fil du projet.
 
 ---
 

@@ -3,9 +3,10 @@
 ## Étapes — dans l'ordre
 
 1. Lire `@.forge/project.md`
-2. Lire `@.forge/branch/<BRANCH>/brief.md`
-3. Reformuler l'objectif en 1 phrase pour confirmer la lecture.
-4. Si plusieurs approches architecturales viables, les présenter :
+2. Lire `.forge/coding_standards.md`
+3. Lire `@.forge/branch/<BRANCH>/brief.md`
+4. Reformuler l'objectif en 1 phrase pour confirmer la lecture.
+5. Si plusieurs approches architecturales viables, les présenter :
    ```
    I have [N] possible approaches:
    **Option A — [Name]** : [1-2 sentences] | + ... | - ...
@@ -13,11 +14,11 @@
    Which one do we go with?
    ```
    Attendre le choix avant de continuer.
-5. Générer le plan (format ci-dessous) et le présenter.
-6. Itérer si ajustements demandés.
-7. Écrire `.forge/branch/<BRANCH>/plan.md` après validation.
-8. Si `project.md` contient uniquement `<!-- pending -->` → le compléter (stack, périmètre, conventions du plan).
-9. Enchaîner sur `phases/resume.md`.
+6. Générer le plan (format ci-dessous) et le présenter.
+7. Itérer si ajustements demandés.
+8. Écrire `.forge/branch/<BRANCH>/plan.md` après validation.
+9. Si `project.md` contient uniquement `<!-- pending -->` → le compléter (stack, périmètre, conventions du plan).
+10. Enchaîner sur `phases/resume.md`.
 
 ---
 

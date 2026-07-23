@@ -6,8 +6,8 @@ CLAUDE_DIR="$HOME/.claude"
 
 echo "► Skill..."
 SKILL_DIR="$CLAUDE_DIR/skills/forge"
-mkdir -p "$SKILL_DIR"
 rm -rf "$SKILL_DIR"
+mkdir -p "$SKILL_DIR"
 cp -r "$ROOT/skill/" "$SKILL_DIR"
 
 echo "► Hook..."

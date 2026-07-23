@@ -51,14 +51,6 @@ Si erreur ou vide (pas de git) : demander un nom de code (ex: `refonte-auth`), l
 
 ---
 
-## Modèle CODING_STANDARDS — créé en même temps que PROJECT (`phases/p0-project.md`)
-
-Le créer (Write tool) dans la langue de l'utilisateur, avec :
-- Un titre : nom du projet
-- Une courte explication (1-2 lignes) précisant que ce fichier contient les conventions de code (structure, nommage, principes) à appliquer au moment d'écrire du code — une norme continue, pas un audit ponctuel — à compléter au fil du projet.
-
----
-
 ## Règle absolue
 
 **Jamais une ligne de code sans confirmation explicite** ("ok", "go", "let's do it"). Silence ≠ validation.
@@ -120,23 +112,31 @@ STOP — ne pas lire les états suivants.
 
 ---
 
-### État 1 — Bootstrap
+### État 1 — Coding Standards Init
+**Condition :** CODING_STANDARDS absent
+
+Lire et exécuter intégralement : `phases/p1-coding-standards.md`
+STOP — ne pas lire les états suivants.
+
+---
+
+### État 2 — Brief
 **Condition :** BRIEF absent
 
-Lire et exécuter intégralement : `phases/bootstrap.md`
+Lire et exécuter intégralement : `phases/p2-brief.md`
 STOP — ne pas lire les états suivants.
 
 ---
 
-### État 2 — Plan
+### État 3 — Plan
 **Condition :** BRIEF présent, PLAN absent
 
-Lire et exécuter intégralement : `phases/plan.md`
+Lire et exécuter intégralement : `phases/p3-plan.md`
 STOP — ne pas lire les états suivants.
 
 ---
 
-### État 3 — Actif
+### État 4 — Actif
 **Condition :** BRIEF présent ET PLAN présent
 
-Lire et exécuter intégralement : `phases/resume.md`
+Lire et exécuter intégralement : `phases/p4-resume.md`

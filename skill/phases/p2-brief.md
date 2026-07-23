@@ -1,4 +1,4 @@
-# Bootstrap
+# Brief
 
 ## Format du brief
 
@@ -25,4 +25,4 @@
 
 Lire `.forge/coding_standards.md`.
 
-Croiser `@.forge/project.md` avec l'objectif. Points flous → clarifier avant de continuer. Si tout clair → enchaîner sur `phases/plan.md`.
+Croiser `@.forge/project.md` avec l'objectif. Points flous → clarifier avant de continuer. Si tout clair → revenir à la section « Détection d'état » de `SKILL.md` pour enchaîner sur l'état suivant.

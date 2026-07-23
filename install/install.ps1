@@ -6,6 +6,7 @@ $claudeDir = "$homeDir\.claude"
 # ── Skill ─────────────────────────────────────────────────────────────────────
 Write-Host "Skill..."
 $skillDir = "$claudeDir\skills\forge"
+if (Test-Path $skillDir) { Remove-Item $skillDir -Recurse -Force }
 New-Item -ItemType Directory -Path $skillDir -Force | Out-Null
 Copy-Item "$root\skill\*" $skillDir -Recurse -Force
 

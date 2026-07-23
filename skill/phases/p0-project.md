@@ -11,7 +11,7 @@ Lister le contenu du dossier racine avec le Glob tool (pattern `*`) — ignorer 
 Si le dossier est vide (rien en dehors des éléments ignorés) :
 - Écrire `.forge/project.md` avec le contenu : `<!-- pending -->`
 - Dire : "Empty project detected. `project.md` initialized. Start with the brief when ready."
-- Enchaîner automatiquement sur `phases/bootstrap.md`.
+- Revenir à la section « Détection d'état » de `SKILL.md` pour enchaîner sur l'état suivant.
 - STOP — ne pas continuer l'exploration.
 
 ## Exploration — lire dans l'ordre ce qui existe
@@ -69,8 +69,7 @@ Si le dossier est vide (rien en dehors des éléments ignorés) :
 - Itérer si corrections demandées.
 - Écrire `.forge/project.md` avec le Write tool uniquement après validation explicite.
   ⚠️ Ne jamais utiliser `mkdir` sur les chemins `.forge/` — Write tool crée les dossiers parents automatiquement.
-- Écrire `.forge/coding_standards.md` avec le modèle défini dans `SKILL.md` (uniquement s'il n'existe pas déjà).
-- Enchaîner automatiquement sur `phases/bootstrap.md`.
+- Revenir à la section « Détection d'état » de `SKILL.md` pour enchaîner sur l'état suivant.
 
 ---
 

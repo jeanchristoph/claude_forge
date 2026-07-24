@@ -79,6 +79,7 @@ Files generated in each project:
 ```
 .forge/                  ← tracked in git, added automatically on first run
 ├── project.md
+├── coding_standards.md  ← coding conventions (structure, naming, principles), completed over time
 └── branch/<BRANCH>/
     ├── brief.md         ← Objective + Decisions & Constraints (living log)
     ├── plan.md
@@ -97,22 +98,31 @@ A legacy `.claude/project.md` / `.claude/branch/` is migrated to `.forge/` autom
 
 - Empty project (excluding dotfiles/dotfolders) → `project.md` placeholder created, continues.
 - Otherwise → explores stack, structure, conventions, writes `project.md` after validation.
+- `coding_standards.md` is written at the same time (only if it doesn't already exist) — see below.
 
 ### State 1 — Bootstrap
 **Condition:** brief absent
 
-Creates `.forge/branch/<BRANCH>/brief.md` with `## Objective` and `## Decisions & Constraints` sections, clarifies the goal, continues to plan.
+Reads `coding_standards.md`. Creates `.forge/branch/<BRANCH>/brief.md` with `## Objective` and `## Decisions & Constraints` sections, clarifies the goal, continues to plan.
 
 ### State 2 — Plan
 **Condition:** brief present, plan absent
 
-Generates `plan.md`, waits for validation before any implementation.  
+Reads `coding_standards.md`, generates `plan.md`, waits for validation before any implementation.  
 L/XL tasks include a commented decomposition block (`T1.1`, `T1.2`, …) to fill in before starting.
 
 ### State 3 — Active
 **Condition:** brief + plan present
 
-Reads files silently. If `## Decisions & Constraints` has entries, displays a one-line "**Last session:**" recap first, then the progress table. Waits for instructions.
+Reads `coding_standards.md` and files silently. If `## Decisions & Constraints` has entries, displays a one-line "**Last session:**" recap first, then the progress table. Waits for instructions.
+
+---
+
+## coding_standards.md
+
+Created alongside `project.md` (State 0), in the user's language: a title (project name) and a short explanation stating that the file holds the coding conventions (structure, naming, principles) to apply while writing code — an ongoing standard, not a one-off audit — meant to be filled in as the project evolves.
+
+It's read at every phase that touches code (Bootstrap, Plan, Active) so conventions stay applied throughout the workflow.
 
 ---
 
@@ -342,6 +352,7 @@ Fichiers générés dans chaque projet :
 ```
 .forge/                  ← suivi en git, ajouté automatiquement au premier lancement
 ├── project.md
+├── coding_standards.md  ← conventions de code (structure, nommage, principes), complétées au fil du projet
 └── branch/<BRANCH>/
     ├── brief.md         ← Objectif + Décisions & Contraintes (journal vivant)
     ├── plan.md
@@ -360,22 +371,31 @@ Un `.claude/project.md` / `.claude/branch/` legacy est migré automatiquement ve
 
 - Projet vide (hors dotfiles/dotfolders) → `project.md` placeholder créé, enchaîne.
 - Sinon → explore stack, structure, conventions, écrit `project.md` après validation.
+- `coding_standards.md` est écrit au même moment (uniquement s'il n'existe pas déjà) — voir ci-dessous.
 
 ### État 1 — Bootstrap
 **Condition :** brief absent
 
-Crée `.forge/branch/<BRANCH>/brief.md` avec les sections `## Objectif` et `## Décisions & Contraintes`, clarifie l'objectif, enchaîne sur le plan.
+Lit `coding_standards.md`. Crée `.forge/branch/<BRANCH>/brief.md` avec les sections `## Objectif` et `## Décisions & Contraintes`, clarifie l'objectif, enchaîne sur le plan.
 
 ### État 2 — Plan
 **Condition :** brief présent, plan absent
 
-Génère `plan.md`, attend validation avant toute implémentation.  
+Lit `coding_standards.md`, génère `plan.md`, attend validation avant toute implémentation.  
 Les tâches L/XL incluent un bloc de décomposition commenté (`T1.1`, `T1.2`, …) à remplir avant de démarrer.
 
 ### État 3 — Actif
 **Condition :** brief + plan présents
 
-Lit les fichiers en silence. Si `## Décisions & Contraintes` contient des entrées, affiche d'abord un récapitulatif "**Last session :**" en une ligne, puis le tableau d'avancement. Attend les instructions.
+Lit `coding_standards.md` et les fichiers en silence. Si `## Décisions & Contraintes` contient des entrées, affiche d'abord un récapitulatif "**Last session :**" en une ligne, puis le tableau d'avancement. Attend les instructions.
+
+---
+
+## coding_standards.md
+
+Créé en même temps que `project.md` (État 0), dans la langue de l'utilisateur : un titre (nom du projet) et une courte explication précisant que le fichier contient les conventions de code (structure, nommage, principes) à appliquer au moment d'écrire du code — une norme continue, pas un audit ponctuel — à compléter au fil du projet.
+
+Il est lu à chaque phase qui touche au code (Bootstrap, Plan, Actif) pour que les conventions restent appliquées tout au long du workflow.
 
 ---
 

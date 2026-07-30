@@ -122,6 +122,8 @@ Le brief est vivant. Les changements de scope sont gérés par la **Surveillance
 
 **Déclencheur :** l'utilisateur dit "grave <branche(s)>" / "engrave <branche(s)>" — une ou plusieurs branches existantes citées, dans l'ordre voulu (ex: "grave dev", "grave master", "grave dev master").
 
+**INVARIANT :** git opère uniquement sur le dépôt courant — jamais sur un autre dépôt ouvert en parallèle.
+
 **Réaction — dans l'ordre :**
 1. Générer automatiquement le message de commit (règles COMMITS GIT : max 150 car., pas de mention Claude) — pas de confirmation sur le message lui-même.
 2. Annoncer la séquence prévue et demander confirmation explicite ("ok", "go") — jamais d'exécution sans validation :

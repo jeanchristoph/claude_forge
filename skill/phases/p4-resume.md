@@ -67,7 +67,8 @@ Le brief est vivant. Les changements de scope sont gérés par la **Surveillance
 - Règle absolue, dépendances, risques majeurs → toujours dans plan.md.
 
 **brief.md** — sous `## Décisions & Contraintes` :
-- Archiver uniquement l'historique d'opérations (entrées datées closes) — jamais une règle/contrainte active.
+- Contraintes (constantes dans le temps, toujours valables) → jamais archivées, quel que soit leur âge.
+- Décisions (choix ponctuels, actés et clos) → garder les 10 plus récentes, déplacer les plus anciennes.
 - Déplacement verbatim — aucune reformulation.
 - Doute sur la nature d'une entrée → garder dans brief.md.
 

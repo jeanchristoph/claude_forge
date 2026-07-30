@@ -21,6 +21,7 @@ The result: fewer surprises, implementations that stay within the defined scope,
 - **L/XL task decomposition** — large tasks are broken into micro-steps in `plan.md` before implementation starts.
 - **Out-of-scope detection** — requests outside the current plan are flagged; user confirms whether to add them or ignore them.
 - **main/master guard** — on protected branches, forge asks for either a ticket ID or a branch name before continuing.
+- **Shipping shortcuts** — `"grave master"` / `"engrave master"` (or with `"dev"`) commit, push, and merge in one confirmed step.
 - **Compaction survival** — the `PreCompact` hook injects the forge state (branch, goal, task statuses) into the compacted context summary.
 - **Cross-platform** — automatic Unix/Windows detection, separate installers.
 
@@ -237,6 +238,17 @@ After each user input, forge checks whether the request falls inside the current
 
 ---
 
+## Shipping — commit, push, merge
+
+```
+"grave master" / "engrave master"                       → commit + push + merge into master
+"grave dev master" / "engrave dev master" (order-free)  → commit + push + merge into dev, then master
+```
+
+The commit message is generated automatically — no separate confirmation on the message itself. The full add/commit/push/merge sequence still requires explicit confirmation ("ok", "go") before running.
+
+---
+
 ## Plan format
 
 ```markdown
@@ -294,6 +306,7 @@ Le résultat : moins de mauvaises surprises, des implémentations qui restent da
 - **Décomposition des tâches L/XL** — les grandes tâches sont découpées en micro-étapes dans `plan.md` avant de démarrer l'implémentation.
 - **Détection hors périmètre** — les demandes hors plan sont signalées ; l'utilisateur confirme si elles doivent être ajoutées ou ignorées.
 - **Garde main/master** — sur les branches protégées, forge demande soit un identifiant de ticket, soit un nom de branche avant de continuer.
+- **Raccourcis de livraison** — `"grave master"` / `"engrave master"` (ou avec `"dev"`) commit, push et merge en une étape confirmée.
 - **Survie à la compaction** — le hook `PreCompact` injecte l'état forge (branche, objectif, statut des tâches) dans le résumé de contexte compacté.
 - **Cross-platform** — détection automatique Unix/Windows, installeurs séparés.
 
@@ -507,6 +520,17 @@ Après chaque input utilisateur, forge vérifie si la demande est dans le plan c
 ```
 "ranger la forge" / "clean the forge"
 ```
+
+---
+
+## Livraison — commit, push, merge
+
+```
+"grave master" / "engrave master"                          → commit + push + merge sur master
+"grave dev master" / "engrave dev master" (ordre indifférent) → commit + push + merge sur dev, puis master
+```
+
+Le message de commit est généré automatiquement — pas de confirmation dédiée sur le message lui-même. La séquence complète add/commit/push/merge reste soumise à confirmation explicite ("ok", "go") avant exécution.
 
 ---
 

@@ -5,10 +5,11 @@
 1. Lire `@.forge/project.md` — contexte interne, **ne pas afficher**.
 2. Lire `.forge/coding_standards.md` — contexte interne, **ne pas afficher**.
 3. Lire `@.forge/branch/<BRANCH>/brief.md` — contexte interne, **ne pas afficher**.
-   - Si `## Décisions & Contraintes` contient des entrées → afficher un résumé en tête : "**Last session :** [points clés]"
-4. Lire `@.forge/branch/<BRANCH>/plan.md`
-5. Afficher le tableau d'avancement (format ci-dessous).
-6. Toutes `[ ]` → "Ready to start with T1?" · sinon → "Which task are we tackling?" — ne jamais démarrer sans réponse.
+4. Lire les 10 dernières entrées de `.forge/branch/<BRANCH>/log.md`, si présent — contexte interne, **ne pas afficher**.
+   - Des entrées existent → afficher un résumé en tête : "**Last session :** [points clés]"
+5. Lire `@.forge/branch/<BRANCH>/plan.md`
+6. Afficher le tableau d'avancement (format ci-dessous).
+7. Toutes `[ ]` → "Ready to start with T1?" · sinon → "Which task are we tackling?" — ne jamais démarrer sans réponse.
 
 ---
 
@@ -40,13 +41,15 @@
 
 ---
 
-## Mise à jour du brief
+## Mise à jour du brief et du log
 
 Le brief est vivant. Les changements de scope sont gérés par la **Surveillance** ci-dessous.
 
-Écrire silencieusement sous `## Décisions & Contraintes` (format : `- [date] [1 ligne]`) :
-- Remarque ou contrainte utilisateur précisant le périmètre
+**Contrainte immuable** (valable pour toute la durée de la branche) → écrire silencieusement dans la section contraintes de `brief.md` :
 - Contrainte technique découverte en cours de tâche
+- Remarque utilisateur précisant durablement le périmètre
+
+**Décision ponctuelle** (choix acté et clos à un instant donné) → écrire silencieusement dans LOG (format : `- [date] [1 ligne]`) :
 - Choix d'implémentation mineur acté sans discussion
 - **Choix utilisateur quand Claude a proposé plusieurs options** (ex: "Option B retenue — raison")
 
@@ -54,7 +57,7 @@ Le brief est vivant. Les changements de scope sont gérés par la **Surveillance
 
 ## Historisation
 
-**Seuils :** brief.md 30 000 car · plan.md 60 000 car. Vérifier après chaque écriture réelle.
+**Seuils :** log.md 30 000 car · plan.md 60 000 car. Vérifier après chaque écriture réelle.
 
 **Si dépassé** → proposer, confirmation obligatoire :
 > "`<fichier>` dépasse <N> caractères. Historiser vers `<fichier>_AAAAMMJJ.md` ? OK ?"
@@ -66,13 +69,11 @@ Le brief est vivant. Les changements de scope sont gérés par la **Surveillance
 - Sous-élément non coché → ne jamais archiver.
 - Règle absolue, dépendances, risques majeurs → toujours dans plan.md.
 
-**brief.md** — sous `## Décisions & Contraintes` :
-- Contraintes (constantes dans le temps, toujours valables) → jamais archivées, quel que soit leur âge.
-- Décisions (choix ponctuels, actés et clos) → garder les 10 plus récentes, déplacer les plus anciennes.
+**log.md** :
+- Garder les 10 entrées les plus récentes, déplacer les plus anciennes.
 - Déplacement verbatim — aucune reformulation.
-- Doute sur la nature d'une entrée → garder dans brief.md.
 
-**Nommage :** `plan_AAAAMMJJ.md` / `brief_AAAAMMJJ.md`, même dossier. Fichier du jour existant → compléter, jamais dupliquer. Toujours au-dessus du seuil après → archiver l'entrée suivante par ancienneté.
+**Nommage :** `plan_AAAAMM.md` / `log_AAAAMM.md`, même dossier. Fichier du jour existant → compléter, jamais dupliquer. Toujours au-dessus du seuil après → archiver l'entrée suivante par ancienneté.
 
 ---
 
@@ -83,7 +84,7 @@ Le brief est vivant. Les changements de scope sont gérés par la **Surveillance
 - L'utilisateur revient sur un choix fait instinctivement par Claude (le corrige, l'invalide)
 
 **Réaction — dans l'ordre :**
-1. Logger le choix retenu sous `## Décisions & Contraintes` (règle ci-dessus).
+1. Logger le choix retenu dans LOG (règle ci-dessus).
 2. Si le choix dépasse le périmètre de cette branche (règle générale, pas spécifique au ticket) → en tirer une règle concise et programmatique, puis proposer :
    > "This choice looks reusable beyond this branch. Add as a rule to global CLAUDE.md? → [règle proposée]"
 3. **Sur confirmation** → ajouter la règle à `~/.claude/CLAUDE.md` (section existante pertinente ou nouvelle section courte). Jamais d'écriture sans validation explicite.

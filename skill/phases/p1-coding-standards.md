@@ -14,4 +14,4 @@ Si `.forge/coding_standards.md` existe déjà → passer directement à `phases/
 ⚠️ Ne jamais utiliser `mkdir` sur les chemins `.forge/` — Write tool crée les dossiers parents automatiquement.
 
 ## Après génération
-Revenir à la section « Détection d'état » de `SKILL.md` pour enchaîner sur l'état suivant.
+Continuer directement à l'État 2 : lire et exécuter `phases/p2-brief.md`.

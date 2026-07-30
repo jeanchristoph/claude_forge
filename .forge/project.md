@@ -15,11 +15,12 @@ forge/
 ├── skill/                    → copié vers ~/.claude/skills/forge/
 │   ├── SKILL.md              (machine à états : migration → garde main/master → détection d'état)
 │   └── phases/
-│       ├── p0-project.md     (État 0 — Project Init)
+│       ├── p0-project.md         (État 0 — Project Init)
 │       ├── p1-coding-standards.md (État 1)
-│       ├── p2-brief.md       (État 2)
-│       ├── p3-plan.md        (État 3)
-│       └── p4-resume.md      (État 4 — actif)
+│       ├── p2-brief.md           (État 2 — Brief)
+│       ├── p3-log.md             (État 3 — Log)
+│       ├── p4-plan.md            (État 4 — Plan)
+│       └── p5-resume.md          (État 5 — Actif)
 ├── hooks/
 │   ├── bash/forge-precompact.sh   → copié vers ~/.claude/hooks/forge/ (Unix)
 │   └── ps1/forge-precompact.ps1   → copié vers ~/.claude/hooks/forge/ (Windows)

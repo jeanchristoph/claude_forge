@@ -95,17 +95,6 @@ Si BRANCH est `main` ou `master` :
 
 ---
 
-## Migration décisions → LOG — exécuter juste après la garde de sécurité
-
-**Condition :** BRIEF existe ET LOG absent.
-
-**Réaction — automatique, sans confirmation :**
-1. Si BRIEF contient `## Décisions & Contraintes` avec des entrées → renommer cette section en `## Contraintes`. Chaque entrée datée (`- [date] ...`, action chronologique) est déplacée vers LOG (créé si absent) tel quel — aucune reformulation, aucun retraitement, simple commande de déplacement. Chaque entrée non datée (règle) reste dans `## Contraintes`.
-2. Si aucune section trouvée → créer LOG vide quand même.
-3. Informer : "Décisions migrées vers `log.md`."
-
----
-
 ## Mise à jour manuelle
 
 **Déclencheur :** l'humain demande de "ranger la forge" ou "clean the forge".
@@ -116,41 +105,17 @@ Si BRANCH est `main` ou `master` :
 
 ---
 
-## Détection d'état — exécuter dans l'ordre, s'arrêter au premier match
+## Détection d'état
 
-### État 0 — Project Init
-**Condition :** PROJECT absent
+Lire la table dans l'ordre, exécuter intégralement le fichier de la première ligne dont la condition s'applique, STOP — ne pas lire les lignes suivantes.
 
-Lire et exécuter intégralement : `phases/p0-project.md`
-STOP — ne pas lire les états suivants.
+| État                      | Condition                               | Fichier                         |
+|---------------------------|-----------------------------------------|---------------------------------|
+| 0 — Project Init          | PROJECT absent                          | `phases/p0-project.md`          |
+| 1 — Coding Standards Init | CODING_STANDARDS absent                 | `phases/p1-coding-standards.md` |
+| 2 — Brief                 | BRIEF absent                            | `phases/p2-brief.md`            |
+| 3 — Log                   | BRIEF présent, LOG absent               | `phases/p3-log.md`              |
+| 4 — Plan                  | BRIEF présent, LOG présent, PLAN absent | `phases/p4-plan.md`             |
+| 5 — Actif                 | BRIEF présent, LOG présent, PLAN présent| `phases/p5-resume.md`           |
 
----
-
-### État 1 — Coding Standards Init
-**Condition :** CODING_STANDARDS absent
-
-Lire et exécuter intégralement : `phases/p1-coding-standards.md`
-STOP — ne pas lire les états suivants.
-
----
-
-### État 2 — Brief
-**Condition :** BRIEF absent
-
-Lire et exécuter intégralement : `phases/p2-brief.md`
-STOP — ne pas lire les états suivants.
-
----
-
-### État 3 — Plan
-**Condition :** BRIEF présent, PLAN absent
-
-Lire et exécuter intégralement : `phases/p3-plan.md`
-STOP — ne pas lire les états suivants.
-
----
-
-### État 4 — Actif
-**Condition :** BRIEF présent ET PLAN présent
-
-Lire et exécuter intégralement : `phases/p4-resume.md`
+Une fois un état exécuté, ne pas revenir relire cette table : chaque fichier de phase pointe explicitement vers l'état suivant (numéro + fichier) à sa fin.

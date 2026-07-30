@@ -118,6 +118,21 @@ Le brief est vivant. Les changements de scope sont gérés par la **Surveillance
 
 ---
 
+## Livraison — commit, push, merge
+
+**Déclencheur :** l'utilisateur dit "grave master" / "engrave master" (→ merge sur master) ou "grave dev master" / "grave master dev" / "engrave dev master" / "engrave master dev" (→ merge sur dev puis master).
+
+**Réaction — dans l'ordre :**
+1. Générer automatiquement le message de commit (règles COMMITS GIT : max 150 car., pas de mention Claude) — pas de confirmation sur le message lui-même.
+2. Annoncer la séquence prévue et demander confirmation explicite ("ok", "go") — jamais d'exécution sans validation :
+   > "add + commit (\"<message>\") + push + merge sur <master | dev puis master>. OK ?"
+3. **Sur confirmation** → exécuter dans l'ordre : `git add`, `git commit`, `git push`.
+   - **master** : checkout master, merge `<BRANCH>`, push master.
+   - **dev master** : checkout dev, merge `<BRANCH>`, push dev, puis checkout master, merge dev, push master.
+4. Revenir sur `<BRANCH>`. Rendre compte : hash de commit, branches mises à jour.
+
+---
+
 ## Clôture de tâche — rapport & réponse client
 
 **Déclencheur :**

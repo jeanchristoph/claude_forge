@@ -241,9 +241,10 @@ After each user input, forge checks whether the request falls inside the current
 ## Shipping — commit, push, merge
 
 ```
-"grave master" / "engrave master"                       → commit + push + merge into master
-"grave dev master" / "engrave dev master" (order-free)  → commit + push + merge into dev, then master
+"grave <branch(es)>" / "engrave <branch(es)>"
 ```
+
+One or more existing branches, named in the desired order (e.g. `"grave dev"`, `"grave master"`, `"grave dev master"`). Merges chain in that order: `<BRANCH>` → first branch → second branch → ...
 
 The commit message is generated automatically — no separate confirmation on the message itself. The full add/commit/push/merge sequence still requires explicit confirmation ("ok", "go") before running.
 
@@ -526,9 +527,10 @@ Après chaque input utilisateur, forge vérifie si la demande est dans le plan c
 ## Livraison — commit, push, merge
 
 ```
-"grave master" / "engrave master"                          → commit + push + merge sur master
-"grave dev master" / "engrave dev master" (ordre indifférent) → commit + push + merge sur dev, puis master
+"grave <branche(s)>" / "engrave <branche(s)>"
 ```
+
+Une ou plusieurs branches existantes, citées dans l'ordre voulu (ex : `"grave dev"`, `"grave master"`, `"grave dev master"`). Les merges s'enchaînent dans cet ordre : `<BRANCH>` → 1ère branche → 2ème branche → ...
 
 Le message de commit est généré automatiquement — pas de confirmation dédiée sur le message lui-même. La séquence complète add/commit/push/merge reste soumise à confirmation explicite ("ok", "go") avant exécution.
 

@@ -1,25 +1,20 @@
 # Brief
 
-## Format du brief
+## Structure du brief
 
-```markdown
-# Brief — <BRANCH>
+`brief.md` contient deux sections, titrées dans la langue de l'utilisateur : une section objectif (le but de la tâche) et une section contraintes (règles immuables et contraintes techniques valables pour toute la durée de la branche — vide à la création, jamais historisée). Les décisions ponctuelles vont dans LOG, jamais dans `brief.md`.
 
-## Objectif
-
-## Décisions & Contraintes
-```
 ⚠️ Ne jamais utiliser `mkdir` sur les chemins `.forge/` — Write tool crée les dossiers parents automatiquement.
 
 ## Actions — dans l'ordre
 
-1. Pré-remplir `## Objectif` si l'intention est exprimée dans le trigger ou la conversation.
-2. Si `## Objectif` ne peut pas être pré-rempli :
+1. Pré-remplir la section objectif si l'intention est exprimée dans le trigger ou la conversation.
+2. Si la section objectif ne peut pas être pré-remplie :
    - Poser la question : "What's the goal of this task?"
    - Reformuler en 2-3 phrases claires, demander validation, itérer.
    - Questions sur les points flous → attendre réponse ; relancer si flou persiste.
-   - Écrire `## Objectif` uniquement après validation explicite.
-3. Écrire `.forge/branch/<BRANCH>/brief.md`.
+   - Écrire la section objectif uniquement après validation explicite.
+3. Écrire `.forge/branch/<BRANCH>/brief.md` — section objectif remplie, section contraintes vide.
 
 ## Analyse
 

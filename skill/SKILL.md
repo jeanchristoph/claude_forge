@@ -48,6 +48,7 @@ Si erreur ou vide (pas de git) : demander un nom de code (ex: `refonte-auth`), l
 - CODING_STANDARDS : `.forge/coding_standards.md`
 - BRIEF : `.forge/branch/<BRANCH>/brief.md`
 - PLAN  : `.forge/branch/<BRANCH>/plan.md`
+- LOG   : `.forge/branch/<BRANCH>/log.md`
 
 ---
 
@@ -91,6 +92,17 @@ Si BRANCH est `main` ou `master` :
 - **Si choix 1** : utiliser l'identifiant fourni à la place de `<BRANCH>` dans tous les chemins pour la suite.
 - **Si choix 2** : exécuter `!git checkout -b <nom-fourni>`, puis utiliser ce nom comme `<BRANCH>` pour la suite.
 - Si l'humain ne répond pas clairement : "Choice required. Operation cancelled." et STOP.
+
+---
+
+## Migration décisions → LOG — exécuter juste après la garde de sécurité
+
+**Condition :** BRIEF existe ET LOG absent.
+
+**Réaction — automatique, sans confirmation :**
+1. Si BRIEF contient `## Décisions & Contraintes` avec des entrées → renommer cette section en `## Contraintes`, n'y garder que le premier bloc contigu (contraintes). Tout ce qui suit ce premier bloc est déplacé vers LOG (créé si absent) tel quel — aucune reformulation, aucun retraitement, simple commande de déplacement.
+2. Si aucune section trouvée → créer LOG vide quand même.
+3. Informer : "Décisions migrées vers `log.md`."
 
 ---
 

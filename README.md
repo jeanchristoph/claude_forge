@@ -246,6 +246,8 @@ After each user input, forge checks whether the request falls inside the current
 
 One or more existing branches, named in the desired order (e.g. `"grave dev"`, `"grave master"`, `"grave dev master"`). Merges chain in that order: `<BRANCH>` → first branch → second branch → ...
 
+**INVARIANT:** git operates only on the current repo — never on another repo open in parallel.
+
 The commit message is generated automatically — no separate confirmation on the message itself. The full add/commit/push/merge sequence still requires explicit confirmation ("ok", "go") before running.
 
 ---
@@ -531,6 +533,8 @@ Après chaque input utilisateur, forge vérifie si la demande est dans le plan c
 ```
 
 Une ou plusieurs branches existantes, citées dans l'ordre voulu (ex : `"grave dev"`, `"grave master"`, `"grave dev master"`). Les merges s'enchaînent dans cet ordre : `<BRANCH>` → 1ère branche → 2ème branche → ...
+
+**INVARIANT :** git opère uniquement sur le dépôt courant — jamais sur un autre dépôt ouvert en parallèle.
 
 Le message de commit est généré automatiquement — pas de confirmation dédiée sur le message lui-même. La séquence complète add/commit/push/merge reste soumise à confirmation explicite ("ok", "go") avant exécution.
 

@@ -57,17 +57,16 @@ Le brief est vivant. Les changements de scope sont gérés par la **Surveillance
 
 ## Historisation
 
-**Seuils :** log.md 30 000 car · plan.md 60 000 car. Vérifier après chaque écriture réelle.
+**Seuils :** log.md 30 000 car · plan.md 30 000 car. Vérifier après chaque écriture réelle.
 
 **Si dépassé** → proposer, confirmation obligatoire :
 > "`<fichier>` dépasse <N> caractères. Historiser vers `<fichier>_AAAAMMJJ.md` ? OK ?"
 
-**Sur confirmation** → déléguer à un agent en tâche de fond (`run_in_background: true`) : lecture, tri, écriture (archive + fichier allégé), sans bloquer le développement en cours.
+**Sur confirmation** → déléguer à un agent en tâche de fond (`run_in_background: true`) : lecture, écriture, sans bloquer le développement en cours.
 
 **plan.md** — par tâche `[x]` sans sous-élément `[ ]`/`[~]`/`[!]` :
-- Déplacer intégralement (Fichiers à créer, Description, corrections, checklist, ligne du tableau) — rien ne reste.
 - Sous-élément non coché → ne jamais archiver.
-- Règle absolue, dépendances, risques majeurs → toujours dans plan.md.
+- Déplacement verbatim des taches — aucune reformulation.
 
 **log.md** :
 - Garder les 10 entrées les plus récentes, déplacer les plus anciennes.

@@ -57,13 +57,13 @@ Scripts are idempotent — re-running after an update overwrites cleanly without
 forge/
 ├── skill/                    → copied to ~/.claude/skills/forge/
 │   ├── SKILL.md
-│   ├── phases/
-│   │   ├── p0-project.md
-│   │   ├── bootstrap.md
-│   │   ├── plan.md
-│   │   └── resume.md
-│   └── templates/
-│       └── brief-template.md
+│   └── phases/
+│       ├── p0-project.md          (State 0 — Project Init)
+│       ├── p1-coding-standards.md (State 1 — Coding Standards Init)
+│       ├── p2-brief.md            (State 2 — Brief)
+│       ├── p3-log.md              (State 3 — Log)
+│       ├── p4-plan.md             (State 4 — Plan)
+│       └── p5-resume.md           (State 5 — Active)
 ├── hooks/
 │   ├── bash/                 → copied to ~/.claude/hooks/forge/ by install.sh (Unix)
 │   │   └── forge-precompact.sh
@@ -102,18 +102,28 @@ A legacy `.claude/project.md` / `.claude/branch/` is migrated to `.forge/` autom
 - Otherwise → explores stack, structure, conventions, writes `project.md` after validation.
 - `coding_standards.md` is written at the same time (only if it doesn't already exist) — see below.
 
-### State 1 — Bootstrap
+### State 1 — Coding Standards Init
+**Condition:** `.forge/coding_standards.md` absent
+
+Writes `coding_standards.md` in the user's language, then continues to brief.
+
+### State 2 — Brief
 **Condition:** brief absent
 
 Reads `coding_standards.md`. Creates `.forge/branch/<BRANCH>/brief.md` with an objective section and an empty constraints section, clarifies the goal, continues to plan.
 
-### State 2 — Plan
-**Condition:** brief present, plan absent
+### State 3 — Log
+**Condition:** brief present, `log.md` absent
+
+Silently creates `log.md` if there's nothing to migrate, or moves pre-existing dated entries from `brief.md`'s `## Decisions & Constraints` into it (constraints without a date stay in `brief.md`).
+
+### State 4 — Plan
+**Condition:** brief present, `log.md` present, plan absent
 
 Reads `coding_standards.md`, generates `plan.md`, waits for validation before any implementation.  
 L/XL tasks include a commented decomposition block (`T1.1`, `T1.2`, …) to fill in before starting.
 
-### State 3 — Active
+### State 5 — Active
 **Condition:** brief + plan present
 
 Reads `coding_standards.md` and files silently. If `log.md` has entries, displays a one-line "**Last session:**" recap of the last 10 first, then the progress table. Waits for instructions.
@@ -348,13 +358,13 @@ Les scripts sont idempotents — relancer après une mise à jour écrase propre
 forge/
 ├── skill/                    → copié dans ~/.claude/skills/forge/
 │   ├── SKILL.md
-│   ├── phases/
-│   │   ├── p0-project.md
-│   │   ├── bootstrap.md
-│   │   ├── plan.md
-│   │   └── resume.md
-│   └── templates/
-│       └── brief-template.md
+│   └── phases/
+│       ├── p0-project.md          (État 0 — Project Init)
+│       ├── p1-coding-standards.md (État 1 — Coding Standards Init)
+│       ├── p2-brief.md            (État 2 — Brief)
+│       ├── p3-log.md              (État 3 — Log)
+│       ├── p4-plan.md             (État 4 — Plan)
+│       └── p5-resume.md           (État 5 — Actif)
 ├── hooks/
 │   ├── bash/                 → copié dans ~/.claude/hooks/forge/ par install.sh (Unix)
 │   │   └── forge-precompact.sh
@@ -393,18 +403,28 @@ Un `.claude/project.md` / `.claude/branch/` legacy est migré automatiquement ve
 - Sinon → explore stack, structure, conventions, écrit `project.md` après validation.
 - `coding_standards.md` est écrit au même moment (uniquement s'il n'existe pas déjà) — voir ci-dessous.
 
-### État 1 — Bootstrap
+### État 1 — Coding Standards Init
+**Condition :** `.forge/coding_standards.md` absent
+
+Écrit `coding_standards.md` dans la langue de l'utilisateur, puis enchaîne sur le brief.
+
+### État 2 — Brief
 **Condition :** brief absent
 
 Lit `coding_standards.md`. Crée `.forge/branch/<BRANCH>/brief.md` avec une section objectif et une section contraintes vide, clarifie l'objectif, enchaîne sur le plan.
 
-### État 2 — Plan
-**Condition :** brief présent, plan absent
+### État 3 — Log
+**Condition :** brief présent, `log.md` absent
+
+Crée `log.md` silencieusement s'il n'y a rien à migrer, ou y déplace les entrées datées préexistantes de `## Décisions & Contraintes` dans `brief.md` (les contraintes sans date restent dans `brief.md`).
+
+### État 4 — Plan
+**Condition :** brief présent, `log.md` présent, plan absent
 
 Lit `coding_standards.md`, génère `plan.md`, attend validation avant toute implémentation.  
 Les tâches L/XL incluent un bloc de décomposition commenté (`T1.1`, `T1.2`, …) à remplir avant de démarrer.
 
-### État 3 — Actif
+### État 5 — Actif
 **Condition :** brief + plan présents
 
 Lit `coding_standards.md` et les fichiers en silence. Si `log.md` contient des entrées, affiche d'abord un récapitulatif "**Last session :**" des 10 dernières en une ligne, puis le tableau d'avancement. Attend les instructions.

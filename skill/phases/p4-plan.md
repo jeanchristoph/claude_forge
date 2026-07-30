@@ -18,7 +18,7 @@
 7. Itérer si ajustements demandés.
 8. Écrire `.forge/branch/<BRANCH>/plan.md` après validation.
 9. Si `project.md` contient uniquement `<!-- pending -->` → le compléter (stack, périmètre, conventions du plan).
-10. Revenir à la section « Détection d'état » de `SKILL.md` pour enchaîner sur l'état suivant.
+10. Continuer directement à l'État 5 : lire et exécuter `phases/p5-resume.md`.
 
 ---
 

@@ -100,15 +100,17 @@ Si BRANCH est `main` ou `master` :
 **Condition :** BRIEF existe ET LOG absent.
 
 **Réaction — automatique, sans confirmation :**
-1. Si BRIEF contient `## Décisions & Contraintes` avec des entrées → renommer cette section en `## Contraintes`, n'y garder que le premier bloc contigu (contraintes). Tout ce qui suit ce premier bloc est déplacé vers LOG (créé si absent) tel quel — aucune reformulation, aucun retraitement, simple commande de déplacement.
+1. Si BRIEF contient `## Décisions & Contraintes` avec des entrées → renommer cette section en `## Contraintes`. Chaque entrée datée (`- [date] ...`, action chronologique) est déplacée vers LOG (créé si absent) tel quel — aucune reformulation, aucun retraitement, simple commande de déplacement. Chaque entrée non datée (règle) reste dans `## Contraintes`.
 2. Si aucune section trouvée → créer LOG vide quand même.
 3. Informer : "Décisions migrées vers `log.md`."
 
 ---
 
-## Mise à jour manuelle — vérifier EN PREMIER après la garde de sécurité
+## Mise à jour manuelle
 
-Si l'humain demande de "ranger la forge" ou "clean the forge" :
+**Déclencheur :** l'humain demande de "ranger la forge" ou "clean the forge".
+
+**Réaction :**
 - Lire et exécuter intégralement : `phases/p0-project.md`
 - STOP — ne pas continuer vers la détection d'état.
 

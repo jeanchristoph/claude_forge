@@ -3,8 +3,9 @@
 ## Garde
 Si LOG existe déjà → ne rien faire, continuer directement à l'État 4 : lire et exécuter `phases/p4-plan.md`.
 
-## Réaction — automatique, sans confirmation
+## Réaction — déléguée, non bloquante
 
+Déléguer à un agent en tâche de fond (`run_in_background: true`), sans attendre son résultat :
 1. Si BRIEF ne contient pas de section `## Décisions & Contraintes` (rien à migrer) → créer LOG vide. Informer : "`log.md` créé."
 2. Sinon (BRIEF contient `## Décisions & Contraintes`) → migration :
    - Renommer cette section en `## Contraintes`.
@@ -13,4 +14,4 @@ Si LOG existe déjà → ne rien faire, continuer directement à l'État 4 : lir
    - Informer : "Décisions migrées vers `log.md`."
 
 ## Suite
-Continuer directement à l'État 4 : lire et exécuter `phases/p4-plan.md`.
+Continuer immédiatement à l'État 4 sans attendre l'agent : lire et exécuter `phases/p4-plan.md`.

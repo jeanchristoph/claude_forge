@@ -141,12 +141,14 @@ Le brief est vivant. Les changements de scope sont gérés par la **Surveillance
 
 Une ligne par action git prévue, dans l'ordre d'exécution. Trois colonnes, en-têtes générés dans la langue de l'utilisateur : numéro d'ordre, action git, détail.
 
-Actions et détail associé :
+Actions et détail associé — aucune autre :
 - `add` → branche courante
 - `commit` → message généré, entre guillemets
 - `push` → remote et branche poussée
 - `merge` → `<BRANCH>` → branche cible, une ligne par branche citée
+- `checkout` → dernière ligne du tableau uniquement, retour sur `<BRANCH>` ; omise si aucune branche n'est citée
 
+⚠️ Jamais de ligne `checkout` pour les changements de branche de l'étape 7 : ils restent implicites. Seul le retour final sur `<BRANCH>` est listé.
 ⚠️ Jamais de liste de fichiers modifiés, jamais de décompte de lignes.
 
 ---

@@ -261,7 +261,7 @@ One or more existing branches, named in the desired order (e.g. `"grave dev"`, `
 
 **INVARIANT:** git operates only on the current repo — never on another repo open in parallel.
 
-The commit message is generated automatically — no separate confirmation on the message itself. Before anything runs, Forge prints a recap table of the planned git actions: add, commit with its message, push, then one row per merge (`<BRANCH>` → target). No git command — `git add` included — runs before you confirm. A single "ok" covers the whole sequence: add, commit, push, then every merge, with no further prompt in between.
+The commit message is generated automatically — no separate confirmation on the message itself. Before anything runs, Forge prints a recap table of the planned git actions: add, commit with its message, push, then one row per merge (`<BRANCH>` → target), and a final row for the return to `<BRANCH>`. Intermediate branch switches are never listed. No git command — `git add` included — runs before you confirm. A single "ok" covers the whole sequence: add, commit, push, then every merge, with no further prompt in between.
 
 ---
 
@@ -562,7 +562,7 @@ Une ou plusieurs branches existantes, citées dans l'ordre voulu (ex : `"grave d
 
 **INVARIANT :** git opère uniquement sur le dépôt courant — jamais sur un autre dépôt ouvert en parallèle.
 
-Le message de commit est généré automatiquement — pas de confirmation dédiée sur le message lui-même. Avant toute exécution, Forge affiche un tableau récapitulatif des actions git prévues : add, commit avec son message, push, puis une ligne par merge (`<BRANCH>` → cible). Aucune commande git — `git add` compris — n'est lancée avant la confirmation. Un seul "ok" couvre toute la séquence : add, commit, push, puis chaque merge, sans validation intermédiaire.
+Le message de commit est généré automatiquement — pas de confirmation dédiée sur le message lui-même. Avant toute exécution, Forge affiche un tableau récapitulatif des actions git prévues : add, commit avec son message, push, puis une ligne par merge (`<BRANCH>` → cible), et une dernière ligne pour le retour sur `<BRANCH>`. Les changements de branche intermédiaires ne sont jamais listés. Aucune commande git — `git add` compris — n'est lancée avant la confirmation. Un seul "ok" couvre toute la séquence : add, commit, push, puis chaque merge, sans validation intermédiaire.
 
 ---
 

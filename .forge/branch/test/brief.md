@@ -9,3 +9,5 @@ Ce tableau se limite aux actions : pas de liste de fichiers, pas de décompte de
 La confirmation est unique et couvre toute la séquence : sur « ok », exécuter `add` + `commit` + `push` sur la branche courante, puis les merges dans l'ordre cité, sans redemander de validation intermédiaire.
 
 ## Contraintes
+
+- Le tableau récapitulatif ne liste que `add`, `commit`, `push` et `merge`. Les changements de branche nécessaires aux merges restent implicites — seule exception : une dernière ligne signalant le retour sur la branche d'origine.

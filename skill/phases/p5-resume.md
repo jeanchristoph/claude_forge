@@ -45,9 +45,10 @@
 
 Le brief est vivant. Les changements de scope sont gérés par la **Surveillance** ci-dessous.
 
-**Contrainte immuable** (valable pour toute la durée de la branche) → écrire silencieusement dans la section contraintes de `brief.md` :
+**Élément de cadre** (valable pour toute la durée de la branche) → écrire silencieusement dans la section `## Scope & rules` de `brief.md` :
 - Contrainte technique découverte en cours de tâche
-- Remarque utilisateur précisant durablement le périmètre
+- Règle immuable posée par l'utilisateur
+- Remarque utilisateur précisant durablement le périmètre ou le hors périmètre
 
 **Décision ponctuelle** (choix acté et clos à un instant donné) → écrire silencieusement dans LOG (format : `- [date] [1 ligne]`) :
 - Choix d'implémentation mineur acté sans discussion

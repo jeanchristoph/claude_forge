@@ -24,17 +24,19 @@
 
 ## Format du plan
 
+⚠️ Titres de sections et libellés de champs écrits tels quels ci-dessous, en anglais, quelle que soit la langue de l'utilisateur — seul le contenu entre crochets suit sa langue.
+
 ```markdown
 # Plan — <BRANCH>
-**Objectif :** [1 phrase tirée du brief]
-**Date :** [date du jour]
+**Objective:** [1 phrase tirée du brief]
+**Date:** [date du jour]
 
-## Tâches
+## Tasks
 
 ### T1 — [Titre court et précis]
-**Effort :** XS/S/M/L/XL
-**Fichiers :** `chemin/vers/fichier`
-**Description :** [Ce qui doit être fait, comment, avec quels patterns]
+**Effort:** XS/S/M/L/XL
+**Files:** `chemin/vers/fichier`
+**Description:** [Ce qui doit être fait, comment, avec quels patterns]
 [ ]
 
 <!-- Tâche L ou XL : décomposer en micro-étapes avant de démarrer
@@ -42,14 +44,14 @@
 [ ] T1.2 — ...
 -->
 
-## Risques
+## Risks
 - [Point d'attention si applicable, sinon omettre]
 
-## Récapitulatif
-| Tâche | Effort | Statut |
+## Summary
+| Task | Effort | Status |
 |---|---|---|
 | T1 — ... | S | [ ] |
-| **Total estimé** | **[somme]** | |
+| **Total** | **[somme]** | |
 ```
 
 **Effort :** XS <30min · S 30min-2h · M 2-4h · L 4h-1j · XL >1j → découper

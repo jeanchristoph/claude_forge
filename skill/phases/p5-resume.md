@@ -124,15 +124,30 @@ Le brief est vivant. Les changements de scope sont gérés par la **Surveillance
 
 **INVARIANT :** git opère uniquement sur le dépôt courant — jamais sur un autre dépôt ouvert en parallèle.
 
+⚠️ Aucune commande git — `git add` compris — avant la confirmation de l'étape 3.
+
 **Réaction — dans l'ordre :**
 1. Générer automatiquement le message de commit (règles COMMITS GIT : max 150 car., pas de mention Claude) — pas de confirmation sur le message lui-même.
-2. Annoncer la séquence prévue et demander confirmation explicite ("ok", "go") — jamais d'exécution sans validation :
-   - Aucune branche citée → "add + commit (\"<message>\") + push on `<BRANCH>`. OK ?"
-   - Branches citées → "add + commit (\"<message>\") + push on `<BRANCH>`, then merge `<BRANCH>` into <branches citées, dans l'ordre>. OK ?"
-3. **Sur confirmation** → exécuter dans l'ordre : `git add`, `git commit`, `git push` sur `<BRANCH>`.
-4. Aucune branche citée → passer directement à l'étape 6.
-5. Pour chaque branche citée, dans l'ordre : branche citée égale à `<BRANCH>` → ignorer sans message ; sinon → checkout de la branche, merge de `<BRANCH>` (toujours la branche de départ, jamais la branche précédente de la chaîne), push.
-6. Revenir sur `<BRANCH>`. Rendre compte : hash de commit, branches mises à jour.
+2. Afficher le tableau récapitulatif des actions prévues (format ci-dessous).
+3. Demander une confirmation unique, couvrant toute la séquence :
+   > Run this sequence? OK?
+4. **Sur refus** → n'exécuter aucune action. STOP — ne pas continuer.
+5. **Sur confirmation** → exécuter la séquence entière sans validation intermédiaire, dans l'ordre : `git add`, `git commit`, `git push` sur `<BRANCH>`.
+6. Aucune branche citée → passer directement à l'étape 8.
+7. Pour chaque branche citée, dans l'ordre : branche citée égale à `<BRANCH>` → ignorer sans message ; sinon → checkout de la branche, merge de `<BRANCH>` (toujours la branche de départ, jamais la branche précédente de la chaîne), push.
+8. Revenir sur `<BRANCH>`. Rendre compte : hash de commit, branches mises à jour.
+
+### Format du tableau récapitulatif
+
+Une ligne par action git prévue, dans l'ordre d'exécution. Trois colonnes, en-têtes générés dans la langue de l'utilisateur : numéro d'ordre, action git, détail.
+
+Actions et détail associé :
+- `add` → branche courante
+- `commit` → message généré, entre guillemets
+- `push` → remote et branche poussée
+- `merge` → `<BRANCH>` → branche cible, une ligne par branche citée
+
+⚠️ Jamais de liste de fichiers modifiés, jamais de décompte de lignes.
 
 ---
 

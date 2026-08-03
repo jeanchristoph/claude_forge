@@ -6,7 +6,7 @@
 
 Where Claude Code jumps straight into code as soon as you describe a problem, the forge skill inserts three mandatory steps before a single line is written:
 
-1. **Brief** — clarify the goal, constraints, and scope
+1. **Brief** — clarify the goal and the frame: rules, constraints, scope
 2. **Plan** — break down into estimated tasks, wait for explicit validation
 3. **Active** — execute with real-time progress tracking
 
@@ -16,7 +16,7 @@ The result: fewer surprises, implementations that stay within the defined scope,
 
 - **Zero code without validation** — the absolute rule: silence ≠ agreement. The skill waits for an explicit "ok" before writing anything.
 - **Persistent per-branch context** — `brief.md` and `plan.md` are stored in `.forge/branch/<BRANCH>/`, tracked in git, and re-read on every `/forge`.
-- **Living brief & log** — constraints go silently into the brief's constraints section (never archived); decisions and user choices are logged silently into `log.md`, without interrupting the workflow.
+- **Living brief & log** — rules, constraints and scope go silently into the brief's `## Scope & rules` section (never archived); decisions and user choices are logged silently into `log.md`, without interrupting the workflow.
 - **Last session summary** — on resume, if `log.md` has entries, a one-line recap of the last 10 is displayed before the progress table.
 - **L/XL task decomposition** — large tasks are broken into micro-steps in `plan.md` before implementation starts.
 - **Out-of-scope detection** — requests outside the current plan are flagged; user confirms whether to add them or ignore them.
@@ -82,7 +82,7 @@ Files generated in each project:
 ├── project.md
 ├── coding_standards.md  ← coding conventions (structure, naming, principles), completed over time
 └── branch/<BRANCH>/
-    ├── brief.md         ← Objective + Constraints (never archived)
+    ├── brief.md         ← `## Objective` + `## Scope & rules` (never archived)
     ├── log.md           ← Decisions log (living log, last 10 entries read on resume)
     ├── plan.md
     ├── rapport.txt      ← generated on task closure
@@ -110,12 +110,12 @@ Writes `coding_standards.md` in the user's language, then continues to brief.
 ### State 2 — Brief
 **Condition:** brief absent
 
-Reads `coding_standards.md`. Creates `.forge/branch/<BRANCH>/brief.md` with an objective section and an empty constraints section, clarifies the goal, continues to plan.
+Reads `coding_standards.md`. Creates `.forge/branch/<BRANCH>/brief.md` with an `## Objective` section and an empty `## Scope & rules` section, clarifies the goal, continues to plan.
 
 ### State 3 — Log
 **Condition:** brief present, `log.md` absent
 
-Silently creates `log.md` if there's nothing to migrate, or moves pre-existing dated entries from `brief.md`'s `## Decisions & Constraints` into it (constraints without a date stay in `brief.md`).
+Silently creates `log.md` if there's nothing to migrate, or moves pre-existing dated entries from `brief.md`'s `## Decisions & Constraints` into it — that section is renamed `## Scope & rules`, and undated entries stay in it.
 
 ### State 4 — Plan
 **Condition:** brief present, `log.md` present, plan absent
@@ -217,8 +217,9 @@ Each installer removes all existing forge entries before adding its own — no d
 
 The brief is a living document. Changes of scope go through **Out-of-scope detection** (see below).
 
-**Constraint** (holds for as long as the branch exists) → written silently into the brief's constraints section, never archived:
+**Frame element** (holds for as long as the branch exists) → written silently into the brief's `## Scope & rules` section, never archived:
 - Technical constraint discovered mid-task
+- Standing rule set by the user
 - User remark durably narrowing the scope
 
 **One-off decision** (settled and closed at a point in time) → written silently into `log.md` (`- [date] [1 line]`):
@@ -248,6 +249,8 @@ After each user input, forge checks whether the request falls inside the current
 ```
 "ranger la forge" / "clean the forge"
 ```
+
+Updates `project.md` (only what changed, after validation), then hands the structural labels of `project.md`, `brief.md` and `plan.md` for the current branch to a background agent, which normalizes them silently without blocking ongoing work — sections are identified by role and position, never by text, so files written by an older version are realigned whatever language their headings were in. Labels only: no content is ever rewritten, reordered or removed. Other branches are left untouched.
 
 ---
 
@@ -307,7 +310,7 @@ The commit message is generated automatically — no separate confirmation on th
 
 Là où Claude Code part directement dans le code dès qu'on lui décrit un problème, le skill forge intercale trois étapes obligatoires avant la moindre ligne :
 
-1. **Brief** — clarifier l'objectif, les contraintes, le périmètre
+1. **Brief** — clarifier l'objectif, le cadre : règles, contraintes, périmètre
 2. **Plan** — décomposer en tâches estimées, attendre une validation explicite
 3. **Actif** — exécuter avec suivi d'avancement en temps réel
 
@@ -317,7 +320,7 @@ Le résultat : moins de mauvaises surprises, des implémentations qui restent da
 
 - **Zéro code sans validation** — la règle absolue : silence ≠ accord. Le skill attend un "ok" explicite avant d'écrire quoi que ce soit.
 - **Contexte persistant par branche** — `brief.md` et `plan.md` sont stockés dans `.forge/branch/<BRANCH>/`, suivis en git, et relus à chaque `/forge`.
-- **Brief vivant & log** — les contraintes vont silencieusement dans la section contraintes du brief (jamais archivée) ; les décisions et choix utilisateur sont enregistrés silencieusement dans `log.md`, sans interrompre le flux de travail.
+- **Brief vivant & log** — le cadre (règles, contraintes, périmètre) va silencieusement dans la section `## Scope & rules` du brief (jamais archivée) ; les décisions et choix utilisateur sont enregistrés silencieusement dans `log.md`, sans interrompre le flux de travail.
 - **Résumé "Last session"** — à la reprise, si `log.md` contient des entrées, un récapitulatif des 10 dernières en une ligne est affiché avant le tableau d'avancement.
 - **Décomposition des tâches L/XL** — les grandes tâches sont découpées en micro-étapes dans `plan.md` avant de démarrer l'implémentation.
 - **Détection hors périmètre** — les demandes hors plan sont signalées ; l'utilisateur confirme si elles doivent être ajoutées ou ignorées.
@@ -383,7 +386,7 @@ Fichiers générés dans chaque projet :
 ├── project.md
 ├── coding_standards.md  ← conventions de code (structure, nommage, principes), complétées au fil du projet
 └── branch/<BRANCH>/
-    ├── brief.md         ← Objectif + Contraintes (jamais archivées)
+    ├── brief.md         ← `## Objective` + `## Scope & rules` (jamais archivé)
     ├── log.md           ← Journal des décisions (vivant, 10 dernières entrées lues à la reprise)
     ├── plan.md
     ├── rapport.txt      ← généré à la clôture de tâche
@@ -411,12 +414,12 @@ Un `.claude/project.md` / `.claude/branch/` legacy est migré automatiquement ve
 ### État 2 — Brief
 **Condition :** brief absent
 
-Lit `coding_standards.md`. Crée `.forge/branch/<BRANCH>/brief.md` avec une section objectif et une section contraintes vide, clarifie l'objectif, enchaîne sur le plan.
+Lit `coding_standards.md`. Crée `.forge/branch/<BRANCH>/brief.md` avec une section `## Objective` et une section `## Scope & rules` vide, clarifie l'objectif, enchaîne sur le plan.
 
 ### État 3 — Log
 **Condition :** brief présent, `log.md` absent
 
-Crée `log.md` silencieusement s'il n'y a rien à migrer, ou y déplace les entrées datées préexistantes de `## Décisions & Contraintes` dans `brief.md` (les contraintes sans date restent dans `brief.md`).
+Crée `log.md` silencieusement s'il n'y a rien à migrer, ou y déplace les entrées datées préexistantes de `## Décisions & Contraintes` dans `brief.md` — cette section est renommée `## Scope & rules`, les entrées sans date y restent.
 
 ### État 4 — Plan
 **Condition :** brief présent, `log.md` présent, plan absent
@@ -518,9 +521,10 @@ Chaque installeur retire toutes les entrées forge existantes avant d'ajouter la
 
 Le brief est un document vivant. Les changements de scope passent par la **Détection hors périmètre** (voir ci-dessous).
 
-**Contrainte** (valable pour toute la durée de la branche) → écrite silencieusement dans la section contraintes du brief, jamais archivée :
+**Élément de cadre** (valable pour toute la durée de la branche) → écrit silencieusement dans la section `## Scope & rules` du brief, jamais archivée :
 - Contrainte technique découverte en cours de tâche
-- Remarque utilisateur précisant durablement le périmètre
+- Règle immuable posée par l'utilisateur
+- Remarque utilisateur précisant durablement le périmètre ou le hors périmètre
 
 **Décision ponctuelle** (choix acté et clos à un instant donné) → écrite silencieusement dans `log.md` (format : `- [date] [1 ligne]`) :
 - Choix d'implémentation mineur acté sans discussion
@@ -549,6 +553,8 @@ Après chaque input utilisateur, forge vérifie si la demande est dans le plan c
 ```
 "ranger la forge" / "clean the forge"
 ```
+
+Met à jour `project.md` (uniquement ce qui a changé, après validation), puis confie les libellés de structure de `project.md`, `brief.md` et `plan.md` de la branche courante à un agent en tâche de fond, qui les normalise silencieusement sans bloquer le travail en cours — les sections sont identifiées par rôle et position, jamais par leur texte, ce qui réaligne les fichiers écrits par une version antérieure quelle que soit la langue de leurs titres. Libellés seuls : aucun contenu n'est réécrit, réordonné ni supprimé. Les autres branches ne sont pas touchées.
 
 ---
 

@@ -48,6 +48,18 @@
 **Description :** `<BRANCH>` (branche de départ) est mergée dans chacune des branches citées, jamais la précédente de la chaîne dans la suivante. `grave` seul → `add` + `commit` + `push` uniquement. Branche citée égale à `<BRANCH>` → ignorée sans message. Détecté hors plan initial — ajouté sur confirmation.
 [x]
 
+### T8 — Libellés de structure figés en anglais (brief + plan)
+**Effort :** S
+**Fichiers :** `skill/phases/p2-brief.md`, `skill/phases/p3-log.md`, `skill/phases/p4-plan.md`, `skill/phases/p5-resume.md`, `.forge/coding_standards.md`, `README.md`
+**Description :** La section « Contraintes » du brief devient `## Scope & rules`, au rôle élargi : règles immuables, contraintes techniques, périmètre et hors périmètre valables toute la durée de la branche. Titres et libellés de champs de `brief.md` et `plan.md` figés en anglais (`## Objective`, `## Scope & rules`, `## Tasks`, `**Effort:**`, `## Risks`, `## Summary`) — seul le contenu suit la langue de l'utilisateur. Règle inverse de l'ancienne consigne anti-gabarit-figé : `coding_standards.md` mis à jour en conséquence (stabilité de la relecture programmatique). Aucune migration des briefs existants. Détecté hors plan initial — ajouté sur confirmation.
+[x]
+
+### T9 — « Range la forge » : normaliser les libellés des fichiers forge
+**Effort :** M
+**Fichiers :** `skill/phases/p0-project.md`, `README.md`
+**Description :** En mode mise à jour (« range la forge »), vérifier la conformité des fichiers de la branche courante (`project.md`, `brief.md`, `plan.md`) aux libellés de structure fixés en anglais, et renommer silencieusement les titres non conformes. Traitement délégué à un agent en tâche de fond (`run_in_background: true`), jamais bloquant — même mécanique que l'historisation. Périmètre : `project.md` + `.forge/branch/<BRANCH>/` uniquement, jamais les autres branches. Détection par rôle et position de section, jamais par correspondance de texte — un fichier généré par une version antérieure peut porter n'importe quelle langue. Contenu jamais modifié, seuls les libellés changent. Référence des libellés : `phases/p2-brief.md` et `phases/p4-plan.md`, jamais redéfinie ici. Détecté hors plan initial — ajouté sur confirmation.
+[x]
+
 ## Risques
 - L'identification du premier bloc (contraintes) repose sur la mise en forme existante (groupe contigu en tête de `## Décisions & Contraintes`), pas sur une analyse sémantique — la migration est un simple déplacement, sans reformulation.
 
@@ -61,4 +73,6 @@
 | T5 — Migration vers log.md | M | [x] |
 | T6 — Mise à jour README.md | S | [x] |
 | T7 — Livraison : merge depuis la branche de départ | XS | [x] |
+| T8 — Libellés de structure figés en anglais | S | [x] |
+| T9 — Range la forge : normalisation des libellés | M | [x] |
 | **Total estimé** | **~6h** | |

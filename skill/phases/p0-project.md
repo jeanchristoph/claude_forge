@@ -33,34 +33,36 @@ Si le dossier est vide (rien en dehors des éléments ignorés) :
 
 ## Format de sortie
 
+⚠️ Titres de sections et libellés de champs écrits tels quels ci-dessous, en anglais, quelle que soit la langue de l'utilisateur — seul le contenu suit sa langue.
+
 ```markdown
 # Project — [Nom du projet]
-**Généré le :** [date]
+**Generated:** [date]
 
 ## Stack
-- Langage : ...
-- Framework / CMS : ...
-- Runtime / version : ...
-- DB : ...
-- Serveur / runtime : ...
+- Language: ...
+- Framework / CMS: ...
+- Runtime / version: ...
+- DB: ...
+- Server: ...
 
-## Structure clés
+## Key structure
 [arborescence simplifiée des dossiers principaux et leur rôle]
 
-## Points d'entrée
+## Entry points
 - ...
 
-## Conventions détectées
-- Nommage : ...
-- Architecture : ...
-- Gestion d'erreurs : ...
+## Detected conventions
+- Naming: ...
+- Architecture: ...
+- Error handling: ...
 
-## Fichiers critiques
+## Critical files
 [fichiers non évidents à lire en priorité avant de coder]
 
-## Outils & accès
-- MCPs disponibles : ...
-- Documentation externe : ...
+## Tools & access
+- Available MCPs: ...
+- External documentation: ...
 ```
 
 ## Après génération ou mise à jour
@@ -80,3 +82,29 @@ Ne pas réécrire intégralement — modifier uniquement ce qui a changé :
 - Identifier les sections obsolètes ou incomplètes
 - Proposer les modifications à l'humain avant d'écrire
 - Conserver ce qui est toujours valide tel quel
+- Déléguer ensuite la normalisation des libellés ci-dessous
+
+---
+
+## Normalisation des libellés — déléguée, non bloquante
+
+**Périmètre :** `.forge/project.md` et les fichiers de `.forge/branch/<BRANCH>/` uniquement. Ne jamais toucher aux autres branches.
+
+**Libellés attendus :**
+- `project.md` → section « Format de sortie » ci-dessus
+- `brief.md` → `phases/p2-brief.md`
+- `plan.md` → `phases/p4-plan.md`
+
+⚠️ Identifier chaque section par son rôle et sa position, jamais par correspondance de texte — un fichier généré par une version antérieure porte des libellés dans n'importe quelle langue.
+⚠️ Renommer le libellé seul. Ne jamais reformuler, réordonner, fusionner ni supprimer un contenu, même obsolète.
+
+**Actions — dans l'ordre :** déléguer à un agent en tâche de fond (`run_in_background: true`), sans attendre son résultat.
+1. Pour chaque fichier du périmètre existant : comparer ses titres de sections et libellés de champs aux libellés attendus.
+2. Tous conformes → ne rien écrire pour ce fichier.
+3. Titre non conforme → le remplacer par le libellé attendu, contenu inchangé.
+4. Section attendue absente → ne pas la créer.
+5. Section présente sans libellé attendu correspondant → la laisser telle quelle.
+6. Aucun renommage sur l'ensemble du périmètre → ne rien afficher.
+7. Au moins un renommage → informer en une ligne : "Forge file labels normalized."
+
+⚠️ Ne jamais attendre la fin de l'agent — la normalisation ne bloque jamais le travail en cours.

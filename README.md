@@ -257,11 +257,11 @@ After each user input, forge checks whether the request falls inside the current
 "grave <branch(es)>" / "engrave <branch(es)>"
 ```
 
-One or more existing branches, named in the desired order (e.g. `"grave dev"`, `"grave master"`, `"grave dev master"`). Merges chain in that order: `<BRANCH>` → first branch → second branch → ...
+One or more existing branches, named in the desired order (e.g. `"grave dev"`, `"grave master"`, `"grave dev master"`). `<BRANCH>` is merged into each named branch in turn, always from the starting branch — never chaining one named branch into the next.
 
 **INVARIANT:** git operates only on the current repo — never on another repo open in parallel.
 
-The commit message is generated automatically — no separate confirmation on the message itself. The full add/commit/push/merge sequence still requires explicit confirmation ("ok", "go") before running.
+The commit message is generated automatically — no separate confirmation on the message itself. Before anything runs, Forge prints a recap table of the planned git actions: add, commit with its message, push, then one row per merge (`<BRANCH>` → target). No git command — `git add` included — runs before you confirm. A single "ok" covers the whole sequence: add, commit, push, then every merge, with no further prompt in between.
 
 ---
 
@@ -558,11 +558,11 @@ Après chaque input utilisateur, forge vérifie si la demande est dans le plan c
 "grave <branche(s)>" / "engrave <branche(s)>"
 ```
 
-Une ou plusieurs branches existantes, citées dans l'ordre voulu (ex : `"grave dev"`, `"grave master"`, `"grave dev master"`). Les merges s'enchaînent dans cet ordre : `<BRANCH>` → 1ère branche → 2ème branche → ...
+Une ou plusieurs branches existantes, citées dans l'ordre voulu (ex : `"grave dev"`, `"grave master"`, `"grave dev master"`). `<BRANCH>` est mergée tour à tour dans chaque branche citée, toujours depuis la branche de départ — jamais en enchaînant une branche citée dans la suivante.
 
 **INVARIANT :** git opère uniquement sur le dépôt courant — jamais sur un autre dépôt ouvert en parallèle.
 
-Le message de commit est généré automatiquement — pas de confirmation dédiée sur le message lui-même. La séquence complète add/commit/push/merge reste soumise à confirmation explicite ("ok", "go") avant exécution.
+Le message de commit est généré automatiquement — pas de confirmation dédiée sur le message lui-même. Avant toute exécution, Forge affiche un tableau récapitulatif des actions git prévues : add, commit avec son message, push, puis une ligne par merge (`<BRANCH>` → cible). Aucune commande git — `git add` compris — n'est lancée avant la confirmation. Un seul "ok" couvre toute la séquence : add, commit, push, puis chaque merge, sans validation intermédiaire.
 
 ---
 

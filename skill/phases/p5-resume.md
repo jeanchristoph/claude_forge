@@ -120,17 +120,19 @@ Le brief est vivant. Les changements de scope sont gérés par la **Surveillance
 
 ## Livraison — commit, push, merge
 
-**Déclencheur :** l'utilisateur dit "grave <branche(s)>" / "engrave <branche(s)>" — une ou plusieurs branches existantes citées, dans l'ordre voulu (ex: "grave dev", "grave master", "grave dev master").
+**Déclencheur :** l'utilisateur dit "grave" / "engrave", seul ou suivi d'une ou plusieurs branches existantes, dans l'ordre voulu (ex: "grave", "grave dev", "grave dev master").
 
 **INVARIANT :** git opère uniquement sur le dépôt courant — jamais sur un autre dépôt ouvert en parallèle.
 
 **Réaction — dans l'ordre :**
 1. Générer automatiquement le message de commit (règles COMMITS GIT : max 150 car., pas de mention Claude) — pas de confirmation sur le message lui-même.
 2. Annoncer la séquence prévue et demander confirmation explicite ("ok", "go") — jamais d'exécution sans validation :
-   > "add + commit (\"<message>\") + push + merge en chaîne sur <branche(s) citées, dans l'ordre>. OK ?"
+   - Aucune branche citée → "add + commit (\"<message>\") + push on `<BRANCH>`. OK ?"
+   - Branches citées → "add + commit (\"<message>\") + push on `<BRANCH>`, then merge `<BRANCH>` into <branches citées, dans l'ordre>. OK ?"
 3. **Sur confirmation** → exécuter dans l'ordre : `git add`, `git commit`, `git push` sur `<BRANCH>`.
-   - Puis, pour chaque branche citée, dans l'ordre : checkout de la branche, merge de la branche précédente dans la chaîne (`<BRANCH>` pour la première citée), push.
-4. Revenir sur `<BRANCH>`. Rendre compte : hash de commit, branches mises à jour.
+4. Aucune branche citée → passer directement à l'étape 6.
+5. Pour chaque branche citée, dans l'ordre : branche citée égale à `<BRANCH>` → ignorer sans message ; sinon → checkout de la branche, merge de `<BRANCH>` (toujours la branche de départ, jamais la branche précédente de la chaîne), push.
+6. Revenir sur `<BRANCH>`. Rendre compte : hash de commit, branches mises à jour.
 
 ---
 

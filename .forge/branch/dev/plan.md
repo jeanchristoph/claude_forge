@@ -14,7 +14,7 @@
 **Effort :** S
 **Fichiers :** `skill/phases/p2-brief.md`
 **Description :** `brief.md` ne garde que `## Objectif` et `## Contraintes` (immuables) — plus de section Décisions. Remplacer le bloc de format littéral figé par des instructions de structure (nom de section + rôle), conformément à la nouvelle règle de `.forge/coding_standards.md` (pas de gabarit en dur figeant la langue).
-[ ]
+[x]
 
 ### T3 — Écriture des décisions dans log.md
 **Effort :** S
@@ -42,6 +42,12 @@
 **Description :** Refléter le nouveau format brief/log dans les deux sections (EN puis FR) : structure des fichiers générés (`log.md`), comportement des États 1-3 (Bootstrap/Plan/Actif), « Living brief »/« Brief vivant », « Last session summary », règles de mise à jour du brief. Détecté hors plan initial — ajouté sur confirmation.
 [x]
 
+### T7 — Livraison : merge de la branche de départ dans chaque branche citée
+**Effort :** XS
+**Fichiers :** `skill/phases/p5-resume.md` (section « Livraison — commit, push, merge »)
+**Description :** `<BRANCH>` (branche de départ) est mergée dans chacune des branches citées, jamais la précédente de la chaîne dans la suivante. `grave` seul → `add` + `commit` + `push` uniquement. Branche citée égale à `<BRANCH>` → ignorée sans message. Détecté hors plan initial — ajouté sur confirmation.
+[x]
+
 ## Risques
 - L'identification du premier bloc (contraintes) repose sur la mise en forme existante (groupe contigu en tête de `## Décisions & Contraintes`), pas sur une analyse sémantique — la migration est un simple déplacement, sans reformulation.
 
@@ -54,4 +60,5 @@
 | T4 — Lecture bornée + fin historisation brief | S | [x] |
 | T5 — Migration vers log.md | M | [x] |
 | T6 — Mise à jour README.md | S | [x] |
-| **Total estimé** | **~5h30** | |
+| T7 — Livraison : merge depuis la branche de départ | XS | [x] |
+| **Total estimé** | **~6h** | |

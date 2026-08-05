@@ -60,6 +60,24 @@
 **Description :** En mode mise à jour (« range la forge »), vérifier la conformité des fichiers de la branche courante (`project.md`, `brief.md`, `plan.md`) aux libellés de structure fixés en anglais, et renommer silencieusement les titres non conformes. Traitement délégué à un agent en tâche de fond (`run_in_background: true`), jamais bloquant — même mécanique que l'historisation. Périmètre : `project.md` + `.forge/branch/<BRANCH>/` uniquement, jamais les autres branches. Détection par rôle et position de section, jamais par correspondance de texte — un fichier généré par une version antérieure peut porter n'importe quelle langue. Contenu jamais modifié, seuls les libellés changent. Référence des libellés : `phases/p2-brief.md` et `phases/p4-plan.md`, jamais redéfinie ici. Détecté hors plan initial — ajouté sur confirmation.
 [x]
 
+### T10 — Mode professeur : renommage `explanation-*` + écriture en tâche de fond
+**Effort :** S
+**Fichiers :** `skill/SKILL.md`, `README.md`, `.forge/project.md`
+**Description :** `cours-<sujet-slug>.md` devient `explanation-<sujet-slug>.md`. L'écriture (création ou complétion par section datée) est déléguée à un agent en tâche de fond (`run_in_background: true`), sans attente de retour — le fil de la tâche en cours reprend immédiatement. La confirmation « Est-ce clair ? » est supprimée : l'écriture part dès l'explication donnée. Question de suivi sur le même sujet → nouvel agent lancé seulement après la fin du précédent, jamais deux écritures simultanées sur le même fichier. Écriture signalée à l'utilisateur en une ligne à la fin de l'agent, jamais à son lancement, sans attente de réponse. Aucune migration des fichiers `cours-*.md` existants. Détecté hors plan initial — ajouté sur confirmation.
+[x]
+
+### T11 — `rapport.txt` → `report.txt`
+**Effort :** XS
+**Fichiers :** `skill/phases/p5-resume.md`, `README.md`, `.forge/project.md`
+**Description :** Dernier nom de fichier produit resté en français aligné sur les autres (`brief.md`, `log.md`, `plan.md`, `explanation-*.md`). Aucune migration des `rapport.txt` existants — un fichier antérieur n'est ni lu ni renommé, la clôture de tâche suivante crée `report.txt`. Détecté hors plan initial — ajouté sur confirmation.
+[x]
+
+### T12 — Clôture : rapport et réponse mail dans la langue de l'utilisateur
+**Effort :** XS
+**Fichiers :** `skill/phases/p5-resume.md`, `.forge/coding_standards.md`
+**Description :** `report.txt` rédigé intégralement dans la langue de l'utilisateur, labels compris — exception unique et explicite à la règle des libellés de structure figés en anglais, actée dans `coding_standards.md` : fichier destiné à un lecteur humain, jamais relu programmatiquement. Réponse mail générée dans la langue du mail reçu, jamais celle de l'utilisateur si elle diffère — le destinataire est le correspondant, pas l'utilisateur. Corrigé au passage : la confirmation de clôture référençait `## Objectif`, libellé inexistant depuis T8 — remplacé par `## Objective`. Détecté hors plan initial — ajouté sur confirmation.
+[x]
+
 ## Risques
 - L'identification du premier bloc (contraintes) repose sur la mise en forme existante (groupe contigu en tête de `## Décisions & Contraintes`), pas sur une analyse sémantique — la migration est un simple déplacement, sans reformulation.
 
@@ -75,4 +93,7 @@
 | T7 — Livraison : merge depuis la branche de départ | XS | [x] |
 | T8 — Libellés de structure figés en anglais | S | [x] |
 | T9 — Range la forge : normalisation des libellés | M | [x] |
+| T10 — Mode professeur : `explanation-*` en tâche de fond | S | [x] |
+| T11 — `rapport.txt` → `report.txt` | XS | [x] |
+| T12 — Rapport et réponse mail dans la langue de l'utilisateur | XS | [x] |
 | **Total estimé** | **~6h** | |

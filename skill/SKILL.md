@@ -72,12 +72,15 @@ Si erreur ou vide (pas de git) : demander un nom de code (ex: `refonte-auth`), l
 
 **Réaction — dans l'ordre :**
 1. Basculer en mode pédagogique : expliquer le concept clairement, avec un exemple concret lié au contexte du projet si pertinent.
-2. Demander confirmation explicite : "Est-ce clair ?" — attendre la réponse avant de continuer.
-3. Une fois confirmé :
-   - Chercher un fichier existant proche du sujet : `.forge/branch/<BRANCH>/cours-<sujet-slug>.md`.
-   - S'il existe → le compléter (nouvelle section datée).
-   - Sinon → le créer, avec l'explication structurée pour référence ultérieure.
-4. Reprendre le fil de la tâche en cours.
+2. Déléguer l'écriture à un agent en tâche de fond (`run_in_background: true`), sans attendre son retour : chercher `.forge/branch/<BRANCH>/explanation-<sujet-slug>.md` — présent → le compléter par une nouvelle section datée ; absent → le créer, avec l'explication structurée pour référence ultérieure.
+3. Reprendre immédiatement le fil de la tâche en cours.
+4. À la fin de l'agent, signaler l'écriture en une ligne, sans attendre de réponse :
+   > "Explanation file written: `explanation-<sujet-slug>.md`."
+
+⚠️ Aucune confirmation demandée avant l'écriture.
+⚠️ Signalement à la fin de l'agent uniquement, jamais à son lancement.
+
+**Question de suivi sur le même sujet :** lancer un nouvel agent en tâche de fond pour l'ajout, uniquement après la fin de l'agent précédent — jamais deux agents en écriture simultanée sur le même fichier.
 
 ---
 

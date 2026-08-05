@@ -85,8 +85,8 @@ Files generated in each project:
     ├── brief.md         ← `## Objective` + `## Scope & rules` (never archived)
     ├── log.md           ← Decisions log (living log, last 10 entries read on resume)
     ├── plan.md
-    ├── rapport.txt      ← generated on task closure
-    └── cours-*.md       ← generated when a technical concept is explained
+    ├── report.txt       ← generated on task closure
+    └── explanation-*.md ← generated in the background when a technical concept is explained
 ```
 
 A legacy `.claude/project.md` / `.claude/branch/` is migrated to `.forge/` automatically on first run — the migration also adds the `.gitignore` block that keeps `.forge/` tracked.
@@ -389,8 +389,8 @@ Fichiers générés dans chaque projet :
     ├── brief.md         ← `## Objective` + `## Scope & rules` (jamais archivé)
     ├── log.md           ← Journal des décisions (vivant, 10 dernières entrées lues à la reprise)
     ├── plan.md
-    ├── rapport.txt      ← généré à la clôture de tâche
-    └── cours-*.md       ← généré lors d'une explication de concept
+    ├── report.txt       ← généré à la clôture de tâche
+    └── explanation-*.md ← généré en tâche de fond lors d'une explication de concept
 ```
 
 Un `.claude/project.md` / `.claude/branch/` legacy est migré automatiquement vers `.forge/` au premier lancement — la migration ajoute aussi le bloc `.gitignore` qui garde `.forge/` suivi en git.

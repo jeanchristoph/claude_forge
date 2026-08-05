@@ -39,8 +39,8 @@ Fichiers générés dans **chaque projet cible** par le skill (pas dans ce dép�
 └── branch/<BRANCH>/
     ├── brief.md
     ├── plan.md
-    ├── rapport.txt
-    └── cours-*.md
+    ├── report.txt
+    └── explanation-*.md
 ```
 
 ## Points d'entrée

@@ -162,13 +162,14 @@ Actions et détail associé — aucune autre :
 
 **Réaction — dans l'ordre :**
 
-1. **Confirmer** que le problème initial (tel que décrit dans `## Objectif` du brief) est bien résolu :
+1. **Confirmer** que le problème initial (tel que décrit dans `## Objective` du brief) est bien résolu :
    > "Le problème initial est-il bien résolu ?"
    Ne pas continuer sans confirmation explicite.
 
 2. **Sur confirmation :**
-   - Générer le rapport interne (ou le mettre à jour si `rapport.txt` existe déjà pour cette branche) : texte brut structuré, concis, logique, schématique — labels courts (ex: PROBLÈME / SOLUTION / IMPACT). **Exclure** : détails d'itérations, mentions de branche, de tests, de fichiers modifiés.
-   - Présenter le rapport, demander confirmation, puis écrire `.forge/branch/<BRANCH>/rapport.txt`.
+   - Générer le rapport interne (ou le mettre à jour si `report.txt` existe déjà pour cette branche) : texte brut structuré, concis, logique, schématique — labels courts (ex: PROBLÈME / SOLUTION / IMPACT). **Exclure** : détails d'itérations, mentions de branche, de tests, de fichiers modifiés.
+   - Rédiger intégralement dans la langue de l'utilisateur, labels compris — seul fichier produit exempté des libellés de structure figés en anglais.
+   - Présenter le rapport, demander confirmation, puis écrire `.forge/branch/<BRANCH>/report.txt`.
    - Proposer ensuite : "Dois-je générer une réponse à un mail ?"
-     - Si oui → attendre que l'utilisateur colle le mail auquel répondre, générer une réponse au ton fluide, professionnel et pédagogique.
+     - Si oui → attendre que l'utilisateur colle le mail auquel répondre, générer une réponse au ton fluide, professionnel et pédagogique, rédigée dans la langue du mail reçu — jamais celle de l'utilisateur si elle diffère.
      - Si non → terminer.

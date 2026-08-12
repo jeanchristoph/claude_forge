@@ -1,6 +1,6 @@
 # Claude_forge
 
-**Version:** 1.1
+**Version:** 0.7.0 — see [CHANGELOG.md](CHANGELOG.md)
 
 **Claude_forge** is a Claude Code system made of the **forge** skill (invoked via `/forge`) and a `PreCompact` hook. Together, they enforce a structured, branch-by-branch development workflow.
 
@@ -76,6 +76,8 @@ forge/
 │   └── install.ps1
 ├── install-unix.sh           → root launcher, delegates to install/install.sh
 ├── install-windows.bat       → root launcher, delegates to install/install.ps1
+├── CHANGELOG.md              (Keep a Changelog format, one section per version)
+├── LICENSE                   (MIT)
 ├── .gitattributes
 └── .gitignore
 ```
@@ -305,11 +307,17 @@ The commit message is generated automatically — no separate confirmation on th
 
 ---
 
+## License
+
+MIT — see [LICENSE](LICENSE).
+
+---
+
 ---
 
 # Claude_forge (français)
 
-**Version :** 1.1
+**Version :** 0.7.0 — voir [CHANGELOG.md](CHANGELOG.md)
 
 **Claude_forge** est un système pour Claude Code composé du skill **forge** (invoqué via `/forge`) et d'un hook `PreCompact`. Ensemble, ils imposent un workflow de développement structuré, branche par branche.
 
@@ -385,6 +393,8 @@ forge/
 │   └── install.ps1
 ├── install-unix.sh           → lanceur racine, délègue à install/install.sh
 ├── install-windows.bat       → lanceur racine, délègue à install/install.ps1
+├── CHANGELOG.md              (format Keep a Changelog, une section par version)
+├── LICENSE                   (MIT)
 ├── .gitattributes
 └── .gitignore
 ```
@@ -611,3 +621,9 @@ Le message de commit est généré automatiquement — pas de confirmation dédi
 
 **Statuts :** `[ ]` à faire · `[x]` terminé · `[!]` bloqué  
 **Effort :** XS <30min · S 30min-2h · M 2-4h · L 4h-1j · XL >1j → découper
+
+---
+
+## Licence
+
+MIT — voir [LICENSE](LICENSE).

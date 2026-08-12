@@ -1,5 +1,12 @@
 # Log — dev
 
+- [2026-08-12] Licence MIT retenue contre Apache 2.0 — pas de procédé brevetable dans de la prose d'instructions ; bascule vers Apache 2.0 possible plus tard, MIT accordant le droit de sous-licencier.
+- [2026-08-12] Copyright au nom de Jean-Christophe Malaval, tiré du compte GitHub — la licence n'emporte aucune cession de droits.
+
+- [2026-08-12] `CHANGELOG.md` rédigé en anglais et tenu à la main — `gh --generate-notes` écarté, il compose ses notes depuis les pull requests, absentes de ce dépôt.
+- [2026-08-12] Numérotation repartie en `0.x` jusqu'à `0.7.0` — écarte le débat 1.2 contre 2.0, le développement initial autorisant les changements de format ; `1.0.0` reporté, faute d'engagement à figer le contrat des fichiers.
+- [2026-08-12] Sept tags rétroactifs mais une seule release publiée — un tag est silencieux, une release émet un `ReleaseEvent` dans le feed des abonnés.
+
 - [2026-08-12] `coding_standards.md` renommé `coding-standards.md` avec garde de migration automatique — seul renommage du système à en exiger une, le fichier conditionnant la détection d'état.
 - [2026-08-12] Conventions de nommage de fichiers et de fins de ligne consignées dans `coding-standards.md`, pas dans le brief — norme du projet, pas cadre de branche.
 

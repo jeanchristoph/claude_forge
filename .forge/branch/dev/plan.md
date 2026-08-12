@@ -117,6 +117,33 @@ Détecté hors plan initial — ajouté sur confirmation.
 Détecté hors plan initial — ajouté sur confirmation.
 [x]
 
+### T17 — `CHANGELOG.md`, premier tag, première release
+**Effort :** M
+**Fichiers :** `CHANGELOG.md` (nouveau), `README.md`, `.forge/project.md`
+**Description :** Le dépôt n'a aujourd'hui ni tag, ni release, ni changelog : le numéro de version ne vit que dans le texte du `README.md` et une montée de version n'est visible nulle part — ni dans l'historique git, ni dans le feed GitHub des abonnés.
+- `CHANGELOG.md` à la racine, format *Keep a Changelog* : rubriques `Added` / `Changed` / `Fixed` / `Removed`, ordre antichronologique, section `[Unreleased]` en tête, liens de comparaison `vX.Y...vX.Z` en bas.
+- Reconstitution rétroactive à partir des 48 commits existants (2026-05-04 → 2026-08-12), par vagues thématiques et jamais un commit par ligne : `v0.1.0` (premier jet), `v0.2.0`, `v0.3.0`, `v0.4.0`, `v0.5.0`, `v0.6.0`, `v0.7.0` (état courant).
+- Numérotation repartie en `0.x` : le développement initial autorise les changements de format sans version majeure, ce qui décrit exactement l'historique du projet. Le `1.1` affiché dans le README n'est pas repris — incohérence assumée, visible nulle part ailleurs que dans l'historique git.
+- `README.md` : `**Version:**` porté à 0.7.0 dans les deux sections (EN + FR), lien vers `CHANGELOG.md`. `.forge/project.md` : structure mise à jour.
+- Tags annotés et release publiée : exécutés dans la procédure de **Livraison**, jamais dans la tâche elle-même. Sept tags rétroactifs, mais une seule release publiée — sept releases déverseraient sept lignes d'un coup dans le feed des abonnés.
+- ⚠️ `gh` CLI absent de la machine : la release passe par l'interface web GitHub, ou nécessite `winget install GitHub.cli` — décision à prendre au moment de publier.
+- Hors périmètre : workflow GitHub Actions et versionnage automatisé (release-please, semantic-release). Rien à construire ni à publier automatiquement — un skill se distribue par clone.
+- `gh` CLI 2.97.0 installé et authentifié en cours de tâche ; dépôt confirmé public, condition nécessaire au `ReleaseEvent`.
+- Tags `v1.0` (`c120ce2`) et `v1.1` (`205110f`) à poser rétroactivement en même temps que `v1.2`, sans quoi les liens de comparaison du changelog sont morts.
+Détecté hors plan initial — ajouté sur confirmation.
+[x]
+
+### T18 — Licence MIT
+**Effort :** XS
+**Fichiers :** `LICENSE` (nouveau), `README.md`, `CHANGELOG.md`, `.forge/project.md`
+**Description :** Le dépôt était public sans licence, donc sous droit d'auteur intégral : consultable et forkable sur GitHub, mais ni utilisable, ni modifiable, ni redistribuable — incohérent avec un outil fait pour être cloné et installé.
+- `LICENSE` MIT à la racine, copyright 2026 Jean-Christophe Malaval.
+- Section `## License` / `## Licence` en fin de chaque version du README, `LICENSE` ajouté aux deux arborescences, entrée `Added` dans le changelog.
+- MIT retenue contre Apache 2.0 : le projet est de la prose d'instructions sans procédé brevetable, la clause de brevets d'Apache couvrirait un risque quasi nul pour un fichier dix fois plus long. La bascule vers Apache 2.0 reste possible à tout moment, MIT accordant explicitement le droit de sous-licencier.
+- Hors périmètre : CLA pour les contributions externes — nécessaire seulement en cas de passage à une licence propriétaire, jamais pour un passage vers Apache 2.0.
+Détecté hors plan initial — ajouté sur confirmation.
+[x]
+
 ## Risques
 - L'identification du premier bloc (contraintes) repose sur la mise en forme existante (groupe contigu en tête de `## Décisions & Contraintes`), pas sur une analyse sémantique — la migration est un simple déplacement, sans reformulation.
 
@@ -139,4 +166,6 @@ Détecté hors plan initial — ajouté sur confirmation.
 | T14 — Lecture bornée du log + seuils recalibrés | S | [x] |
 | T15 — Lanceurs d'installation à la racine | XS | [x] |
 | T16 — `coding_standards.md` → `coding-standards.md` | S | [x] |
-| **Total estimé** | **~8h30** | |
+| T17 — `CHANGELOG.md`, premier tag, première release | M | [x] |
+| T18 — Licence MIT | XS | [x] |
+| **Total estimé** | **~11h30** | |

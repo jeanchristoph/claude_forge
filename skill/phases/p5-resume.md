@@ -5,11 +5,13 @@
 1. Lire `@.forge/project.md` — contexte interne, **ne pas afficher**.
 2. Lire `.forge/coding_standards.md` — contexte interne, **ne pas afficher**.
 3. Lire `@.forge/branch/<BRANCH>/brief.md` — contexte interne, **ne pas afficher**.
-4. Lire les 10 dernières entrées de `.forge/branch/<BRANCH>/log.md`, si présent — contexte interne, **ne pas afficher**.
-   - Des entrées existent → afficher un résumé en tête : "**Last session :** [points clés]"
+4. Lire les 40 premières lignes de `.forge/branch/<BRANCH>/log.md` (`Read` avec `limit: 40`), si présent — contexte interne, **ne pas afficher**.
+   - Des entrées existent → retenir les 10 plus récentes parmi les lignes lues, afficher un résumé en tête : "**Last session :** [points clés]"
+   - ⚠️ Jamais de lecture non bornée de `log.md` — la taille du fichier ne doit jamais peser sur le coût de la reprise.
 5. Lire `@.forge/branch/<BRANCH>/plan.md`
-6. Afficher le tableau d'avancement (format ci-dessous).
-7. Toutes `[ ]` → "Ready to start with T1?" · sinon → "Which task are we tackling?" — ne jamais démarrer sans réponse.
+6. Vérifier les seuils d'historisation (section « Historisation ») — unique contrôle de la session.
+7. Afficher le tableau d'avancement (format ci-dessous).
+8. Toutes `[ ]` → "Ready to start with T1?" · sinon → "Which task are we tackling?" — ne jamais démarrer sans réponse.
 
 ---
 
@@ -54,20 +56,27 @@ Le brief est vivant. Les changements de scope sont gérés par la **Surveillance
 - Choix d'implémentation mineur acté sans discussion
 - **Choix utilisateur quand Claude a proposé plusieurs options** (ex: "Option B retenue — raison")
 
+⚠️ Entrée insérée en tête de `log.md`, juste sous le titre — jamais en fin de fichier. La lecture bornée de l'étape 4 suppose les entrées les plus récentes en haut.
+
 ---
 
 ## Historisation
 
-**Seuils :** log.md 30 000 car · plan.md 30 000 car. Vérifier après chaque écriture réelle.
+**Seuils :** log.md 90 000 car · plan.md 20 000 car. Vérifier une seule fois par session, à la reprise (étape 6 des « Actions — dans l'ordre »).
+
+⚠️ Aucune vérification déclenchée par une écriture en cours de session — le développement n'est jamais interrompu.
+⚠️ `plan.md` injecté intégralement via `@` → son seuil gouverne le coût de reprise. `log.md` lu borné → son seuil ne gouverne que la lisibilité et le coût de l'agent d'archivage.
 
 **Si dépassé** → proposer, confirmation obligatoire :
 > "`<fichier>` dépasse <N> caractères. Historiser vers `<fichier>_AAAAMMJJ.md` ? OK ?"
 
 **Sur confirmation** → déléguer à un agent en tâche de fond (`run_in_background: true`) : lecture, écriture, sans bloquer le développement en cours.
 
-**plan.md** — par tâche `[x]` sans sous-élément `[ ]`/`[~]`/`[!]` :
-- Sous-élément non coché → ne jamais archiver.
-- Déplacement verbatim des taches — aucune reformulation.
+**plan.md** — historisation restreinte à la section `## Tasks` :
+- Garder les 10 tâches `[x]` les plus récentes, déplacer les plus anciennes.
+- Tâche portant un sous-élément `[ ]`/`[~]`/`[!]` → ne jamais archiver.
+- `## Summary` et `## Risks` intactes — le tableau récapitulatif conserve toutes ses lignes, y compris celles des tâches archivées.
+- Déplacement verbatim des tâches — aucune reformulation, aucun marqueur d'archive.
 
 **log.md** :
 - Garder les 10 entrées les plus récentes, déplacer les plus anciennes.

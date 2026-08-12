@@ -78,6 +78,22 @@
 **Description :** `report.txt` rédigé intégralement dans la langue de l'utilisateur, labels compris — exception unique et explicite à la règle des libellés de structure figés en anglais, actée dans `coding_standards.md` : fichier destiné à un lecteur humain, jamais relu programmatiquement. Réponse mail générée dans la langue du mail reçu, jamais celle de l'utilisateur si elle diffère — le destinataire est le correspondant, pas l'utilisateur. Corrigé au passage : la confirmation de clôture référençait `## Objectif`, libellé inexistant depuis T8 — remplacé par `## Objective`. Détecté hors plan initial — ajouté sur confirmation.
 [x]
 
+### T13 — Historisation vérifiée au démarrage uniquement
+**Effort :** S
+**Fichiers :** `skill/phases/p5-resume.md` (sections « Actions — dans l'ordre » et « Historisation »)
+**Description :** Le contrôle des seuils (`log.md`, `plan.md`) cesse d'être déclenché après chaque écriture réelle. Il devient un contrôle unique à la reprise, exécuté dans les `Actions — dans l'ordre` après lecture de `log.md` et `plan.md`, avant l'affichage du tableau d'avancement. En cours de session, aucune écriture ne déclenche plus de proposition d'historisation — le développement n'est jamais interrompu. Proposition et confirmation obligatoire inchangées, exécution toujours déléguée à un agent en tâche de fond. Détecté hors plan initial — ajouté sur confirmation.
+[x]
+
+### T14 — Lecture bornée du log, seuils recalibrés, historisation du plan limitée à `## Tasks`
+**Effort :** S
+**Fichiers :** `skill/phases/p5-resume.md` (sections « Actions — dans l'ordre » et « Historisation »)
+**Description :** Trois volets.
+1. Étape 4 : la lecture de `log.md` impose son mécanisme — `Read` avec `limit: 40`, les 10 entrées les plus récentes retenues parmi les lignes lues. Sans borne explicite, `Read` charge le fichier entier et la totalité du log entre en contexte à chaque reprise ; « lire les 10 dernières entrées » n'était qu'une intention. La convention d'écriture est figée dans « Mise à jour du brief et du log » : nouvelle entrée insérée **en tête** de `log.md`, juste sous le titre — la borne de lecture n'a de sens que si les entrées récentes sont en haut du fichier.
+2. Seuils : `log.md` maintenu à 90 000 car — une fois la lecture bornée, sa taille ne pèse plus sur la reprise. `plan.md` abaissé de 30 000 à 20 000 car — injecté intégralement via `@`, il gouverne seul le coût de reprise. Note `⚠️` ajoutée dans « Historisation » explicitant cette asymétrie de mécanisme (`@` intégral vs `limit`).
+3. Historisation de `plan.md` restreinte à la section `## Tasks` : `## Summary` et `## Risks` restent intactes — le tableau récapitulatif conserve toutes ses lignes, y compris celles des tâches archivées, et reste la vue complète de la branche. Garder les 10 tâches `[x]` les plus récentes, déplacer les plus anciennes. Règles conservées : tâche portant un sous-élément non coché jamais archivée, déplacement verbatim. Aucun marqueur d'archive sur les lignes du récapitulatif — déplacement strictement verbatim.
+Détecté hors plan initial — ajouté sur confirmation.
+[x]
+
 ## Risques
 - L'identification du premier bloc (contraintes) repose sur la mise en forme existante (groupe contigu en tête de `## Décisions & Contraintes`), pas sur une analyse sémantique — la migration est un simple déplacement, sans reformulation.
 
@@ -96,4 +112,6 @@
 | T10 — Mode professeur : `explanation-*` en tâche de fond | S | [x] |
 | T11 — `rapport.txt` → `report.txt` | XS | [x] |
 | T12 — Rapport et réponse mail dans la langue de l'utilisateur | XS | [x] |
-| **Total estimé** | **~6h** | |
+| T13 — Historisation vérifiée au démarrage uniquement | S | [x] |
+| T14 — Lecture bornée du log + seuils recalibrés | S | [x] |
+| **Total estimé** | **~7h** | |

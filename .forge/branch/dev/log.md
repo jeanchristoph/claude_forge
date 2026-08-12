@@ -1,5 +1,10 @@
 # Log — dev
 
+- [2026-08-12] Historisation de `plan.md` restreinte à `## Tasks` — `## Summary` conservée intégralement, sans marqueur d'archive sur les lignes des tâches déplacées.
+- [2026-08-12] `log.md` lu borné (`limit: 40`) et nouvelles entrées insérées en tête — la taille du log ne pèse plus sur le coût de reprise ; seuil maintenu à 90 000 car, `plan.md` abaissé à 20 000 car.
+
+- [2026-08-12] Seuils d'historisation contrôlés une seule fois par session, à la reprise — plus aucune vérification déclenchée par une écriture en cours de tâche.
+
 - [2026-08-05] `report.txt` rédigé dans la langue de l'utilisateur, labels compris — exception unique aux libellés figés en anglais, actée dans `coding_standards.md`.
 - [2026-08-05] Réponse mail rédigée dans la langue du mail reçu, jamais celle de l'utilisateur si elle diffère — le destinataire est le correspondant.
 - [2026-08-05] `rapport.txt` renommé `report.txt` — noms de fichiers produits alignés en anglais ; `rapport.txt` antérieur ni lu ni migré.

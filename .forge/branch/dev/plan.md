@@ -185,6 +185,23 @@ Détecté hors plan initial — ajouté sur confirmation.
 Détecté hors plan initial — ajouté sur confirmation.
 [x]
 
+### T22 — Commande `frappe` / `hammer` : dispatch de sous-agents sur les tâches du plan
+**Effort :** L
+**Fichiers :** `skill/phases/p5-resume.md`, `README.md`, `README.fr.md`, `.forge/project.md`, `CHANGELOG.md`
+**Description :** Exécuter les tâches du plan par sous-agents, avec vérification systématique, jusqu'à un résultat livrable en production. Schéma, mesures publiées et sources dans `explanation-dispatch-agents.md`.
+- Architecture retenue : pipeline par tâche, jamais une chaîne de rôles nommés — les mesures publiées donnent 2 à 15 % de dégradation et 4 à 220 fois le coût pour les architectures multi-agents à rôles. Ce qui produit l'effet est le contexte frais du vérificateur, pas l'intitulé du rôle.
+- ⚠️ INVARIANT : seul l'orchestrateur écrit dans `plan.md` et `log.md`. Les sous-agents rendent un verdict structuré, jamais une écriture directe — des écritures concurrentes corrompraient les fichiers.
+- ⚠️ La règle absolue s'applique : confirmation unique au lancement, sur un récapitulatif chiffré (tâches, agents, ordre), à l'image de la Livraison.
+
+[ ] T22.1 — Section « Frappe » dans `p5-resume.md` : déclencheur `frappe` / `hammer`, seul ou suivi d'une tâche (`frappe T3`), récapitulatif chiffré, confirmation unique, `Sur refus → STOP`.
+[ ] T22.2 — Partition des tâches par le champ `Files` du plan : fichiers disjoints → parallèle en worktree git, intersection → séquentiel dans le même groupe. Partition décidée avant tout lancement.
+[ ] T22.3 — Cellule par tâche : implémentation (contexte = brief + coding-standards + la tâche), puis vérification mécanique (tests, lint, types). Rouge → reprise, deux au maximum, puis `[!] blocked` avec la raison.
+[ ] T22.4 — Vérification adversariale : trois sous-agents en contexte frais, angles distincts (respect du brief, régression, sécurité, dette), ne voyant que le diff et le brief. Majorité défavorable → reprise, deux au maximum.
+[ ] T22.5 — Barrière finale et revue transversale unique : incohérences entre tâches, doublons, dette accumulée. Objet distinct de la vérification par tâche, jamais un doublon de celle-ci.
+[ ] T22.6 — Documentation : `README.md`, `README.fr.md` (section Frappe), `CHANGELOG.md` sous `[Unreleased]`, `project.md`.
+Détecté hors plan initial — ajouté sur confirmation.
+[ ]
+
 ## Risques
 - L'identification du premier bloc (contraintes) repose sur la mise en forme existante (groupe contigu en tête de `## Décisions & Contraintes`), pas sur une analyse sémantique — la migration est un simple déplacement, sans reformulation.
 
@@ -212,4 +229,5 @@ Détecté hors plan initial — ajouté sur confirmation.
 | T19 — Visibilité du dépôt | S | [x] |
 | T20 — Démo animée générée par VHS | M | [x] |
 | T21 — README scindé par langue | S | [x] |
-| **Total estimé** | **~16h** | |
+| T22 — Commande `frappe` / `hammer` | L | [ ] |
+| **Total estimé** | **~22h** | |

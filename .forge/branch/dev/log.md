@@ -1,6 +1,7 @@
 # Log — dev
 
-- [2026-08-12] Commande de dispatch de sous-agents étudiée puis reportée — schéma, mesures et sources conservés dans `explanation-dispatch-agents.md`, rien d'implémenté ni ajouté au plan.
+- [2026-08-12] Commande de dispatch nommée `frappe` / `hammer` — verbe à l'impératif comme `grave`, retenu contre `trempe`, `atelier` et `compagnons` ; ajoutée au plan en T22.
+- [2026-08-12] Dispatch construit en pipeline par tâche et non en chaîne de rôles nommés — les rôles dégradent le résultat de 2 à 15 % pour 4 à 220 fois le coût, l'effet venant du contexte frais du vérificateur.
 
 - [2026-08-12] Démo ouverte sur la séquence de reprise elle-même — détection de branche puis les cinq lectures ordonnées — plutôt que directement sur le tableau d'avancement.
 

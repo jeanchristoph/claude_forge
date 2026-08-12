@@ -1,5 +1,8 @@
 # Log — dev
 
+- [2026-08-12] Section « Frappe » rédigée d'un bloc plutôt que sous-étape par sous-étape — une section de skill partielle est inexploitable, contrairement à du code où l'incrément tient debout.
+- [2026-08-12] Vérificateurs adversariaux instruits de réfuter et non de valider ; aucune tâche cochée sans vérification mécanique verte — le juge reste la suite de tests.
+
 - [2026-08-12] Commande de dispatch nommée `frappe` / `hammer` — verbe à l'impératif comme `grave`, retenu contre `trempe`, `atelier` et `compagnons` ; ajoutée au plan en T22.
 - [2026-08-12] Dispatch construit en pipeline par tâche et non en chaîne de rôles nommés — les rôles dégradent le résultat de 2 à 15 % pour 4 à 220 fois le coût, l'effet venant du contexte frais du vérificateur.
 

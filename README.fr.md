@@ -148,7 +148,7 @@ Les tâches L/XL incluent un bloc de décomposition commenté (`T1.1`, `T1.2`, �
 ### État 5 — Actif
 **Condition :** brief + plan présents
 
-Lit `coding-standards.md` et les fichiers en silence. Si `log.md` contient des entrées, affiche d'abord un récapitulatif "**Last session :**" des 10 dernières en une ligne, puis le tableau d'avancement. Attend les instructions.
+Lit `coding-standards.md` et les fichiers en silence. Si `log.md` contient des entrées, affiche d'abord un récapitulatif "**Last session :**" des 10 dernières en une ligne, puis le tableau d'avancement. Propose ensuite les deux voies — choisir une tâche soi-même, ou frapper les tâches restantes — et attend.
 
 ---
 
@@ -273,6 +273,40 @@ Après chaque input utilisateur, forge vérifie si la demande est dans le plan c
 ```
 
 Met à jour `project.md` (uniquement ce qui a changé, après validation), puis confie les libellés de structure de `project.md`, `brief.md` et `plan.md` de la branche courante à un agent en tâche de fond, qui les normalise silencieusement sans bloquer le travail en cours — les sections sont identifiées par rôle et position, jamais par leur texte, ce qui réaligne les fichiers écrits par une version antérieure quelle que soit la langue de leurs titres. Libellés seuls : aucun contenu n'est réécrit, réordonné ni supprimé. Les autres branches ne sont pas touchées.
+
+---
+
+## Frappe — dispatch de sous-agents sur le plan
+
+```
+"frappe" / "hammer"          → toutes les tâches non cochées
+"frappe T3" / "hammer T3"    → cette tâche seulement
+```
+
+Exécute les tâches du plan par sous-agents, avec vérification à chaque étape. Les tâches sont
+partitionnées selon les fichiers qu'elles touchent — information que le plan porte déjà dans son
+champ `Files` : fichiers disjoints en parallèle, chacun dans son propre worktree git, fichiers en
+intersection en séquentiel dans le même groupe. Un tableau récapitule chaque tâche, son mode
+d'exécution et son nombre de sous-agents ; rien ne démarre avant une confirmation unique, valable
+pour toute la séquence.
+
+Chaque tâche traverse la même cellule : **implémentation** (avec pour seul contexte le brief, les
+conventions de code et la tâche), puis **vérification mécanique** (tests, lint, types), puis
+**trois relecteurs adversariaux** en contexte frais, chacun sur un angle distinct — respect du
+brief, régression, sécurité, dette introduite — ne voyant que le diff et le brief. Un échec
+mécanique ou une majorité défavorable renvoie la tâche à l'implémentation, deux fois au maximum,
+après quoi elle est marquée `[!] blocked` avec sa raison et la séquence continue.
+
+Les relecteurs reçoivent une consigne de réfutation, jamais de validation : un relecteur chargé de
+valider valide. Et le juge reste la suite de tests — aucune tâche n'est cochée sur le seul avis
+d'un sous-agent.
+
+Une fois toutes les tâches passées, un relecteur unique examine le diff complet pour ce que la
+vérification par tâche ne peut pas voir : incohérences entre tâches, doublons, dette accumulée.
+Ses constats sont présentés pour confirmation, jamais appliqués silencieusement.
+
+Seul l'orchestrateur écrit dans `plan.md` et `log.md` ; les sous-agents rendent des verdicts
+structurés.
 
 ---
 

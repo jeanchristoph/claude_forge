@@ -11,7 +11,7 @@
 5. Lire `@.forge/branch/<BRANCH>/plan.md`
 6. Vérifier les seuils d'historisation (section « Historisation ») — unique contrôle de la session.
 7. Afficher le tableau d'avancement (format ci-dessous).
-8. Toutes `[ ]` → "Ready to start with T1?" · sinon → "Which task are we tackling?" — ne jamais démarrer sans réponse.
+8. Toutes `[ ]` → "Ready to start with T1? Or hammer the whole plan?" · sinon → "Which task are we tackling? Or hammer the remaining tasks?" — ne jamais démarrer sans réponse.
 
 ---
 
@@ -125,6 +125,55 @@ Le brief est vivant. Les changements de scope sont gérés par la **Surveillance
 3. **Si refus** ("non", "no", "ignore") :
    - Traiter la demande sans modifier le plan
    - Continuer normalement
+
+---
+
+## Frappe — dispatch de sous-agents sur les tâches du plan
+
+**Déclencheur :** l'utilisateur dit "frappe" / "hammer", seul ou suivi d'une tâche du plan (ex: "frappe T3").
+
+**INVARIANT :** seul l'orchestrateur écrit dans PLAN et LOG. Les sous-agents rendent un verdict structuré, jamais une écriture directe — des écritures concurrentes corrompent les fichiers.
+
+⚠️ Aucun sous-agent lancé avant la confirmation de l'étape 4.
+
+**Réaction — dans l'ordre :**
+1. Constituer la liste des tâches : tâche citée → elle seule ; aucune tâche citée → toutes les tâches `[ ]` du plan, dans l'ordre. Liste vide → "Nothing to hammer — every task is done." et STOP.
+2. Partitionner par le champ `Files` de chaque tâche : fichiers disjoints → tâches parallèles, un worktree git par tâche ; fichiers en intersection → même groupe, traité séquentiellement.
+3. Afficher le tableau de frappe (format ci-dessous).
+4. Demander une confirmation unique, couvrant toute la séquence :
+   > Run the hammering? OK?
+5. **Sur refus** → n'exécuter aucune action. STOP — ne pas continuer.
+6. **Sur confirmation** → exécuter la cellule de chaque tâche (ci-dessous), sans validation intermédiaire.
+7. Toutes les tâches traitées → exécuter la revue transversale (ci-dessous).
+8. Rendre compte : tâches vertes, tâches `[!] blocked` avec leur raison, constats de la revue transversale.
+
+### Cellule d'une tâche
+
+1. **Implémentation** — un sous-agent. Contexte transmis : `brief.md`, `coding-standards.md`, la tâche et ses fichiers. Rien d'autre.
+2. **Vérification mécanique** — tests, lint et types du projet.
+   - Rouge → retour à l'étape 1 avec le rapport d'échec. Deux reprises au maximum.
+   - Reprises épuisées → marquer `[!] blocked` avec la raison en une ligne, passer à la tâche suivante.
+   - Vert → étape 3.
+3. **Vérification adversariale** — trois sous-agents en contexte frais, lancés en parallèle, ne recevant que le diff de la tâche et `brief.md`. Un angle distinct par sous-agent, jamais deux fois le même : respect du brief · régression · sécurité · dette introduite.
+   - Majorité défavorable → retour à l'étape 1. Deux reprises au maximum.
+   - Majorité favorable → cocher `[x]`, passer à la tâche suivante.
+
+⚠️ Consigne de réfutation à chaque vérificateur, jamais de validation — un relecteur chargé de valider valide.
+⚠️ Le juge est la suite de tests, jamais un sous-agent : aucune tâche cochée `[x]` sans étape 2 verte.
+
+### Revue transversale
+
+Un sous-agent unique, après toutes les tâches, recevant le diff complet et `brief.md`. Objet distinct de la cellule : incohérences entre tâches, doublons, dette accumulée.
+- Constats → les présenter, demander confirmation avant toute correction.
+- Aucun constat → l'indiquer en une ligne.
+
+### Format du tableau de frappe
+
+Une ligne par tâche à traiter, dans l'ordre d'exécution. Quatre colonnes, en-têtes générés dans la langue de l'utilisateur : numéro de tâche, titre, mode d'exécution (`parallel` / `sequential`), nombre de sous-agents prévus.
+
+Dernière ligne : total des tâches et total des sous-agents, reprises exclues.
+
+⚠️ Jamais de liste de fichiers, jamais de décompte de lignes.
 
 ---
 

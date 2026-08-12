@@ -149,7 +149,7 @@ L/XL tasks include a commented decomposition block (`T1.1`, `T1.2`, …) to fill
 ### State 5 — Active
 **Condition:** brief + plan present
 
-Reads `coding-standards.md` and files silently. If `log.md` has entries, displays a one-line "**Last session:**" recap of the last 10 first, then the progress table. Waits for instructions.
+Reads `coding-standards.md` and files silently. If `log.md` has entries, displays a one-line "**Last session:**" recap of the last 10 first, then the progress table. Then offers both routes — picking a task yourself, or hammering the remaining ones — and waits.
 
 ---
 
@@ -274,6 +274,37 @@ After each user input, forge checks whether the request falls inside the current
 ```
 
 Updates `project.md` (only what changed, after validation), then hands the structural labels of `project.md`, `brief.md` and `plan.md` for the current branch to a background agent, which normalizes them silently without blocking ongoing work — sections are identified by role and position, never by text, so files written by an older version are realigned whatever language their headings were in. Labels only: no content is ever rewritten, reordered or removed. Other branches are left untouched.
+
+---
+
+## Hammering — dispatching subagents over the plan
+
+```
+"frappe" / "hammer"          → every unchecked task
+"frappe T3" / "hammer T3"    → that task only
+```
+
+Runs the plan's tasks through subagents, with verification at every step. Tasks are partitioned
+by the files they touch — taken from the plan's own `Files` field: disjoint files run in parallel,
+each in its own git worktree, overlapping files run sequentially in the same group. A recap table
+lists every task, its execution mode and its subagent count; nothing starts before you confirm it,
+once, for the whole run.
+
+Each task goes through the same cell: **implementation** (given only the brief, the coding
+standards and the task), then **mechanical verification** (tests, lint, types), then **three
+adversarial reviewers** in fresh contexts, each with a distinct angle — brief compliance,
+regression, security, debt introduced — seeing nothing but the diff and the brief. A red build or
+a hostile majority sends the task back, twice at most, after which it is marked `[!] blocked` with
+its reason and the run moves on.
+
+Reviewers are told to refute, never to approve: a reviewer asked to validate validates. And the
+judge is always the test suite — no task is ever checked off on a subagent's opinion alone.
+
+Once every task is through, a single reviewer looks at the complete diff for what per-task review
+cannot see: inconsistencies between tasks, duplication, accumulated debt. Its findings are reported
+for confirmation, never applied silently.
+
+Only the orchestrator writes to `plan.md` and `log.md`; subagents return structured verdicts.
 
 ---
 

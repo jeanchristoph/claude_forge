@@ -33,6 +33,17 @@ pause 0.8
 
 prompt "/forge"
 
+line "${GREY}•${OFF} Bash(git branch --show-current)"
+line "  ${GREY}└ dev${OFF}"
+line ""
+pause 0.5
+line "${GREY}•${OFF} Read(.forge/project.md)              ${GREY}└ 67 lines${OFF}"
+line "${GREY}•${OFF} Read(.forge/coding-standards.md)     ${GREY}└ 38 lines${OFF}"
+line "${GREY}•${OFF} Read(.forge/branch/dev/brief.md)     ${GREY}└ 12 lines${OFF}"
+line "${GREY}•${OFF} Read(.forge/branch/dev/log.md)       ${GREY}└ 40 lines (bounded)${OFF}"
+line "${GREY}•${OFF} Read(.forge/branch/dev/plan.md)      ${GREY}└ 126 lines${OFF}"
+line ""
+pause 1.4
 line "${BOLD}Last session :${OFF} decision log split out of the brief; State 3 migrates"
 line "dated entries automatically, on resume only the last 10 are read."
 pause 0.5

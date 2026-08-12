@@ -27,6 +27,14 @@ with no error until it times out.
 `demo.sh` reproduces the skill's output **word for word**, taken from `skill/phases/`.
 A reconstructed demo is fine; a demo showing behaviour the tool does not have is not.
 
+Check every new character on an extracted frame, never on the script alone: the
+terminal font lacks Claude Code's own glyphs (`⏺`, `⎿`) and renders them as empty
+boxes. `•` and `└` are safe.
+
+```bash
+ffmpeg -ss 6 -i docs/demo.gif -frames:v 1 /tmp/check.png
+```
+
 Keep the GIF under 5 MB and around 1100 px wide, otherwise GitHub takes seconds to
 display it. After editing `demo.sh`, check the total duration and adjust the `Sleep`
 in `demo.tape` to match — trailing frozen frames are wasted bytes.

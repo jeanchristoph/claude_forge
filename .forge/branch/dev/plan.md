@@ -168,7 +168,8 @@ Détecté hors plan initial — ajouté sur confirmation.
 - Démo régénérable à chaque évolution du skill sans nouvelle prise, les deux fichiers sources étant versionnés.
 - Chaîne de génération : WSL Debian 13, `vhs` + `ttyd` en binaires officiels (`ttyd` retiré des dépôts Debian 13), `ffmpeg` et `chromium` par apt. ⚠️ Exécution en utilisateur non-root obligatoire — Chromium refuse de démarrer en root. Prérequis documentés pour un contributeur.
 - `README.md` : commentaire d'emplacement remplacé par l'image, dans les deux versions, avec mention explicite que la session est reconstituée.
-- Résultat : 26 s, 985 Ko, 1100×720. Tableau d'avancement à 5 s, tâche exécutée à 12 s, récapitulatif git à 20 s.
+- Résultat : 33 s, 1,4 Mo, 1100×820. Détection de branche et cinq lectures ordonnées à 6 s, tableau d'avancement, tâche exécutée, récapitulatif git à 27 s.
+- ⚠️ Police du terminal VHS sans les glyphes `⏺` et `⎿` de Claude Code, rendus en carrés vides — remplacés par `•` et `└`. Vérifier chaque nouveau caractère sur une image extraite, jamais sur la seule lecture du script.
 - `docs/README.md` documente la chaîne et ses deux pièges : WSL obligatoire (VHS ne tient pas sous Windows natif), exécution en utilisateur non-root (Chromium refuse de démarrer, VHS se bloque sans message).
 Détecté hors plan initial — ajouté sur confirmation.
 [x]

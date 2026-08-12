@@ -1,5 +1,9 @@
 # Log — dev
 
+- [2026-08-12] Commande de dispatch de sous-agents étudiée puis reportée — schéma, mesures et sources conservés dans `explanation-dispatch-agents.md`, rien d'implémenté ni ajouté au plan.
+
+- [2026-08-12] Démo ouverte sur la séquence de reprise elle-même — détection de branche puis les cinq lectures ordonnées — plutôt que directement sur le tableau d'avancement.
+
 - [2026-08-12] README scindé en un fichier par langue avec sélecteur en badges — la cohérence entre versions était déjà manuelle, le fichier unique ne la garantissait pas.
 
 - [2026-08-12] Démo du README reconstituée par un script, pas capturée d'une session réelle — seule voie déterministe et régénérable, sous réserve de reproduire les sorties du skill à l'identique.

@@ -193,14 +193,15 @@ Détecté hors plan initial — ajouté sur confirmation.
 - ⚠️ INVARIANT : seul l'orchestrateur écrit dans `plan.md` et `log.md`. Les sous-agents rendent un verdict structuré, jamais une écriture directe — des écritures concurrentes corrompraient les fichiers.
 - ⚠️ La règle absolue s'applique : confirmation unique au lancement, sur un récapitulatif chiffré (tâches, agents, ordre), à l'image de la Livraison.
 
-[ ] T22.1 — Section « Frappe » dans `p5-resume.md` : déclencheur `frappe` / `hammer`, seul ou suivi d'une tâche (`frappe T3`), récapitulatif chiffré, confirmation unique, `Sur refus → STOP`.
-[ ] T22.2 — Partition des tâches par le champ `Files` du plan : fichiers disjoints → parallèle en worktree git, intersection → séquentiel dans le même groupe. Partition décidée avant tout lancement.
-[ ] T22.3 — Cellule par tâche : implémentation (contexte = brief + coding-standards + la tâche), puis vérification mécanique (tests, lint, types). Rouge → reprise, deux au maximum, puis `[!] blocked` avec la raison.
-[ ] T22.4 — Vérification adversariale : trois sous-agents en contexte frais, angles distincts (respect du brief, régression, sécurité, dette), ne voyant que le diff et le brief. Majorité défavorable → reprise, deux au maximum.
-[ ] T22.5 — Barrière finale et revue transversale unique : incohérences entre tâches, doublons, dette accumulée. Objet distinct de la vérification par tâche, jamais un doublon de celle-ci.
-[ ] T22.6 — Documentation : `README.md`, `README.fr.md` (section Frappe), `CHANGELOG.md` sous `[Unreleased]`, `project.md`.
+[x] T22.1 — Section « Frappe » dans `p5-resume.md` : déclencheur `frappe` / `hammer`, seul ou suivi d'une tâche (`frappe T3`), récapitulatif chiffré, confirmation unique, `Sur refus → STOP`.
+[x] T22.2 — Partition des tâches par le champ `Files` du plan : fichiers disjoints → parallèle en worktree git, intersection → séquentiel dans le même groupe. Partition décidée avant tout lancement.
+[x] T22.3 — Cellule par tâche : implémentation (contexte = brief + coding-standards + la tâche), puis vérification mécanique (tests, lint, types). Rouge → reprise, deux au maximum, puis `[!] blocked` avec la raison.
+[x] T22.4 — Vérification adversariale : trois sous-agents en contexte frais, angles distincts (respect du brief, régression, sécurité, dette), ne voyant que le diff et le brief. Majorité défavorable → reprise, deux au maximum.
+[x] T22.5 — Barrière finale et revue transversale unique : incohérences entre tâches, doublons, dette accumulée. Objet distinct de la vérification par tâche, jamais un doublon de celle-ci.
+[x] T22.6 — Documentation : `README.md`, `README.fr.md` (section Frappe), `CHANGELOG.md` sous `[Unreleased]`, `project.md`.
+[x] T22.7 — Reprise : la question finale de l'étape 8 propose la frappe à côté du choix manuel d'une tâche — sans quoi la commande n'est découvrable qu'en lisant le README.
 Détecté hors plan initial — ajouté sur confirmation.
-[ ]
+[x]
 
 ## Risques
 - L'identification du premier bloc (contraintes) repose sur la mise en forme existante (groupe contigu en tête de `## Décisions & Contraintes`), pas sur une analyse sémantique — la migration est un simple déplacement, sans reformulation.
@@ -229,5 +230,5 @@ Détecté hors plan initial — ajouté sur confirmation.
 | T19 — Visibilité du dépôt | S | [x] |
 | T20 — Démo animée générée par VHS | M | [x] |
 | T21 — README scindé par langue | S | [x] |
-| T22 — Commande `frappe` / `hammer` | L | [ ] |
+| T22 — Commande `frappe` / `hammer` | L | [x] |
 | **Total estimé** | **~22h** | |

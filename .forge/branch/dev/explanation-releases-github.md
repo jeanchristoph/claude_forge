@@ -175,3 +175,40 @@ lisibilité de l'annonce — le reste est replié.
 ```bash
 winget install GitHub.cli
 ```
+
+## 2026-08-12 — Épuisement supposé des numéros de version
+
+### Question posée
+
+En incrémentant la version mineure à chaque livraison, n'arrive-t-on pas trop vite à la
+version `1.0` ?
+
+### Non — la crainte repose sur une erreur de lecture
+
+Les trois composants d'un numéro **SemVer** sont des **entiers indépendants**, pas les
+décimales d'un nombre. `0.9.0` est donc suivi de `0.10.0`, puis `0.11.0`, `0.12.0`, **sans
+limite**. Aucun mécanisme ne fait basculer en `1.0.0`.
+
+Le passage en `1.0.0` est toujours une **décision délibérée** : elle vaut engagement à ne
+plus casser le format ou l'API sans passer en version majeure. Elle n'est jamais la
+conséquence arithmétique d'une suite d'incréments.
+
+Précédents connus : Node.js est resté longtemps en `0.x` jusqu'à `0.12`, et de nombreux
+projets dépassent largement le neuvième mineur.
+
+### La vraie question sous-jacente : le rythme de publication
+
+Rien n'oblige à publier une release à chaque livraison. Les commits partent sur les branches
+à leur rythme ; une release regroupe un **ensemble cohérent de changements**.
+
+C'est précisément le rôle de la section `[Unreleased]` du changelog : accumuler les entrées
+jusqu'à ce qu'un ensemble mérite d'être publié.
+
+Deux régimes valides :
+
+| Régime | Ce qu'on y gagne |
+| ------ | ---------------- |
+| Publier souvent en `0.x` | un feed vivant |
+| Accumuler et publier des versions plus consistantes | des notes de release plus lisibles |
+
+Le choix dépend de **l'audience visée**, pas d'une règle technique.

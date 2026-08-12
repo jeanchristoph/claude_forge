@@ -57,6 +57,7 @@ Fichiers générés dans **chaque projet cible** par le skill (pas dans ce dép�
 - `skill/SKILL.md` — point d'entrée lu par Claude Code à chaque invocation `/forge` (state machine)
 - `install/install.ps1` / `install/install.sh` — déploient skill + hook vers `~/.claude/` et fusionnent `settings.json`
 - `hooks/ps1/forge-precompact.ps1` / `hooks/bash/forge-precompact.sh` — hook `PreCompact`, injecte l'état du plan courant dans le contexte compacté
+- `skill/phases/p5-resume.md` — porte les trois commandes de l'état actif : Frappe (`frappe` / `hammer`), Livraison (`grave` / `engrave`) et Clôture de tâche
 
 ## Conventions détectées
 - Nommage : phases numérotées `pN-<nom>.md`, sections `##`/`###` avec mots-clés stricts (« Condition », « Réaction », « STOP »)

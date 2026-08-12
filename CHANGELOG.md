@@ -18,6 +18,8 @@ Every format change so far is absorbed by an automatic migration — upgrading r
 ### Changed
 
 - The hardcoded version line in the README is replaced by the release badge, which updates on its own.
+- The bilingual README is split into `README.md` (English) and `README.fr.md` (French), with a language selector under the title. The single file had grown past 640 lines, burying the demo and the install section under the translation.
+- Demo: the shipping command is shown as `engrave`, the English spelling, rather than `grave`.
 
 ## [0.7.0] — 2026-08-12
 

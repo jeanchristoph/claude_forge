@@ -64,9 +64,9 @@ line "  T2 — Root installers              XS       ${GREEN}[x]${OFF}"
 line ""
 pause 1.8
 
-prompt "grave master"
+prompt "engrave master"
 
-line "${BOLD}Shipping — grave master${OFF}"
+line "${BOLD}Shipping — engrave master${OFF}"
 line ""
 line "  ${GREY}#   Action     Detail${OFF}"
 line "  ${GREY}──  ────────   ─────────────────────────────────────────────${OFF}"

@@ -1,5 +1,7 @@
 # Log — dev
 
+- [2026-08-12] README scindé en un fichier par langue avec sélecteur en badges — la cohérence entre versions était déjà manuelle, le fichier unique ne la garantissait pas.
+
 - [2026-08-12] Démo du README reconstituée par un script, pas capturée d'une session réelle — seule voie déterministe et régénérable, sous réserve de reproduire les sorties du skill à l'identique.
 - [2026-08-12] Chaîne VHS abandonnée sous Windows natif au profit de WSL — chaque brique fonctionne isolément sous Windows, mais le pilotage de Chromium par go-rod se bloque sans message.
 

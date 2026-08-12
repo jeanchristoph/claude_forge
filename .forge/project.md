@@ -29,6 +29,8 @@ forge/
 │   └── install.ps1            (déploiement Windows, idempotent)
 ├── install-unix.sh            (lanceur racine → install/install.sh)
 ├── install-windows.bat        (lanceur racine → install/install.ps1)
+├── CHANGELOG.md               (format Keep a Changelog, une section par version)
+├── LICENSE                    (MIT, Jean-Christophe Malaval)
 ├── README.md                  (doc bilingue EN puis FR)
 └── TODO.txt                   (notes de travail en cours)
 ```

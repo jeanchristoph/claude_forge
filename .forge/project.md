@@ -31,6 +31,11 @@ forge/
 ├── install-windows.bat        (lanceur racine → install/install.ps1)
 ├── CHANGELOG.md               (format Keep a Changelog, une section par version)
 ├── LICENSE                    (MIT, Jean-Christophe Malaval)
+├── docs/
+│   ├── demo.sh                (rejoue les sorties du skill pour la démo)
+│   ├── demo.tape              (pilote l'enregistrement vhs)
+│   ├── demo.gif               (généré — jamais édité à la main)
+│   └── README.md              (prérequis de régénération, WSL requis)
 ├── README.md                  (doc bilingue EN puis FR)
 └── TODO.txt                   (notes de travail en cours)
 ```

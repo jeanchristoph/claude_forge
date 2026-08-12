@@ -1,5 +1,8 @@
 # Log — dev
 
+- [2026-08-12] Démo du README reconstituée par un script, pas capturée d'une session réelle — seule voie déterministe et régénérable, sous réserve de reproduire les sorties du skill à l'identique.
+- [2026-08-12] Chaîne VHS abandonnée sous Windows natif au profit de WSL — chaque brique fonctionne isolément sous Windows, mais le pilotage de Chromium par go-rod se bloque sans message.
+
 - [2026-08-12] Licence MIT retenue contre Apache 2.0 — pas de procédé brevetable dans de la prose d'instructions ; bascule vers Apache 2.0 possible plus tard, MIT accordant le droit de sous-licencier.
 - [2026-08-12] Copyright au nom de Jean-Christophe Malaval, tiré du compte GitHub — la licence n'emporte aucune cession de droits.
 

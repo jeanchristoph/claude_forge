@@ -7,7 +7,7 @@ Output docs/demo.gif
 Set Shell "bash"
 Set FontSize 16
 Set Width 1100
-Set Height 720
+Set Height 820
 Set Padding 24
 Set Theme "Catppuccin Mocha"
 Set TypingSpeed 0ms
@@ -17,4 +17,4 @@ Type "clear && bash docs/demo.sh"
 Enter
 Show
 
-Sleep 27s
+Sleep 34s

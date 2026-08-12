@@ -144,6 +144,35 @@ Détecté hors plan initial — ajouté sur confirmation.
 Détecté hors plan initial — ajouté sur confirmation.
 [x]
 
+### T19 — Visibilité du dépôt
+**Effort :** S
+**Fichiers :** `README.md`, métadonnées GitHub (hors dépôt)
+**Description :** Le dépôt n'a aucun topic, une description en français alors que toute sa documentation publique est en anglais, aucun badge et aucun visuel. Quatre étoiles à ce jour.
+- Topics posés via `gh repo edit` : `claude-code`, `claude`, `anthropic`, `ai-agent`, `developer-tools`, `workflow`, `cli`. Sans eux, le dépôt n'apparaît dans aucune recherche thématique.
+- Description basculée en anglais — c'est la seule phrase visible dans une liste de résultats GitHub.
+- Badges en tête de README (licence, dernière release) via shields.io, dans les deux versions.
+- Emplacement de la démo visuelle préparé dans le README, avec les indications d'enregistrement. ⚠️ Le GIF lui-même est enregistré par l'utilisateur pendant une session réelle — non productible ici.
+- Hors périmètre : renommage du dépôt (`claude_forge` → kebab-case), diffusion externe (listes communautaires, réseaux, article). Décisions à part.
+- Ligne `**Version:**` du README supprimée au profit du badge de release, qui se met à jour seul — un numéro en dur dans le texte est une source d'oubli à chaque livraison.
+- Topics et description : exécutés dans la procédure de **Livraison**, comme les tags de T17 — modification de métadonnées publiques, jamais silencieuse.
+Détecté hors plan initial — ajouté sur confirmation.
+[x]
+
+### T20 — Démo animée générée par VHS
+**Effort :** M
+**Fichiers :** `docs/demo.tape` (nouveau), `docs/demo.sh` (nouveau), `docs/demo.gif` (généré), `README.md`, `.forge/project.md`
+**Description :** T19 tenait le GIF pour non productible ici ; la chaîne VHS fonctionne sous WSL, ce constat tombe.
+- `docs/demo.sh` rejoue les sorties du skill avec des temporisations choisies : récap « Last session », tableau d'avancement, « Ready to start with T1? » suivi d'un « go », tableau récapitulatif des actions git.
+- ⚠️ Sorties reproduites mot pour mot depuis les phases du skill, jamais une version embellie — une démo reconstituée est acceptable, une démo qui montre un comportement inexistant ne l'est pas.
+- `docs/demo.tape` pilote l'enregistrement : commandes de lancement masquées (`Hide` / `Show`), 100×30, police 16, thème sombre, cible sous 5 Mo.
+- Démo régénérable à chaque évolution du skill sans nouvelle prise, les deux fichiers sources étant versionnés.
+- Chaîne de génération : WSL Debian 13, `vhs` + `ttyd` en binaires officiels (`ttyd` retiré des dépôts Debian 13), `ffmpeg` et `chromium` par apt. ⚠️ Exécution en utilisateur non-root obligatoire — Chromium refuse de démarrer en root. Prérequis documentés pour un contributeur.
+- `README.md` : commentaire d'emplacement remplacé par l'image, dans les deux versions, avec mention explicite que la session est reconstituée.
+- Résultat : 26 s, 985 Ko, 1100×720. Tableau d'avancement à 5 s, tâche exécutée à 12 s, récapitulatif git à 20 s.
+- `docs/README.md` documente la chaîne et ses deux pièges : WSL obligatoire (VHS ne tient pas sous Windows natif), exécution en utilisateur non-root (Chromium refuse de démarrer, VHS se bloque sans message).
+Détecté hors plan initial — ajouté sur confirmation.
+[x]
+
 ## Risques
 - L'identification du premier bloc (contraintes) repose sur la mise en forme existante (groupe contigu en tête de `## Décisions & Contraintes`), pas sur une analyse sémantique — la migration est un simple déplacement, sans reformulation.
 
@@ -168,4 +197,6 @@ Détecté hors plan initial — ajouté sur confirmation.
 | T16 — `coding_standards.md` → `coding-standards.md` | S | [x] |
 | T17 — `CHANGELOG.md`, premier tag, première release | M | [x] |
 | T18 — Licence MIT | XS | [x] |
-| **Total estimé** | **~11h30** | |
+| T19 — Visibilité du dépôt | S | [x] |
+| T20 — Démo animée générée par VHS | M | [x] |
+| **Total estimé** | **~15h** | |

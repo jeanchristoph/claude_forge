@@ -27,6 +27,8 @@ forge/
 ├── install/
 │   ├── install.sh             (déploiement Unix, idempotent)
 │   └── install.ps1            (déploiement Windows, idempotent)
+├── install-unix.sh            (lanceur racine → install/install.sh)
+├── install-windows.bat        (lanceur racine → install/install.ps1)
 ├── README.md                  (doc bilingue EN puis FR)
 └── TODO.txt                   (notes de travail en cours)
 ```
@@ -35,7 +37,7 @@ Fichiers générés dans **chaque projet cible** par le skill (pas dans ce dép�
 ```
 .forge/
 ├── project.md
-├── coding_standards.md
+├── coding-standards.md
 └── branch/<BRANCH>/
     ├── brief.md
     ├── plan.md

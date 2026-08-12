@@ -1,5 +1,11 @@
 # Log — dev
 
+- [2026-08-12] `coding_standards.md` renommé `coding-standards.md` avec garde de migration automatique — seul renommage du système à en exiger une, le fichier conditionnant la détection d'état.
+- [2026-08-12] Conventions de nommage de fichiers et de fins de ligne consignées dans `coding-standards.md`, pas dans le brief — norme du projet, pas cadre de branche.
+
+- [2026-08-12] Lanceurs d'installation nommés `install-windows.bat` / `install-unix.sh` — kebab-case retenu contre l'underscore (convention des commandes shell, cohérence du dépôt), `unix` retenu contre `linux` (couvre macOS et WSL).
+- [2026-08-12] `.gitattributes` ajouté — `*.sh` forcé en `eol=lf` : sans lui, `core.autocrlf` casse le shebang du lanceur Unix sur un clone Windows.
+
 - [2026-08-12] Historisation de `plan.md` restreinte à `## Tasks` — `## Summary` conservée intégralement, sans marqueur d'archive sur les lignes des tâches déplacées.
 - [2026-08-12] `log.md` lu borné (`limit: 40`) et nouvelles entrées insérées en tête — la taille du log ne pèse plus sur le coût de reprise ; seuil maintenu à 90 000 car, `plan.md` abaissé à 20 000 car.
 

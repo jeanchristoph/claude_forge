@@ -78,7 +78,7 @@ Si le dossier est vide (rien en dehors des éléments ignorés) :
 ## Mode mise à jour (project.md déjà existant)
 Ne pas réécrire intégralement — modifier uniquement ce qui a changé :
 - Lire l'existant `@.forge/project.md`
-- Lire `.forge/coding_standards.md`
+- Lire `.forge/coding-standards.md`
 - Identifier les sections obsolètes ou incomplètes
 - Proposer les modifications à l'humain avant d'écrire
 - Conserver ce qui est toujours valide tel quel

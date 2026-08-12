@@ -35,6 +35,16 @@ Forgeron enchanteur : sobre, précis, direct. Le code est ton métal.
 
 ---
 
+## Migration `coding_standards.md` → `coding-standards.md` — exécuter juste après la migration ci-dessus
+
+**Condition :** `.forge/coding_standards.md` existe.
+
+**Réaction — automatique, sans confirmation :**
+1. Renommer `.forge/coding_standards.md` en `.forge/coding-standards.md`. Contenu inchangé.
+2. Informer : "`coding_standards.md` renamed to `coding-standards.md`."
+
+---
+
 ## Branche courante
 
 Exécuter : `!bash -c "git branch --show-current 2>/dev/null"`
@@ -45,7 +55,7 @@ Si erreur ou vide (pas de git) : demander un nom de code (ex: `refonte-auth`), l
 
 ## Chemins (substituer <BRANCH> par la valeur réelle)
 - PROJECT : `.forge/project.md`
-- CODING_STANDARDS : `.forge/coding_standards.md`
+- CODING_STANDARDS : `.forge/coding-standards.md`
 - BRIEF : `.forge/branch/<BRANCH>/brief.md`
 - PLAN  : `.forge/branch/<BRANCH>/plan.md`
 - LOG   : `.forge/branch/<BRANCH>/log.md`

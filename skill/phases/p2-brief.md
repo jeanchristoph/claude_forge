@@ -20,6 +20,6 @@
 
 ## Analyse
 
-Lire `.forge/coding_standards.md`.
+Lire `.forge/coding-standards.md`.
 
 Croiser `@.forge/project.md` avec l'objectif. Points flous → clarifier avant de continuer. Si tout clair → continuer directement à l'État 3 : lire et exécuter `phases/p3-log.md`.

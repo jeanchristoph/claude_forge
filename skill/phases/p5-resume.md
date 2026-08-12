@@ -3,7 +3,7 @@
 ## Actions — dans l'ordre
 
 1. Lire `@.forge/project.md` — contexte interne, **ne pas afficher**.
-2. Lire `.forge/coding_standards.md` — contexte interne, **ne pas afficher**.
+2. Lire `.forge/coding-standards.md` — contexte interne, **ne pas afficher**.
 3. Lire `@.forge/branch/<BRANCH>/brief.md` — contexte interne, **ne pas afficher**.
 4. Lire les 40 premières lignes de `.forge/branch/<BRANCH>/log.md` (`Read` avec `limit: 40`), si présent — contexte interne, **ne pas afficher**.
    - Des entrées existent → retenir les 10 plus récentes parmi les lignes lues, afficher un résumé en tête : "**Last session :** [points clés]"

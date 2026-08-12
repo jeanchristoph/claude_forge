@@ -21,3 +21,14 @@ Conventions de formulation pour les fichiers d'instructions du skill (`skill/SKI
 - Chemin, identifiant, variable → toujours en inline code, jamais en texte nu.
 - Piège connu ou contrainte à ne pas violer → préfixe `⚠️` seul en tête de ligne, jamais noyé dans un paragraphe.
 - Terme du domaine du skill (Brief, Plan, État, Scope & rules, Hors périmètre, Historisation) → toujours le même mot une fois introduit, jamais de synonyme.
+
+## Nommage des fichiers
+
+- Nom de fichier et de dossier → kebab-case, minuscules : `p0-project.md`, `forge-precompact.sh`, `install-windows.bat`, `explanation-<sujet-slug>.md`. Jamais d'underscore : le kebab-case est la convention des commandes shell (`apt-get`, `docker-compose`), l'underscore reste réservé aux identifiants de code (modules, variables) où le tiret serait un opérateur.
+- Lanceur destiné à un terminal → suffixe de plateforme explicite : `-windows` / `-unix`. `unix` couvre Linux, macOS et WSL — jamais `linux`, qui exclut les deux derniers.
+- Fichier produit par le skill dans un projet cible → nom en anglais, au même titre que les libellés de structure : `brief.md`, `log.md`, `plan.md`, `report.txt`, `explanation-*.md`.
+
+## Fins de ligne
+
+- Fins de ligne figées par `.gitattributes`, jamais laissées à `core.autocrlf` : `*.sh` en `eol=lf`, `*.bat` et `*.ps1` en `eol=crlf`.
+- ⚠️ Un `.sh` livré en CRLF porte un shebang invalide et devient inexécutable sous Unix et WSL après un clone Windows.

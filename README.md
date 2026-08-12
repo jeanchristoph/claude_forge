@@ -29,15 +29,17 @@ The result: fewer surprises, implementations that stay within the defined scope,
 
 ## Installation
 
-**Windows (PowerShell):**
-```powershell
-powershell -File install/install.ps1
+**Windows:**
+```
+install-windows.bat
 ```
 
 **Unix (bash):**
 ```bash
-bash install/install.sh
+./install-unix.sh
 ```
+
+Both launchers sit at the repository root and delegate to `install/install.ps1` / `install/install.sh` — call those directly if you prefer.
 
 Scripts are idempotent — re-running after an update overwrites cleanly without duplicates.
 
@@ -72,6 +74,9 @@ forge/
 ├── install/
 │   ├── install.sh
 │   └── install.ps1
+├── install-unix.sh           → root launcher, delegates to install/install.sh
+├── install-windows.bat       → root launcher, delegates to install/install.ps1
+├── .gitattributes
 └── .gitignore
 ```
 
@@ -80,7 +85,7 @@ Files generated in each project:
 ```
 .forge/                  ← tracked in git, added automatically on first run
 ├── project.md
-├── coding_standards.md  ← coding conventions (structure, naming, principles), completed over time
+├── coding-standards.md  ← coding conventions (structure, naming, principles), completed over time
 └── branch/<BRANCH>/
     ├── brief.md         ← `## Objective` + `## Scope & rules` (never archived)
     ├── log.md           ← Decisions log (living log, last 10 entries read on resume)
@@ -89,7 +94,7 @@ Files generated in each project:
     └── explanation-*.md ← generated in the background when a technical concept is explained
 ```
 
-A legacy `.claude/project.md` / `.claude/branch/` is migrated to `.forge/` automatically on first run — the migration also adds the `.gitignore` block that keeps `.forge/` tracked.
+A legacy `.claude/project.md` / `.claude/branch/` is migrated to `.forge/` automatically on first run — the migration also adds the `.gitignore` block that keeps `.forge/` tracked. A legacy `.forge/coding_standards.md` is renamed to `coding-standards.md` in the same pass, contents untouched.
 
 ---
 
@@ -100,17 +105,17 @@ A legacy `.claude/project.md` / `.claude/branch/` is migrated to `.forge/` autom
 
 - Empty project (excluding dotfiles/dotfolders) → `project.md` placeholder created, continues.
 - Otherwise → explores stack, structure, conventions, writes `project.md` after validation.
-- `coding_standards.md` is written at the same time (only if it doesn't already exist) — see below.
+- `coding-standards.md` is written at the same time (only if it doesn't already exist) — see below.
 
 ### State 1 — Coding Standards Init
-**Condition:** `.forge/coding_standards.md` absent
+**Condition:** `.forge/coding-standards.md` absent
 
-Writes `coding_standards.md` in the user's language, then continues to brief.
+Writes `coding-standards.md` in the user's language, then continues to brief.
 
 ### State 2 — Brief
 **Condition:** brief absent
 
-Reads `coding_standards.md`. Creates `.forge/branch/<BRANCH>/brief.md` with an `## Objective` section and an empty `## Scope & rules` section, clarifies the goal, continues to plan.
+Reads `coding-standards.md`. Creates `.forge/branch/<BRANCH>/brief.md` with an `## Objective` section and an empty `## Scope & rules` section, clarifies the goal, continues to plan.
 
 ### State 3 — Log
 **Condition:** brief present, `log.md` absent
@@ -120,17 +125,17 @@ Silently creates `log.md` if there's nothing to migrate, or moves pre-existing d
 ### State 4 — Plan
 **Condition:** brief present, `log.md` present, plan absent
 
-Reads `coding_standards.md`, generates `plan.md`, waits for validation before any implementation.  
+Reads `coding-standards.md`, generates `plan.md`, waits for validation before any implementation.  
 L/XL tasks include a commented decomposition block (`T1.1`, `T1.2`, …) to fill in before starting.
 
 ### State 5 — Active
 **Condition:** brief + plan present
 
-Reads `coding_standards.md` and files silently. If `log.md` has entries, displays a one-line "**Last session:**" recap of the last 10 first, then the progress table. Waits for instructions.
+Reads `coding-standards.md` and files silently. If `log.md` has entries, displays a one-line "**Last session:**" recap of the last 10 first, then the progress table. Waits for instructions.
 
 ---
 
-## coding_standards.md
+## coding-standards.md
 
 Created alongside `project.md` (State 0), in the user's language: a title (project name) and a short explanation stating that the file holds the coding conventions (structure, naming, principles) to apply while writing code — an ongoing standard, not a one-off audit — meant to be filled in as the project evolves.
 
@@ -333,15 +338,17 @@ Le résultat : moins de mauvaises surprises, des implémentations qui restent da
 
 ## Installation
 
-**Windows (PowerShell) :**
-```powershell
-powershell -File install/install.ps1
+**Windows :**
+```
+install-windows.bat
 ```
 
 **Unix (bash) :**
 ```bash
-bash install/install.sh
+./install-unix.sh
 ```
+
+Les deux lanceurs sont à la racine du dépôt et délèguent à `install/install.ps1` / `install/install.sh` — appeler ces derniers directement reste possible.
 
 Les scripts sont idempotents — relancer après une mise à jour écrase proprement sans doublon.
 
@@ -376,6 +383,9 @@ forge/
 ├── install/
 │   ├── install.sh
 │   └── install.ps1
+├── install-unix.sh           → lanceur racine, délègue à install/install.sh
+├── install-windows.bat       → lanceur racine, délègue à install/install.ps1
+├── .gitattributes
 └── .gitignore
 ```
 
@@ -384,7 +394,7 @@ Fichiers générés dans chaque projet :
 ```
 .forge/                  ← suivi en git, ajouté automatiquement au premier lancement
 ├── project.md
-├── coding_standards.md  ← conventions de code (structure, nommage, principes), complétées au fil du projet
+├── coding-standards.md  ← conventions de code (structure, nommage, principes), complétées au fil du projet
 └── branch/<BRANCH>/
     ├── brief.md         ← `## Objective` + `## Scope & rules` (jamais archivé)
     ├── log.md           ← Journal des décisions (vivant, 10 dernières entrées lues à la reprise)
@@ -393,7 +403,7 @@ Fichiers générés dans chaque projet :
     └── explanation-*.md ← généré en tâche de fond lors d'une explication de concept
 ```
 
-Un `.claude/project.md` / `.claude/branch/` legacy est migré automatiquement vers `.forge/` au premier lancement — la migration ajoute aussi le bloc `.gitignore` qui garde `.forge/` suivi en git.
+Un `.claude/project.md` / `.claude/branch/` legacy est migré automatiquement vers `.forge/` au premier lancement — la migration ajoute aussi le bloc `.gitignore` qui garde `.forge/` suivi en git. Un `.forge/coding_standards.md` legacy est renommé `coding-standards.md` dans la même passe, contenu inchangé.
 
 ---
 
@@ -404,17 +414,17 @@ Un `.claude/project.md` / `.claude/branch/` legacy est migré automatiquement ve
 
 - Projet vide (hors dotfiles/dotfolders) → `project.md` placeholder créé, enchaîne.
 - Sinon → explore stack, structure, conventions, écrit `project.md` après validation.
-- `coding_standards.md` est écrit au même moment (uniquement s'il n'existe pas déjà) — voir ci-dessous.
+- `coding-standards.md` est écrit au même moment (uniquement s'il n'existe pas déjà) — voir ci-dessous.
 
 ### État 1 — Coding Standards Init
-**Condition :** `.forge/coding_standards.md` absent
+**Condition :** `.forge/coding-standards.md` absent
 
-Écrit `coding_standards.md` dans la langue de l'utilisateur, puis enchaîne sur le brief.
+Écrit `coding-standards.md` dans la langue de l'utilisateur, puis enchaîne sur le brief.
 
 ### État 2 — Brief
 **Condition :** brief absent
 
-Lit `coding_standards.md`. Crée `.forge/branch/<BRANCH>/brief.md` avec une section `## Objective` et une section `## Scope & rules` vide, clarifie l'objectif, enchaîne sur le plan.
+Lit `coding-standards.md`. Crée `.forge/branch/<BRANCH>/brief.md` avec une section `## Objective` et une section `## Scope & rules` vide, clarifie l'objectif, enchaîne sur le plan.
 
 ### État 3 — Log
 **Condition :** brief présent, `log.md` absent
@@ -424,17 +434,17 @@ Crée `log.md` silencieusement s'il n'y a rien à migrer, ou y déplace les entr
 ### État 4 — Plan
 **Condition :** brief présent, `log.md` présent, plan absent
 
-Lit `coding_standards.md`, génère `plan.md`, attend validation avant toute implémentation.  
+Lit `coding-standards.md`, génère `plan.md`, attend validation avant toute implémentation.  
 Les tâches L/XL incluent un bloc de décomposition commenté (`T1.1`, `T1.2`, …) à remplir avant de démarrer.
 
 ### État 5 — Actif
 **Condition :** brief + plan présents
 
-Lit `coding_standards.md` et les fichiers en silence. Si `log.md` contient des entrées, affiche d'abord un récapitulatif "**Last session :**" des 10 dernières en une ligne, puis le tableau d'avancement. Attend les instructions.
+Lit `coding-standards.md` et les fichiers en silence. Si `log.md` contient des entrées, affiche d'abord un récapitulatif "**Last session :**" des 10 dernières en une ligne, puis le tableau d'avancement. Attend les instructions.
 
 ---
 
-## coding_standards.md
+## coding-standards.md
 
 Créé en même temps que `project.md` (État 0), dans la langue de l'utilisateur : un titre (nom du projet) et une courte explication précisant que le fichier contient les conventions de code (structure, nommage, principes) à appliquer au moment d'écrire du code — une norme continue, pas un audit ponctuel — à compléter au fil du projet.
 

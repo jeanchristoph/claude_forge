@@ -1,10 +1,10 @@
 # Coding Standards Init
 
 ## Objectif
-Générer `.forge/coding_standards.md` — conventions de code (structure, nommage, principes) à appliquer au moment d'écrire du code, communes à toutes les branches.
+Générer `.forge/coding-standards.md` — conventions de code (structure, nommage, principes) à appliquer au moment d'écrire du code, communes à toutes les branches.
 
 ## Garde
-Si `.forge/coding_standards.md` existe déjà → passer directement à `phases/p2-brief.md` sans réécrire.
+Si `.forge/coding-standards.md` existe déjà → passer directement à `phases/p2-brief.md` sans réécrire.
 
 ## Génération
 Écrire (Write tool) dans la langue de l'utilisateur, avec :

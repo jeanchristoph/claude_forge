@@ -3,7 +3,7 @@
 ## Étapes — dans l'ordre
 
 1. Lire `@.forge/project.md`
-2. Lire `.forge/coding_standards.md`
+2. Lire `.forge/coding-standards.md`
 3. Lire `@.forge/branch/<BRANCH>/brief.md`
 4. Reformuler l'objectif en 1 phrase pour confirmer la lecture.
 5. Si plusieurs approches architecturales viables, les présenter :

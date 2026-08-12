@@ -94,6 +94,29 @@
 Détecté hors plan initial — ajouté sur confirmation.
 [x]
 
+### T15 — Lanceurs d'installation exécutables à la racine
+**Effort :** XS
+**Fichiers :** `install-windows.bat` (nouveau), `install-unix.sh` (nouveau), `README.md`, `.forge/project.md`
+**Description :** Deux lanceurs à la racine du dépôt, appelables directement depuis un terminal, pour éviter la commande longue vers `install/`. Noms portant explicitement la plateforme cible.
+- `install-windows.bat` → invoque `install/install.ps1` via `powershell -NoProfile -ExecutionPolicy Bypass -File`, chemin résolu relativement au script (`%~dp0`), code de sortie propagé. Appelable en cmd comme en PowerShell.
+- `install-unix.sh` → shebang `#!/usr/bin/env bash`, délègue à `install/install.sh`, chemin résolu relativement au script. Bit exécutable versionné (`git update-index --chmod=+x`) pour que `./install-unix.sh` fonctionne après clone.
+- Aucune logique d'installation dupliquée : les lanceurs délèguent, les installeurs existants restent la seule source de vérité.
+- `README.md` : section Installation (EN + FR) et arborescence mises à jour. `.forge/project.md` : structure mise à jour.
+- `.gitattributes` créé au passage : `*.sh` en `eol=lf`, `*.bat`/`*.ps1` en `eol=crlf`. Sans lui, `core.autocrlf` transforme le shebang du lanceur Unix en CRLF sur un clone Windows et le rend inexécutable sous WSL.
+Détecté hors plan initial — ajouté sur confirmation.
+[x]
+
+### T16 — `coding_standards.md` → `coding-standards.md`
+**Effort :** S
+**Fichiers :** `skill/SKILL.md`, `skill/phases/p0-project.md`, `skill/phases/p1-coding-standards.md`, `skill/phases/p2-brief.md`, `skill/phases/p4-plan.md`, `skill/phases/p5-resume.md`, `README.md`, `.forge/project.md`, `.forge/coding_standards.md`
+**Description :** Dernier nom du système en snake_case aligné sur le kebab-case employé partout ailleurs (`forge-precompact.sh`, `p0-project.md`, `explanation-<slug>.md`).
+- Garde de migration dans `skill/SKILL.md`, placée juste après la migration `.claude` → `.forge` : `.forge/coding_standards.md` présent → renommer en `.forge/coding-standards.md`. Automatique, sans confirmation.
+- ⚠️ Migration obligatoire, contrairement aux renommages précédents (`rapport.txt`, `cours-*`) : `CODING_STANDARDS` conditionne la détection d'état. Sans garde, le fichier est vu absent, l'État 1 se déclenche et régénère un fichier vierge par-dessus les standards rédigés du projet.
+- Chemin `CODING_STANDARDS` et toutes les références mises à jour dans le skill, le README (EN + FR) et `project.md`. Fichier du dépôt renommé au passage.
+- Conventions retenues consignées dans `coding-standards.md` : sections « Nommage des fichiers » (kebab-case, suffixe de plateforme `-windows`/`-unix`, nom de fichier produit en anglais) et « Fins de ligne » (`.gitattributes`, `*.sh` en LF).
+Détecté hors plan initial — ajouté sur confirmation.
+[x]
+
 ## Risques
 - L'identification du premier bloc (contraintes) repose sur la mise en forme existante (groupe contigu en tête de `## Décisions & Contraintes`), pas sur une analyse sémantique — la migration est un simple déplacement, sans reformulation.
 
@@ -114,4 +137,6 @@ Détecté hors plan initial — ajouté sur confirmation.
 | T12 — Rapport et réponse mail dans la langue de l'utilisateur | XS | [x] |
 | T13 — Historisation vérifiée au démarrage uniquement | S | [x] |
 | T14 — Lecture bornée du log + seuils recalibrés | S | [x] |
-| **Total estimé** | **~7h** | |
+| T15 — Lanceurs d'installation à la racine | XS | [x] |
+| T16 — `coding_standards.md` → `coding-standards.md` | S | [x] |
+| **Total estimé** | **~8h30** | |

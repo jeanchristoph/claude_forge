@@ -173,6 +173,17 @@ Détecté hors plan initial — ajouté sur confirmation.
 Détecté hors plan initial — ajouté sur confirmation.
 [x]
 
+### T21 — README scindé par langue, sélecteur en badges
+**Effort :** S
+**Fichiers :** `README.md`, `README.fr.md` (nouveau), `docs/demo.sh`, `docs/demo.gif`, `.forge/project.md`, `CHANGELOG.md`
+**Description :** Le README bilingue dépassait 640 lignes, dont la moitié de traduction : la démo et la section Installation étaient noyées dans le défilement.
+- `README.md` ne garde que l'anglais, le français part dans `README.fr.md`. Même plan de section à section, environ 325 lignes chacun.
+- Sélecteur de langue en badges cliquables juste sous le titre, langue courante en bleu, l'autre en gris — GitHub n'offre aucun bouton de langue natif, deux fichiers liés sont la convention.
+- Démo : `grave master` remplacé par `engrave master`, la démo étant en anglais. GIF régénéré.
+- Convention de documentation de `project.md` mise à jour : un fichier par langue, toute évolution de l'un répercutée sur l'autre dans le même commit.
+Détecté hors plan initial — ajouté sur confirmation.
+[x]
+
 ## Risques
 - L'identification du premier bloc (contraintes) repose sur la mise en forme existante (groupe contigu en tête de `## Décisions & Contraintes`), pas sur une analyse sémantique — la migration est un simple déplacement, sans reformulation.
 
@@ -199,4 +210,5 @@ Détecté hors plan initial — ajouté sur confirmation.
 | T18 — Licence MIT | XS | [x] |
 | T19 — Visibilité du dépôt | S | [x] |
 | T20 — Démo animée générée par VHS | M | [x] |
-| **Total estimé** | **~15h** | |
+| T21 — README scindé par langue | S | [x] |
+| **Total estimé** | **~16h** | |

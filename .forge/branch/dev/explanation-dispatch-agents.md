@@ -91,3 +91,11 @@ chantiers longs et découpables (migration, audit large), pas sur l'ajout de deu
 **Recommandation** : démarrer par la version minimale — un implémenteur, un vérificateur en
 contexte frais, une boucle de tests plafonnée — l'éprouver sur des tâches réelles, et n'ajouter
 des rôles qu'en cas de manque constaté.
+
+### Nom de la commande
+
+`frappe` / `hammer`, retenu contre `trempe` / `temper`, `atelier` / `workshop` et
+`compagnons` / `journeymen`. La frappe désigne les coups répétés sur la pièce chauffée : c'est
+la boucle implémentation → vérification → reprise, jouée autant de fois que nécessaire.
+Verbe à l'impératif, comme toutes les commandes de la forge (`grave`, `range la forge`) — une
+racine métier, une forme propre à chaque langue, et aucun accent à taper.

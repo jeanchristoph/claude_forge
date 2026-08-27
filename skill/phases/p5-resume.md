@@ -11,7 +11,14 @@
 5. Lire `@.forge/branch/<BRANCH>/plan.md`
 6. Vérifier les seuils d'historisation (section « Historisation ») — unique contrôle de la session.
 7. Afficher le tableau d'avancement (format ci-dessous).
-8. Toutes `[ ]` → "Ready to start with T1? Or hammer the whole plan?" · sinon → "Which task are we tackling? Or hammer the remaining tasks?" — ne jamais démarrer sans réponse.
+8. Poser le choix du mode d'exécution avec `AskUserQuestion` — jamais une question en texte libre.
+   - `header` : `Mode` · trois options, dans cet ordre, quel que soit l'état du plan :
+     - `Step by step (recommended)` → "Start with the next open task, one at a time, each one validated before the next."
+     - `Pick a task` → "Choose which task we tackle now."
+     - `Hammer the plan` → "Dispatch every open task to sub-agents in one sequence."
+   - `Pick a task` retenu → seconde `AskUserQuestion`, `header` : `Task`, une option par tâche ouverte dans l'ordre du plan (label `T<n> — titre`, description = son effort et sa dépendance éventuelle), quatre au maximum.
+
+   ⚠️ Aucun démarrage avant la réponse à la question — ni enchaînement, ni tâche isolée, ni frappe.
 
 ---
 

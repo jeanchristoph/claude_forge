@@ -149,7 +149,7 @@ L/XL tasks include a commented decomposition block (`T1.1`, `T1.2`, …) to fill
 ### State 5 — Active
 **Condition:** brief + plan present
 
-Reads `coding-standards.md` and files silently. If `log.md` has entries, displays a one-line "**Last session:**" recap of the last 10 first, then the progress table. Then offers both routes — picking a task yourself, or hammering the remaining ones — and waits.
+Reads `coding-standards.md` and files silently. If `log.md` has entries, displays a one-line "**Last session:**" recap of the last 10 first, then the progress table. Then offers the three modes — chaining the open tasks, picking one yourself, or hammering the remaining ones — and waits. Plan fully checked: no mode is offered, the question is left open.
 
 ---
 

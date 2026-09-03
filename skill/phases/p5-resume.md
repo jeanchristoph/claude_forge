@@ -11,8 +11,11 @@
 5. Lire `@.forge/branch/<BRANCH>/plan.md`
 6. Vérifier les seuils d'historisation (section « Historisation ») — unique contrôle de la session.
 7. Afficher le tableau d'avancement (format ci-dessous).
-8. Poser le choix du mode d'exécution avec `AskUserQuestion` — jamais une question en texte libre.
-   - `header` : `Mode` · trois options, dans cet ordre, quel que soit l'état du plan :
+8. **Aucune tâche ouverte** (plan intégralement `[x]`) → ne proposer aucun mode d'exécution : ni enchaînement, ni tâche isolée, ni frappe. Demander en une ligne quoi faire ensuite, puis STOP.
+   > "Plan complete — what do we do next?"
+
+9. **Au moins une tâche ouverte** → poser le choix du mode d'exécution avec `AskUserQuestion` — jamais une question en texte libre.
+   - `header` : `Mode` · trois options, dans cet ordre :
      - `Chain the tasks (recommended)` → "Work through every open task in order, one after another, without stopping between them."
      - `Pick a task` → "Choose which task we tackle now."
      - `Hammer the plan` → "Dispatch every open task to sub-agents in one sequence — each task tested, then reviewed by three adversarial sub-agents."

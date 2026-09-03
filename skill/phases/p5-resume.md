@@ -11,8 +11,8 @@
 5. Lire `@.forge/branch/<BRANCH>/plan.md`
 6. Vérifier les seuils d'historisation (section « Historisation ») — unique contrôle de la session.
 7. Afficher le tableau d'avancement (format ci-dessous).
-8. **Aucune tâche ouverte** (plan intégralement `[x]`) → ne proposer aucun mode d'exécution : ni enchaînement, ni tâche isolée, ni frappe. Demander en une ligne quoi faire ensuite, puis STOP.
-   > "Plan complete — what do we do next?"
+8. **Aucune tâche ouverte** — une `[!] blocked` n'est pas ouverte → aucun mode proposé. Demander en une ligne quoi faire ensuite, puis STOP.
+   > "Nothing open — what do we do next?"
 
 9. **Au moins une tâche ouverte** → poser le choix du mode d'exécution avec `AskUserQuestion` — jamais une question en texte libre.
    - `header` : `Mode` · trois options, dans cet ordre :

@@ -148,7 +148,7 @@ Les tâches L/XL incluent un bloc de décomposition commenté (`T1.1`, `T1.2`, �
 ### État 5 — Actif
 **Condition :** brief + plan présents
 
-Lit `coding-standards.md` et les fichiers en silence. Si `log.md` contient des entrées, affiche d'abord un récapitulatif "**Last session :**" des 10 dernières en une ligne, puis le tableau d'avancement. Propose ensuite les trois modes — enchaîner les tâches ouvertes, en choisir une, ou frapper les restantes — et attend. Plan intégralement coché : aucun mode proposé, la question est ouverte.
+Lit `coding-standards.md` et les fichiers en silence. Si `log.md` contient des entrées, affiche d'abord un récapitulatif "**Last session :**" des 10 dernières en une ligne, puis le tableau d'avancement. Propose ensuite les trois modes — enchaîner les tâches ouvertes, en choisir une, ou frapper les restantes — et attend. Aucune tâche ouverte : aucun mode proposé, la question est ouverte.
 
 ---
 

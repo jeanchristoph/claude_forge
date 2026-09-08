@@ -1,7 +1,7 @@
 ---
 name: forge
 description: Workflow de développement par branche. Brief validé, plan structuré, suivi en temps réel.
-disable-model-invocation: true
+disable-model-invocation: false
 ---
 
 Always respond in the user's language.

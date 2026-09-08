@@ -39,13 +39,13 @@
 **Silencieuse (automatique)** — après tâche terminée ou événement notable :
 - Cocher `[x]`, ajouter note max 1 ligne, marquer `[!]` si bloqué.
 
-**Substantielle (confirmation obligatoire)** — annoncer et attendre "ok" avant d'appliquer :
+**Substantielle (confirmation obligatoire)** — décrire la modification, puis poser le choix avec `AskUserQuestion` — `header` : `Plan`, options `Apply` / `Leave as is` — avant d'appliquer :
 - Ajouter/supprimer une tâche
 - Modifier l'ordre ou les dépendances
 - Changer l'effort estimé
 - Réécrire la description
 
-> "I want to update the plan: [description]. OK?"
+⚠️ La modification est décrite en clair avant la question — jamais réduite à l'intitulé d'une option.
 
 **Tâche L/XL** — avant de démarrer, décomposer en micro-étapes et écrire `plan.md` :
 `[ ] T2.1 — ...` · `[ ] T2.2 — ...`
@@ -77,10 +77,9 @@ Le brief est vivant. Les changements de scope sont gérés par la **Surveillance
 
 **Réaction — dans l'ordre :**
 1. Logger le choix retenu dans LOG (règle ci-dessus).
-2. Si le choix dépasse le périmètre de cette branche (règle générale, pas spécifique au ticket) → en tirer une règle concise et programmatique, puis proposer :
-   > "This choice looks reusable beyond this branch. Add as a rule to global CLAUDE.md? → [règle proposée]"
-3. **Sur confirmation** → ajouter la règle à `~/.claude/CLAUDE.md` (section existante pertinente ou nouvelle section courte). Jamais d'écriture sans validation explicite.
-4. **Sur refus** → rester local au brief, ne jamais reproposer plus tard pour la même décision.
+2. Si le choix dépasse le périmètre de cette branche (règle générale, pas spécifique au ticket) → en tirer une règle concise et programmatique, l'afficher telle qu'elle serait écrite, puis poser le choix avec `AskUserQuestion` — `header` : `Global rule`, options `Add to CLAUDE.md` / `Keep it local`.
+3. **Sur `Add to CLAUDE.md`** → ajouter la règle à `~/.claude/CLAUDE.md` (section existante pertinente ou nouvelle section courte). Jamais d'écriture sans validation explicite.
+4. **Sur `Keep it local`** → rester local au brief, ne jamais reproposer plus tard pour la même décision.
 
 ---
 
@@ -95,17 +94,17 @@ Le brief est vivant. Les changements de scope sont gérés par la **Surveillance
 
 ### Réaction — dans l'ordre :
 
-1. **Signaler** la détection clairement :
-   > "This request isn't in the current plan. Want me to add it?"
+1. **Signaler** la détection clairement, décrire la tâche telle qu'elle entrerait au plan, puis poser le choix avec `AskUserQuestion` — `header` : `Scope`, options `Add to the plan` / `Handle it off-plan` :
+   > "This request isn't in the current plan."
 
-2. **Si confirmation** ("ok", "yes", "oui") :
+2. **Si `Add to the plan`** :
    - Appliquer la mise à jour **substantielle** du plan (tâche ajoutée, effort estimé, position dans la séquence)
-   - Si la demande change significativement le scope global → proposer aussi de mettre à jour le brief :
-     > "This also changes the project scope. Should I update the brief?"
+   - Si la demande change significativement le scope global → poser aussi le choix avec `AskUserQuestion` — `header` : `Brief`, options `Update the brief` / `Plan only` :
+     > "This also changes the project scope."
    - Écrire `.forge/branch/<BRANCH>/plan.md` après validation
    - Écrire `.forge/branch/<BRANCH>/brief.md` si scope mis à jour
 
-3. **Si refus** ("non", "no", "ignore") :
+3. **Si `Handle it off-plan`** :
    - Traiter la demande sans modifier le plan
    - Continuer normalement
 
@@ -123,10 +122,9 @@ Le brief est vivant. Les changements de scope sont gérés par la **Surveillance
 1. Constituer la liste des tâches : tâche citée → elle seule ; aucune tâche citée → toutes les tâches `[ ]` du plan, dans l'ordre. Liste vide → "Nothing to hammer — every task is done." et STOP.
 2. Partitionner par le champ `Files` de chaque tâche : fichiers disjoints → tâches parallèles, un worktree git par tâche ; fichiers en intersection → même groupe, traité séquentiellement.
 3. Afficher le tableau de frappe (format ci-dessous).
-4. Demander une confirmation unique, couvrant toute la séquence :
-   > Run the hammering? OK?
-5. **Sur refus** → n'exécuter aucune action. STOP — ne pas continuer.
-6. **Sur confirmation** → exécuter la cellule de chaque tâche (ci-dessous), sans validation intermédiaire.
+4. Poser une confirmation unique couvrant toute la séquence, avec `AskUserQuestion` — `header` : `Hammer`, options `Run the hammering` / `Cancel`.
+5. **Sur `Cancel`** → n'exécuter aucune action. STOP — ne pas continuer.
+6. **Sur `Run the hammering`** → exécuter la cellule de chaque tâche (ci-dessous), sans validation intermédiaire.
 7. Toutes les tâches traitées → exécuter la revue transversale (ci-dessous).
 8. Rendre compte : tâches vertes, tâches `[!] blocked` avec leur raison, constats de la revue transversale.
 
@@ -147,7 +145,7 @@ Le brief est vivant. Les changements de scope sont gérés par la **Surveillance
 ### Revue transversale
 
 Un sous-agent unique, après toutes les tâches, recevant le diff complet et `brief.md`. Objet distinct de la cellule : incohérences entre tâches, doublons, dette accumulée.
-- Constats → les présenter, demander confirmation avant toute correction.
+- Constats → les présenter, puis poser le choix avec `AskUserQuestion` — `header` : `Review`, options `Fix them` / `Leave them` — avant toute correction.
 - Aucun constat → l'indiquer en une ligne.
 
 ### Format du tableau de frappe
@@ -171,10 +169,9 @@ Dernière ligne : total des tâches et total des sous-agents, reprises exclues.
 **Réaction — dans l'ordre :**
 1. Générer automatiquement le message de commit (règles COMMITS GIT : max 150 car., pas de mention Claude) — pas de confirmation sur le message lui-même.
 2. Afficher le tableau récapitulatif des actions prévues (format ci-dessous).
-3. Demander une confirmation unique, couvrant toute la séquence :
-   > Run this sequence? OK?
-4. **Sur refus** → n'exécuter aucune action. STOP — ne pas continuer.
-5. **Sur confirmation** → exécuter la séquence entière sans validation intermédiaire, dans l'ordre : `git add`, `git commit`, `git push` sur `<BRANCH>`.
+3. Poser une confirmation unique couvrant toute la séquence, avec `AskUserQuestion` — `header` : `Engrave`, options `Run the sequence` / `Cancel`.
+4. **Sur `Cancel`** → n'exécuter aucune action. STOP — ne pas continuer.
+5. **Sur `Run the sequence`** → exécuter la séquence entière sans validation intermédiaire, dans l'ordre : `git add`, `git commit`, `git push` sur `<BRANCH>`.
 6. Aucune branche citée → passer directement à l'étape 8.
 7. Pour chaque branche citée, dans l'ordre : branche citée égale à `<BRANCH>` → ignorer sans message ; sinon → checkout de la branche, merge de `<BRANCH>` (toujours la branche de départ, jamais la branche précédente de la chaîne), push.
 8. Revenir sur `<BRANCH>`. Rendre compte : hash de commit, branches mises à jour.
@@ -203,14 +200,23 @@ Actions et détail associé — aucune autre :
 
 **Réaction — dans l'ordre :**
 
-1. **Confirmer** que le problème initial (tel que décrit dans `## Objective` du brief) est bien résolu :
-   > "Le problème initial est-il bien résolu ?"
-   Ne pas continuer sans confirmation explicite.
+1. **Confirmer** que le problème initial est bien résolu : rappeler en une ligne l'objectif tel que décrit dans `## Objective` du brief, puis poser le choix avec `AskUserQuestion` — `header` : `Closure`, options `Solved` / `Not yet`.
+   `Not yet` → demander ce qui reste, et STOP. Aucune suite sans `Solved`.
 
-2. **Sur confirmation :**
+2. **Sur `Solved` :**
    - Générer le rapport interne (ou le mettre à jour si `report.txt` existe déjà pour cette branche) : texte brut structuré, concis, logique, schématique — labels courts (ex: PROBLÈME / SOLUTION / IMPACT). **Exclure** : détails d'itérations, mentions de branche, de tests, de fichiers modifiés.
    - Rédiger intégralement dans la langue de l'utilisateur, labels compris — seul fichier produit exempté des libellés de structure figés en anglais.
-   - Présenter le rapport, demander confirmation, puis écrire `.forge/branch/<BRANCH>/report.txt`.
-   - Proposer ensuite : "Dois-je générer une réponse à un mail ?"
-     - Si oui → attendre que l'utilisateur colle le mail auquel répondre, générer une réponse au ton fluide, professionnel et pédagogique, rédigée dans la langue du mail reçu — jamais celle de l'utilisateur si elle diffère.
-     - Si non → terminer.
+   - Présenter le rapport, poser le choix avec `AskUserQuestion` — `header` : `Report`, options `Write it` / `Rework it` — puis écrire `.forge/branch/<BRANCH>/report.txt`. `Rework it` → demander ce qui doit changer, régénérer, reposer la question.
+
+3. **Publication dans ClickUp** — uniquement si `.forge/clickup.json` est présent. Fichier absent → étape entièrement silencieuse, jamais mentionnée.
+   - Lire `branch_code` dans `.forge/clickup.json` : `<BRANCH>` est le code de la tâche ClickUp, `custom_id` ou `id` selon ce champ.
+   - Vérifier la tâche par `clickup_get_task` avant tout envoi. Introuvable → le signaler, demander l'identifiant, ne jamais deviner. Sans réponse : passer à l'étape 4.
+   - Poser le choix avec `AskUserQuestion` — `header` : `ClickUp`, options `Post the comment` / `Skip`, la tâche visée nommée dans la question.
+   - **Sur `Post the comment`** → `clickup_create_task_comment` sur cette tâche, contenu de `report.txt` transmis tel quel — jamais reformulé, jamais reformaté. Rendre compte en une ligne.
+   - **Sur `Skip`** → n'envoyer rien, passer à l'étape 4 sans commentaire.
+
+   ⚠️ Action sortante : aucun envoi sans accord explicite. Le silence n'est pas un accord.
+
+4. **Réponse client** — poser le choix avec `AskUserQuestion` — `header` : `Email`, options `Draft a reply` / `Finish`.
+   - `Draft a reply` → attendre que l'utilisateur colle le mail auquel répondre, générer une réponse au ton fluide, professionnel et pédagogique, rédigée dans la langue du mail reçu — jamais celle de l'utilisateur si elle diffère.
+   - `Finish` → terminer.

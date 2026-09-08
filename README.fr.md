@@ -23,7 +23,7 @@ Le résultat : moins de mauvaises surprises, des implémentations qui restent da
 
 ### Ce que Claude_forge apporte concrètement
 
-- **Zéro code sans validation** — la règle absolue : silence ≠ accord. Le skill attend un "ok" explicite avant d'écrire quoi que ce soit.
+- **Zéro code sans validation** — la règle absolue : silence ≠ accord. Le skill attend une validation explicite avant d'écrire quoi que ce soit, posée en choix et jamais en texte libre.
 - **Contexte persistant par branche** — `brief.md` et `plan.md` sont stockés dans `.forge/branch/<BRANCH>/`, suivis en git, et relus à chaque `/forge`.
 - **Brief vivant & log** — le cadre (règles, contraintes, périmètre) va silencieusement dans la section `## Scope & rules` du brief ; les décisions et choix utilisateur sont enregistrés silencieusement dans `log.md`, sans interrompre le flux de travail.
 - **Résumé "Last session"** — à la reprise, si `log.md` contient des entrées, un récapitulatif des 10 dernières en une ligne est affiché avant le tableau d'avancement.
@@ -109,6 +109,7 @@ Fichiers générés dans chaque projet :
 .forge/                  ← suivi en git, ajouté automatiquement au premier lancement
 ├── project.md
 ├── coding-standards.md  ← conventions de code (structure, nommage, principes), complétées au fil du projet
+├── clickup.json         ← écrit par `/forge-clickup` : liste cible, branche de base, code de branche
 └── branch/<BRANCH>/
     ├── brief.md         ← `## Objective` + `## Scope & rules`
     ├── log.md           ← Journal des décisions (vivant, 10 dernières entrées lues à la reprise)
@@ -173,9 +174,22 @@ Erreur ou résultat vide (pas de dépôt git) : demande un nom de code utilisé 
 
 ---
 
+## Confirmations
+
+Toute confirmation bloquante, tout choix fermé est posé sous forme de question à choix, jamais en
+texte libre : mode d'exécution, approche architecturale, validation du plan, mise à jour
+substantielle, demande hors périmètre, propagation d'une règle globale, frappe, livraison, clôture,
+publication ClickUp, réponse client. Le refus est toujours une option explicite, et l'absence de
+réponse vaut STOP — jamais accord.
+
+Les questions ouvertes restent en texte libre, là où une liste figée ne ferait que gêner : objectif
+de la tâche, nom de code de branche, identifiant de ticket, mail à coller, quoi faire ensuite.
+
+---
+
 ## Garde de sécurité — main / master
 
-Sur `main` ou `master`, propose :
+Sur `main` ou `master`, forge pose le choix — pas une question en texte libre :
 1. Rester sur la branche → fournir un identifiant ticket (ex: `CU-123`)
 2. Créer une branche → fournir un nom
 
@@ -266,9 +280,9 @@ Après chaque input utilisateur, forge vérifie si la demande est dans le plan c
 - Modifie une contrainte technique ou fonctionnelle implicitement acceptée
 
 **Réaction :**
-1. Signaler : `"This request isn't in the current plan. Want me to add it?"`
-2. Sur confirmation → appliquer une mise à jour substantielle du plan ; si le scope change significativement, proposer aussi de mettre à jour le brief.
-3. Sur refus → traiter la demande sans toucher au plan.
+1. Signaler : `"This request isn't in the current plan."`, décrire la tâche telle qu'elle entrerait au plan, puis poser le choix — l'ajouter, ou la traiter hors plan.
+2. Ajoutée → appliquer une mise à jour substantielle du plan ; si le scope change significativement, poser aussi la question de la mise à jour du brief.
+3. Hors plan → traiter la demande sans toucher au plan.
 
 ---
 
@@ -326,7 +340,26 @@ Une ou plusieurs branches existantes, citées dans l'ordre voulu (ex : `"grave d
 
 **INVARIANT :** git opère uniquement sur le dépôt courant — jamais sur un autre dépôt ouvert en parallèle.
 
-Le message de commit est généré automatiquement — pas de confirmation dédiée sur le message lui-même. Avant toute exécution, Forge affiche un tableau récapitulatif des actions git prévues : add, commit avec son message, push, puis une ligne par merge (`<BRANCH>` → cible), et une dernière ligne pour le retour sur `<BRANCH>`. Les changements de branche intermédiaires ne sont jamais listés. Aucune commande git — `git add` compris — n'est lancée avant la confirmation. Un seul "ok" couvre toute la séquence : add, commit, push, puis chaque merge, sans validation intermédiaire.
+Le message de commit est généré automatiquement — pas de confirmation dédiée sur le message lui-même. Avant toute exécution, Forge affiche un tableau récapitulatif des actions git prévues : add, commit avec son message, push, puis une ligne par merge (`<BRANCH>` → cible), et une dernière ligne pour le retour sur `<BRANCH>`. Les changements de branche intermédiaires ne sont jamais listés. Aucune commande git — `git add` compris — n'est lancée avant la confirmation. Une seule confirmation couvre toute la séquence : add, commit, push, puis chaque merge, sans validation intermédiaire.
+
+---
+
+## Clôture de tâche — rapport & réponse client
+
+Déclenchée quand toutes les tâches sont `[x]` et que tu as validé les tests, ou dès que tu annonces
+que c'est terminé.
+
+Forge confirme d'abord que le problème initial est bien résolu, puis écrit `report.txt` dans le
+dossier de la branche : texte brut, structuré et schématique, dans ta langue — labels compris.
+C'est le seul fichier généré exempté des libellés de structure figés en anglais.
+
+Si `.forge/clickup.json` existe, Forge propose ensuite de publier ce rapport en commentaire sur la
+tâche ClickUp dont le code est le nom de la branche. La tâche est relue avant tout envoi, jamais
+devinée, et rien ne part sans accord explicite. Sans ce fichier, l'étape reste entièrement
+silencieuse.
+
+Enfin, il propose de rédiger une réponse à un mail client — rédigée dans la langue du mail reçu,
+jamais la tienne si elles diffèrent.
 
 ---
 

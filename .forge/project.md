@@ -46,8 +46,10 @@ Fichiers générés dans **chaque projet cible** par le skill (pas dans ce dép�
 .forge/
 ├── project.md
 ├── coding-standards.md
+├── clickup.json          (écrit par forge-clickup : liste cible, branche de base, code de branche)
 └── branch/<BRANCH>/
     ├── brief.md
+    ├── log.md
     ├── plan.md
     ├── report.txt
     └── explanation-*.md

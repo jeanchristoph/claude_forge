@@ -1,5 +1,7 @@
 # Log — dev
 
+- [2026-09-08] Confirmations du skill portées en choix `AskUserQuestion` sur tout le périmètre, pas seulement la clôture — un choix fermé posé en texte libre laisse passer le silence pour un accord.
+
 - [2026-09-07] Historisation supprimée du skill plutôt que ses seuils relevés — un plan scindé perd la vue d'ensemble que l'utilisateur relit, la lecture bornée du log suffit à tenir le coût de reprise.
 
 - [2026-08-12] Section « Frappe » rédigée d'un bloc plutôt que sous-étape par sous-étape — une section de skill partielle est inexploitable, contrairement à du code où l'incrément tient debout.

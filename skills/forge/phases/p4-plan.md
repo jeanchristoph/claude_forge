@@ -11,11 +11,10 @@
    I have [N] possible approaches:
    **Option A — [Name]** : [1-2 sentences] | + ... | - ...
    **Option B — [Name]** : [1-2 sentences] | + ... | - ...
-   Which one do we go with?
    ```
-   Attendre le choix avant de continuer.
+   Puis poser le choix avec `AskUserQuestion` — `header` : `Approach`, une option par approche (label `Option X — Name`, description = son compromis), quatre au maximum. Attendre le choix avant de continuer.
 6. Générer le plan (format ci-dessous) et le présenter.
-7. Itérer si ajustements demandés.
+7. Poser le choix avec `AskUserQuestion` — `header` : `Plan`, options `Validate` / `Adjust`. `Adjust` → demander quoi changer, itérer, reposer la question.
 8. Écrire `.forge/branch/<BRANCH>/plan.md` après validation.
 9. Si `project.md` contient uniquement `<!-- pending -->` → le compléter (stack, périmètre, conventions du plan).
 10. Continuer directement à l'État 5 : lire et exécuter `phases/p5-resume.md`.

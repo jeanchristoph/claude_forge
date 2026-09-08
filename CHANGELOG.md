@@ -10,6 +10,14 @@ Every format change so far is absorbed by an automatic migration — upgrading r
 
 ## [Unreleased]
 
+### Added
+
+- Report published to ClickUp on task closure. Once `report.txt` is written, `forge` offers to post it as a comment on the ClickUp task whose code is the branch name: the task is read back before anything is sent, never guessed, and nothing goes out without an explicit yes. The step only exists when `.forge/clickup.json` is present — without that file, closure behaves exactly as before.
+
+### Changed
+
+- Confirmations are asked as selectable questions, never as free text. The rule is now part of the skill's absolute rule and covers every blocking confirmation and every closed choice: the `main`/`master` guard, architectural approach, objective and plan validation, substantial plan updates, out-of-scope requests, global rule propagation, hammering, shipping, closure, ClickUp posting and client reply. Refusal is always an explicit option, and no answer means STOP. Open questions stay free text — the goal of the task, a branch code name, a ticket ID, the email to paste, what to do next.
+
 ## [0.9.0] — 2026-09-08
 
 ### Added

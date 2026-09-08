@@ -215,6 +215,33 @@ Détecté hors plan initial — ajouté sur confirmation.
 Détecté hors plan initial — ajouté sur confirmation.
 [x]
 
+### T24 — Clôture : rapport publié en commentaire ClickUp
+**Effort :** S
+**Fichiers :** `skills/forge/phases/p5-resume.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`, `.forge/project.md`
+**Description :** À la clôture, le rapport interne reste enfermé dans `.forge/` alors que la tâche ClickUp qui a ouvert la branche est l'endroit où il est attendu.
+- Nouvelle étape dans « Clôture de tâche — rapport & réponse client », après l'écriture de `.forge/branch/<BRANCH>/report.txt` et avant la proposition de réponse mail : `.forge/clickup.json` présent → proposer la publication du rapport en commentaire sur la tâche ClickUp.
+- `clickup.json` absent → étape entièrement silencieuse, jamais mentionnée. Le skill `forge` ne dépend pas de `forge-clickup` : il en constate seulement la configuration.
+- Tâche cible : `<BRANCH>` lue comme le code ClickUp (`custom_id` ou `id` selon `branch_code`), vérifiée par `clickup_get_task` avant tout envoi. Introuvable → le signaler et demander l'identifiant, jamais deviner.
+- Publication par `clickup_create_task_comment`, contenu de `report.txt` transmis tel quel — jamais reformulé ni reformaté.
+- ⚠️ Action sortante : confirmation explicite obligatoire, aucun envoi sans accord. Refus → STOP silencieux, la clôture se poursuit sur la réponse mail.
+- Compte rendu en une ligne après publication.
+Détecté hors plan initial — ajouté sur confirmation.
+[x]
+
+### T25 — Confirmations posées en choix, jamais en texte libre
+**Effort :** M
+**Fichiers :** `skills/forge/SKILL.md`, `skills/forge/phases/p2-brief.md`, `skills/forge/phases/p4-plan.md`, `skills/forge/phases/p5-resume.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description :** Le skill pose ses confirmations bloquantes en texte libre (« Run this sequence? OK? », « Le problème initial est-il bien résolu ? ») alors que ce sont des choix fermés — seule l'étape 8 de la reprise utilise `AskUserQuestion`.
+- Règle générale posée dans `SKILL.md` : toute confirmation binaire bloquante et tout choix fermé passent par `AskUserQuestion`. Les questions ouvertes (objectif de la tâche, nom de code de branche, « quoi faire ensuite ») restent en texte libre — un choix fermé sur une réponse libre serait une contrainte, pas une aide.
+- Occurrences à convertir, avec leur `header` : garde `main`/`master` de `SKILL.md` (`Branch`) · choix d'approche architecturale, étape 5 de `p4-plan.md` (`Approach`) · dans `p5-resume.md` : mise à jour substantielle du plan (`Plan`), demande hors périmètre (`Scope`), propagation vers `CLAUDE.md` global (`Global rule`), frappe (`Hammer`), livraison (`Engrave`), corrections issues de la revue transversale (`Review`), clôture — problème résolu (`Closure`), écriture du rapport (`Report`), réponse mail (`Email`), publication ClickUp de T24 (`ClickUp`).
+- Le complément saisi après un choix reste en texte libre : identifiant de ticket, nom de branche, mail à coller.
+- ⚠️ La règle absolue est inchangée : refus ou absence de réponse → STOP. Un choix n'est jamais une validation implicite, l'option de refus est toujours explicite.
+- ⚠️ `AskUserQuestion` plafonne à quatre options : au-delà, enchaîner une seconde question — mécanique déjà en place pour `Pick a task`.
+- Documentation : `README.md`, `README.fr.md`, `CHANGELOG.md` sous `[Unreleased]`.
+Détecté hors plan initial — ajouté sur confirmation.
+Note : `p2-brief.md` ajouté aux fichiers — la validation de l'objectif était aussi posée en texte libre.
+[x]
+
 ## Risques
 - L'identification du premier bloc (contraintes) repose sur la mise en forme existante (groupe contigu en tête de `## Décisions & Contraintes`), pas sur une analyse sémantique — la migration est un simple déplacement, sans reformulation.
 
@@ -244,4 +271,6 @@ Détecté hors plan initial — ajouté sur confirmation.
 | T21 — README scindé par langue | S | [x] |
 | T22 — Commande `frappe` / `hammer` | L | [x] |
 | T23 — Supprimer l'historisation des fichiers | S | [x] |
+| T24 — Rapport publié en commentaire ClickUp | S | [x] |
+| T25 — Confirmations posées en choix | M | [x] |
 | **Total estimé** | **~22h** | |

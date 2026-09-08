@@ -24,7 +24,7 @@ The result: fewer surprises, implementations that stay within the defined scope,
 
 ### What Claude_forge brings concretely
 
-- **Zero code without validation** — the absolute rule: silence ≠ agreement. The skill waits for an explicit "ok" before writing anything.
+- **Zero code without validation** — the absolute rule: silence ≠ agreement. The skill waits for an explicit go-ahead before writing anything, asked as a choice and never as free text.
 - **Persistent per-branch context** — `brief.md` and `plan.md` are stored in `.forge/branch/<BRANCH>/`, tracked in git, and re-read on every `/forge`.
 - **Living brief & log** — rules, constraints and scope go silently into the brief's `## Scope & rules` section; decisions and user choices are logged silently into `log.md`, without interrupting the workflow.
 - **Last session summary** — on resume, if `log.md` has entries, a one-line recap of the last 10 is displayed before the progress table.
@@ -110,6 +110,7 @@ Files generated in each project:
 .forge/                  ← tracked in git, added automatically on first run
 ├── project.md
 ├── coding-standards.md  ← coding conventions (structure, naming, principles), completed over time
+├── clickup.json         ← written by `/forge-clickup`: target list, base branch, branch code
 └── branch/<BRANCH>/
     ├── brief.md         ← `## Objective` + `## Scope & rules`
     ├── log.md           ← Decisions log (living log, last 10 entries read on resume)
@@ -174,9 +175,21 @@ Error or empty result (no git repo): asks for a code name used as `<BRANCH>`. No
 
 ---
 
+## Confirmations
+
+Every blocking confirmation and every closed choice is asked as a selectable question, never as free
+text: execution mode, architectural approach, plan validation, substantial plan updates, out-of-scope
+requests, global rule propagation, hammering, shipping, closure, ClickUp posting, client reply.
+Refusal is always an explicit option, and no answer means STOP — never consent.
+
+Open questions stay free text, where a fixed list would only get in the way: the goal of the task, a
+branch code name, a ticket ID, the email to paste, what to do next.
+
+---
+
 ## Safety guard — main / master
 
-On `main` or `master`, offers:
+On `main` or `master`, forge asks — as a choice, not free text:
 1. Stay on the branch → provide a ticket ID (e.g. `CU-123`)
 2. Create a branch → provide a name
 
@@ -267,9 +280,9 @@ After each user input, forge checks whether the request falls inside the current
 - Changes an implicitly accepted technical or functional constraint
 
 **Reaction:**
-1. Flag it: `"This request isn't in the current plan. Want me to add it?"`
-2. On confirmation → apply a substantial plan update; if scope changes significantly, offer to update the brief too.
-3. On refusal → handle the request without touching the plan.
+1. Flag it: `"This request isn't in the current plan."`, describe the task as it would enter the plan, then ask — add it, or handle it off-plan.
+2. Added → apply a substantial plan update; if scope changes significantly, ask about updating the brief too.
+3. Off-plan → handle the request without touching the plan.
 
 ---
 
@@ -324,7 +337,24 @@ One or more existing branches, named in the desired order (e.g. `"grave dev"`, `
 
 **INVARIANT:** git operates only on the current repo — never on another repo open in parallel.
 
-The commit message is generated automatically — no separate confirmation on the message itself. Before anything runs, Forge prints a recap table of the planned git actions: add, commit with its message, push, then one row per merge (`<BRANCH>` → target), and a final row for the return to `<BRANCH>`. Intermediate branch switches are never listed. No git command — `git add` included — runs before you confirm. A single "ok" covers the whole sequence: add, commit, push, then every merge, with no further prompt in between.
+The commit message is generated automatically — no separate confirmation on the message itself. Before anything runs, Forge prints a recap table of the planned git actions: add, commit with its message, push, then one row per merge (`<BRANCH>` → target), and a final row for the return to `<BRANCH>`. Intermediate branch switches are never listed. No git command — `git add` included — runs before you confirm. A single confirmation covers the whole sequence: add, commit, push, then every merge, with no further prompt in between.
+
+---
+
+## Task closure — report & client reply
+
+Triggered once every task is `[x]` and you've validated the tests, or as soon as you say it's done.
+
+Forge first confirms the original goal is actually solved, then writes `report.txt` in the branch
+folder: plain text, structured and schematic, in your language — labels included. It's the only
+generated file exempt from the English structural labels.
+
+If `.forge/clickup.json` exists, Forge then offers to post that report as a comment on the ClickUp
+task whose code is the branch name. The task is fetched before anything is sent, never guessed, and
+nothing goes out without an explicit yes. Without that file, the step stays entirely silent.
+
+Last, it offers to draft a reply to a client email — written in the language of the email received,
+never yours if they differ.
 
 ---
 

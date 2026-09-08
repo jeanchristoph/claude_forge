@@ -66,6 +66,11 @@ Si erreur ou vide (pas de git) : demander un nom de code (ex: `refonte-auth`), l
 
 **Jamais une ligne de code sans confirmation explicite** ("ok", "go", "let's do it"). Silence ≠ validation.
 
+**Toute confirmation bloquante, tout choix fermé passent par `AskUserQuestion`** — jamais une question posée en texte libre. Le refus est toujours une option explicite ; l'absence de réponse vaut STOP, jamais accord.
+
+⚠️ Les questions ouvertes restent en texte libre : objectif de la tâche, nom de code de branche, identifiant de ticket, mail à coller, « quoi faire ensuite ». Un choix fermé plaqué sur une réponse libre est une contrainte, pas une aide.
+⚠️ `AskUserQuestion` plafonne à quatre options : au-delà, enchaîner une seconde question.
+
 ---
 
 ## PAS DE COPYRIGHT CLAUDE NULLE PART
@@ -97,14 +102,12 @@ Si erreur ou vide (pas de git) : demander un nom de code (ex: `refonte-auth`), l
 ## Garde de sécurité — exécuter juste après la migration ci-dessus
 
 Si BRANCH est `main` ou `master` :
-- Demander à l'humain :
-  > "You're on `<BRANCH>`. How do you want to proceed?
-  > **1)** Stay on `<BRANCH>` — give me the ticket ID (e.g. CU-123, PROJ-456) to use as reference.
-  > **2)** Create a branch — give me the name and I'll create it."
-- Attendre la réponse.
-- **Si choix 1** : utiliser l'identifiant fourni à la place de `<BRANCH>` dans tous les chemins pour la suite.
-- **Si choix 2** : exécuter `!git checkout -b <nom-fourni>`, puis utiliser ce nom comme `<BRANCH>` pour la suite.
-- Si l'humain ne répond pas clairement : "Choice required. Operation cancelled." et STOP.
+- Poser le choix avec `AskUserQuestion` — `header` : `Branch`, deux options :
+  - `Stay on <BRANCH>` → "Work under a ticket ID used as reference — I'll ask you for it."
+  - `Create a branch` → "I create a new branch and switch to it — I'll ask you for the name."
+- **Si `Stay on <BRANCH>`** : demander l'identifiant en texte libre (ex: CU-123, PROJ-456), puis l'utiliser à la place de `<BRANCH>` dans tous les chemins pour la suite.
+- **Si `Create a branch`** : demander le nom en texte libre, exécuter `!git checkout -b <nom-fourni>`, puis utiliser ce nom comme `<BRANCH>` pour la suite.
+- Sans réponse : "Choice required. Operation cancelled." et STOP.
 
 ---
 

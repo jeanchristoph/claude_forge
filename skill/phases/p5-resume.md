@@ -9,12 +9,11 @@
    - Des entrées existent → retenir les 10 plus récentes parmi les lignes lues, afficher un résumé en tête : "**Last session :** [points clés]"
    - ⚠️ Jamais de lecture non bornée de `log.md` — la taille du fichier ne doit jamais peser sur le coût de la reprise.
 5. Lire `@.forge/branch/<BRANCH>/plan.md`
-6. Vérifier les seuils d'historisation (section « Historisation ») — unique contrôle de la session.
-7. Afficher le tableau d'avancement (format ci-dessous).
-8. **Aucune tâche ouverte** — une `[!] blocked` n'est pas ouverte → aucun mode proposé. Demander en une ligne quoi faire ensuite, puis STOP.
+6. Afficher le tableau d'avancement (format ci-dessous).
+7. **Aucune tâche ouverte** — une `[!] blocked` n'est pas ouverte → aucun mode proposé. Demander en une ligne quoi faire ensuite, puis STOP.
    > "Nothing open — what do we do next?"
 
-9. **Au moins une tâche ouverte** → poser le choix du mode d'exécution avec `AskUserQuestion` — jamais une question en texte libre.
+8. **Au moins une tâche ouverte** → poser le choix du mode d'exécution avec `AskUserQuestion` — jamais une question en texte libre.
    - `header` : `Mode` · trois options, dans cet ordre :
      - `Chain the tasks (recommended)` → "Work through every open task in order, one after another, without stopping between them."
      - `Pick a task` → "Choose which task we tackle now."
@@ -67,32 +66,6 @@ Le brief est vivant. Les changements de scope sont gérés par la **Surveillance
 - **Choix utilisateur quand Claude a proposé plusieurs options** (ex: "Option B retenue — raison")
 
 ⚠️ Entrée insérée en tête de `log.md`, juste sous le titre — jamais en fin de fichier. La lecture bornée de l'étape 4 suppose les entrées les plus récentes en haut.
-
----
-
-## Historisation
-
-**Seuils :** log.md 90 000 car · plan.md 20 000 car. Vérifier une seule fois par session, à la reprise (étape 6 des « Actions — dans l'ordre »).
-
-⚠️ Aucune vérification déclenchée par une écriture en cours de session — le développement n'est jamais interrompu.
-⚠️ `plan.md` injecté intégralement via `@` → son seuil gouverne le coût de reprise. `log.md` lu borné → son seuil ne gouverne que la lisibilité et le coût de l'agent d'archivage.
-
-**Si dépassé** → proposer, confirmation obligatoire :
-> "`<fichier>` dépasse <N> caractères. Historiser vers `<fichier>_AAAAMMJJ.md` ? OK ?"
-
-**Sur confirmation** → déléguer à un agent en tâche de fond (`run_in_background: true`) : lecture, écriture, sans bloquer le développement en cours.
-
-**plan.md** — historisation restreinte à la section `## Tasks` :
-- Garder les 10 tâches `[x]` les plus récentes, déplacer les plus anciennes.
-- Tâche portant un sous-élément `[ ]`/`[~]`/`[!]` → ne jamais archiver.
-- `## Summary` et `## Risks` intactes — le tableau récapitulatif conserve toutes ses lignes, y compris celles des tâches archivées.
-- Déplacement verbatim des tâches — aucune reformulation, aucun marqueur d'archive.
-
-**log.md** :
-- Garder les 10 entrées les plus récentes, déplacer les plus anciennes.
-- Déplacement verbatim — aucune reformulation.
-
-**Nommage :** `plan_AAAAMM.md` / `log_AAAAMM.md`, même dossier. Fichier du jour existant → compléter, jamais dupliquer. Toujours au-dessus du seuil après → archiver l'entrée suivante par ancienneté.
 
 ---
 

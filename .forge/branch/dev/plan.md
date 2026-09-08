@@ -203,6 +203,18 @@ Détecté hors plan initial — ajouté sur confirmation.
 Détecté hors plan initial — ajouté sur confirmation.
 [x]
 
+### T23 — Supprimer l'historisation des fichiers
+**Effort :** S
+**Fichiers :** `skill/phases/p5-resume.md`, `skill/phases/p2-brief.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description :** L'historisation disparaît entièrement du skill : plus aucun fichier n'est scindé.
+- `p5-resume.md` : section « Historisation » supprimée (seuils `log.md` 90 000 / `plan.md` 20 000, proposition et confirmation, agent d'archivage en tâche de fond, nommage `plan_AAAAMM.md` / `log_AAAAMM.md`, règles de conservation des 10 dernières entrées). Étape 6 des « Actions — dans l'ordre » retirée, étapes suivantes renumérotées 6-7-8.
+- `p2-brief.md` : mention « jamais historisée » sur `## Scope & rules` retirée, devenue sans objet.
+- `README.md` / `README.fr.md` : trois mentions « never archived » / « jamais archivé » retirées.
+- ⚠️ Conservé : la lecture bornée de `log.md` (`Read` avec `limit: 40`), seul garde-fou restant sur le coût de reprise — elle ne dépendait pas de l'historisation.
+- ⚠️ `plan.md` reste injecté intégralement via `@` : sans seuil ni archivage, sa croissance pèse désormais sans limite sur chaque reprise. Coût assumé.
+Détecté hors plan initial — ajouté sur confirmation.
+[x]
+
 ## Risques
 - L'identification du premier bloc (contraintes) repose sur la mise en forme existante (groupe contigu en tête de `## Décisions & Contraintes`), pas sur une analyse sémantique — la migration est un simple déplacement, sans reformulation.
 
@@ -231,4 +243,5 @@ Détecté hors plan initial — ajouté sur confirmation.
 | T20 — Démo animée générée par VHS | M | [x] |
 | T21 — README scindé par langue | S | [x] |
 | T22 — Commande `frappe` / `hammer` | L | [x] |
+| T23 — Supprimer l'historisation des fichiers | S | [x] |
 | **Total estimé** | **~22h** | |

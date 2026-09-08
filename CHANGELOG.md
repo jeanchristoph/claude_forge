@@ -10,6 +10,10 @@ Every format change so far is absorbed by an automatic migration — upgrading r
 
 ## [Unreleased]
 
+### Removed
+
+- Automatic file archiving. Threshold checks on `log.md` and `plan.md`, the archiving proposal and the `plan_AAAAMM.md` / `log_AAAAMM.md` files are gone: no file is ever split anymore. The bounded read of `log.md` stays — it is what keeps resume cost flat.
+
 ## [0.8.0] — 2026-08-12
 
 ### Added

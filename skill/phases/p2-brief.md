@@ -2,7 +2,7 @@
 
 ## Structure du brief
 
-`brief.md` contient deux sections, dans cet ordre : `## Objective` (le but de la tâche) puis `## Scope & rules` (règles immuables, contraintes techniques, périmètre et hors périmètre valables pour toute la durée de la branche — vide à la création, jamais historisée). Les décisions ponctuelles vont dans LOG, jamais dans `brief.md`.
+`brief.md` contient deux sections, dans cet ordre : `## Objective` (le but de la tâche) puis `## Scope & rules` (règles immuables, contraintes techniques, périmètre et hors périmètre valables pour toute la durée de la branche — vide à la création). Les décisions ponctuelles vont dans LOG, jamais dans `brief.md`.
 
 ⚠️ `## Objective` et `## Scope & rules` sont des libellés fixes, écrits tels quels quelle que soit la langue de l'utilisateur — seul le contenu des sections suit sa langue.
 

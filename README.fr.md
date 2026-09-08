@@ -25,7 +25,7 @@ Le résultat : moins de mauvaises surprises, des implémentations qui restent da
 
 - **Zéro code sans validation** — la règle absolue : silence ≠ accord. Le skill attend un "ok" explicite avant d'écrire quoi que ce soit.
 - **Contexte persistant par branche** — `brief.md` et `plan.md` sont stockés dans `.forge/branch/<BRANCH>/`, suivis en git, et relus à chaque `/forge`.
-- **Brief vivant & log** — le cadre (règles, contraintes, périmètre) va silencieusement dans la section `## Scope & rules` du brief (jamais archivée) ; les décisions et choix utilisateur sont enregistrés silencieusement dans `log.md`, sans interrompre le flux de travail.
+- **Brief vivant & log** — le cadre (règles, contraintes, périmètre) va silencieusement dans la section `## Scope & rules` du brief ; les décisions et choix utilisateur sont enregistrés silencieusement dans `log.md`, sans interrompre le flux de travail.
 - **Résumé "Last session"** — à la reprise, si `log.md` contient des entrées, un récapitulatif des 10 dernières en une ligne est affiché avant le tableau d'avancement.
 - **Décomposition des tâches L/XL** — les grandes tâches sont découpées en micro-étapes dans `plan.md` avant de démarrer l'implémentation.
 - **Détection hors périmètre** — les demandes hors plan sont signalées ; l'utilisateur confirme si elles doivent être ajoutées ou ignorées.
@@ -104,7 +104,7 @@ Fichiers générés dans chaque projet :
 ├── project.md
 ├── coding-standards.md  ← conventions de code (structure, nommage, principes), complétées au fil du projet
 └── branch/<BRANCH>/
-    ├── brief.md         ← `## Objective` + `## Scope & rules` (jamais archivé)
+    ├── brief.md         ← `## Objective` + `## Scope & rules`
     ├── log.md           ← Journal des décisions (vivant, 10 dernières entrées lues à la reprise)
     ├── plan.md
     ├── report.txt       ← généré à la clôture de tâche
@@ -239,7 +239,7 @@ Chaque installeur retire toutes les entrées forge existantes avant d'ajouter la
 
 Le brief est un document vivant. Les changements de scope passent par la **Détection hors périmètre** (voir ci-dessous).
 
-**Élément de cadre** (valable pour toute la durée de la branche) → écrit silencieusement dans la section `## Scope & rules` du brief, jamais archivée :
+**Élément de cadre** (valable pour toute la durée de la branche) → écrit silencieusement dans la section `## Scope & rules` du brief :
 - Contrainte technique découverte en cours de tâche
 - Règle immuable posée par l'utilisateur
 - Remarque utilisateur précisant durablement le périmètre ou le hors périmètre

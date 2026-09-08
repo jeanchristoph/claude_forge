@@ -26,7 +26,7 @@ The result: fewer surprises, implementations that stay within the defined scope,
 
 - **Zero code without validation** — the absolute rule: silence ≠ agreement. The skill waits for an explicit "ok" before writing anything.
 - **Persistent per-branch context** — `brief.md` and `plan.md` are stored in `.forge/branch/<BRANCH>/`, tracked in git, and re-read on every `/forge`.
-- **Living brief & log** — rules, constraints and scope go silently into the brief's `## Scope & rules` section (never archived); decisions and user choices are logged silently into `log.md`, without interrupting the workflow.
+- **Living brief & log** — rules, constraints and scope go silently into the brief's `## Scope & rules` section; decisions and user choices are logged silently into `log.md`, without interrupting the workflow.
 - **Last session summary** — on resume, if `log.md` has entries, a one-line recap of the last 10 is displayed before the progress table.
 - **L/XL task decomposition** — large tasks are broken into micro-steps in `plan.md` before implementation starts.
 - **Out-of-scope detection** — requests outside the current plan are flagged; user confirms whether to add them or ignore them.
@@ -105,7 +105,7 @@ Files generated in each project:
 ├── project.md
 ├── coding-standards.md  ← coding conventions (structure, naming, principles), completed over time
 └── branch/<BRANCH>/
-    ├── brief.md         ← `## Objective` + `## Scope & rules` (never archived)
+    ├── brief.md         ← `## Objective` + `## Scope & rules`
     ├── log.md           ← Decisions log (living log, last 10 entries read on resume)
     ├── plan.md
     ├── report.txt       ← generated on task closure
@@ -240,7 +240,7 @@ Each installer removes all existing forge entries before adding its own — no d
 
 The brief is a living document. Changes of scope go through **Out-of-scope detection** (see below).
 
-**Frame element** (holds for as long as the branch exists) → written silently into the brief's `## Scope & rules` section, never archived:
+**Frame element** (holds for as long as the branch exists) → written silently into the brief's `## Scope & rules` section:
 - Technical constraint discovered mid-task
 - Standing rule set by the user
 - User remark durably narrowing the scope

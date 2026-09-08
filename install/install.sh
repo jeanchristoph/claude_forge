@@ -4,11 +4,19 @@ set -e
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CLAUDE_DIR="$HOME/.claude"
 
-echo "► Skill..."
-SKILL_DIR="$CLAUDE_DIR/skills/forge"
-rm -rf "$SKILL_DIR"
-mkdir -p "$SKILL_DIR"
-cp -r "$ROOT/skill/" "$SKILL_DIR"
+# Un dossier sous skills/ = un skill installé, sous son propre nom.
+# Ajouter un skill n'exige aucune modification de ce script.
+echo "► Skills..."
+SKILL_NAMES=()
+for src in "$ROOT"/skills/*/; do
+  name="$(basename "$src")"
+  SKILL_NAMES+=("$name")
+  dest="$CLAUDE_DIR/skills/$name"
+  rm -rf "$dest"
+  mkdir -p "$dest"
+  cp -r "$src." "$dest/"
+  echo "  $name"
+done
 
 echo "► Hook..."
 HOOK_DIR="$CLAUDE_DIR/hooks/forge"
@@ -21,6 +29,7 @@ node -e "
 const fs = require('fs'), path = require('path');
 const H = process.env.HOME;
 const sp = path.join(H, '.claude', 'settings.json');
+const names = process.argv.slice(1);
 
 let s = {};
 try { s = JSON.parse(fs.readFileSync(sp, 'utf8')); } catch(e) {}
@@ -28,13 +37,19 @@ try { s = JSON.parse(fs.readFileSync(sp, 'utf8')); } catch(e) {}
 s.permissions = s.permissions || {};
 s.permissions.allow = s.permissions.allow || [];
 
-const rulePosix = 'Read(~/.claude/skills/forge/**)';
-const oldFwd    = 'Read(' + H + '/.claude/skills/forge/**)';
-const oldRule   = 'Read(' + H + '/.claude/skills/forge)';
-const projectRules = ['Read(/.claude/**)', 'Edit(/.claude/**)', 'Write(/.claude/**)', 'Read(/.forge/**)', 'Edit(/.forge/**)', 'Write(/.forge/**)', 'Bash(bash -c "git branch --show-current*)'];
+// Une règle par skill, plus les formes de chemin abandonnées et les règles héritées,
+// purgées de settings.json à chaque installation.
+const skillRules = names.map(n => 'Read(~/.claude/skills/' + n + '/**)');
+const oldForms   = names.flatMap(n => [
+  'Read(' + H + '/.claude/skills/' + n + '/**)',
+  'Read(' + H + '/.claude/skills/' + n + ')'
+]);
+const legacy = ['Read(/.claude/**)', 'Edit(/.claude/**)', 'Write(/.claude/**)', 'Write(/.forge/**)'];
+const stale = [...skillRules, ...oldForms, ...legacy];
+const projectRules = ['Read(/.forge/**)', 'Edit(/.forge/**)', 'Bash(bash -c \"git branch --show-current*)'];
 s.permissions.allow = s.permissions.allow
-  .filter(r => r !== rulePosix && r !== oldFwd && r !== oldRule && !projectRules.includes(r))
-  .concat(rulePosix, ...projectRules);
+  .filter(r => !stale.includes(r) && !projectRules.includes(r))
+  .concat(...skillRules, ...projectRules);
 
 s.hooks = s.hooks || {};
 s.hooks.PreCompact = s.hooks.PreCompact || [];
@@ -49,6 +64,6 @@ s.hooks.PreCompact.push({ hooks: [{ type: 'command', command: cmd, shell: 'bash'
 
 fs.writeFileSync(sp, JSON.stringify(s, null, 2));
 console.log('Settings OK.');
-"
+" "${SKILL_NAMES[@]}"
 
 echo "Done."

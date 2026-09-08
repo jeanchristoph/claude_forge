@@ -24,7 +24,7 @@ with no error until it times out.
 
 ## Rules
 
-`demo.sh` reproduces the skill's output **word for word**, taken from `skill/phases/`.
+`demo.sh` reproduces the skill's output **word for word**, taken from `skills/forge/phases/`.
 A reconstructed demo is fine; a demo showing behaviour the tool does not have is not.
 
 Check every new character on an extracted frame, never on the script alone: the

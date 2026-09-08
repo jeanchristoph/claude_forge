@@ -53,12 +53,15 @@ Both launchers sit at the repository root and delegate to `install/install.ps1` 
 
 Scripts are idempotent — re-running after an update overwrites cleanly without duplicates.
 
+The `/forge-clickup` extension additionally requires the ClickUp MCP connector to be authenticated (`/mcp` in Claude Code). No script can do this step for you: it is a browser OAuth flow.
+
 ---
 
 ## Usage
 
 ```
 /forge
+/forge-clickup    # extension: opens a ClickUp task, creates the branch, then hands over to forge
 ```
 
 ---
@@ -67,15 +70,18 @@ Scripts are idempotent — re-running after an update overwrites cleanly without
 
 ```
 forge/
-├── skill/                    → copied to ~/.claude/skills/forge/
-│   ├── SKILL.md
-│   └── phases/
-│       ├── p0-project.md          (State 0 — Project Init)
-│       ├── p1-coding-standards.md (State 1 — Coding Standards Init)
-│       ├── p2-brief.md            (State 2 — Brief)
-│       ├── p3-log.md              (State 3 — Log)
-│       ├── p4-plan.md             (State 4 — Plan)
-│       └── p5-resume.md           (State 5 — Active)
+├── skills/                   → each subfolder is copied to ~/.claude/skills/<name>/
+│   ├── forge/
+│   │   ├── SKILL.md
+│   │   └── phases/
+│   │       ├── p0-project.md          (State 0 — Project Init)
+│   │       ├── p1-coding-standards.md (State 1 — Coding Standards Init)
+│   │       ├── p2-brief.md            (State 2 — Brief)
+│   │       ├── p3-log.md              (State 3 — Log)
+│   │       ├── p4-plan.md             (State 4 — Plan)
+│   │       └── p5-resume.md           (State 5 — Active)
+│   └── forge-clickup/        → extension: ClickUp task kickoff
+│       └── SKILL.md
 ├── hooks/
 │   ├── bash/                 → copied to ~/.claude/hooks/forge/ by install.sh (Unix)
 │   │   └── forge-precompact.sh
@@ -184,8 +190,8 @@ On `main` or `master`, offers:
   "permissions": {
     "allow": [
       "Read(~/.claude/skills/forge/**)",
-      "Read(/.claude/**)", "Edit(/.claude/**)", "Write(/.claude/**)",
-      "Read(/.forge/**)", "Edit(/.forge/**)", "Write(/.forge/**)",
+      "Read(~/.claude/skills/forge-clickup/**)",
+      "Read(/.forge/**)", "Edit(/.forge/**)",
       "Bash(git branch --show-current*)"
     ]
   },
@@ -203,8 +209,8 @@ On `main` or `master`, offers:
   "permissions": {
     "allow": [
       "Read(//c/Users/{USER}/.claude/skills/forge/**)",
-      "Read(/.claude/**)", "Edit(/.claude/**)", "Write(/.claude/**)",
-      "Read(/.forge/**)", "Edit(/.forge/**)", "Write(/.forge/**)",
+      "Read(//c/Users/{USER}/.claude/skills/forge-clickup/**)",
+      "Read(/.forge/**)", "Edit(/.forge/**)",
       "Bash(git branch --show-current*)"
     ]
   },

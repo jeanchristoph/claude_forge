@@ -10,9 +10,26 @@ Every format change so far is absorbed by an automatic migration — upgrading r
 
 ## [Unreleased]
 
+## [0.9.0] — 2026-09-08
+
+### Added
+
+- `forge-clickup` — task-opening extension, installed alongside `forge` by both installers into `~/.claude/skills/forge-clickup`. It creates the ClickUp task, re-reads it to obtain the `custom_id` that ClickUp only assigns after creation, branches off the repository base branch, pushes it, then hands over to `forge`. List targeting lives in `.forge/clickup.json`, written by the skill itself on first run.
+- Execution mode chosen at resume. As soon as the plan still holds an open task, `forge` asks through `AskUserQuestion` rather than free text, offering three options in order: chain every open task without stopping between them, pick a single task, or hammer the plan — every open task dispatched to sub-agents, each tested then reviewed by three adversarial ones. Picking a task opens a second question listing the open tasks, four at most. Nothing starts before the answer. When no task is open — a `[!] blocked` task does not count as open — no mode is offered at all: `forge` asks in one line what comes next, and stops. READMEs cover the three modes.
+
+### Changed
+
+- `forge` can now be started by the model itself: `disable-model-invocation` is `false`, so a request matching its description opens the workflow without the user typing `/forge`. Typing the command still behaves exactly as before.
+- Repo layout: `skill/` becomes `skills/forge/`, and every folder under `skills/` is installed to `~/.claude/skills/<name>/` under its own name. Both installers iterate over that folder and generate one permission rule per skill, so adding a skill no longer requires touching them. READMEs updated accordingly, and the documented `settings.json` keys now match what the scripts actually write.
+
 ### Removed
 
 - Automatic file archiving. Threshold checks on `log.md` and `plan.md`, the archiving proposal and the `plan_AAAAMM.md` / `log_AAAAMM.md` files are gone: no file is ever split anymore. The bounded read of `log.md` stays — it is what keeps resume cost flat.
+
+### Fixed
+
+- Unix installer: `cp -r "$ROOT/skill/" "$SKILL_DIR"` copied the source directory *into* the destination, yielding `~/.claude/skills/forge/skill/SKILL.md` instead of `~/.claude/skills/forge/SKILL.md`. It now copies the contents.
+- Unix installer: permission rules realigned on the Windows installer, which is the reference. The legacy `Read/Edit/Write(/.claude/**)` grants — obsolete since the `.claude/` → `.forge/` migration — and `Write(/.forge/**)` are no longer added, and they are now purged from `settings.json` on reinstall for users who ran an earlier version.
 
 ## [0.8.0] — 2026-08-12
 
@@ -126,7 +143,8 @@ Every format change so far is absorbed by an automatic migration — upgrading r
 - Idempotent Unix and Windows installers, with `settings.json` merge and no duplicate entries on reinstall.
 - `main` / `master` guard: on a protected branch, forge asks for a ticket ID or a branch name before continuing.
 
-[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/jeanchristoph/claude_forge/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/jeanchristoph/claude_forge/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/jeanchristoph/claude_forge/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/jeanchristoph/claude_forge/compare/v0.5.0...v0.6.0

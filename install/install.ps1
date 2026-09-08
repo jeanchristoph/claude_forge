@@ -3,12 +3,19 @@ $root = Split-Path -Parent $PSScriptRoot
 $homeDir  = $env:USERPROFILE
 $claudeDir = "$homeDir\.claude"
 
-# ── Skill ─────────────────────────────────────────────────────────────────────
-Write-Host "Skill..."
-$skillDir = "$claudeDir\skills\forge"
-if (Test-Path $skillDir) { Remove-Item $skillDir -Recurse -Force }
-New-Item -ItemType Directory -Path $skillDir -Force | Out-Null
-Copy-Item "$root\skill\*" $skillDir -Recurse -Force
+# ── Skills ────────────────────────────────────────────────────────────────────
+# Un dossier sous skills/ = un skill installé, sous son propre nom.
+# Ajouter un skill n'exige aucune modification de ce script.
+Write-Host "Skills..."
+$skillNames = @()
+foreach ($d in Get-ChildItem "$root\skills" -Directory) {
+    $skillNames += $d.Name
+    $dest = "$claudeDir\skills\$($d.Name)"
+    if (Test-Path $dest) { Remove-Item $dest -Recurse -Force }
+    New-Item -ItemType Directory -Path $dest -Force | Out-Null
+    Copy-Item "$($d.FullName)\*" $dest -Recurse -Force
+    Write-Host "  $($d.Name)"
+}
 
 # ── Hook ──────────────────────────────────────────────────────────────────────
 Write-Host "Hook..."
@@ -28,16 +35,23 @@ if (-not ($s.PSObject.Properties.Name -contains "permissions")) {
 if (-not ($s.permissions.PSObject.Properties.Name -contains "allow")) {
     $s.permissions | Add-Member -NotePropertyName allow -NotePropertyValue @()
 }
-$drive          = $homeDir[0].ToString().ToLower()
-$rest           = $homeDir.Substring(2).Replace('\', '/')
-$rulePosix      = "Read(//$drive$rest/.claude/skills/forge/**)"
-$ruleBackslash  = "Read($homeDir\.claude\skills\forge\**)"
-$ruleFwdSlash   = "Read($($homeDir.Replace('\','/'))/.claude/skills/forge/**)"
-$oldRule        = "Read($homeDir\.claude\skills\forge)"
+$drive   = $homeDir[0].ToString().ToLower()
+$rest    = $homeDir.Substring(2).Replace('\', '/')
+$homeFwd = $homeDir.Replace('\', '/')
+
+# Une règle POSIX par skill. Les autres formes de chemin sont purgées à chaque install.
+$skillRules = @()
+$staleRules = @()
+foreach ($n in $skillNames) {
+    $skillRules += "Read(//$drive$rest/.claude/skills/$n/**)"
+    $staleRules += "Read($homeDir\.claude\skills\$n\**)"
+    $staleRules += "Read($homeFwd/.claude/skills/$n/**)"
+    $staleRules += "Read($homeDir\.claude\skills\$n)"
+}
 $projectRules = @("Read(/.forge/**)", "Edit(/.forge/**)",'Bash(bash -c "git branch --show-current*)')
 $s.permissions.allow = @($s.permissions.allow | Where-Object {
-    $_ -ne $rulePosix -and $_ -ne $ruleBackslash -and $_ -ne $ruleFwdSlash -and $_ -ne $oldRule -and $_ -notin $projectRules
-}) + $rulePosix + $projectRules
+    $_ -notin $skillRules -and $_ -notin $staleRules -and $_ -notin $projectRules
+}) + $skillRules + $projectRules
 
 # hooks.PreCompact — retire toutes les entrées forge (bash + ps1), ajoute uniquement ps1
 if (-not ($s.PSObject.Properties.Name -contains "hooks")) {

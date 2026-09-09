@@ -1,7 +1,7 @@
 ---
 name: forge-clickup
 description: Ouvre une tâche ClickUp, crée la branche git associée et enchaîne sur forge.
-disable-model-invocation: true
+disable-model-invocation: false
 ---
 
 Always respond in the user's language.

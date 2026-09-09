@@ -10,6 +10,8 @@ Every format change so far is absorbed by an automatic migration — upgrading r
 
 ## [Unreleased]
 
+## [0.9.1] — 2026-09-09
+
 ### Added
 
 - Report published to ClickUp on task closure. Once `report.txt` is written, `forge` offers to post it as a comment on the ClickUp task whose code is the branch name: the task is read back before anything is sent, never guessed, and nothing goes out without an explicit yes. The step only exists when `.forge/clickup.json` is present — without that file, closure behaves exactly as before.
@@ -152,7 +154,8 @@ Every format change so far is absorbed by an automatic migration — upgrading r
 - Idempotent Unix and Windows installers, with `settings.json` merge and no duplicate entries on reinstall.
 - `main` / `master` guard: on a protected branch, forge asks for a ticket ID or a branch name before continuing.
 
-[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/jeanchristoph/claude_forge/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/jeanchristoph/claude_forge/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/jeanchristoph/claude_forge/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/jeanchristoph/claude_forge/compare/v0.6.0...v0.7.0

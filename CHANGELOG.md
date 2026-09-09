@@ -17,6 +17,7 @@ Every format change so far is absorbed by an automatic migration — upgrading r
 ### Changed
 
 - Confirmations are asked as selectable questions, never as free text. The rule is now part of the skill's absolute rule and covers every blocking confirmation and every closed choice: the `main`/`master` guard, architectural approach, objective and plan validation, substantial plan updates, out-of-scope requests, global rule propagation, hammering, shipping, closure, ClickUp posting and client reply. Refusal is always an explicit option, and no answer means STOP. Open questions stay free text — the goal of the task, a branch code name, a ticket ID, the email to paste, what to do next.
+- `forge-clickup` can now be started by the model itself: `disable-model-invocation` is `false`, so a request matching its description opens the task-opening workflow without the user typing `/forge-clickup`. Typing the command still behaves exactly as before.
 
 ## [0.9.0] — 2026-09-08
 

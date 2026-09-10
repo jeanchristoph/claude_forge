@@ -59,6 +59,15 @@ Si erreur ou vide (pas de git) : demander un nom de code (ex: `refonte-auth`), l
 - BRIEF : `.forge/branch/<BRANCH>/brief.md`
 - PLAN  : `.forge/branch/<BRANCH>/plan.md`
 - LOG   : `.forge/branch/<BRANCH>/log.md`
+- OUTPUT : `.forge/branch/<BRANCH>/output/` — dossier de destination de tout contenu généré, créé au premier fichier écrit
+
+---
+
+## Contenu généré
+
+**Déclencheur :** fichier produit à la demande — documentation, script SQL, export, note, analyse, procédure, explication, livrable client. Tout fichier qui n'est ni du code source implémentant une tâche du plan, ni un fichier dont le projet impose l'emplacement, ni un fichier d'état du skill (section « Chemins »).
+
+**Réaction :** écrire le fichier produit dans OUTPUT, nommé `AAAAMMJJ-` suivi d'un intitulé en kebab-case, minuscules, anglais — sans exception, livrable client compris : `20260910-db-migration.sql`, `20260910-user-documentation-map.md`.
 
 ---
 
@@ -87,10 +96,10 @@ Si erreur ou vide (pas de git) : demander un nom de code (ex: `refonte-auth`), l
 
 **Réaction — dans l'ordre :**
 1. Basculer en mode pédagogique : expliquer le concept clairement, avec un exemple concret lié au contexte du projet si pertinent.
-2. Déléguer l'écriture à un agent en tâche de fond (`run_in_background: true`), sans attendre son retour : chercher `.forge/branch/<BRANCH>/explanation-<sujet-slug>.md` — présent → le compléter par une nouvelle section datée ; absent → le créer, avec l'explication structurée pour référence ultérieure.
+2. Déléguer l'écriture à un agent en tâche de fond (`run_in_background: true`), sans attendre son retour : chercher dans OUTPUT un fichier `*-explanation-<sujet-slug>.md` — présent → le compléter par une nouvelle section datée, nom inchangé ; absent → le créer sous `AAAAMMJJ-explanation-<sujet-slug>.md`, avec l'explication structurée pour référence ultérieure.
 3. Reprendre immédiatement le fil de la tâche en cours.
 4. À la fin de l'agent, signaler l'écriture en une ligne, sans attendre de réponse :
-   > "Explanation file written: `explanation-<sujet-slug>.md`."
+   > "Explanation file written: `<AAAAMMJJ>-explanation-<sujet-slug>.md`."
 
 ⚠️ Aucune confirmation demandée avant l'écriture.
 ⚠️ Signalement à la fin de l'agent uniquement, jamais à son lancement.

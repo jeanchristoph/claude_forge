@@ -106,6 +106,7 @@ Le brief est vivant. Les changements de scope sont gérés par la **Surveillance
 
 3. **Si `Handle it off-plan`** :
    - Traiter la demande sans modifier le plan
+   - Fichier produit → écrit dans OUTPUT, jamais ailleurs — section « Contenu généré » de `SKILL.md`
    - Continuer normalement
 
 ---

@@ -26,6 +26,7 @@ The result: fewer surprises, implementations that stay within the defined scope,
 
 - **Zero code without validation** — the absolute rule: silence ≠ agreement. The skill waits for an explicit go-ahead before writing anything, asked as a choice and never as free text.
 - **Persistent per-branch context** — `brief.md` and `plan.md` are stored in `.forge/branch/<BRANCH>/`, tracked in git, and re-read on every `/forge`.
+- **Generated content stays with the branch** — any doc, SQL script, export, explanation or client deliverable you ask for is written to `.forge/branch/<BRANCH>/output/`, never at the project root, named `YYYYMMDD-` plus a lowercase kebab-case English label, with no exception: `20260910-db-migration.sql`. Forge's own files — `brief.md`, `plan.md`, `log.md`, `report.txt` — stay one level up, untouched.
 - **Living brief & log** — rules, constraints and scope go silently into the brief's `## Scope & rules` section; decisions and user choices are logged silently into `log.md`, without interrupting the workflow.
 - **Last session summary** — on resume, if `log.md` has entries, a one-line recap of the last 10 is displayed before the progress table.
 - **L/XL task decomposition** — large tasks are broken into micro-steps in `plan.md` before implementation starts.
@@ -116,7 +117,10 @@ Files generated in each project:
     ├── log.md           ← Decisions log (living log, last 10 entries read on resume)
     ├── plan.md
     ├── report.txt       ← generated on task closure
-    └── explanation-*.md ← generated in the background when a technical concept is explained
+    └── output/          ← every generated file, named `YYYYMMDD-`
+        ├── 20260910-explanation-*.md ← written in the background when a technical concept is explained
+        ├── 20260910-db-migration.sql ← docs, SQL scripts, exports, notes
+        └── 20260910-user-documentation-map.md ← client deliverable, named like every other file
 ```
 
 A legacy `.claude/project.md` / `.claude/branch/` is migrated to `.forge/` automatically on first run — the migration also adds the `.gitignore` block that keeps `.forge/` tracked. A legacy `.forge/coding_standards.md` is renamed to `coding-standards.md` in the same pass, contents untouched.

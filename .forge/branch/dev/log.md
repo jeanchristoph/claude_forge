@@ -1,5 +1,11 @@
 # Log — dev
 
+- [2026-09-10] Anciens `explanation-*.md` laissés en place, aucune garde de migration vers `output/` — un suivi sur un sujet déjà expliqué ouvrira un nouveau fichier daté, l'ancien restant consultable.
+- [2026-09-10] OUTPUT déplacé dans un sous-dossier `output/` — un dossier dédié sépare le contenu généré des fichiers d'état, là où une liste d'exclusions nominatives aurait dérivé à chaque nouveau fichier ; `explanation-*.md` y rejoint le reste.
+- [2026-09-10] Nommage d'OUTPUT sans aucune exception, livrable client compris : `AAAAMMJJ-` + intitulé kebab-case anglais — une règle sans cas particulier se vérifie d'un coup d'œil sur le contenu du dossier.
+- [2026-09-10] Périmètre du contenu généré posé dans le déclencheur, pas en exception finale — une clause de sortie en fin de section se lit après coup, une condition d'entrée se lit avant d'agir.
+- [2026-09-10] Contenu généré (doc, SQL, export) écrit par défaut dans `.forge/branch/<BRANCH>/` — code source implémentant une tâche et emplacement imposé par le projet exclus ; ajouté au plan en T26.
+
 - [2026-09-08] Confirmations du skill portées en choix `AskUserQuestion` sur tout le périmètre, pas seulement la clôture — un choix fermé posé en texte libre laisse passer le silence pour un accord.
 
 - [2026-09-07] Historisation supprimée du skill plutôt que ses seuils relevés — un plan scindé perd la vue d'ensemble que l'utilisateur relit, la lecture bornée du log suffit à tenir le coût de reprise.

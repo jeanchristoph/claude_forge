@@ -10,6 +10,16 @@ Every format change so far is absorbed by an automatic migration — upgrading r
 
 ## [Unreleased]
 
+## [0.9.2] — 2026-09-10
+
+### Added
+
+- Generated content is written to `.forge/branch/<BRANCH>/output/`. Any file produced on request — a document, an SQL script, an export, a note, an explanation, a client deliverable — lands in that folder instead of the project root or a temporary folder, named `YYYYMMDD-` plus a lowercase kebab-case English label, with no exception — client deliverables included: `20260910-db-migration.sql`. What counts as generated content is settled up front: anything that is neither source code implementing a plan task, nor a file whose location the project dictates, nor one of the skill's own state files. Those — `brief.md`, `plan.md`, `log.md`, `report.txt` — stay one level up under their fixed names, which state detection reads.
+
+### Changed
+
+- Teacher mode writes into `output/` like every other generated file: a new explanation is created as `YYYYMMDD-explanation-<topic>.md`, and a follow-up on the same topic is looked up by topic and appended to the existing file under its original name.
+
 ## [0.9.1] — 2026-09-09
 
 ### Added
@@ -154,7 +164,8 @@ Every format change so far is absorbed by an automatic migration — upgrading r
 - Idempotent Unix and Windows installers, with `settings.json` merge and no duplicate entries on reinstall.
 - `main` / `master` guard: on a protected branch, forge asks for a ticket ID or a branch name before continuing.
 
-[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.9.1...HEAD
+[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.9.2...HEAD
+[0.9.2]: https://github.com/jeanchristoph/claude_forge/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/jeanchristoph/claude_forge/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/jeanchristoph/claude_forge/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/jeanchristoph/claude_forge/compare/v0.7.0...v0.8.0

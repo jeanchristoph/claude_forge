@@ -25,6 +25,7 @@ Le résultat : moins de mauvaises surprises, des implémentations qui restent da
 
 - **Zéro code sans validation** — la règle absolue : silence ≠ accord. Le skill attend une validation explicite avant d'écrire quoi que ce soit, posée en choix et jamais en texte libre.
 - **Contexte persistant par branche** — `brief.md` et `plan.md` sont stockés dans `.forge/branch/<BRANCH>/`, suivis en git, et relus à chaque `/forge`.
+- **Contenu généré rangé avec la branche** — toute doc, script SQL, export, explication ou livrable client demandé est écrit dans `.forge/branch/<BRANCH>/output/`, jamais à la racine du projet, nommé `AAAAMMJJ-` suivi d'un intitulé en kebab-case anglais, sans exception : `20260910-db-migration.sql`. Les fichiers propres à forge — `brief.md`, `plan.md`, `log.md`, `report.txt` — restent au niveau du dessus, intacts.
 - **Brief vivant & log** — le cadre (règles, contraintes, périmètre) va silencieusement dans la section `## Scope & rules` du brief ; les décisions et choix utilisateur sont enregistrés silencieusement dans `log.md`, sans interrompre le flux de travail.
 - **Résumé "Last session"** — à la reprise, si `log.md` contient des entrées, un récapitulatif des 10 dernières en une ligne est affiché avant le tableau d'avancement.
 - **Décomposition des tâches L/XL** — les grandes tâches sont découpées en micro-étapes dans `plan.md` avant de démarrer l'implémentation.
@@ -115,7 +116,10 @@ Fichiers générés dans chaque projet :
     ├── log.md           ← Journal des décisions (vivant, 10 dernières entrées lues à la reprise)
     ├── plan.md
     ├── report.txt       ← généré à la clôture de tâche
-    └── explanation-*.md ← généré en tâche de fond lors d'une explication de concept
+    └── output/          ← tout fichier généré, nommé `AAAAMMJJ-`
+        ├── 20260910-explanation-*.md ← écrit en tâche de fond lors d'une explication de concept
+        ├── 20260910-db-migration.sql ← docs, scripts SQL, exports, notes
+        └── 20260910-user-documentation-map.md ← livrable client, nommé comme tous les autres
 ```
 
 Un `.claude/project.md` / `.claude/branch/` legacy est migré automatiquement vers `.forge/` au premier lancement — la migration ajoute aussi le bloc `.gitignore` qui garde `.forge/` suivi en git. Un `.forge/coding_standards.md` legacy est renommé `coding-standards.md` dans la même passe, contenu inchangé.

@@ -242,6 +242,19 @@ Détecté hors plan initial — ajouté sur confirmation.
 Note : `p2-brief.md` ajouté aux fichiers — la validation de l'objectif était aussi posée en texte libre.
 [x]
 
+### T26 — Contenu généré écrit dans le dossier de branche
+**Effort :** S
+**Fichiers :** `skills/forge/SKILL.md`, `skills/forge/phases/p5-resume.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description :** Toute demande de génération de contenu (documentation, script SQL, export, note, analyse, procédure, explication) produit son fichier dans `.forge/branch/<BRANCH>/output/` — jamais à la racine du projet ni dans un dossier temporaire.
+- Règle posée dans `SKILL.md`, à la suite de la section « Chemins » : `OUTPUT : .forge/branch/<BRANCH>/output/`, créé au premier fichier écrit.
+- Nommage du fichier produit : préfixe de date `AAAAMMJJ-` suivi d'un intitulé en kebab-case, minuscules, anglais, conformément à `coding-standards.md` (`20260910-db-migration.sql`).
+- Dossier dédié plutôt qu'exclusion nominative : les fichiers d'état du skill (`brief.md`, `plan.md`, `log.md`, `report.txt`) restent au niveau du dessus, la détection d'état les lit par leur nom fixe sans jamais croiser un fichier daté.
+- Mode professeur aligné : explication créée sous `AAAAMMJJ-explanation-<sujet-slug>.md` dans OUTPUT ; suivi sur le même sujet → recherche par slug, complément dans le fichier existant, nom inchangé.
+- Périmètre posé dans le déclencheur, jamais en exception a posteriori : est un contenu généré tout fichier qui n'est ni du code source implémentant une tâche du plan, ni un fichier dont le projet impose l'emplacement, ni un fichier d'état du skill.
+- Documentation : `README.md`, `README.fr.md`, `CHANGELOG.md` sous `[Unreleased]`.
+Détecté hors plan initial — ajouté sur confirmation.
+[x]
+
 ## Risques
 - L'identification du premier bloc (contraintes) repose sur la mise en forme existante (groupe contigu en tête de `## Décisions & Contraintes`), pas sur une analyse sémantique — la migration est un simple déplacement, sans reformulation.
 
@@ -273,4 +286,5 @@ Note : `p2-brief.md` ajouté aux fichiers — la validation de l'objectif était
 | T23 — Supprimer l'historisation des fichiers | S | [x] |
 | T24 — Rapport publié en commentaire ClickUp | S | [x] |
 | T25 — Confirmations posées en choix | M | [x] |
+| T26 — Contenu généré dans le dossier de branche | S | [x] |
 | **Total estimé** | **~22h** | |

@@ -10,6 +10,10 @@ Every format change so far is absorbed by an automatic migration — upgrading r
 
 ## [Unreleased]
 
+### Changed
+
+- Client replies are drafted as email, not as a text file. One paragraph is one line — no hand-wrapping inside a paragraph, which breaks sentences at arbitrary points and often right before a full stop; the mail client handles the rendering. Anything already covered by an attached document is announced in one sentence rather than restated.
+
 ## [0.9.2] — 2026-09-10
 
 ### Added

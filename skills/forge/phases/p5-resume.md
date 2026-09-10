@@ -220,4 +220,9 @@ Actions et détail associé — aucune autre :
 
 4. **Réponse client** — poser le choix avec `AskUserQuestion` — `header` : `Email`, options `Draft a reply` / `Finish`.
    - `Draft a reply` → attendre que l'utilisateur colle le mail auquel répondre, générer une réponse au ton fluide, professionnel et pédagogique, rédigée dans la langue du mail reçu — jamais celle de l'utilisateur si elle diffère.
+   - **Un paragraphe tient sur une seule ligne.** Jamais de retour à la ligne forcé à l'intérieur d'un paragraphe :
+     le client de messagerie gère le rendu, un repli à la main coupe les phrases n'importe où, souvent juste avant
+     un point. Les retours à la ligne ne séparent que les paragraphes et les éléments d'une liste.
+   - **Aller à l'essentiel.** Ce qui figure dans une pièce jointe ou un document remis au client n'est pas reformulé
+     dans le corps du mail : on l'y annonce en une phrase. Un mail de quelques paragraphes, pas une page.
    - `Finish` → terminer.

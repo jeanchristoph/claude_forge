@@ -46,6 +46,10 @@
 ## Risks
 - [Point d'attention si applicable, sinon omettre]
 
+## Deployment
+[Étapes manuelles hors déploiement git, dans l'ordre d'exécution — script SQL, réglage de configuration, procédure d'exploitation. Aucune → `None`]
+- [ ] [Quoi — quand : before / after deploy] — `output/AAAAMMJJ-intitule.sql`
+
 ## Summary
 | Task | Effort | Status |
 |---|---|---|

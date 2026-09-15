@@ -1,5 +1,8 @@
 # Log — dev
 
+- [2026-09-15] Section `## Deployment` du plan initialisée à `None` et remplie silencieusement dès qu'un script hors git est écrit — laissée au moment de la clôture, elle serait reconstituée de mémoire ; la case n'a pas de règle de coche, l'humain joue le script en production.
+- [2026-09-15] Copie dans OUTPUT d'un script versionné mais diffusé à part fusionnée dans le déclencheur « Contenu généré » — une phrase dans la condition d'entrée plutôt qu'un paragraphe autonome relu après coup.
+
 - [2026-09-10] Anciens `explanation-*.md` laissés en place, aucune garde de migration vers `output/` — un suivi sur un sujet déjà expliqué ouvrira un nouveau fichier daté, l'ancien restant consultable.
 - [2026-09-10] OUTPUT déplacé dans un sous-dossier `output/` — un dossier dédié sépare le contenu généré des fichiers d'état, là où une liste d'exclusions nominatives aurait dérivé à chaque nouveau fichier ; `explanation-*.md` y rejoint le reste.
 - [2026-09-10] Nommage d'OUTPUT sans aucune exception, livrable client compris : `AAAAMMJJ-` + intitulé kebab-case anglais — une règle sans cas particulier se vérifie d'un coup d'œil sur le contenu du dossier.

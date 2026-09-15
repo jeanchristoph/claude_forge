@@ -10,6 +10,13 @@ Every format change so far is absorbed by an automatic migration — upgrading r
 
 ## [Unreleased]
 
+## [0.9.3] — 2026-09-15
+
+### Added
+
+- The plan carries a `## Deployment` section: the manual steps that live outside the git deployment — an SQL migration to run, a configuration setting to apply, an operating procedure — each with its timing (before / after deploy) and the path of its copy under `output/`. It starts at `None` and is filled silently as soon as such a script is written, so nothing to run by hand is left to memory at release time.
+- A script versioned in the repository but distributed or run apart from the git deployment is copied identically to `output/` the moment it is written; the repository stays the source of truth, `output/` holds the copy to hand over.
+
 ### Changed
 
 - Client replies are drafted as email, not as a text file. One paragraph is one line — no hand-wrapping inside a paragraph, which breaks sentences at arbitrary points and often right before a full stop; the mail client handles the rendering. Anything already covered by an attached document is announced in one sentence rather than restated.
@@ -168,7 +175,8 @@ Every format change so far is absorbed by an automatic migration — upgrading r
 - Idempotent Unix and Windows installers, with `settings.json` merge and no duplicate entries on reinstall.
 - `main` / `master` guard: on a protected branch, forge asks for a ticket ID or a branch name before continuing.
 
-[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.9.2...HEAD
+[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.9.3...HEAD
+[0.9.3]: https://github.com/jeanchristoph/claude_forge/compare/v0.9.2...v0.9.3
 [0.9.2]: https://github.com/jeanchristoph/claude_forge/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/jeanchristoph/claude_forge/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/jeanchristoph/claude_forge/compare/v0.8.0...v0.9.0

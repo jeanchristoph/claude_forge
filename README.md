@@ -30,6 +30,7 @@ The result: fewer surprises, implementations that stay within the defined scope,
 - **Living brief & log** — rules, constraints and scope go silently into the brief's `## Scope & rules` section; decisions and user choices are logged silently into `log.md`, without interrupting the workflow.
 - **Last session summary** — on resume, if `log.md` has entries, a one-line recap of the last 10 is displayed before the progress table.
 - **L/XL task decomposition** — large tasks are broken into micro-steps in `plan.md` before implementation starts.
+- **Deployment steps in the plan** — anything to run by hand outside the git deployment — an SQL migration, a configuration setting, an operating procedure — is listed in the `## Deployment` section of `plan.md` with its timing and its copy under `output/`, filled in as soon as the script is written.
 - **Out-of-scope detection** — requests outside the current plan are flagged; user confirms whether to add them or ignore them.
 - **main/master guard** — on protected branches, forge asks for either a ticket ID or a branch name before continuing.
 - **Shipping shortcuts** — `"grave master"` / `"engrave master"` (or with `"dev"`) commit, push, and merge in one confirmed step.

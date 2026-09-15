@@ -65,7 +65,7 @@ Si erreur ou vide (pas de git) : demander un nom de code (ex: `refonte-auth`), l
 
 ## Contenu généré
 
-**Déclencheur :** fichier produit à la demande — documentation, script SQL, export, note, analyse, procédure, explication, livrable client. Tout fichier qui n'est ni du code source implémentant une tâche du plan, ni un fichier dont le projet impose l'emplacement, ni un fichier d'état du skill (section « Chemins »).
+**Déclencheur :** fichier produit à la demande — documentation, script SQL, export, note, analyse, procédure, explication, livrable client. Tout fichier qui n'est ni du code source implémentant une tâche du plan, ni un fichier dont le projet impose l'emplacement, ni un fichier d'état du skill (section « Chemins »). S'y ajoute tout script versionné dans le dépôt mais diffusé ou exécuté à part du déploiement git (migration SQL, réglage manuel, procédure d'exploitation) : le dépôt reste la source de vérité, OUTPUT en reçoit une copie identique dès l'écriture.
 
 **Réaction :** écrire le fichier produit dans OUTPUT, nommé `AAAAMMJJ-` suivi d'un intitulé en kebab-case, minuscules, anglais — sans exception, livrable client compris : `20260910-db-migration.sql`, `20260910-user-documentation-map.md`.
 

@@ -29,6 +29,7 @@ Le résultat : moins de mauvaises surprises, des implémentations qui restent da
 - **Brief vivant & log** — le cadre (règles, contraintes, périmètre) va silencieusement dans la section `## Scope & rules` du brief ; les décisions et choix utilisateur sont enregistrés silencieusement dans `log.md`, sans interrompre le flux de travail.
 - **Résumé "Last session"** — à la reprise, si `log.md` contient des entrées, un récapitulatif des 10 dernières en une ligne est affiché avant le tableau d'avancement.
 - **Décomposition des tâches L/XL** — les grandes tâches sont découpées en micro-étapes dans `plan.md` avant de démarrer l'implémentation.
+- **Étapes de mise en production dans le plan** — tout ce qui se joue à la main hors du déploiement git — migration SQL, réglage de configuration, procédure d'exploitation — est listé dans la section `## Deployment` de `plan.md` avec son moment et sa copie dans `output/`, renseigné dès que le script est écrit.
 - **Détection hors périmètre** — les demandes hors plan sont signalées ; l'utilisateur confirme si elles doivent être ajoutées ou ignorées.
 - **Garde main/master** — sur les branches protégées, forge demande soit un identifiant de ticket, soit un nom de branche avant de continuer.
 - **Raccourcis de livraison** — `"grave master"` / `"engrave master"` (ou avec `"dev"`) commit, push et merge en une étape confirmée.

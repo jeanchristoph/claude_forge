@@ -38,6 +38,7 @@
 
 **Silencieuse (automatique)** — après tâche terminée ou événement notable :
 - Cocher `[x]`, ajouter note max 1 ligne, marquer `[!]` si bloqué.
+- Script diffusé à part du déploiement git (section « Contenu généré » du SKILL) → ajouter l'étape dans `## Deployment` : quoi, moment d'exécution, chemin de la copie dans OUTPUT. `None` remplacé par la première étape.
 
 **Substantielle (confirmation obligatoire)** — décrire la modification, puis poser le choix avec `AskUserQuestion` — `header` : `Plan`, options `Apply` / `Leave as is` — avant d'appliquer :
 - Ajouter/supprimer une tâche

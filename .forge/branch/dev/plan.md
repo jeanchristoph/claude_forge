@@ -255,6 +255,17 @@ Note : `p2-brief.md` ajouté aux fichiers — la validation de l'objectif était
 Détecté hors plan initial — ajouté sur confirmation.
 [x]
 
+
+### T27 — Section `## Deployment` du plan et copie des scripts hors git dans OUTPUT
+**Effort :** XS
+**Fichiers :** `skills/forge/SKILL.md`, `skills/forge/phases/p4-plan.md`, `skills/forge/phases/p5-resume.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description :** Le plan porte une section `## Deployment` listant les étapes manuelles hors déploiement git — migration SQL, réglage de configuration, procédure d'exploitation — avec leur moment (before / after deploy) et le chemin de la copie dans OUTPUT.
+- Format posé dans `p4-plan.md` entre `## Risks` et `## Summary`, initialisé à `None`.
+- Mise à jour silencieuse dans `p5-resume.md` : dès qu'un script diffusé à part du git est écrit, l'étape est ajoutée.
+- Déclencheur « Contenu généré » du `SKILL.md` étendu : un script versionné mais diffusé à part est copié à l'identique dans OUTPUT dès l'écriture, le dépôt restant la source de vérité.
+Détecté hors plan initial — ajouté sur confirmation.
+[x]
+
 ## Risques
 - L'identification du premier bloc (contraintes) repose sur la mise en forme existante (groupe contigu en tête de `## Décisions & Contraintes`), pas sur une analyse sémantique — la migration est un simple déplacement, sans reformulation.
 
@@ -287,4 +298,5 @@ Détecté hors plan initial — ajouté sur confirmation.
 | T24 — Rapport publié en commentaire ClickUp | S | [x] |
 | T25 — Confirmations posées en choix | M | [x] |
 | T26 — Contenu généré dans le dossier de branche | S | [x] |
+| T27 — Section `## Deployment` du plan | XS | [x] |
 | **Total estimé** | **~22h** | |

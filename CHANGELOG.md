@@ -10,6 +10,10 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ## [Unreleased]
 
+### Changed
+
+- A request outside the current plan always becomes a plan task: forge writes it up — with the brief's `## Scope & rules` entry it implies, if any — and asks one validation only. The "add to the plan / handle it off-plan" choice and the separate brief question are gone.
+
 ## [0.10.0] — 2026-09-16
 
 ### Added

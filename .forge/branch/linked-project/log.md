@@ -1,3 +1,4 @@
+- [2026-09-16 20:53] T16 added: an extra request is always a plan task, validated on its wording — no on-plan / off-plan choice, no separate brief question
 - [2026-09-16 20:45] T15 added: forge-clickup asks the goal, derives title + description, validated before creation
 - [2026-09-16 20:41] Off-plan: log entries timestamped `[AAAA-MM-JJ HH:MM]`, local time
 - [2026-09-16] Off-plan: client reply tone gains « empathique » (p5-resume closure step 4)

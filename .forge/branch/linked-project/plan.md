@@ -94,6 +94,12 @@
 **Description:** Étape 1 demande l'objectif en texte libre ; titre (une ligne) et description (quelques phrases) en sont déduits dans la langue de l'utilisateur, validés par le motif « Validation d'un contenu » avant création. Étape 3 crée la tâche avec `name` + `description`. Forge pré-remplit ensuite `## Objective` depuis la conversation.
 [x] step 1 rewritten, create_task carries description, README en/fr usage line, CHANGELOG Unreleased
 
+### T16 — Demande complémentaire = tâche au plan, validée sur sa formulation
+**Effort:** S
+**Files:** `skills/forge/phases/p5-resume.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** La Surveillance ne propose plus `Add to the plan` / `Handle it off-plan` ni la question `Brief` : la tâche est formulée (titre, effort, fichiers, description, entrée `## Scope & rules` si le périmètre change) et validée en une question — motif « Validation d'un contenu ». `Validate` → plan (et brief) écrits, exécution selon le mode en cours ; `Cancel` → rien n'entre au plan, demande non traitée.
+[x] Surveillance rewritten in p5-resume, README en/fr (intro + section), CHANGELOG Unreleased
+
 ## Risks
 - Chaque question bloquante du sous-agent coûte un tour complet de relais — acceptable car le brief est hérité et la frappe interdite : validation du plan et choix du mode sont les seuls points attendus.
 - Le sous-agent doit résoudre tous les chemins sous ROOT : un `.forge/` relatif écrit dans le projet parent violerait la cloison. Le test T7 le vérifie explicitement.
@@ -120,4 +126,5 @@ None
 | T13 — Mode délégué : la validation du plan vaut accord | XS | [x] |
 | T14 — Retrait des migrations et de la normalisation | S | [x] |
 | T15 — forge-clickup : objectif demandé, titre et description déduits | S | [x] |
-| **Total** | **5M + 8S + 2XS** | |
+| T16 — Demande complémentaire = tâche au plan, validée sur sa formulation | S | [x] |
+| **Total** | **5M + 9S + 2XS** | |

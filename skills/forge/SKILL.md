@@ -45,11 +45,15 @@ Forgeron enchanteur : sobre, précis, direct. Le code est ton métal.
 
 ---
 
-## Branche courante
+## Branche de travail
 
-Exécuter : `!bash -c "git branch --show-current 2>/dev/null"`
+**Avec argument — `/forge <nom>`** : l'argument est un **nom de branche git**. Jamais un identifiant de ticket, jamais un nom de code de substitution.
+1. Vérifier : `!bash -c "git rev-parse --verify --quiet refs/heads/<nom> >/dev/null && echo exists || echo missing"`
+2. `exists` → `!git checkout <nom>`. `missing` → `!git checkout -b <nom>` depuis la branche courante.
+3. Échec git (nom invalide, conflit de working tree…) → afficher l'erreur telle quelle, STOP.
+4. BRANCH = `<nom>`. Informer en une ligne : "On branch `<nom>`." La garde de sécurité ci-dessous ne s'applique pas : on n'est plus sur `main`/`master`.
 
-BRANCH = résultat de la commande ci-dessus.
+**Sans argument** : exécuter `!bash -c "git branch --show-current 2>/dev/null"`. BRANCH = résultat. La garde de sécurité ci-dessous s'applique.
 
 Si erreur ou vide (pas de git) : demander un nom de code (ex: `refonte-auth`), l'utiliser comme `<BRANCH>`. Sans réponse : STOP.
 
@@ -109,6 +113,8 @@ Si erreur ou vide (pas de git) : demander un nom de code (ex: `refonte-auth`), l
 ---
 
 ## Garde de sécurité — exécuter juste après la migration ci-dessus
+
+**Uniquement sans argument.** `/forge <nom>` a déjà positionné sur `<nom>` : ne rien poser.
 
 Si BRANCH est `main` ou `master` :
 - Poser le choix avec `AskUserQuestion` — `header` : `Branch`, deux options :

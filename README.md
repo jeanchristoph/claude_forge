@@ -32,7 +32,8 @@ The result: fewer surprises, implementations that stay within the defined scope,
 - **L/XL task decomposition** — large tasks are broken into micro-steps in `plan.md` before implementation starts.
 - **Deployment steps in the plan** — anything to run by hand outside the git deployment — an SQL migration, a configuration setting, an operating procedure — is listed in the `## Deployment` section of `plan.md` with its timing and its copy under `output/`, filled in as soon as the script is written.
 - **Out-of-scope detection** — requests outside the current plan are flagged; user confirms whether to add them or ignore them.
-- **main/master guard** — on protected branches, forge asks for either a ticket ID or a branch name before continuing.
+- **Branch as argument** — `/forge <branch-name>` checks out that branch, creating it from the current one if it does not exist. The argument is always a git branch name, never a ticket ID.
+- **main/master guard** — without an argument, on protected branches, forge asks for either a ticket ID or a branch name before continuing.
 - **Shipping shortcuts** — `"grave master"` / `"engrave master"` (or with `"dev"`) commit, push, and merge in one confirmed step.
 - **Compaction survival** — the `PreCompact` hook injects the forge state (branch, goal, task statuses) into the compacted context summary.
 - **Cross-platform** — automatic Unix/Windows detection, separate installers.
@@ -62,8 +63,9 @@ The `/forge-clickup` extension additionally requires the ClickUp MCP connector t
 ## Usage
 
 ```
-/forge
-/forge-clickup    # extension: opens a ClickUp task, creates the branch, then hands over to forge
+/forge                  # works on the current branch (main/master guard applies)
+/forge <branch-name>    # checks out <branch-name>, creating it from the current branch if missing
+/forge-clickup          # extension: opens a ClickUp task, creates the branch, then hands over to forge
 ```
 
 ---
@@ -194,9 +196,11 @@ branch code name, a ticket ID, the email to paste, what to do next.
 
 ## Safety guard — main / master
 
-On `main` or `master`, forge asks — as a choice, not free text:
+Without an argument, on `main` or `master`, forge asks — as a choice, not free text:
 1. Stay on the branch → provide a ticket ID (e.g. `CU-123`)
 2. Create a branch → provide a name
+
+With an argument (`/forge <branch-name>`) the guard does not apply: forge is already positioned on `<branch-name>`.
 
 ---
 

@@ -100,6 +100,12 @@
 **Description:** La Surveillance ne propose plus `Add to the plan` / `Handle it off-plan` ni la question `Brief` : la tâche est formulée (titre, effort, fichiers, description, entrée `## Scope & rules` si le périmètre change) et validée en une question — motif « Validation d'un contenu ». `Validate` → plan (et brief) écrits, exécution selon le mode en cours ; `Cancel` → rien n'entre au plan, demande non traitée.
 [x] Surveillance rewritten in p5-resume, README en/fr (intro + section), CHANGELOG Unreleased
 
+### T17 — Exclure `.forge/`, `docs/` et les fichiers `.git*` des archives de release
+**Effort:** XS
+**Files:** `.gitattributes`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** `export-ignore` sur `.forge/`, `docs/`, `.gitattributes`, `.gitignore` — le dépôt les suit toujours, seules les archives « Source code » des releases GitHub les omettent. Ligne dans la section Installation des README, entrée CHANGELOG. Effet à partir du prochain tag.
+[x] export-ignore rules in .gitattributes, README en/fr Installation, CHANGELOG Unreleased
+
 ## Risks
 - Chaque question bloquante du sous-agent coûte un tour complet de relais — acceptable car le brief est hérité et la frappe interdite : validation du plan et choix du mode sont les seuls points attendus.
 - Le sous-agent doit résoudre tous les chemins sous ROOT : un `.forge/` relatif écrit dans le projet parent violerait la cloison. Le test T7 le vérifie explicitement.
@@ -127,4 +133,5 @@ None
 | T14 — Retrait des migrations et de la normalisation | S | [x] |
 | T15 — forge-clickup : objectif demandé, titre et description déduits | S | [x] |
 | T16 — Demande complémentaire = tâche au plan, validée sur sa formulation | S | [x] |
-| **Total** | **5M + 9S + 2XS** | |
+| T17 — Exclure `.forge/`, `docs/` et `.git*` des archives de release | XS | [x] |
+| **Total** | **5M + 9S + 3XS** | |

@@ -4,3 +4,9 @@
 *.ps1 text eol=crlf
 *.gif binary
 *.png binary
+
+# Left out of the release archives (GitHub "Source code" zip / tar.gz)
+.forge/ export-ignore
+docs/ export-ignore
+.gitattributes export-ignore
+.gitignore export-ignore

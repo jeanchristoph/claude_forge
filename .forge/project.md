@@ -40,8 +40,7 @@ forge/
 │   ├── demo.gif               (généré — jamais édité à la main)
 │   └── README.md              (prérequis de régénération, WSL requis)
 ├── README.md                  (documentation, anglais)
-├── README.fr.md               (même documentation, français)
-└── TODO.txt                   (notes de travail en cours)
+└── README.fr.md               (même documentation, français)
 ```
 
 Fichiers générés dans **chaque projet cible** par le skill (pas dans ce dépôt) :

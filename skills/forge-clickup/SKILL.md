@@ -79,14 +79,22 @@ S'il ne manque qu'un champ, compléter ce champ seul — ne pas tout redemander.
 L'utilisateur n'édite jamais ce fichier à la main. S'il demande de changer la liste
 par défaut ou d'ajouter un alias, réécrire le fichier.
 
-## Étape 1 — Titre
+## Étape 1 — Objectif
 
-Demander le titre de la tâche, et **uniquement** le titre.
+Demander l'objectif de la tâche, en texte libre — jamais le titre :
 
-Priorité, description, échéance, assigné : ne jamais les demander. Les appliquer
-seulement si l'utilisateur les a mentionnés spontanément.
+> "What's the goal of this task?"
 
-Sans titre : STOP.
+Sans réponse : STOP.
+
+En déduire, dans la langue de l'utilisateur :
+- **Titre** : une ligne courte et précise, sans ponctuation finale.
+- **Description** : l'objectif reformulé en quelques phrases claires — jamais un copier-coller brut, jamais un roman.
+
+Présenter les deux, puis poser le choix avec `AskUserQuestion` — `header` : `Task`, options `Validate` / `Cancel` — motif « Validation d'un contenu » de `forge` : le changement demandé arrive en texte libre, retravailler, reposer la question. `Cancel` → STOP, aucune tâche créée.
+
+Priorité, échéance, assigné : ne jamais les demander. Les appliquer seulement si
+l'utilisateur les a mentionnés spontanément.
 
 ## Étape 2 — Liste cible
 
@@ -97,7 +105,7 @@ Sans titre : STOP.
 
 ## Étape 3 — Créer la tâche
 
-`clickup_create_task` avec `name` = le titre et `list_id` = la liste cible.
+`clickup_create_task` avec `name` = le titre, `description` = la description et `list_id` = la liste cible.
 
 ## Étape 4 — Récupérer le code
 
@@ -136,7 +144,7 @@ Afficher d'abord :
 
 Puis **invoquer `forge` via l'outil Skill**, sans demander de confirmation. La branche
 `<CODE>` est déjà la branche courante : `forge` la reprend telle quelle et amorce
-`.forge/branch/<CODE>/brief.md`.
+`.forge/branch/<CODE>/brief.md` — l'objectif est déjà dans la conversation, `forge` en pré-remplit `## Objective` sans le redemander.
 
 Ne rien faire au-delà : à partir de là, c'est `forge` qui mène. Ne pas coder, ne pas
 planifier, ne pas devancer ses étapes.

@@ -88,6 +88,12 @@
 **Description:** Retirer tout mécanisme de migration ou de compatibilité : sections `.claude` → `.forge` et `coding_standards.md` de SKILL.md, migration des décisions du brief en p3 (réduite à la création d'un log vide), normalisation des libellés en p0. README en/fr et CHANGELOG alignés ; `docs/demo.sh` et l'historique du CHANGELOG intacts.
 [x] SKILL.md, p0, p3 stripped; README en/fr, CHANGELOG header + Removed entry
 
+### T15 — forge-clickup : objectif demandé, titre et description déduits
+**Effort:** S
+**Files:** `skills/forge-clickup/SKILL.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Étape 1 demande l'objectif en texte libre ; titre (une ligne) et description (quelques phrases) en sont déduits dans la langue de l'utilisateur, validés par le motif « Validation d'un contenu » avant création. Étape 3 crée la tâche avec `name` + `description`. Forge pré-remplit ensuite `## Objective` depuis la conversation.
+[x] step 1 rewritten, create_task carries description, README en/fr usage line, CHANGELOG Unreleased
+
 ## Risks
 - Chaque question bloquante du sous-agent coûte un tour complet de relais — acceptable car le brief est hérité et la frappe interdite : validation du plan et choix du mode sont les seuls points attendus.
 - Le sous-agent doit résoudre tous les chemins sous ROOT : un `.forge/` relatif écrit dans le projet parent violerait la cloison. Le test T7 le vérifie explicitement.
@@ -113,4 +119,5 @@ None
 | T12 — Validation d'un contenu : `Validate` / `Cancel` + texte libre | S | [x] |
 | T13 — Mode délégué : la validation du plan vaut accord | XS | [x] |
 | T14 — Retrait des migrations et de la normalisation | S | [x] |
-| **Total** | **5M + 7S + 2XS** | |
+| T15 — forge-clickup : objectif demandé, titre et description déduits | S | [x] |
+| **Total** | **5M + 8S + 2XS** | |

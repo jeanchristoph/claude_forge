@@ -65,7 +65,7 @@ The `/forge-clickup` extension additionally requires the ClickUp MCP connector t
 ```
 /forge                  # works on the current branch (main/master guard applies)
 /forge <branch-name>    # checks out <branch-name>, creating it from master/main if missing
-/forge-clickup          # extension: opens a ClickUp task, creates the branch, then hands over to forge
+/forge-clickup          # extension: asks the goal, opens the ClickUp task (title and description derived from it), creates the branch, hands over to forge
 ```
 
 ---

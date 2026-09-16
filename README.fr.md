@@ -31,7 +31,8 @@ Le résultat : moins de mauvaises surprises, des implémentations qui restent da
 - **Décomposition des tâches L/XL** — les grandes tâches sont découpées en micro-étapes dans `plan.md` avant de démarrer l'implémentation.
 - **Étapes de mise en production dans le plan** — tout ce qui se joue à la main hors du déploiement git — migration SQL, réglage de configuration, procédure d'exploitation — est listé dans la section `## Deployment` de `plan.md` avec son moment et sa copie dans `output/`, renseigné dès que le script est écrit.
 - **Détection hors périmètre** — les demandes hors plan sont signalées ; l'utilisateur confirme si elles doivent être ajoutées ou ignorées.
-- **Garde main/master** — sur les branches protégées, forge demande soit un identifiant de ticket, soit un nom de branche avant de continuer.
+- **Branche en argument** — `/forge <nom-de-branche>` bascule sur cette branche, créée depuis la branche courante si elle n'existe pas. L'argument est toujours un nom de branche git, jamais un identifiant de ticket.
+- **Garde main/master** — sans argument, sur les branches protégées, forge demande soit un identifiant de ticket, soit un nom de branche avant de continuer.
 - **Raccourcis de livraison** — `"grave master"` / `"engrave master"` (ou avec `"dev"`) commit, push et merge en une étape confirmée.
 - **Survie à la compaction** — le hook `PreCompact` injecte l'état forge (branche, objectif, statut des tâches) dans le résumé de contexte compacté.
 - **Cross-platform** — détection automatique Unix/Windows, installeurs séparés.
@@ -61,8 +62,9 @@ L'extension `/forge-clickup` requiert en plus le connecteur MCP ClickUp authenti
 ## Usage
 
 ```
-/forge
-/forge-clickup    # extension : ouvre une tâche ClickUp, crée la branche, puis enchaîne sur forge
+/forge                  # travaille sur la branche courante (garde main/master)
+/forge <nom-de-branche> # bascule sur <nom-de-branche>, créée depuis la branche courante si absente
+/forge-clickup          # extension : ouvre une tâche ClickUp, crée la branche, puis enchaîne sur forge
 ```
 
 ---
@@ -194,9 +196,11 @@ de la tâche, nom de code de branche, identifiant de ticket, mail à coller, quo
 
 ## Garde de sécurité — main / master
 
-Sur `main` ou `master`, forge pose le choix — pas une question en texte libre :
+Sans argument, sur `main` ou `master`, forge pose le choix — pas une question en texte libre :
 1. Rester sur la branche → fournir un identifiant ticket (ex: `CU-123`)
 2. Créer une branche → fournir un nom
+
+Avec un argument (`/forge <nom-de-branche>`), la garde ne s'applique pas : forge est déjà positionné sur `<nom-de-branche>`.
 
 ---
 

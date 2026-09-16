@@ -10,6 +10,12 @@ Every format change so far is absorbed by an automatic migration — upgrading r
 
 ## [Unreleased]
 
+## [0.9.4] — 2026-09-16
+
+### Added
+
+- `/forge <branch-name>` takes a git branch name as argument: forge checks it out, creating it from the current branch when it does not exist, and skips the main/master guard. The argument is never read as a ticket ID — previously forge could silently treat it as a reference and keep working on `master`.
+
 ## [0.9.3] — 2026-09-15
 
 ### Added
@@ -175,7 +181,8 @@ Every format change so far is absorbed by an automatic migration — upgrading r
 - Idempotent Unix and Windows installers, with `settings.json` merge and no duplicate entries on reinstall.
 - `main` / `master` guard: on a protected branch, forge asks for a ticket ID or a branch name before continuing.
 
-[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.9.3...HEAD
+[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.9.4...HEAD
+[0.9.4]: https://github.com/jeanchristoph/claude_forge/compare/v0.9.3...v0.9.4
 [0.9.3]: https://github.com/jeanchristoph/claude_forge/compare/v0.9.2...v0.9.3
 [0.9.2]: https://github.com/jeanchristoph/claude_forge/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/jeanchristoph/claude_forge/compare/v0.9.0...v0.9.1

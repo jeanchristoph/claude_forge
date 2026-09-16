@@ -1,0 +1,11 @@
+- [2026-09-16] T13 added: in delegated mode plan validation is the go-ahead — no Mode question, one relay less
+- [2026-09-16] T12 added: content validation is Validate / Cancel + explained free text — the rework option cost a round-trip for nothing; AskUserQuestion needs two options minimum, Cancel is the explicit refusal
+- [2026-09-16] T11 added: selectable questions in the user's language — one rule in SKILL.md, English labels stay internal references
+- [2026-09-16] T9 green on fixtures — finding: return note must keep `delegated to <LINKED>` or shipping cannot find the linked project
+- [2026-09-16] T10 added: hammer removed — little used, execution mode belongs to the user's coding preferences in CLAUDE.md
+- [2026-09-16] T9 added: relayed engrave — executed by the parent with `git -C <LINKED>`, never relayed to the sub-agent (pure git, no code read)
+- [2026-09-16] T7 green — child objective came out in English: `LANGUAGE:` line added to the fixed sub-agent prompt
+- [2026-09-16] Delegated mode marker = `## Origin` in the child brief + `FORGE_DELEGATED` prompt line — no flag passed, state lives in files
+- [2026-09-16] Delegation refused when the parent works under a ticket ID on main/master — a real branch is required
+- [2026-09-16] Delegated run ends with FORGE_DONE — no closure, no engrave in the linked project; the user ships it from there
+- [2026-09-16] Plan validated: 8 tasks, chained

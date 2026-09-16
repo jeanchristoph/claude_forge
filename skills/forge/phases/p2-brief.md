@@ -6,6 +6,8 @@
 
 ⚠️ `## Objective` et `## Scope & rules` sont des libellés fixes, écrits tels quels quelle que soit la langue de l'utilisateur — seul le contenu des sections suit sa langue.
 
+En mode délégué, `## Origin` précède ces deux sections : écrit par le parent (section « Délégation — projet lié » de `p5-resume.md`), jamais par cette phase.
+
 ⚠️ Ne jamais utiliser `mkdir` sur les chemins `.forge/` — Write tool crée les dossiers parents automatiquement.
 
 ## Actions — dans l'ordre
@@ -13,7 +15,7 @@
 1. Pré-remplir `## Objective` si l'intention est exprimée dans le trigger ou la conversation.
 2. Si `## Objective` ne peut pas être pré-remplie :
    - Poser la question : "What's the goal of this task?"
-   - Reformuler en 2-3 phrases claires, puis poser le choix avec `AskUserQuestion` — `header` : `Objective`, options `Validate` / `Rework`. `Rework` → demander ce qui cloche, reformuler, reposer la question.
+   - Reformuler en 2-3 phrases claires, puis poser le choix avec `AskUserQuestion` — `header` : `Objective`, options `Validate` / `Cancel` — motif « Validation d'un contenu » de `SKILL.md` : le changement demandé arrive en texte libre, reformuler, reposer la question.
    - Questions sur les points flous → attendre réponse ; relancer si flou persiste.
    - Écrire `## Objective` uniquement après validation explicite.
 3. Écrire `.forge/branch/<BRANCH>/brief.md` — `## Objective` remplie, `## Scope & rules` vide.

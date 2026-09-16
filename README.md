@@ -163,7 +163,7 @@ L/XL tasks include a commented decomposition block (`T1.1`, `T1.2`, …) to fill
 ### State 5 — Active
 **Condition:** brief + plan present
 
-Reads `coding-standards.md` and files silently. If `log.md` has entries, displays a one-line "**Last session:**" recap of the last 10 first, then the progress table. Then offers the three modes — chaining the open tasks, picking one yourself, or hammering the remaining ones — and waits. No open task: no mode is offered, the question is left open.
+Reads `coding-standards.md` and files silently. If `log.md` has entries, displays a one-line "**Last session:**" recap of the last 10 first, then the progress table. Then offers the two modes — chaining the open tasks or picking one yourself — and waits. No open task: no mode is offered, the question is left open.
 
 ---
 
@@ -186,11 +186,19 @@ Error or empty result (no git repo): asks for a code name used as `<BRANCH>`. No
 
 Every blocking confirmation and every closed choice is asked as a selectable question, never as free
 text: execution mode, architectural approach, plan validation, substantial plan updates, out-of-scope
-requests, global rule propagation, hammering, shipping, closure, ClickUp posting, client reply.
-Refusal is always an explicit option, and no answer means STOP — never consent.
+requests, global rule propagation, shipping, linked-project shipping, closure, ClickUp posting, client reply.
+Refusal is always an explicit option, and no answer means STOP — never consent. The question, its
+options and their descriptions are written in your language — the English labels quoted in this
+document are the skill's internal references, not what you see on screen.
 
 Open questions stay free text, where a fixed list would only get in the way: the goal of the task, a
 branch code name, a ticket ID, the email to paste, what to do next.
+
+Validating a piece of content — the brief's objective, the plan, the closing report — offers two options
+only: validate, or cancel. There is no "rework" option: a change request goes through the question's
+free-text field, with its explanation, and the content comes back reworked under the same question. A
+bare "no" is not a change request — forge asks in one line what should change, and never shows the same
+content again unchanged.
 
 ---
 
@@ -305,34 +313,38 @@ Updates `project.md` (only what changed, after validation), then hands the struc
 
 ---
 
-## Hammering — dispatching subagents over the plan
+## Delegating to a linked project
 
 ```
-"frappe" / "hammer"          → every unchecked task
-"frappe T3" / "hammer T3"    → that task only
+"do T3 and T5 in ../other-project"    → those tasks only
+"do this in ../other-project"         → forge asks which open tasks to delegate
 ```
 
-Runs the plan's tasks through subagents, with verification at every step. Tasks are partitioned
-by the files they touch — taken from the plan's own `Files` field: disjoint files run in parallel,
-each in its own git worktree, overlapping files run sequentially in the same group. A recap table
-lists every task, its execution mode and its subagent count; nothing starts before you confirm it,
-once, for the whole run.
+A request that targets a folder outside the current project opens a **linked project**: a repository that
+has already been forged (`.forge/` present — otherwise forge refuses and asks you to run `/forge` there
+first; it never initializes a project on its own). It needs a real branch on the parent side: a session
+kept on `main`/`master` under a ticket ID cannot delegate.
 
-Each task goes through the same cell: **implementation** (given only the brief, the coding
-standards and the task), then **mechanical verification** (tests, lint, types), then **three
-adversarial reviewers** in fresh contexts, each with a distinct angle — brief compliance,
-regression, security, debt introduced — seeing nothing but the diff and the brief. A red build or
-a hostile majority sends the task back, twice at most, after which it is marked `[!] blocked` with
-its reason and the run moves on.
+The parent prepares the ground, and nothing else: it checks out the same branch `<BRANCH>` in the linked
+repository (created from its up-to-date `master`/`main` when missing), writes the linked brief — the parent
+brief copied verbatim, preceded by an `## Origin` block naming the parent path, the branch and the
+**mandate**: the delegated tasks copied in full — and opens the linked `log.md`. The parent's own plan is
+annotated (`delegated to <path> @ <BRANCH>`) and its log records the hand-over. A recap table lists these
+actions; nothing runs before you confirm once.
 
-Reviewers are told to refute, never to approve: a reviewer asked to validate validates. And the
-judge is always the test suite — no task is ever checked off on a subagent's opinion alone.
+Execution then happens in a **sealed forge context**: a subagent that receives only the linked path,
+`<BRANCH>`, your language and the order to run the forge skill there. No `project.md`, no coding standards,
+no plan, no log cross the wall in either direction. The linked plan is derived from the mandate alone —
+every task carries its lineage (`T1 — … ← parent T3`), and a need outside the mandate is never turned into
+a task: it is reported back. Once the plan is validated the subagent chains every task without asking
+for an execution mode — validating the plan is the go-ahead. Every blocking question it meets (plan
+validation, an approach to choose) is relayed to you verbatim as a `FORGE_QUESTION` and answered through the same
+`AskUserQuestion` you know; the answer goes back to the subagent, whose context stays intact.
 
-Once every task is through, a single reviewer looks at the complete diff for what per-task review
-cannot see: inconsistencies between tasks, duplication, accumulated debt. Its findings are reported
-for confirmation, never applied silently.
-
-Only the orchestrator writes to `plan.md` and `log.md`; subagents return structured verdicts.
+The run ends with a single `FORGE_DONE` report: tasks done, tasks blocked with their reason, needs outside
+the mandate, files touched. The parent then — and only then — checks each delegated task `[x]` or marks it
+`[!] blocked` with the reason, one log entry per task. Nothing is committed in the linked repository at that
+point: shipping it is offered when you engrave the parent (see below).
 
 ---
 
@@ -344,7 +356,16 @@ Only the orchestrator writes to `plan.md` and `log.md`; subagents return structu
 
 One or more existing branches, named in the desired order (e.g. `"grave dev"`, `"grave master"`, `"grave dev master"`). `<BRANCH>` is merged into each named branch in turn, always from the starting branch — never chaining one named branch into the next.
 
-**INVARIANT:** git operates only on the current repo — never on another repo open in parallel.
+**INVARIANT:** git operates only on the current repo — never on another repo open in parallel. The one
+exception is a linked project: branch positioning when delegating, and the relayed shipping below.
+
+When the plan carries delegated tasks, engraving the parent also offers to ship each linked project that
+has uncommitted changes: first whether to ship it at all, then onto which branches — the same branches as
+the parent, `<BRANCH>` only (commit and push, no merge), or a list of your own. Its commit message is
+generated from the delegated tasks marked done, never from its code, which the parent does not read. The
+linked project's actions get their own recap table under the parent's, and the single confirmation covers
+everything; a target branch missing from the linked repository is skipped, never created. The delegated
+subagent is never involved: relayed shipping is plain git, run by the parent.
 
 Anything published on the remote forge after a delivery — release title and notes, tag or PR description — is written in **English**, whatever your language. The commit message follows the language of the repository's commits.
 

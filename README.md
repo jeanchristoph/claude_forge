@@ -346,6 +346,8 @@ One or more existing branches, named in the desired order (e.g. `"grave dev"`, `
 
 **INVARIANT:** git operates only on the current repo — never on another repo open in parallel.
 
+Anything published on the remote forge after a delivery — release title and notes, tag or PR description — is written in **English**, whatever your language. The commit message follows the language of the repository's commits.
+
 The commit message is generated automatically — no separate confirmation on the message itself. Before anything runs, Forge prints a recap table of the planned git actions: add, commit with its message, push, then one row per merge (`<BRANCH>` → target), and a final row for the return to `<BRANCH>`. Intermediate branch switches are never listed. No git command — `git add` included — runs before you confirm. A single confirmation covers the whole sequence: add, commit, push, then every merge, with no further prompt in between.
 
 ---

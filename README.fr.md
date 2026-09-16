@@ -349,6 +349,8 @@ Une ou plusieurs branches existantes, citées dans l'ordre voulu (ex : `"grave d
 
 **INVARIANT :** git opère uniquement sur le dépôt courant — jamais sur un autre dépôt ouvert en parallèle.
 
+Tout ce qui est publié sur la forge distante après une livraison — titre et notes de release, description de tag ou de PR — est rédigé en **anglais**, quelle que soit ta langue. Le message de commit suit la langue des commits du dépôt.
+
 Le message de commit est généré automatiquement — pas de confirmation dédiée sur le message lui-même. Avant toute exécution, Forge affiche un tableau récapitulatif des actions git prévues : add, commit avec son message, push, puis une ligne par merge (`<BRANCH>` → cible), et une dernière ligne pour le retour sur `<BRANCH>`. Les changements de branche intermédiaires ne sont jamais listés. Aucune commande git — `git add` compris — n'est lancée avant la confirmation. Une seule confirmation couvre toute la séquence : add, commit, push, puis chaque merge, sans validation intermédiaire.
 
 ---

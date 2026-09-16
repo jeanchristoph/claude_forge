@@ -166,6 +166,8 @@ Dernière ligne : total des tâches et total des sous-agents, reprises exclues.
 
 **INVARIANT :** git opère uniquement sur le dépôt courant — jamais sur un autre dépôt ouvert en parallèle.
 
+**Publication hors dépôt :** tout texte publié sur la forge distante à la suite d'une livraison — titre et notes d'une release, description d'un tag ou d'une PR — est rédigé en **anglais**, quelle que soit la langue de l'utilisateur. Le message de commit, lui, suit la langue des commits du dépôt.
+
 ⚠️ Aucune commande git — `git add` compris — avant la confirmation de l'étape 3.
 
 **Réaction — dans l'ordre :**

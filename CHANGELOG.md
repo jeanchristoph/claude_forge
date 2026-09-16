@@ -10,6 +10,10 @@ Every format change so far is absorbed by an automatic migration — upgrading r
 
 ## [Unreleased]
 
+### Added
+
+- Anything published on the remote forge after a delivery — release title and notes, tag or PR description — is written in English, whatever the user's language; the commit message keeps following the repository's commit language.
+
 ### Changed
 
 - `/forge <branch-name>` creates a missing branch from the up-to-date default branch — `master`, else `main` — never from the current one, so a new branch never inherits the unmerged commits of whatever branch happened to be checked out. Same sequence as forge-clickup: `checkout <default>`, `pull`, `checkout -b <name>`.

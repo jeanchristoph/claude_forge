@@ -299,6 +299,8 @@ The brief is a living document. Changes of scope go through **Out-of-scope detec
 
 After each user input, forge checks whether the request falls inside the current plan or not.
 
+A **direct action** never becomes a task: a precise order — what, where — that fits in one command or one local edit and calls for no design decision (delete or rename a file, fix a wording, add a word, run a command) is carried out at once, the order itself being the confirmation, and logged in one line when the repository changes. When in doubt, forge treats the request as a direct action: one action too many costs nothing, one question too many costs a round-trip.
+
 **Detected when the request:**
 - Concerns a feature not in the plan
 - Introduces a new use case, module, or behaviour

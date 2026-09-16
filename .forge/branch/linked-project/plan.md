@@ -106,6 +106,12 @@
 **Description:** `export-ignore` sur `.forge/`, `docs/`, `.gitattributes`, `.gitignore` — le dépôt les suit toujours, seules les archives « Source code » des releases GitHub les omettent. Ligne dans la section Installation des README, entrée CHANGELOG. Effet à partir du prochain tag.
 [x] export-ignore rules in .gitattributes, README en/fr Installation, CHANGELOG Unreleased
 
+### T19 — Action directe ≠ demande complémentaire
+**Effort:** XS
+**Files:** `skills/forge/phases/p5-resume.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Seuil ajouté en tête de la Surveillance : un ordre précis, local, sans décision de conception est une action directe — exécutée immédiatement, journalisée si le dépôt change, jamais une tâche ni une question ; l'ordre explicite vaut confirmation. Doute → action directe. Le reste reste une demande complémentaire.
+[x] Surveillance threshold in p5-resume, README en/fr, CHANGELOG Unreleased
+
 ## Risks
 - Chaque question bloquante du sous-agent coûte un tour complet de relais — acceptable car le brief est hérité et la frappe interdite : validation du plan et choix du mode sont les seuls points attendus.
 - Le sous-agent doit résoudre tous les chemins sous ROOT : un `.forge/` relatif écrit dans le projet parent violerait la cloison. Le test T7 le vérifie explicitement.
@@ -134,4 +140,5 @@ None
 | T15 — forge-clickup : objectif demandé, titre et description déduits | S | [x] |
 | T16 — Demande complémentaire = tâche au plan, validée sur sa formulation | S | [x] |
 | T17 — Exclure `.forge/`, `docs/` et `.git*` des archives de release | XS | [x] |
-| **Total** | **5M + 9S + 3XS** | |
+| T19 — Action directe ≠ demande complémentaire | XS | [x] |
+| **Total** | **5M + 9S + 4XS** | |

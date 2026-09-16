@@ -1,3 +1,5 @@
+- [2026-09-16 21:02] T19 added: direct actions (precise, local, no design decision) run at once and are logged — never a task, never a question; doubt → direct action
+- [2026-09-16 21:02] Direct action: TODO.txt removed from the repository (obsolete notes)
 - [2026-09-16 20:56] T17 added: release archives exclude .forge/, docs/ and .git* via export-ignore — effective from the next tag
 - [2026-09-16 20:53] T16 added: an extra request is always a plan task, validated on its wording — no on-plan / off-plan choice, no separate brief question
 - [2026-09-16 20:45] T15 added: forge-clickup asks the goal, derives title + description, validated before creation

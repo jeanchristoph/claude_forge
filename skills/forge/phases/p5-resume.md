@@ -90,6 +90,14 @@ Le brief est vivant. Les changements de scope sont gérés par la **Surveillance
 
 **À chaque input utilisateur**, après l'exécution du skill (reprise ou nouveau projet), évaluer si la demande correspond à une tâche existante du plan ou non.
 
+### Action directe — exécuter sans tâche ni question
+
+**Condition :** la demande est un ordre précis (quoi, où), tient en une commande ou une modification locale, et n'appelle aucune décision de conception — supprimer ou renommer un fichier, corriger un texte, ajouter un mot, exécuter une commande.
+
+**Réaction :** exécuter immédiatement — l'ordre explicite est la confirmation exigée par la règle absolue. Le dépôt change → une ligne dans LOG. Aucune tâche, aucune question.
+
+⚠️ Doute entre action directe et demande complémentaire → action directe : une action de trop ne coûte rien, une question de trop coûte un aller-retour.
+
 ### Demande hors périmètre — détecter si :
 - La demande concerne une fonctionnalité absente du plan
 - Elle introduit un nouveau cas d'usage, un nouveau module, ou un nouveau comportement

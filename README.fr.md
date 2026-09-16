@@ -299,6 +299,8 @@ Le brief est un document vivant. Les changements de scope passent par la **Déte
 
 Après chaque input utilisateur, forge vérifie si la demande est dans le plan courant ou non.
 
+Une **action directe** ne devient jamais une tâche : un ordre précis — quoi, où — qui tient en une commande ou une modification locale et n'appelle aucune décision de conception (supprimer ou renommer un fichier, corriger une formulation, ajouter un mot, lancer une commande) est exécuté sur-le-champ, l'ordre valant confirmation, et journalisé en une ligne quand le dépôt change. Dans le doute, forge y voit une action directe : une action de trop ne coûte rien, une question de trop coûte un aller-retour.
+
 **Détecté si la demande :**
 - Concerne une fonctionnalité absente du plan
 - Introduit un nouveau cas d'usage, module ou comportement

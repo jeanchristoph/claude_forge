@@ -1,3 +1,4 @@
+- [2026-09-16] T14 added: every migration / compatibility mechanism removed — label normalization included, old-format projects updated by hand
 - [2026-09-16] T13 added: in delegated mode plan validation is the go-ahead — no Mode question, one relay less
 - [2026-09-16] T12 added: content validation is Validate / Cancel + explained free text — the rework option cost a round-trip for nothing; AskUserQuestion needs two options minimum, Cancel is the explicit refusal
 - [2026-09-16] T11 added: selectable questions in the user's language — one rule in SKILL.md, English labels stay internal references

@@ -82,6 +82,12 @@
 **Description:** En mode délégué, aucune question `Mode` : après validation du plan, le sous-agent enchaîne toutes les tâches ouvertes dans l'ordre. Un relais de moins par délégation.
 [x] reprise and « Mode délégué » rule aligned, README en/fr, CHANGELOG
 
+### T14 — Retrait des migrations et de la normalisation
+**Effort:** S
+**Files:** `skills/forge/SKILL.md`, `skills/forge/phases/p0-project.md`, `skills/forge/phases/p3-log.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Retirer tout mécanisme de migration ou de compatibilité : sections `.claude` → `.forge` et `coding_standards.md` de SKILL.md, migration des décisions du brief en p3 (réduite à la création d'un log vide), normalisation des libellés en p0. README en/fr et CHANGELOG alignés ; `docs/demo.sh` et l'historique du CHANGELOG intacts.
+[x] SKILL.md, p0, p3 stripped; README en/fr, CHANGELOG header + Removed entry
+
 ## Risks
 - Chaque question bloquante du sous-agent coûte un tour complet de relais — acceptable car le brief est hérité et la frappe interdite : validation du plan et choix du mode sont les seuls points attendus.
 - Le sous-agent doit résoudre tous les chemins sous ROOT : un `.forge/` relatif écrit dans le projet parent violerait la cloison. Le test T7 le vérifie explicitement.
@@ -106,4 +112,5 @@ None
 | T11 — Questions à choix dans la langue de l'utilisateur | S | [x] |
 | T12 — Validation d'un contenu : `Validate` / `Cancel` + texte libre | S | [x] |
 | T13 — Mode délégué : la validation du plan vaut accord | XS | [x] |
-| **Total** | **5M + 6S + 2XS** | |
+| T14 — Retrait des migrations et de la normalisation | S | [x] |
+| **Total** | **5M + 7S + 2XS** | |

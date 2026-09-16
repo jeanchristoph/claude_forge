@@ -126,7 +126,13 @@ Files generated in each project:
         └── 20260910-user-documentation-map.md ← client deliverable, named like every other file
 ```
 
-A legacy `.claude/project.md` / `.claude/branch/` is migrated to `.forge/` automatically on first run — the migration also adds the `.gitignore` block that keeps `.forge/` tracked. A legacy `.forge/coding_standards.md` is renamed to `coding-standards.md` in the same pass, contents untouched.
+Keep `.forge/` tracked in git — the `.gitignore` block below does it:
+
+```
+###> claude/forge ###
+!/.forge/
+###< claude/forge ###
+```
 
 ---
 
@@ -152,7 +158,7 @@ Reads `coding-standards.md`. Creates `.forge/branch/<BRANCH>/brief.md` with an `
 ### State 3 — Log
 **Condition:** brief present, `log.md` absent
 
-Silently creates `log.md` if there's nothing to migrate, or moves pre-existing dated entries from `brief.md`'s `## Decisions & Constraints` into it — that section is renamed `## Scope & rules`, and undated entries stay in it.
+Silently creates an empty `log.md` and continues to the plan.
 
 ### State 4 — Plan
 **Condition:** brief present, `log.md` present, plan absent
@@ -309,7 +315,7 @@ After each user input, forge checks whether the request falls inside the current
 "ranger la forge" / "clean the forge"
 ```
 
-Updates `project.md` (only what changed, after validation), then hands the structural labels of `project.md`, `brief.md` and `plan.md` for the current branch to a background agent, which normalizes them silently without blocking ongoing work — sections are identified by role and position, never by text, so files written by an older version are realigned whatever language their headings were in. Labels only: no content is ever rewritten, reordered or removed. Other branches are left untouched.
+Updates `project.md` — only what changed, after validation.
 
 ---
 

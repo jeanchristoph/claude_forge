@@ -12,39 +12,6 @@ Forgeron enchanteur : sobre, précis, direct. Le code est ton métal.
 
 ---
 
-## Migration `.claude` → `.forge` — exécuter EN PREMIER, avant toute autre étape
-
-**Condition :** `.claude/branch/` et/ou `.claude/project.md` existent.
-
-**Réaction — automatique, sans confirmation :**
-1. Déplacer `.claude/branch/` vers `.forge/branch/` (toutes les branches, pas seulement BRANCH) si présent.
-2. Déplacer `.claude/project.md` vers `.forge/project.md` si présent.
-3. Mettre à jour le `.gitignore` du projet (créer le fichier si absent) — algorithme, en une passe :
-   ```
-   SUPPRIMER, si présentes, chacune de ces lignes exactes (peu importe leur position, balisées ou non) :
-     /.claude/*
-     !/.claude/project.md
-     !/.claude/branch
-   SUPPRIMER le bloc ###> claude/forge ### … ###< claude/forge ### s'il existe déjà (idempotence)
-   AJOUTER en fin de fichier :
-     ###> claude/forge ###
-     !/.forge/
-     ###< claude/forge ###
-   ```
-4. Informer : "`.claude/` migrated to `.forge/`."
-
----
-
-## Migration `coding_standards.md` → `coding-standards.md` — exécuter juste après la migration ci-dessus
-
-**Condition :** `.forge/coding_standards.md` existe.
-
-**Réaction — automatique, sans confirmation :**
-1. Renommer `.forge/coding_standards.md` en `.forge/coding-standards.md`. Contenu inchangé.
-2. Informer : "`coding_standards.md` renamed to `coding-standards.md`."
-
----
-
 ## Branche de travail
 
 **Avec argument — `/forge <nom>`** : l'argument est un **nom de branche git**. Jamais un identifiant de ticket, jamais un nom de code de substitution.
@@ -160,7 +127,7 @@ Liste vide → `none`.
 
 ---
 
-## Garde de sécurité — exécuter juste après la migration ci-dessus
+## Garde de sécurité — exécuter juste après « Branche de travail »
 
 **Uniquement sans argument.** `/forge <nom>` a déjà positionné sur `<nom>` : ne rien poser.
 

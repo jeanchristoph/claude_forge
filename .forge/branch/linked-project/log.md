@@ -1,3 +1,4 @@
+- [2026-09-16 20:45] T15 added: forge-clickup asks the goal, derives title + description, validated before creation
 - [2026-09-16 20:41] Off-plan: log entries timestamped `[AAAA-MM-JJ HH:MM]`, local time
 - [2026-09-16] Off-plan: client reply tone gains « empathique » (p5-resume closure step 4)
 - [2026-09-16] T14 added: every migration / compatibility mechanism removed — label normalization included, old-format projects updated by hand

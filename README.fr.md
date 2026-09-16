@@ -64,7 +64,7 @@ L'extension `/forge-clickup` requiert en plus le connecteur MCP ClickUp authenti
 ```
 /forge                  # travaille sur la branche courante (garde main/master)
 /forge <nom-de-branche> # bascule sur <nom-de-branche>, créée depuis master/main si absente
-/forge-clickup          # extension : ouvre une tâche ClickUp, crée la branche, puis enchaîne sur forge
+/forge-clickup          # extension : demande l'objectif, ouvre la tâche ClickUp (titre et description déduits), crée la branche, enchaîne sur forge
 ```
 
 ---

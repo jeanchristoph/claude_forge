@@ -20,6 +20,7 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ### Changed
 
+- `/forge-clickup` asks for the goal of the task, never its title: the ClickUp title and description are derived from the goal and shown for validation before the task is created. Forge then pre-fills the brief's `## Objective` from that same goal.
 - Every selectable question — its text, header, option labels and descriptions — is written in the user's language. The English labels in the skill files are internal references only; previously they were shown as-is on screen.
 - `log.md` entries carry the time as well as the date: `- [YYYY-MM-DD HH:MM] …`, local time.
 - The client reply drafted at closure is empathetic as well as fluent, professional and pedagogical.

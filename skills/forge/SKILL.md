@@ -49,7 +49,7 @@ Forgeron enchanteur : sobre, précis, direct. Le code est ton métal.
 
 **Avec argument — `/forge <nom>`** : l'argument est un **nom de branche git**. Jamais un identifiant de ticket, jamais un nom de code de substitution.
 1. Vérifier : `!bash -c "git rev-parse --verify --quiet refs/heads/<nom> >/dev/null && echo exists || echo missing"`
-2. `exists` → `!git checkout <nom>`. `missing` → `!git checkout -b <nom>` depuis la branche courante.
+2. `exists` → `!git checkout <nom>`. `missing` → créer depuis la branche par défaut, **jamais depuis la branche courante** : détecter `master` puis `main` (`git show-ref --verify --quiet refs/heads/<défaut>`), puis `!git checkout <défaut>`, `!git pull` (ignoré si aucune branche distante n'est suivie), `!git checkout -b <nom>`. Ni `master` ni `main` → créer depuis le `HEAD` courant et le signaler.
 3. Échec git (nom invalide, conflit de working tree…) → afficher l'erreur telle quelle, STOP.
 4. BRANCH = `<nom>`. Informer en une ligne : "On branch `<nom>`." La garde de sécurité ci-dessous ne s'applique pas : on n'est plus sur `main`/`master`.
 

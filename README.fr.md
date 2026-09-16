@@ -31,7 +31,7 @@ Le résultat : moins de mauvaises surprises, des implémentations qui restent da
 - **Décomposition des tâches L/XL** — les grandes tâches sont découpées en micro-étapes dans `plan.md` avant de démarrer l'implémentation.
 - **Étapes de mise en production dans le plan** — tout ce qui se joue à la main hors du déploiement git — migration SQL, réglage de configuration, procédure d'exploitation — est listé dans la section `## Deployment` de `plan.md` avec son moment et sa copie dans `output/`, renseigné dès que le script est écrit.
 - **Détection hors périmètre** — les demandes hors plan sont signalées ; l'utilisateur confirme si elles doivent être ajoutées ou ignorées.
-- **Branche en argument** — `/forge <nom-de-branche>` bascule sur cette branche, créée depuis la branche courante si elle n'existe pas. L'argument est toujours un nom de branche git, jamais un identifiant de ticket.
+- **Branche en argument** — `/forge <nom-de-branche>` bascule sur cette branche, créée depuis la branche par défaut à jour (`master`, sinon `main`) si elle n'existe pas — jamais depuis la branche courante. L'argument est toujours un nom de branche git, jamais un identifiant de ticket.
 - **Garde main/master** — sans argument, sur les branches protégées, forge demande soit un identifiant de ticket, soit un nom de branche avant de continuer.
 - **Raccourcis de livraison** — `"grave master"` / `"engrave master"` (ou avec `"dev"`) commit, push et merge en une étape confirmée.
 - **Survie à la compaction** — le hook `PreCompact` injecte l'état forge (branche, objectif, statut des tâches) dans le résumé de contexte compacté.
@@ -63,7 +63,7 @@ L'extension `/forge-clickup` requiert en plus le connecteur MCP ClickUp authenti
 
 ```
 /forge                  # travaille sur la branche courante (garde main/master)
-/forge <nom-de-branche> # bascule sur <nom-de-branche>, créée depuis la branche courante si absente
+/forge <nom-de-branche> # bascule sur <nom-de-branche>, créée depuis master/main si absente
 /forge-clickup          # extension : ouvre une tâche ClickUp, crée la branche, puis enchaîne sur forge
 ```
 

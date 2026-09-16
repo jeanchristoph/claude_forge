@@ -30,7 +30,7 @@ Le résultat : moins de mauvaises surprises, des implémentations qui restent da
 - **Résumé "Last session"** — à la reprise, si `log.md` contient des entrées, un récapitulatif des 10 dernières en une ligne est affiché avant le tableau d'avancement.
 - **Décomposition des tâches L/XL** — les grandes tâches sont découpées en micro-étapes dans `plan.md` avant de démarrer l'implémentation.
 - **Étapes de mise en production dans le plan** — tout ce qui se joue à la main hors du déploiement git — migration SQL, réglage de configuration, procédure d'exploitation — est listé dans la section `## Deployment` de `plan.md` avec son moment et sa copie dans `output/`, renseigné dès que le script est écrit.
-- **Détection hors périmètre** — les demandes hors plan sont signalées ; l'utilisateur confirme si elles doivent être ajoutées ou ignorées.
+- **Détection hors périmètre** — une demande hors du plan courant devient une tâche du plan : forge la formule, tu valides la formulation, rien de plus.
 - **Branche en argument** — `/forge <nom-de-branche>` bascule sur cette branche, créée depuis la branche par défaut à jour (`master`, sinon `main`) si elle n'existe pas — jamais depuis la branche courante. L'argument est toujours un nom de branche git, jamais un identifiant de ticket.
 - **Garde main/master** — sans argument, sur les branches protégées, forge demande soit un identifiant de ticket, soit un nom de branche avant de continuer.
 - **Raccourcis de livraison** — `"grave master"` / `"engrave master"` (ou avec `"dev"`) commit, push et merge en une étape confirmée.
@@ -302,10 +302,10 @@ Après chaque input utilisateur, forge vérifie si la demande est dans le plan c
 - Introduit un nouveau cas d'usage, module ou comportement
 - Modifie une contrainte technique ou fonctionnelle implicitement acceptée
 
-**Réaction :**
-1. Signaler : `"This request isn't in the current plan."`, décrire la tâche telle qu'elle entrerait au plan, puis poser le choix — l'ajouter, ou la traiter hors plan.
-2. Ajoutée → appliquer une mise à jour substantielle du plan ; si le scope change significativement, poser aussi la question de la mise à jour du brief.
-3. Hors plan → traiter la demande sans toucher au plan.
+**Réaction :** une nouvelle demande est toujours une nouvelle tâche du plan — forge ne demande jamais s'il faut l'ajouter ou la traiter hors plan.
+1. Signaler : `"This request isn't in the current plan."`, puis formuler la tâche telle qu'elle entre au plan — titre, effort, fichiers, description — avec l'entrée `## Scope & rules` qu'elle implique, si le périmètre change durablement.
+2. Poser une seule question : valider, ou annuler. Un changement de formulation passe par le champ de texte libre, comme pour toute validation de contenu.
+3. Validée → la tâche entre au plan (et au brief, si son périmètre a changé) et s'exécute selon le mode en cours. Annulée → rien n'entre au plan, la demande n'est pas traitée.
 
 ---
 

@@ -97,20 +97,17 @@ Le brief est vivant. Les changements de scope sont gérés par la **Surveillance
 
 ### Réaction — dans l'ordre :
 
-1. **Signaler** la détection clairement, décrire la tâche telle qu'elle entrerait au plan, puis poser le choix avec `AskUserQuestion` — `header` : `Scope`, options `Add to the plan` / `Handle it off-plan` :
+Une demande complémentaire est toujours une tâche du plan — jamais de choix « au plan / hors plan ».
+
+1. **Formuler** la tâche telle qu'elle entre au plan — titre, effort, fichiers, description — précédée de :
    > "This request isn't in the current plan."
+   Si la demande change durablement le périmètre → ajouter à la même présentation l'entrée proposée pour `## Scope & rules` du brief.
 
-2. **Si `Add to the plan`** :
-   - Appliquer la mise à jour **substantielle** du plan (tâche ajoutée, effort estimé, position dans la séquence)
-   - Si la demande change significativement le scope global → poser aussi le choix avec `AskUserQuestion` — `header` : `Brief`, options `Update the brief` / `Plan only` :
-     > "This also changes the project scope."
-   - Écrire `.forge/branch/<BRANCH>/plan.md` après validation
-   - Écrire `.forge/branch/<BRANCH>/brief.md` si scope mis à jour
+2. **Poser une seule question** avec `AskUserQuestion` — `header` : `Plan`, options `Validate` / `Cancel` — motif « Validation d'un contenu » de `SKILL.md` : le changement demandé arrive en texte libre, reformuler, reposer la question.
 
-3. **Si `Handle it off-plan`** :
-   - Traiter la demande sans modifier le plan
-   - Fichier produit → écrit dans OUTPUT, jamais ailleurs — section « Contenu généré » de `SKILL.md`
-   - Continuer normalement
+3. **Sur `Validate`** → appliquer la mise à jour du plan (tâche ajoutée, effort, position dans la séquence), écrire `.forge/branch/<BRANCH>/plan.md`, écrire `.forge/branch/<BRANCH>/brief.md` si `## Scope & rules` change, puis exécuter la tâche selon le mode en cours.
+
+4. **Sur `Cancel`** → rien n'entre au plan, la demande n'est pas traitée. STOP — ne pas continuer.
 
 ---
 

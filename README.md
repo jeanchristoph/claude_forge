@@ -31,7 +31,7 @@ The result: fewer surprises, implementations that stay within the defined scope,
 - **Last session summary** — on resume, if `log.md` has entries, a one-line recap of the last 10 is displayed before the progress table.
 - **L/XL task decomposition** — large tasks are broken into micro-steps in `plan.md` before implementation starts.
 - **Deployment steps in the plan** — anything to run by hand outside the git deployment — an SQL migration, a configuration setting, an operating procedure — is listed in the `## Deployment` section of `plan.md` with its timing and its copy under `output/`, filled in as soon as the script is written.
-- **Out-of-scope detection** — requests outside the current plan are flagged; user confirms whether to add them or ignore them.
+- **Out-of-scope detection** — a request outside the current plan becomes a plan task: forge writes it up and you validate the wording, nothing more.
 - **Branch as argument** — `/forge <branch-name>` checks out that branch, creating it from the up-to-date default branch (`master`, else `main`) if it does not exist — never from the current one. The argument is always a git branch name, never a ticket ID.
 - **main/master guard** — without an argument, on protected branches, forge asks for either a ticket ID or a branch name before continuing.
 - **Shipping shortcuts** — `"grave master"` / `"engrave master"` (or with `"dev"`) commit, push, and merge in one confirmed step.
@@ -302,10 +302,10 @@ After each user input, forge checks whether the request falls inside the current
 - Introduces a new use case, module, or behaviour
 - Changes an implicitly accepted technical or functional constraint
 
-**Reaction:**
-1. Flag it: `"This request isn't in the current plan."`, describe the task as it would enter the plan, then ask — add it, or handle it off-plan.
-2. Added → apply a substantial plan update; if scope changes significantly, ask about updating the brief too.
-3. Off-plan → handle the request without touching the plan.
+**Reaction:** a new request is always a new plan task — forge never asks whether to add it or handle it off-plan.
+1. Flag it: `"This request isn't in the current plan."`, then write the task up as it would enter the plan — title, effort, files, description — together with the `## Scope & rules` entry it implies, if the scope changes durably.
+2. Ask one question only: validate, or cancel. A change to the wording goes through the free-text field, as for any content validation.
+3. Validated → the task enters the plan (and the brief, if its scope changed) and runs under the current mode. Cancelled → nothing enters the plan and the request is not handled.
 
 ---
 

@@ -55,6 +55,8 @@ Les deux lanceurs sont à la racine du dépôt et délèguent à `install/instal
 
 Les scripts sont idempotents — relancer après une mise à jour écrase proprement sans doublon.
 
+Les archives de release (« Source code » zip / tar.gz sur la [page des releases](https://github.com/jeanchristoph/claude_forge/releases)) ne contiennent que ce dont les installeurs ont besoin : `.forge/`, `docs/` et les fichiers `.git*` en sont exclus.
+
 L'extension `/forge-clickup` requiert en plus le connecteur MCP ClickUp authentifié (`/mcp` dans Claude Code). Aucun script ne peut faire cette étape à ta place : c'est un OAuth navigateur.
 
 ---

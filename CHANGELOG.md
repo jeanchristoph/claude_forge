@@ -10,10 +10,6 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ## [Unreleased]
 
-### Changed
-
-- A request outside the current plan always becomes a plan task: forge writes it up — with the brief's `## Scope & rules` entry it implies, if any — and asks one validation only. The "add to the plan / handle it off-plan" choice and the separate brief question are gone.
-
 ## [0.10.0] — 2026-09-16
 
 ### Added
@@ -24,6 +20,8 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ### Changed
 
+- Release archives ("Source code" zip / tar.gz) leave out `.forge/`, `docs/`, `.gitattributes` and `.gitignore` through `export-ignore` in `.gitattributes`; the repository itself still tracks them.
+- A request outside the current plan always becomes a plan task: forge writes it up — with the brief's `## Scope & rules` entry it implies, if any — and asks one validation only. The "add to the plan / handle it off-plan" choice and the separate brief question are gone.
 - `/forge-clickup` asks for the goal of the task, never its title: the ClickUp title and description are derived from the goal and shown for validation before the task is created. Forge then pre-fills the brief's `## Objective` from that same goal.
 - Every selectable question — its text, header, option labels and descriptions — is written in the user's language. The English labels in the skill files are internal references only; previously they were shown as-is on screen.
 - `log.md` entries carry the time as well as the date: `- [YYYY-MM-DD HH:MM] …`, local time.
@@ -34,6 +32,7 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 ### Removed
 
 - Hammering (`frappe` / `hammer`): the subagent dispatch over the plan, its adversarial review cell and its cross-review. Little used, and the way tasks get executed belongs to the user's coding preferences in `CLAUDE.md`, not to forge. The mode question now offers chaining or picking a task.
+- `TODO.txt`: its notes described the log split out of the brief, shipped long ago.
 - Every migration and compatibility mechanism: the `.claude/` → `.forge/` move with its `.gitignore` rewrite, the `coding_standards.md` → `coding-standards.md` rename, State 3 moving dated entries out of the brief's `## Decisions & Constraints`, and the background label normalization run by "tidy the forge". State 3 now only creates an empty `log.md`; "tidy the forge" only updates `project.md`. Old-format projects are updated by hand.
 
 ## [0.9.4] — 2026-09-16

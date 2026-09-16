@@ -1,4 +1,0 @@
-Ajout d'un log
-séparé le log du brief.
-Lire seulement les dix dernieres entrées début et ensuite mis a jours.
-Le brief ne contient que le brief + contrainte ou les regles immuables provenant des décision inscrite dans le journal.

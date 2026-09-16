@@ -56,6 +56,8 @@ Both launchers sit at the repository root and delegate to `install/install.ps1` 
 
 Scripts are idempotent — re-running after an update overwrites cleanly without duplicates.
 
+The release archives ("Source code" zip / tar.gz on the [releases page](https://github.com/jeanchristoph/claude_forge/releases)) carry only what the installers need: `.forge/`, `docs/` and the `.git*` files are left out.
+
 The `/forge-clickup` extension additionally requires the ClickUp MCP connector to be authenticated (`/mcp` in Claude Code). No script can do this step for you: it is a browser OAuth flow.
 
 ---

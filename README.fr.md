@@ -287,7 +287,7 @@ Le brief est un document vivant. Les changements de scope passent par la **Déte
 - Règle immuable posée par l'utilisateur
 - Remarque utilisateur précisant durablement le périmètre ou le hors périmètre
 
-**Décision ponctuelle** (choix acté et clos à un instant donné) → écrite silencieusement dans `log.md` (format : `- [date] [1 ligne]`) :
+**Décision ponctuelle** (choix acté et clos à un instant donné) → écrite silencieusement dans `log.md` (format : `- [AAAA-MM-JJ HH:MM] [1 ligne]`, heure locale) :
 - Choix d'implémentation mineur acté sans discussion
 - Choix utilisateur quand Claude a proposé plusieurs options (ex : "Option B retenue — raison")
 

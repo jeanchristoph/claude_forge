@@ -6,7 +6,7 @@ Si BRIEF contient `## Origin` → les étapes ci-dessous s'appliquent avec ces r
 - Source unique du plan : `### Delegated tasks` du brief. `## Objective` et `## Scope & rules` cadrent, ils ne génèrent aucune tâche.
 - En-tête supplémentaire, sous `**Date:**` : `**Origin:** <parent> · <BRANCH> · T3, T5` — valeurs reprises de `## Origin`.
 - Titre de tâche : `### T1 — [Titre] ← parent T3`. Une tâche parente peut donner plusieurs tâches enfant ; chaque tâche enfant pointe une seule tâche parente.
-- Aucune tâche hors mandat. Besoin hors périmètre découvert à la rédaction → entrée LOG (`- [date] Out of mandate: [besoin]`), jamais une tâche ; remonté dans `FORGE_DONE`.
+- Aucune tâche hors mandat. Besoin hors périmètre découvert à la rédaction → entrée LOG (`- [AAAA-MM-JJ HH:MM] Out of mandate: [besoin]`), jamais une tâche ; remonté dans `FORGE_DONE`.
 - Étapes 5 et 7 → `FORGE_QUESTION` (section « Mode délégué » de `SKILL.md`), mêmes header et options.
 
 ## Étapes — dans l'ordre

@@ -6,11 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 The project is still in initial development (`0.x`): file formats may change.
-Since 0.9.5 no automatic migration ships with the skill: a project forged with an older format is brought up to date by hand.
+Since 0.10.0 no automatic migration ships with the skill: a project forged with an older format is brought up to date by hand.
 
 ## [Unreleased]
 
-## [0.9.5] — 2026-09-16
+## [0.10.0] — 2026-09-16
 
 ### Added
 
@@ -21,8 +21,9 @@ Since 0.9.5 no automatic migration ships with the skill: a project forged with a
 ### Changed
 
 - Every selectable question — its text, header, option labels and descriptions — is written in the user's language. The English labels in the skill files are internal references only; previously they were shown as-is on screen.
+- `log.md` entries carry the time as well as the date: `- [YYYY-MM-DD HH:MM] …`, local time.
+- The client reply drafted at closure is empathetic as well as fluent, professional and pedagogical.
 - Validating a presented content — brief objective, plan, closing report — offers `Validate` / `Cancel` only. The "rework" option is gone: it cost a round-trip before the user could even say what to change. A change request now comes through the question's free-text field with its explanation; a bare disagreement gets a one-line "what should change?" and the content is never shown again unchanged.
-
 - `/forge <branch-name>` creates a missing branch from the up-to-date default branch — `master`, else `main` — never from the current one, so a new branch never inherits the unmerged commits of whatever branch happened to be checked out. Same sequence as forge-clickup: `checkout <default>`, `pull`, `checkout -b <name>`.
 
 ### Removed
@@ -201,8 +202,8 @@ Since 0.9.5 no automatic migration ships with the skill: a project forged with a
 - Idempotent Unix and Windows installers, with `settings.json` merge and no duplicate entries on reinstall.
 - `main` / `master` guard: on a protected branch, forge asks for a ticket ID or a branch name before continuing.
 
-[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.9.5...HEAD
-[0.9.5]: https://github.com/jeanchristoph/claude_forge/compare/v0.9.4...v0.9.5
+[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/jeanchristoph/claude_forge/compare/v0.9.4...v0.10.0
 [0.9.4]: https://github.com/jeanchristoph/claude_forge/compare/v0.9.3...v0.9.4
 [0.9.3]: https://github.com/jeanchristoph/claude_forge/compare/v0.9.2...v0.9.3
 [0.9.2]: https://github.com/jeanchristoph/claude_forge/compare/v0.9.1...v0.9.2

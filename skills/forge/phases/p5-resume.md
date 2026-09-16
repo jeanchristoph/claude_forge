@@ -64,7 +64,7 @@ Le brief est vivant. Les changements de scope sont gérés par la **Surveillance
 - Règle immuable posée par l'utilisateur
 - Remarque utilisateur précisant durablement le périmètre ou le hors périmètre
 
-**Décision ponctuelle** (choix acté et clos à un instant donné) → écrire silencieusement dans LOG (format : `- [date] [1 ligne]`) :
+**Décision ponctuelle** (choix acté et clos à un instant donné) → écrire silencieusement dans LOG (format : `- [AAAA-MM-JJ HH:MM] [1 ligne]`, heure locale) :
 - Choix d'implémentation mineur acté sans discussion
 - **Choix utilisateur quand Claude a proposé plusieurs options** (ex: "Option B retenue — raison")
 
@@ -135,8 +135,8 @@ Le brief est vivant. Les changements de scope sont gérés par la **Surveillance
 8. **Sur `Open the linked project`** → dans l'ordre :
    - Exécuter l'action git retenue à l'étape 4. Échec → afficher l'erreur telle quelle, STOP.
    - Écrire `<LINKED>/.forge/branch/<BRANCH>/brief.md` — format du mandat ci-dessous. Fichier déjà présent → le remplacer : le mandat parent fait foi.
-   - Écrire `<LINKED>/.forge/branch/<BRANCH>/log.md` s'il est absent, puis insérer en tête : `- [date] Opened from <ROOT> · T3, T5`.
-   - PLAN parent : sous chaque tâche du mandat, note `delegated to <LINKED> @ <BRANCH>` — statut inchangé. LOG parent : `- [date] Delegated T3, T5 to <LINKED> @ <BRANCH>`.
+   - Écrire `<LINKED>/.forge/branch/<BRANCH>/log.md` s'il est absent, puis insérer en tête : `- [AAAA-MM-JJ HH:MM] Opened from <ROOT> · T3, T5`.
+   - PLAN parent : sous chaque tâche du mandat, note `delegated to <LINKED> @ <BRANCH>` — statut inchangé. LOG parent : `- [AAAA-MM-JJ HH:MM] Delegated T3, T5 to <LINKED> @ <BRANCH>`.
    - Lancer le sous-agent (prompt ci-dessous), puis entrer dans la boucle de relais.
 
 ### Boucle de relais
@@ -156,7 +156,7 @@ Pour chaque tâche parente du mandat, dans l'ordre du plan :
 - Absente de `done` et de `blocked` → marquer `[!] blocked — not addressed by the delegated run · delegated to <LINKED> @ <BRANCH>`.
 
 ⚠️ La note conserve toujours `delegated to <LINKED> @ <BRANCH>` : la livraison relayée s'appuie dessus pour retrouver le projet lié.
-- Une entrée LOG parent par tâche : `- [date] T3 delegated to <LINKED> — done` / `— blocked: <raison>`.
+- Une entrée LOG parent par tâche : `- [AAAA-MM-JJ HH:MM] T3 delegated to <LINKED> — done` / `— blocked: <raison>`.
 
 `out_of_mandate` non vide → présenter chaque besoin à l'utilisateur, puis appliquer la « Surveillance des demandes complémentaires » à chacun. Rendre compte : tâches vertes, tâches bloquées avec leur raison, fichiers touchés dans `<LINKED>`.
 
@@ -300,7 +300,7 @@ Tableau d'un projet lié : mêmes colonnes, même contenu, titré par `<LINKED>`
    ⚠️ Action sortante : aucun envoi sans accord explicite. Le silence n'est pas un accord.
 
 4. **Réponse client** — poser le choix avec `AskUserQuestion` — `header` : `Email`, options `Draft a reply` / `Finish`.
-   - `Draft a reply` → attendre que l'utilisateur colle le mail auquel répondre, générer une réponse au ton fluide, professionnel et pédagogique, rédigée dans la langue du mail reçu — jamais celle de l'utilisateur si elle diffère.
+   - `Draft a reply` → attendre que l'utilisateur colle le mail auquel répondre, générer une réponse au ton fluide, professionnel, pédagogique et empathique, rédigée dans la langue du mail reçu — jamais celle de l'utilisateur si elle diffère.
    - **Un paragraphe tient sur une seule ligne.** Jamais de retour à la ligne forcé à l'intérieur d'un paragraphe :
      le client de messagerie gère le rendu, un repli à la main coupe les phrases n'importe où, souvent juste avant
      un point. Les retours à la ligne ne séparent que les paragraphes et les éléments d'une liste.

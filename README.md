@@ -287,7 +287,7 @@ The brief is a living document. Changes of scope go through **Out-of-scope detec
 - Standing rule set by the user
 - User remark durably narrowing the scope
 
-**One-off decision** (settled and closed at a point in time) → written silently into `log.md` (`- [date] [1 line]`):
+**One-off decision** (settled and closed at a point in time) → written silently into `log.md` (`- [YYYY-MM-DD HH:MM] [1 line]`, local time):
 - Minor implementation choice made without discussion
 - User's choice when Claude presented several options (e.g. "Option B chosen — reason")
 

@@ -32,7 +32,7 @@ The result: fewer surprises, implementations that stay within the defined scope,
 - **L/XL task decomposition** — large tasks are broken into micro-steps in `plan.md` before implementation starts.
 - **Deployment steps in the plan** — anything to run by hand outside the git deployment — an SQL migration, a configuration setting, an operating procedure — is listed in the `## Deployment` section of `plan.md` with its timing and its copy under `output/`, filled in as soon as the script is written.
 - **Out-of-scope detection** — requests outside the current plan are flagged; user confirms whether to add them or ignore them.
-- **Branch as argument** — `/forge <branch-name>` checks out that branch, creating it from the current one if it does not exist. The argument is always a git branch name, never a ticket ID.
+- **Branch as argument** — `/forge <branch-name>` checks out that branch, creating it from the up-to-date default branch (`master`, else `main`) if it does not exist — never from the current one. The argument is always a git branch name, never a ticket ID.
 - **main/master guard** — without an argument, on protected branches, forge asks for either a ticket ID or a branch name before continuing.
 - **Shipping shortcuts** — `"grave master"` / `"engrave master"` (or with `"dev"`) commit, push, and merge in one confirmed step.
 - **Compaction survival** — the `PreCompact` hook injects the forge state (branch, goal, task statuses) into the compacted context summary.
@@ -64,7 +64,7 @@ The `/forge-clickup` extension additionally requires the ClickUp MCP connector t
 
 ```
 /forge                  # works on the current branch (main/master guard applies)
-/forge <branch-name>    # checks out <branch-name>, creating it from the current branch if missing
+/forge <branch-name>    # checks out <branch-name>, creating it from master/main if missing
 /forge-clickup          # extension: opens a ClickUp task, creates the branch, then hands over to forge
 ```
 

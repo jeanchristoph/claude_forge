@@ -14,7 +14,7 @@
 forge/
 ├── skills/                        → chaque dossier copié vers ~/.claude/skills/<nom>/
 │   ├── forge/
-│   │   ├── SKILL.md               (machine à états : migration → branche → garde main/master → détection d'état ; mode délégué)
+│   │   ├── SKILL.md               (machine à états : branche → garde main/master → détection d'état ; mode délégué)
 │   │   └── phases/
 │   │       ├── p0-project.md         (État 0 — Project Init)
 │   │       ├── p1-coding-standards.md (État 1)

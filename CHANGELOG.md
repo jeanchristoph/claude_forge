@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 The project is still in initial development (`0.x`): file formats may change.
-Every format change so far is absorbed by an automatic migration — upgrading requires no manual action.
+Since 0.9.5 no automatic migration ships with the skill: a project forged with an older format is brought up to date by hand.
 
 ## [Unreleased]
 
@@ -28,6 +28,7 @@ Every format change so far is absorbed by an automatic migration — upgrading r
 ### Removed
 
 - Hammering (`frappe` / `hammer`): the subagent dispatch over the plan, its adversarial review cell and its cross-review. Little used, and the way tasks get executed belongs to the user's coding preferences in `CLAUDE.md`, not to forge. The mode question now offers chaining or picking a task.
+- Every migration and compatibility mechanism: the `.claude/` → `.forge/` move with its `.gitignore` rewrite, the `coding_standards.md` → `coding-standards.md` rename, State 3 moving dated entries out of the brief's `## Decisions & Constraints`, and the background label normalization run by "tidy the forge". State 3 now only creates an empty `log.md`; "tidy the forge" only updates `project.md`. Old-format projects are updated by hand.
 
 ## [0.9.4] — 2026-09-16
 

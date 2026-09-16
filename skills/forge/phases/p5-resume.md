@@ -13,14 +13,16 @@
 7. **Aucune tâche ouverte** — une `[!] blocked` n'est pas ouverte → aucun mode proposé. Demander en une ligne quoi faire ensuite, puis STOP.
    > "Nothing open — what do we do next?"
 
+   BRIEF contient `## Origin` (mode délégué) → aucune question : terminer par `FORGE_DONE` (section « Mode délégué » de `SKILL.md`). STOP.
+
 8. **Au moins une tâche ouverte** → poser le choix du mode d'exécution avec `AskUserQuestion` — jamais une question en texte libre.
-   - `header` : `Mode` · trois options, dans cet ordre :
+   - `header` : `Mode` · deux options, dans cet ordre :
      - `Chain the tasks (recommended)` → "Work through every open task in order, one after another, without stopping between them."
      - `Pick a task` → "Choose which task we tackle now."
-     - `Hammer the plan` → "Dispatch every open task to sub-agents in one sequence — each task tested, then reviewed by three adversarial sub-agents."
    - `Pick a task` retenu → seconde `AskUserQuestion`, `header` : `Task`, une option par tâche ouverte dans l'ordre du plan (label `T<n> — titre`, description = son effort et sa dépendance éventuelle), quatre au maximum.
+   - BRIEF contient `## Origin` (mode délégué) → aucune question : enchaîner toutes les tâches ouvertes dans l'ordre, sans arrêt entre elles — la validation du plan vaut accord.
 
-   ⚠️ Aucun démarrage avant la réponse à la question — ni enchaînement, ni tâche isolée, ni frappe.
+   ⚠️ Aucun démarrage avant la réponse à la question — ni enchaînement, ni tâche isolée. En mode délégué, la réponse est la validation du plan.
 
 ---
 
@@ -112,51 +114,105 @@ Le brief est vivant. Les changements de scope sont gérés par la **Surveillance
 
 ---
 
-## Frappe — dispatch de sous-agents sur les tâches du plan
+## Délégation — projet lié
 
-**Déclencheur :** l'utilisateur dit "frappe" / "hammer", seul ou suivi d'une tâche du plan (ex: "frappe T3").
+**Déclencheur :** une demande vise un dossier hors de ROOT — chemin cité explicitement ou projet nommé sans ambiguïté — avec ou sans tâches du plan citées (ex: "fais T3 et T5 dans `../autre-projet`").
 
-**INVARIANT :** seul l'orchestrateur écrit dans PLAN et LOG. Les sous-agents rendent un verdict structuré, jamais une écriture directe — des écritures concurrentes corrompent les fichiers.
+**Vocabulaire :** projet *parent* = ROOT de la session · projet *lié* = `<LINKED>`, chemin absolu du dossier visé · *mandat* = les tâches parentes déléguées.
 
-⚠️ Aucun sous-agent lancé avant la confirmation de l'étape 4.
+**INVARIANT :** le parent n'écrit dans `<LINKED>` que `.forge/branch/<BRANCH>/brief.md` et `.forge/branch/<BRANCH>/log.md` — jamais de code, jamais de plan. Le parent ne lit jamais le code de `<LINKED>`.
+
+⚠️ Aucune écriture, aucune commande git avant la confirmation de l'étape 6.
 
 **Réaction — dans l'ordre :**
-1. Constituer la liste des tâches : tâche citée → elle seule ; aucune tâche citée → toutes les tâches `[ ]` du plan, dans l'ordre. Liste vide → "Nothing to hammer — every task is done." et STOP.
-2. Partitionner par le champ `Files` de chaque tâche : fichiers disjoints → tâches parallèles, un worktree git par tâche ; fichiers en intersection → même groupe, traité séquentiellement.
-3. Afficher le tableau de frappe (format ci-dessous).
-4. Poser une confirmation unique couvrant toute la séquence, avec `AskUserQuestion` — `header` : `Hammer`, options `Run the hammering` / `Cancel`.
-5. **Sur `Cancel`** → n'exécuter aucune action. STOP — ne pas continuer.
-6. **Sur `Run the hammering`** → exécuter la cellule de chaque tâche (ci-dessous), sans validation intermédiaire.
-7. Toutes les tâches traitées → exécuter la revue transversale (ci-dessous).
-8. Rendre compte : tâches vertes, tâches `[!] blocked` avec leur raison, constats de la revue transversale.
+1. `<LINKED>/.forge/` absent → "`<LINKED>` is not forged — run `/forge` there first." STOP — ne pas continuer. Jamais d'initialisation à la place de l'utilisateur.
+2. `<BRANCH>` est un identifiant de ticket (parent resté sur `main`/`master`) → "Delegation needs a real branch — create one first." STOP — ne pas continuer.
+3. Constituer le mandat : tâches citées dans la demande → elles seules ; aucune citée → poser le choix avec `AskUserQuestion` en multi-sélection — `header` : `Delegate`, une option par tâche `[ ]` du plan (label `T<n> — titre`, description = son effort), quatre par question, enchaînées si besoin. Mandat vide → "Nothing to delegate." STOP — ne pas continuer.
+4. Vérifier la branche dans `<LINKED>` : `git -C <LINKED> rev-parse --verify --quiet refs/heads/<BRANCH>`. Retenir l'action : `checkout` si elle existe, sinon création depuis la branche par défaut à jour de `<LINKED>` — même règle que « Branche de travail » de `SKILL.md`, chaque commande préfixée `git -C <LINKED>`.
+5. Afficher le tableau de délégation (format ci-dessous).
+6. Poser une confirmation unique avec `AskUserQuestion` — `header` : `Delegate`, options `Open the linked project` / `Cancel`.
+7. **Sur `Cancel`** → n'exécuter aucune action. STOP — ne pas continuer.
+8. **Sur `Open the linked project`** → dans l'ordre :
+   - Exécuter l'action git retenue à l'étape 4. Échec → afficher l'erreur telle quelle, STOP.
+   - Écrire `<LINKED>/.forge/branch/<BRANCH>/brief.md` — format du mandat ci-dessous. Fichier déjà présent → le remplacer : le mandat parent fait foi.
+   - Écrire `<LINKED>/.forge/branch/<BRANCH>/log.md` s'il est absent, puis insérer en tête : `- [date] Opened from <ROOT> · T3, T5`.
+   - PLAN parent : sous chaque tâche du mandat, note `delegated to <LINKED> @ <BRANCH>` — statut inchangé. LOG parent : `- [date] Delegated T3, T5 to <LINKED> @ <BRANCH>`.
+   - Lancer le sous-agent (prompt ci-dessous), puis entrer dans la boucle de relais.
 
-### Cellule d'une tâche
+### Boucle de relais
 
-1. **Implémentation** — un sous-agent. Contexte transmis : `brief.md`, `coding-standards.md`, la tâche et ses fichiers. Rien d'autre.
-2. **Vérification mécanique** — tests, lint et types du projet.
-   - Rouge → retour à l'étape 1 avec le rapport d'échec. Deux reprises au maximum.
-   - Reprises épuisées → marquer `[!] blocked` avec la raison en une ligne, passer à la tâche suivante.
-   - Vert → étape 3.
-3. **Vérification adversariale** — trois sous-agents en contexte frais, lancés en parallèle, ne recevant que le diff de la tâche et `brief.md`. Un angle distinct par sous-agent, jamais deux fois le même : respect du brief · régression · sécurité · dette introduite.
-   - Majorité défavorable → retour à l'étape 1. Deux reprises au maximum.
-   - Majorité favorable → cocher `[x]`, passer à la tâche suivante.
+À chaque rapport du sous-agent :
+- Rapport contenant `FORGE_QUESTION` → poser la question avec `AskUserQuestion`, `header` et options recopiés tels quels ; `options: none` → question en texte libre. Renvoyer la réponse au même sous-agent par `SendMessage`, message `FORGE_ANSWER: <réponse>`. Reprendre la boucle.
+- Rapport contenant `FORGE_DONE` → sortir de la boucle, appliquer le retour ci-dessous.
+- Rapport sans aucun des deux blocs → le renvoyer au sous-agent par `SendMessage` : `FORGE_ANSWER: end your turn with a FORGE_QUESTION or a FORGE_DONE block.` Deux rappels au maximum, puis marquer chaque tâche du mandat `[!] blocked — delegated run ended without report` et sortir.
 
-⚠️ Consigne de réfutation à chaque vérificateur, jamais de validation — un relecteur chargé de valider valide.
-⚠️ Le juge est la suite de tests, jamais un sous-agent : aucune tâche cochée `[x]` sans étape 2 verte.
+⚠️ Jamais de réponse inventée à la place de l'utilisateur — chaque `FORGE_QUESTION` lui est posée.
 
-### Revue transversale
+### Retour — application de `FORGE_DONE`
 
-Un sous-agent unique, après toutes les tâches, recevant le diff complet et `brief.md`. Objet distinct de la cellule : incohérences entre tâches, doublons, dette accumulée.
-- Constats → les présenter, puis poser le choix avec `AskUserQuestion` — `header` : `Review`, options `Fix them` / `Leave them` — avant toute correction.
-- Aucun constat → l'indiquer en une ligne.
+Pour chaque tâche parente du mandat, dans l'ordre du plan :
+- Toutes ses tâches enfant dans `done` → cocher `[x]`, note `delegated to <LINKED> @ <BRANCH> · done`.
+- Au moins une dans `blocked` → marquer `[!] blocked — <raison de la première> · delegated to <LINKED> @ <BRANCH>`.
+- Absente de `done` et de `blocked` → marquer `[!] blocked — not addressed by the delegated run · delegated to <LINKED> @ <BRANCH>`.
 
-### Format du tableau de frappe
+⚠️ La note conserve toujours `delegated to <LINKED> @ <BRANCH>` : la livraison relayée s'appuie dessus pour retrouver le projet lié.
+- Une entrée LOG parent par tâche : `- [date] T3 delegated to <LINKED> — done` / `— blocked: <raison>`.
 
-Une ligne par tâche à traiter, dans l'ordre d'exécution. Quatre colonnes, en-têtes générés dans la langue de l'utilisateur : numéro de tâche, titre, mode d'exécution (`parallel` / `sequential`), nombre de sous-agents prévus.
+`out_of_mandate` non vide → présenter chaque besoin à l'utilisateur, puis appliquer la « Surveillance des demandes complémentaires » à chacun. Rendre compte : tâches vertes, tâches bloquées avec leur raison, fichiers touchés dans `<LINKED>`.
 
-Dernière ligne : total des tâches et total des sous-agents, reprises exclues.
+⚠️ Le parent ne coche jamais une tâche déléguée de lui-même — seul `FORGE_DONE` fait foi.
 
-⚠️ Jamais de liste de fichiers, jamais de décompte de lignes.
+### Format du mandat — `brief.md` du projet lié
+
+Brief parent recopié à l'identique, précédé de `## Origin`. Libellés en anglais, tels quels ; contenu des tâches recopié intégralement depuis PLAN parent, sans reformulation.
+
+```markdown
+## Origin
+**Parent:** <ROOT>
+**Branch:** <BRANCH>
+**Tasks:** T3, T5
+
+### Delegated tasks
+
+#### T3 — [Titre parent]
+**Effort:** [effort parent]
+**Files:** [fichiers parent]
+**Description:** [description parent, intégrale]
+
+## Objective
+[brief parent, inchangé]
+
+## Scope & rules
+[brief parent, inchangé]
+```
+
+### Prompt du sous-agent
+
+Un sous-agent, type général, lancé en tâche de fond. Prompt figé — rien d'autre n'est transmis :
+
+```
+FORGE_DELEGATED
+ROOT: <LINKED>
+BRANCH: <BRANCH>
+LANGUAGE: <langue de l'utilisateur>
+Invoke the `forge` skill with argument `<BRANCH>`. Resolve every path and every git command under ROOT.
+Delegated mode applies (section « Mode délégué » of the skill): never call AskUserQuestion.
+Write every file content and every report in LANGUAGE; structure labels stay in English.
+End every turn with a FORGE_QUESTION or a FORGE_DONE block.
+```
+
+### Format du tableau de délégation
+
+Une ligne par action prévue, dans l'ordre d'exécution. Trois colonnes, en-têtes générés dans la langue de l'utilisateur : numéro d'ordre, action, détail.
+
+Actions et détail associé — aucune autre :
+- `branch` → `<LINKED>` : `checkout <BRANCH>` ou `create <BRANCH> from <défaut>`
+- `brief` → `<LINKED>/.forge/branch/<BRANCH>/brief.md` : mandat `T3, T5`
+- `log` → `<LINKED>/.forge/branch/<BRANCH>/log.md`
+- `mark` → tâches parentes annotées, une ligne
+- `agent` → sous-agent délégué, une ligne
+
+⚠️ Jamais de liste de fichiers du projet lié, jamais de décompte de lignes.
 
 ---
 
@@ -164,21 +220,41 @@ Dernière ligne : total des tâches et total des sous-agents, reprises exclues.
 
 **Déclencheur :** l'utilisateur dit "grave" / "engrave", seul ou suivi d'une ou plusieurs branches existantes, dans l'ordre voulu (ex: "grave", "grave dev", "grave dev master").
 
-**INVARIANT :** git opère uniquement sur le dépôt courant — jamais sur un autre dépôt ouvert en parallèle.
+**INVARIANT :** git opère uniquement sur le dépôt courant — jamais sur un autre dépôt ouvert en parallèle. Unique exception : `<LINKED>`, pour le positionnement de branche par la « Délégation — projet lié » et pour la livraison relayée ci-dessous — rien d'autre.
 
 **Publication hors dépôt :** tout texte publié sur la forge distante à la suite d'une livraison — titre et notes d'une release, description d'un tag ou d'une PR — est rédigé en **anglais**, quelle que soit la langue de l'utilisateur. Le message de commit, lui, suit la langue des commits du dépôt.
 
-⚠️ Aucune commande git — `git add` compris — avant la confirmation de l'étape 3.
+⚠️ Aucune commande git — `git add` compris, `<LINKED>` compris — avant la confirmation de l'étape 4.
 
 **Réaction — dans l'ordre :**
 1. Générer automatiquement le message de commit (règles COMMITS GIT : max 150 car., pas de mention Claude) — pas de confirmation sur le message lui-même.
-2. Afficher le tableau récapitulatif des actions prévues (format ci-dessous).
-3. Poser une confirmation unique couvrant toute la séquence, avec `AskUserQuestion` — `header` : `Engrave`, options `Run the sequence` / `Cancel`.
-4. **Sur `Cancel`** → n'exécuter aucune action. STOP — ne pas continuer.
-5. **Sur `Run the sequence`** → exécuter la séquence entière sans validation intermédiaire, dans l'ordre : `git add`, `git commit`, `git push` sur `<BRANCH>`.
-6. Aucune branche citée → passer directement à l'étape 8.
-7. Pour chaque branche citée, dans l'ordre : branche citée égale à `<BRANCH>` → ignorer sans message ; sinon → checkout de la branche, merge de `<BRANCH>` (toujours la branche de départ, jamais la branche précédente de la chaîne), push.
-8. Revenir sur `<BRANCH>`. Rendre compte : hash de commit, branches mises à jour.
+2. Livraison relayée — pour chaque projet lié (ci-dessous) : poser les deux questions, retenir la séquence du lié.
+3. Afficher le tableau récapitulatif des actions prévues (format ci-dessous), puis un tableau par projet lié retenu.
+4. Poser une confirmation unique couvrant toute la séquence — parent et projets liés — avec `AskUserQuestion` — `header` : `Engrave`, options `Run the sequence` / `Cancel`.
+5. **Sur `Cancel`** → n'exécuter aucune action, parent et liés. STOP — ne pas continuer.
+6. **Sur `Run the sequence`** → exécuter la séquence entière sans validation intermédiaire, dans l'ordre : `git add`, `git commit`, `git push` sur `<BRANCH>`.
+7. Aucune branche citée → passer directement à l'étape 9.
+8. Pour chaque branche citée, dans l'ordre : branche citée égale à `<BRANCH>` → ignorer sans message ; sinon → checkout de la branche, merge de `<BRANCH>` (toujours la branche de départ, jamais la branche précédente de la chaîne), push.
+9. Revenir sur `<BRANCH>`.
+10. Pour chaque projet lié retenu, dans l'ordre du plan : dérouler les étapes 6 à 9 avec ses branches, chaque commande préfixée `git -C <LINKED>`. Échec → afficher l'erreur telle quelle, passer au projet lié suivant ; le parent, déjà livré, n'est jamais repris.
+11. Rendre compte : hash de commit et branches mises à jour, parent puis chaque projet lié.
+
+### Livraison relayée — projets liés
+
+**Déclencheur :** PLAN parent porte au moins une note `delegated to <LINKED> @ <BRANCH>`. Aucune → étape 2 silencieuse, jamais mentionnée.
+
+**Pour chaque `<LINKED>` distinct, dans l'ordre du plan :**
+- `git -C <LINKED> status --porcelain` vide → ignorer sans question. Une ligne au rendu final : "`<LINKED>`: nothing to engrave."
+- Sinon → poser le choix avec `AskUserQuestion` — `header` : `Linked`, question "Also engrave `<LINKED>` @ `<BRANCH>`?", options `Engrave it` / `Skip`.
+- **Sur `Skip`** → projet lié écarté de la séquence, sans commentaire.
+- **Sur `Engrave it`** → poser le choix des branches avec `AskUserQuestion` — `header` : `Linked branches`, options dans cet ordre :
+  - `Same branches as the parent` → "[branches citées du parent, dans l'ordre]" — omise si le parent n'en cite aucune.
+  - `<BRANCH> only` → "Commit and push `<BRANCH>`, no merge."
+  - `Other branches` → "I'll ask you which ones." — puis demander en texte libre, dans l'ordre voulu.
+- Message de commit du lié : généré depuis les tâches du mandat cochées `[x]` avec sa note `delegated to <LINKED>` — jamais depuis le code de `<LINKED>`, que le parent ne lit pas. Langue : celle des commits de `<LINKED>` (`git -C <LINKED> log -5 --format=%s`).
+- Branche citée absente de `<LINKED>` (`git -C <LINKED> show-ref --verify --quiet refs/heads/<cible>`) → ligne `merge` marquée `skipped — branch missing` dans le tableau, ignorée à l'exécution, jamais créée.
+
+⚠️ Le sous-agent délégué n'est jamais sollicité pour livrer : la livraison relayée est du git pur, exécuté par le parent.
 
 ### Format du tableau récapitulatif
 
@@ -191,7 +267,9 @@ Actions et détail associé — aucune autre :
 - `merge` → `<BRANCH>` → branche cible, une ligne par branche citée
 - `checkout` → dernière ligne du tableau uniquement, retour sur `<BRANCH>` ; omise si aucune branche n'est citée
 
-⚠️ Jamais de ligne `checkout` pour les changements de branche de l'étape 7 : ils restent implicites. Seul le retour final sur `<BRANCH>` est listé.
+Tableau d'un projet lié : mêmes colonnes, même contenu, titré par `<LINKED>` en une ligne au-dessus ; le détail de chaque ligne porte le chemin (`add` → `<LINKED>` · `<BRANCH>`).
+
+⚠️ Jamais de ligne `checkout` pour les changements de branche de l'étape 8 : ils restent implicites. Seul le retour final sur `<BRANCH>` est listé.
 ⚠️ Jamais de liste de fichiers modifiés, jamais de décompte de lignes.
 
 ---
@@ -210,7 +288,7 @@ Actions et détail associé — aucune autre :
 2. **Sur `Solved` :**
    - Générer le rapport interne (ou le mettre à jour si `report.txt` existe déjà pour cette branche) : texte brut structuré, concis, logique, schématique — labels courts (ex: PROBLÈME / SOLUTION / IMPACT). **Exclure** : détails d'itérations, mentions de branche, de tests, de fichiers modifiés.
    - Rédiger intégralement dans la langue de l'utilisateur, labels compris — seul fichier produit exempté des libellés de structure figés en anglais.
-   - Présenter le rapport, poser le choix avec `AskUserQuestion` — `header` : `Report`, options `Write it` / `Rework it` — puis écrire `.forge/branch/<BRANCH>/report.txt`. `Rework it` → demander ce qui doit changer, régénérer, reposer la question.
+   - Présenter le rapport, poser le choix avec `AskUserQuestion` — `header` : `Report`, options `Write it` / `Cancel` — motif « Validation d'un contenu » de `SKILL.md` : le changement demandé arrive en texte libre, régénérer, reposer la question. Sur `Write it` → écrire `.forge/branch/<BRANCH>/report.txt`.
 
 3. **Publication dans ClickUp** — uniquement si `.forge/clickup.json` est présent. Fichier absent → étape entièrement silencieuse, jamais mentionnée.
    - Lire `branch_code` dans `.forge/clickup.json` : `<BRANCH>` est le code de la tâche ClickUp, `custom_id` ou `id` selon ce champ.

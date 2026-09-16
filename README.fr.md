@@ -162,7 +162,7 @@ Les tâches L/XL incluent un bloc de décomposition commenté (`T1.1`, `T1.2`, �
 ### État 5 — Actif
 **Condition :** brief + plan présents
 
-Lit `coding-standards.md` et les fichiers en silence. Si `log.md` contient des entrées, affiche d'abord un récapitulatif "**Last session :**" des 10 dernières en une ligne, puis le tableau d'avancement. Propose ensuite les trois modes — enchaîner les tâches ouvertes, en choisir une, ou frapper les restantes — et attend. Aucune tâche ouverte : aucun mode proposé, la question est ouverte.
+Lit `coding-standards.md` et les fichiers en silence. Si `log.md` contient des entrées, affiche d'abord un récapitulatif "**Last session :**" des 10 dernières en une ligne, puis le tableau d'avancement. Propose ensuite les deux modes — enchaîner les tâches ouvertes ou en choisir une — et attend. Aucune tâche ouverte : aucun mode proposé, la question est ouverte.
 
 ---
 
@@ -185,12 +185,20 @@ Erreur ou résultat vide (pas de dépôt git) : demande un nom de code utilisé 
 
 Toute confirmation bloquante, tout choix fermé est posé sous forme de question à choix, jamais en
 texte libre : mode d'exécution, approche architecturale, validation du plan, mise à jour
-substantielle, demande hors périmètre, propagation d'une règle globale, frappe, livraison, clôture,
-publication ClickUp, réponse client. Le refus est toujours une option explicite, et l'absence de
-réponse vaut STOP — jamais accord.
+substantielle, demande hors périmètre, propagation d'une règle globale, livraison, livraison du projet
+lié, clôture, publication ClickUp, réponse client. Le refus est toujours une option explicite, et
+l'absence de réponse vaut STOP — jamais accord. La question, ses options et leurs descriptions sont
+rédigées dans ta langue — les libellés anglais cités dans ce document sont les références internes du
+skill, pas ce que tu vois à l'écran.
 
 Les questions ouvertes restent en texte libre, là où une liste figée ne ferait que gêner : objectif
 de la tâche, nom de code de branche, identifiant de ticket, mail à coller, quoi faire ensuite.
+
+Valider un contenu — l'objectif du brief, le plan, le rapport de clôture — n'offre que deux options :
+valider, ou annuler. Pas d'option « à retravailler » : une demande de changement passe par le champ de
+texte libre de la question, avec son explication, et le contenu revient retravaillé sous la même
+question. Un simple « non » n'est pas une demande de changement — forge demande en une ligne ce qui
+doit changer, et ne re-présente jamais un contenu inchangé.
 
 ---
 
@@ -305,38 +313,39 @@ Met à jour `project.md` (uniquement ce qui a changé, après validation), puis 
 
 ---
 
-## Frappe — dispatch de sous-agents sur le plan
+## Délégation vers un projet lié
 
 ```
-"frappe" / "hammer"          → toutes les tâches non cochées
-"frappe T3" / "hammer T3"    → cette tâche seulement
+"fais T3 et T5 dans ../autre-projet"    → ces tâches seulement
+"fais ça dans ../autre-projet"          → forge demande quelles tâches ouvertes déléguer
 ```
 
-Exécute les tâches du plan par sous-agents, avec vérification à chaque étape. Les tâches sont
-partitionnées selon les fichiers qu'elles touchent — information que le plan porte déjà dans son
-champ `Files` : fichiers disjoints en parallèle, chacun dans son propre worktree git, fichiers en
-intersection en séquentiel dans le même groupe. Un tableau récapitule chaque tâche, son mode
-d'exécution et son nombre de sous-agents ; rien ne démarre avant une confirmation unique, valable
-pour toute la séquence.
+Une demande qui vise un dossier hors du projet courant ouvre un **projet lié** : un dépôt déjà forgé
+(`.forge/` présent — sinon forge refuse et demande d'y lancer `/forge` d'abord ; il n'initialise jamais un
+projet de lui-même). Il faut une vraie branche côté parent : une session restée sur `main`/`master` sous
+un identifiant de ticket ne peut pas déléguer.
 
-Chaque tâche traverse la même cellule : **implémentation** (avec pour seul contexte le brief, les
-conventions de code et la tâche), puis **vérification mécanique** (tests, lint, types), puis
-**trois relecteurs adversariaux** en contexte frais, chacun sur un angle distinct — respect du
-brief, régression, sécurité, dette introduite — ne voyant que le diff et le brief. Un échec
-mécanique ou une majorité défavorable renvoie la tâche à l'implémentation, deux fois au maximum,
-après quoi elle est marquée `[!] blocked` avec sa raison et la séquence continue.
+Le parent prépare le terrain, rien de plus : il positionne la même branche `<BRANCH>` dans le dépôt lié
+(créée depuis son `master`/`main` à jour si elle manque), écrit le brief lié — le brief parent recopié à
+l'identique, précédé d'un bloc `## Origin` portant le chemin du parent, la branche et le **mandat** : les
+tâches déléguées recopiées intégralement — et ouvre le `log.md` lié. Le plan du parent est annoté
+(`delegated to <chemin> @ <BRANCH>`) et son log enregistre le passage de relais. Un tableau récapitulatif
+liste ces actions ; rien ne s'exécute avant une confirmation unique.
 
-Les relecteurs reçoivent une consigne de réfutation, jamais de validation : un relecteur chargé de
-valider valide. Et le juge reste la suite de tests — aucune tâche n'est cochée sur le seul avis
-d'un sous-agent.
+L'exécution se fait ensuite dans un **contexte forge étanche** : un sous-agent qui ne reçoit que le chemin
+du projet lié, `<BRANCH>`, ta langue et l'ordre d'y exécuter le skill forge. Aucun `project.md`, aucun
+standard, aucun plan, aucun log ne traverse la cloison, dans un sens comme dans l'autre. Le plan lié est
+dérivé du seul mandat — chaque tâche porte sa filiation (`T1 — … ← parent T3`), et un besoin hors mandat
+ne devient jamais une tâche : il est remonté. Une fois le plan validé, le sous-agent enchaîne toutes les
+tâches sans demander de mode d'exécution — la validation du plan vaut accord. Chaque question bloquante
+qu'il rencontre (validation du plan, choix d'approche) t'est relayée telle quelle sous forme de
+`FORGE_QUESTION` et posée via le même `AskUserQuestion` que d'habitude ; la réponse repart vers le
+sous-agent, dont le contexte reste intact.
 
-Une fois toutes les tâches passées, un relecteur unique examine le diff complet pour ce que la
-vérification par tâche ne peut pas voir : incohérences entre tâches, doublons, dette accumulée.
-Ses constats sont présentés pour confirmation, jamais appliqués silencieusement.
-
-Seul l'orchestrateur écrit dans `plan.md` et `log.md` ; les sous-agents rendent des verdicts
-structurés.
-
+L'exécution se termine par un unique rapport `FORGE_DONE` : tâches faites, tâches bloquées avec leur
+raison, besoins hors mandat, fichiers touchés. Le parent coche alors — et seulement alors — chaque tâche
+déléguée `[x]` ou la marque `[!] blocked` avec la raison, une entrée de log par tâche. Rien n'est commité
+dans le dépôt lié à ce stade : sa livraison est proposée au moment où tu graves le parent (voir plus bas).
 ---
 
 ## Livraison — commit, push, merge
@@ -347,7 +356,16 @@ structurés.
 
 Une ou plusieurs branches existantes, citées dans l'ordre voulu (ex : `"grave dev"`, `"grave master"`, `"grave dev master"`). `<BRANCH>` est mergée tour à tour dans chaque branche citée, toujours depuis la branche de départ — jamais en enchaînant une branche citée dans la suivante.
 
-**INVARIANT :** git opère uniquement sur le dépôt courant — jamais sur un autre dépôt ouvert en parallèle.
+**INVARIANT :** git opère uniquement sur le dépôt courant — jamais sur un autre dépôt ouvert en parallèle. Unique
+exception : un projet lié, pour le positionnement de branche à la délégation et pour la livraison relayée ci-dessous.
+
+Quand le plan porte des tâches déléguées, graver le parent propose aussi de livrer chaque projet lié qui a des
+modifications non commitées : d'abord s'il faut le livrer, puis sur quelles branches — les mêmes que le parent,
+`<BRANCH>` seule (commit et push, aucun merge), ou une liste de ton choix. Son message de commit est généré
+depuis les tâches déléguées cochées, jamais depuis son code, que le parent ne lit pas. Les actions du projet lié
+ont leur propre tableau récapitulatif sous celui du parent, et la confirmation unique couvre tout ; une branche
+cible absente du dépôt lié est ignorée, jamais créée. Le sous-agent délégué n'intervient jamais : la livraison
+relayée est du git pur, exécuté par le parent.
 
 Tout ce qui est publié sur la forge distante après une livraison — titre et notes de release, description de tag ou de PR — est rédigé en **anglais**, quelle que soit ta langue. Le message de commit suit la langue des commits du dépôt.
 

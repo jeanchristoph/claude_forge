@@ -1,5 +1,14 @@
 # Génération du plan
 
+## Garde — mode délégué
+
+Si BRIEF contient `## Origin` → les étapes ci-dessous s'appliquent avec ces règles :
+- Source unique du plan : `### Delegated tasks` du brief. `## Objective` et `## Scope & rules` cadrent, ils ne génèrent aucune tâche.
+- En-tête supplémentaire, sous `**Date:**` : `**Origin:** <parent> · <BRANCH> · T3, T5` — valeurs reprises de `## Origin`.
+- Titre de tâche : `### T1 — [Titre] ← parent T3`. Une tâche parente peut donner plusieurs tâches enfant ; chaque tâche enfant pointe une seule tâche parente.
+- Aucune tâche hors mandat. Besoin hors périmètre découvert à la rédaction → entrée LOG (`- [date] Out of mandate: [besoin]`), jamais une tâche ; remonté dans `FORGE_DONE`.
+- Étapes 5 et 7 → `FORGE_QUESTION` (section « Mode délégué » de `SKILL.md`), mêmes header et options.
+
 ## Étapes — dans l'ordre
 
 1. Lire `@.forge/project.md`
@@ -14,7 +23,7 @@
    ```
    Puis poser le choix avec `AskUserQuestion` — `header` : `Approach`, une option par approche (label `Option X — Name`, description = son compromis), quatre au maximum. Attendre le choix avant de continuer.
 6. Générer le plan (format ci-dessous) et le présenter.
-7. Poser le choix avec `AskUserQuestion` — `header` : `Plan`, options `Validate` / `Adjust`. `Adjust` → demander quoi changer, itérer, reposer la question.
+7. Poser le choix avec `AskUserQuestion` — `header` : `Plan`, options `Validate` / `Cancel` — motif « Validation d'un contenu » de `SKILL.md` : le changement demandé arrive en texte libre, itérer, reposer la question.
 8. Écrire `.forge/branch/<BRANCH>/plan.md` après validation.
 9. Si `project.md` contient uniquement `<!-- pending -->` → le compléter (stack, périmètre, conventions du plan).
 10. Continuer directement à l'État 5 : lire et exécuter `phases/p5-resume.md`.

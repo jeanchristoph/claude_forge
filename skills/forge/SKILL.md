@@ -58,6 +58,7 @@ Forgeron enchanteur : sobre, précis, direct. Le code est ton métal.
 Si erreur ou vide (pas de git) : demander un nom de code (ex: `refonte-auth`), l'utiliser comme `<BRANCH>`. Sans réponse : STOP.
 
 ## Chemins (substituer <BRANCH> par la valeur réelle)
+- ROOT : racine du projet — le dossier courant ; en mode délégué, le dossier transmis par le parent. Tout chemin ci-dessous et toute commande git se résolvent sous ROOT.
 - PROJECT : `.forge/project.md`
 - CODING_STANDARDS : `.forge/coding-standards.md`
 - BRIEF : `.forge/branch/<BRANCH>/brief.md`
@@ -83,6 +84,53 @@ Si erreur ou vide (pas de git) : demander un nom de code (ex: `refonte-auth`), l
 
 ⚠️ Les questions ouvertes restent en texte libre : objectif de la tâche, nom de code de branche, identifiant de ticket, mail à coller, « quoi faire ensuite ». Un choix fermé plaqué sur une réponse libre est une contrainte, pas une aide.
 ⚠️ `AskUserQuestion` plafonne à quatre options : au-delà, enchaîner une seconde question.
+⚠️ Validation d'un contenu présenté (objectif du brief, plan, rapport) → deux options seulement : `Validate` / `Cancel`. Jamais d'option « à retravailler » : une demande de changement arrive par le champ de texte libre de la question, avec son explication. Texte libre reçu → retravailler le contenu, le re-présenter, reposer la même question. Texte libre sans substance (« non », « pas d'accord ») → demander en une ligne ce qui doit changer, puis retravailler ; jamais re-présenter un contenu inchangé. `Cancel` → n'écrire rien, STOP. Sans réponse : STOP.
+⚠️ Question, `header`, libellés et descriptions d'un `AskUserQuestion` sont rédigés dans la langue de l'utilisateur. Les libellés anglais du skill (`Validate` / `Cancel`, `Run the sequence` / `Cancel`…) sont des références internes : « Sur `Validate` » désigne l'option qui en tient lieu, quelle que soit sa langue à l'écran. Un `FORGE_QUESTION` relayé arrive déjà dans cette langue.
+⚠️ Exception unique : en mode délégué (section ci-dessous), `AskUserQuestion` est inaccessible — la question remonte au parent par un bloc `FORGE_QUESTION`. La règle reste entière : rien ne s'exécute sans la réponse.
+
+---
+
+## Mode délégué
+
+**Condition :** le skill est invoqué par un sous-agent dont le prompt commence par la ligne `FORGE_DELEGATED` (section « Délégation — projet lié » de `phases/p5-resume.md`). BRIEF porte alors `## Origin` : c'est le marqueur lu par les phases.
+
+**INVARIANT :** rien du parent n'entre — ni `project.md`, ni standards, ni plan, ni log ; rien d'autre qu'un bloc `FORGE_QUESTION` ou `FORGE_DONE` ne sort.
+
+**Règles :**
+- ROOT = valeur de la ligne `ROOT:` du prompt. Aucune écriture, aucune commande git hors de ROOT.
+- Langue de l'utilisateur = valeur de la ligne `LANGUAGE:` du prompt — le prompt lui-même n'en est pas un indice.
+- Plan validé → enchaîner toutes les tâches ouvertes dans l'ordre, sans question de mode : la validation du plan vaut accord.
+- Point bloquant (confirmation, choix fermé, question ouverte) → terminer le tour par un bloc `FORGE_QUESTION` (format ci-dessous), puis attendre. La réponse arrive dans un message `FORGE_ANSWER: <réponse>` — la traiter comme la réponse de l'utilisateur.
+- Livraison et Clôture de tâche non applicables : la séquence se termine par `FORGE_DONE` — la livraison du projet lié est proposée au parent lors de son propre « grave ».
+- Toutes les tâches du plan traitées (`[x]` ou `[!]`) → terminer le tour par un bloc `FORGE_DONE` (format ci-dessous). STOP — ne pas continuer.
+
+### Format `FORGE_QUESTION`
+
+```
+FORGE_QUESTION
+header: [header]
+question: [question]
+options:
+- [label] — [description]
+```
+
+Question ouverte → `options: none`.
+
+### Format `FORGE_DONE`
+
+```
+FORGE_DONE
+done:
+- T1 ← parent T3 — [note]
+blocked:
+- T2 ← parent T5 — [raison]
+out_of_mandate:
+- [besoin hors mandat, une ligne]
+files:
+- `chemin/relatif/sous/ROOT`
+```
+
+Liste vide → `none`.
 
 ---
 

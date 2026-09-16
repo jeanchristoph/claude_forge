@@ -10,13 +10,24 @@ Every format change so far is absorbed by an automatic migration — upgrading r
 
 ## [Unreleased]
 
+## [0.9.5] — 2026-09-16
+
 ### Added
 
+- Delegation to a linked project: a request that targets a folder outside the current project opens the same branch in that already-forged repository, hands it the parent brief plus a mandate — the delegated tasks copied in full under `## Origin` — and runs the forge skill there in a sealed subagent. The linked plan is derived from the mandate alone, every task traced to its parent (`← parent T<n>`); blocking questions are relayed to the user as `FORGE_QUESTION` blocks and answered through the usual `AskUserQuestion`; once the plan is validated the subagent chains every task without asking for a mode; the run ends with a single `FORGE_DONE` report from which the parent checks or blocks each delegated task. A folder without `.forge/` is refused, never initialized.
+- Relayed shipping: engraving the parent offers to ship each linked project with uncommitted changes — whether to ship it, then onto which branches (same as the parent, `<BRANCH>` only, or a list of your own). The linked commit message is generated from the delegated tasks marked done; the linked actions get their own recap table and the single confirmation covers parent and linked projects alike. Plain git run by the parent — the delegated subagent is never involved.
 - Anything published on the remote forge after a delivery — release title and notes, tag or PR description — is written in English, whatever the user's language; the commit message keeps following the repository's commit language.
 
 ### Changed
 
+- Every selectable question — its text, header, option labels and descriptions — is written in the user's language. The English labels in the skill files are internal references only; previously they were shown as-is on screen.
+- Validating a presented content — brief objective, plan, closing report — offers `Validate` / `Cancel` only. The "rework" option is gone: it cost a round-trip before the user could even say what to change. A change request now comes through the question's free-text field with its explanation; a bare disagreement gets a one-line "what should change?" and the content is never shown again unchanged.
+
 - `/forge <branch-name>` creates a missing branch from the up-to-date default branch — `master`, else `main` — never from the current one, so a new branch never inherits the unmerged commits of whatever branch happened to be checked out. Same sequence as forge-clickup: `checkout <default>`, `pull`, `checkout -b <name>`.
+
+### Removed
+
+- Hammering (`frappe` / `hammer`): the subagent dispatch over the plan, its adversarial review cell and its cross-review. Little used, and the way tasks get executed belongs to the user's coding preferences in `CLAUDE.md`, not to forge. The mode question now offers chaining or picking a task.
 
 ## [0.9.4] — 2026-09-16
 
@@ -189,7 +200,8 @@ Every format change so far is absorbed by an automatic migration — upgrading r
 - Idempotent Unix and Windows installers, with `settings.json` merge and no duplicate entries on reinstall.
 - `main` / `master` guard: on a protected branch, forge asks for a ticket ID or a branch name before continuing.
 
-[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.9.4...HEAD
+[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.9.5...HEAD
+[0.9.5]: https://github.com/jeanchristoph/claude_forge/compare/v0.9.4...v0.9.5
 [0.9.4]: https://github.com/jeanchristoph/claude_forge/compare/v0.9.3...v0.9.4
 [0.9.3]: https://github.com/jeanchristoph/claude_forge/compare/v0.9.2...v0.9.3
 [0.9.2]: https://github.com/jeanchristoph/claude_forge/compare/v0.9.1...v0.9.2

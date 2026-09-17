@@ -1,3 +1,4 @@
+- [2026-09-17 12:05] T20 added: a request whose result is generated content (doc, export, SQL, workbook, analysis, deliverable) is a direct action -> OUTPUT + log, never a plan task; the plan only tracks tasks implementing the brief objective
 - [2026-09-16 21:02] T19 added: direct actions (precise, local, no design decision) run at once and are logged — never a task, never a question; doubt → direct action
 - [2026-09-16 21:02] Direct action: TODO.txt removed from the repository (obsolete notes)
 - [2026-09-16 20:56] T17 added: release archives exclude .forge/, docs/ and .git* via export-ignore — effective from the next tag

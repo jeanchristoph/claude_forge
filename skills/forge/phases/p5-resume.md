@@ -92,11 +92,13 @@ Le brief est vivant. Les changements de scope sont gérés par la **Surveillance
 
 ### Action directe — exécuter sans tâche ni question
 
-**Condition :** la demande est un ordre précis (quoi, où), tient en une commande ou une modification locale, et n'appelle aucune décision de conception — supprimer ou renommer un fichier, corriger un texte, ajouter un mot, exécuter une commande.
+**Condition — l'une ou l'autre :**
+- La demande est un ordre précis (quoi, où), tient en une commande ou une modification locale, et n'appelle aucune décision de conception — supprimer ou renommer un fichier, corriger un texte, ajouter un mot, exécuter une commande.
+- Le résultat demandé est un contenu généré au sens de la section « Contenu généré » de `SKILL.md` — documentation, export, script SQL, classeur de contrôle, analyse, livrable client — quelle que soit sa taille. Le plan ne trace que les tâches qui implémentent l'objectif du brief : un livrable demandé en cours de route se produit, il ne se planifie pas.
 
-**Réaction :** exécuter immédiatement — l'ordre explicite est la confirmation exigée par la règle absolue. Le dépôt change → une ligne dans LOG. Aucune tâche, aucune question.
+**Réaction :** exécuter immédiatement — l'ordre explicite est la confirmation exigée par la règle absolue. Contenu généré → écrit dans OUTPUT, une ligne dans LOG. Le dépôt change → une ligne dans LOG. Aucune tâche, aucune question.
 
-⚠️ Doute entre action directe et demande complémentaire → action directe : une action de trop ne coûte rien, une question de trop coûte un aller-retour.
+⚠️ Doute entre action directe et demande complémentaire, entre livrable et fonctionnalité → action directe : une action de trop ne coûte rien, une question de trop coûte un aller-retour.
 
 ### Demande hors périmètre — détecter si :
 - La demande concerne une fonctionnalité absente du plan

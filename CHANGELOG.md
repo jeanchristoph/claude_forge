@@ -13,6 +13,7 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 ### Changed
 
 - A direct action — a precise order that fits in one command or one local edit and calls for no design decision — is carried out at once and logged, never turned into a plan task nor confirmed again; in doubt, forge treats the request as a direct action.
+- A request whose result is generated content — documentation, export, SQL script, checking workbook, analysis, client deliverable — is a direct action too, whatever its size: produced in `output/` and logged, never turned into a plan task. The plan only tracks the tasks that implement the brief's objective.
 
 ## [0.10.0] — 2026-09-16
 

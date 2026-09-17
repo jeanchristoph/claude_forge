@@ -112,6 +112,12 @@
 **Description:** Seuil ajouté en tête de la Surveillance : un ordre précis, local, sans décision de conception est une action directe — exécutée immédiatement, journalisée si le dépôt change, jamais une tâche ni une question ; l'ordre explicite vaut confirmation. Doute → action directe. Le reste reste une demande complémentaire.
 [x] Surveillance threshold in p5-resume, README en/fr, CHANGELOG Unreleased
 
+### T20 — Contenu généré = action directe, jamais une tâche
+**Effort:** XS
+**Files:** `skills/forge/phases/p5-resume.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Le seuil « Action directe » de la Surveillance s'étend à toute demande dont le résultat est un contenu généré au sens de la section « Contenu généré » de `SKILL.md` — documentation, export, script SQL, classeur de contrôle, analyse, livrable client. Ce contenu est produit dans OUTPUT et journalisé, jamais transformé en tâche du plan ni soumis à une question, quelle que soit sa taille : le plan ne trace que les tâches qui implémentent l'objectif du brief ; un livrable demandé en cours de route se produit, il ne se planifie pas. Doute entre livrable et fonctionnalité → action directe. README en/fr, CHANGELOG Unreleased.
+[x] second direct-action condition in p5-resume (generated content → OUTPUT + log), README en/fr, CHANGELOG Unreleased
+
 ## Risks
 - Chaque question bloquante du sous-agent coûte un tour complet de relais — acceptable car le brief est hérité et la frappe interdite : validation du plan et choix du mode sont les seuls points attendus.
 - Le sous-agent doit résoudre tous les chemins sous ROOT : un `.forge/` relatif écrit dans le projet parent violerait la cloison. Le test T7 le vérifie explicitement.
@@ -141,4 +147,5 @@ None
 | T16 — Demande complémentaire = tâche au plan, validée sur sa formulation | S | [x] |
 | T17 — Exclure `.forge/`, `docs/` et `.git*` des archives de release | XS | [x] |
 | T19 — Action directe ≠ demande complémentaire | XS | [x] |
-| **Total** | **5M + 9S + 4XS** | |
+| T20 — Contenu généré = action directe, jamais une tâche | XS | [x] |
+| **Total** | **5M + 9S + 5XS** | |

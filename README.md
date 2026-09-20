@@ -335,26 +335,57 @@ has already been forged (`.forge/` present — otherwise forge refuses and asks 
 first; it never initializes a project on its own). It needs a real branch on the parent side: a session
 kept on `main`/`master` under a ticket ID cannot delegate.
 
-The parent prepares the ground, and nothing else: it checks out the same branch `<BRANCH>` in the linked
-repository (created from its up-to-date `master`/`main` when missing), writes the linked brief — the parent
-brief copied verbatim, preceded by an `## Origin` block naming the parent path, the branch and the
-**mandate**: the delegated tasks copied in full — and opens the linked `log.md`. The parent's own plan is
-annotated (`delegated to <path> @ <BRANCH>`) and its log records the hand-over. A recap table lists these
+The parent prepares the ground, and nothing else: it checks out the branch **`<parent>/<BRANCH>`** in the
+linked repository — the parent folder name as prefix, the parent branch unchanged on the right: `forge/linked-project`,
+`forge/CU-123` — created from its up-to-date `master`/`main` when missing. In the linked repository the branch
+says where it comes from at a glance, groups under `git branch --list 'forge/*'`, and never collides with the
+linked project's own branches, ticket IDs included; the bare parent name is never used. It then writes the
+linked brief — the parent brief copied verbatim, preceded by an `## Origin` block naming the parent path, the
+parent branch and the **mandate**: the delegated tasks copied in full — and opens the linked `log.md`. The
+parent's own plan is annotated (`delegated to <path> @ <parent>/<BRANCH>`) and its log records the hand-over. A recap table lists these
 actions; nothing runs before you confirm once.
 
 Execution then happens in a **sealed forge context**: a subagent that receives only the linked path,
-`<BRANCH>`, your language and the order to run the forge skill there. No `project.md`, no coding standards,
+`<parent>/<BRANCH>`, your language and the order to run the forge skill there. No `project.md`, no coding standards,
 no plan, no log cross the wall in either direction. The linked plan is derived from the mandate alone —
 every task carries its lineage (`T1 — … ← parent T3`), and a need outside the mandate is never turned into
 a task: it is reported back. Once the plan is validated the subagent chains every task without asking
 for an execution mode — validating the plan is the go-ahead. Every blocking question it meets (plan
 validation, an approach to choose) is relayed to you verbatim as a `FORGE_QUESTION` and answered through the same
-`AskUserQuestion` you know; the answer goes back to the subagent, whose context stays intact.
+`AskUserQuestion` you know; the answer goes back to the subagent, whose context stays intact. A relayed
+question carries the **full content** you are deciding on — the whole plan, the whole task description,
+the brief entry — never a one-line summary: the parent shows it to you as is, then asks.
 
 The run ends with a single `FORGE_DONE` report: tasks done, tasks blocked with their reason, needs outside
 the mandate, files touched. The parent then — and only then — checks each delegated task `[x]` or marks it
 `[!] blocked` with the reason, one log entry per task. Nothing is committed in the linked repository at that
 point: shipping it is offered when you engrave the parent (see below).
+
+---
+
+## Delegating to a branch of the same repository
+
+```
+"run a forge agent on branch X"       → X opened in a sibling worktree, forge runs there
+"open branch X in an agent"           → same thing
+```
+
+A request to run an agent — or a delegated forge — on a branch of the current repository opens that branch
+in a **worktree**: an existing worktree for `X` is reused, otherwise forge creates `<repo-folder>-X` next to
+the repository (`git worktree add`). Two refusals, never worked around: `X` is the current branch ("already
+on it"), or `X` does not exist — forge never creates a branch on your behalf. A recap table lists the
+branch, the worktree path and the agent; nothing runs before you confirm once.
+
+There is no mandate here: the parent writes nothing in the worktree, neither brief, nor log, nor plan, and
+never reads its code. The subagent gets the worktree path, the branch, your language and `SCOPE: branch`,
+and runs the forge skill there exactly as you would on that branch — project, brief, log and plan read as
+the phases prescribe. The difference with a linked project is that **every choice is relayed to you**:
+the brief objective, the plan validation, the execution mode, the go-ahead before each task, the engrave
+confirmation. "A validated plan is the go-ahead" does not apply in this scope.
+
+The run ends with a one-line `FORGE_DONE`: nothing is written into the parent plan or log, since nothing
+was delegated. The worktree is left in place — forge reminds you of `git worktree remove <path>` for once
+the branch is engraved.
 
 ---
 
@@ -371,7 +402,7 @@ exception is a linked project: branch positioning when delegating, and the relay
 
 When the plan carries delegated tasks, engraving the parent also offers to ship each linked project that
 has uncommitted changes: first whether to ship it at all, then onto which branches — the same branches as
-the parent, `<BRANCH>` only (commit and push, no merge), or a list of your own. Its commit message is
+the parent, `<parent>/<BRANCH>` only (commit and push, no merge), or a list of your own. Its commit message is
 generated from the delegated tasks marked done, never from its code, which the parent does not read. The
 linked project's actions get their own recap table under the parent's, and the single confirmation covers
 everything; a target branch missing from the linked repository is skipped, never created. The delegated

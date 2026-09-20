@@ -9,3 +9,6 @@ L'exécution dans le projet lié se fait dans un **contexte forge isolé et impe
 Côté parent, chaque tâche déléguée est annotée à l'envoi (`delegated to <dossier> @ <BRANCH>`) et cochée `[x]` ou marquée `[!] blocked` uniquement au retour du rapport, avec une entrée log par tâche. Le parent ne coche jamais une tâche déléguée de lui-même. Au « grave » du parent, la livraison du projet lié est proposée — quels projets liés, sur quelles branches — et exécutée par le parent dans la même séquence, sous une confirmation unique.
 
 ## Scope & rules
+
+- La délégation vise deux cibles : un projet lié (dossier hors ROOT, mandat, `SCOPE: linked`) ou une branche du dépôt courant (worktree frère `<dépôt>-<X>`, sans mandat, `SCOPE: branch`). Dans les deux cas le sous-agent est étanche et toute question bloquante remonte par `FORGE_QUESTION`, qui porte le contenu entier à trancher ; en `SCOPE: branch`, aucun raccourci — chaque choix est relayé à l'utilisateur.
+- La branche d'un projet lié est toujours `<parent>/<BRANCH>` — jamais le nom nu de la branche parente : le préfixe dit d'où vient la délégation, la partie droite reste identique pour la correspondance.

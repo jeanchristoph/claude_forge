@@ -335,27 +335,59 @@ Une demande qui vise un dossier hors du projet courant ouvre un **projet lié** 
 projet de lui-même). Il faut une vraie branche côté parent : une session restée sur `main`/`master` sous
 un identifiant de ticket ne peut pas déléguer.
 
-Le parent prépare le terrain, rien de plus : il positionne la même branche `<BRANCH>` dans le dépôt lié
-(créée depuis son `master`/`main` à jour si elle manque), écrit le brief lié — le brief parent recopié à
-l'identique, précédé d'un bloc `## Origin` portant le chemin du parent, la branche et le **mandat** : les
-tâches déléguées recopiées intégralement — et ouvre le `log.md` lié. Le plan du parent est annoté
-(`delegated to <chemin> @ <BRANCH>`) et son log enregistre le passage de relais. Un tableau récapitulatif
+Le parent prépare le terrain, rien de plus : il positionne la branche **`<parent>/<BRANCH>`** dans le dépôt
+lié — le nom du dossier parent en préfixe, la branche parente inchangée à droite : `forge/linked-project`,
+`forge/CU-123` — créée depuis son `master`/`main` à jour si elle manque. Dans le dépôt lié, la branche dit
+d'un coup d'œil d'où elle vient, se regroupe sous `git branch --list 'forge/*'` et n'entre jamais en collision
+avec les branches propres du projet lié, identifiants de ticket compris ; le nom nu de la branche parente
+n'est jamais utilisé. Il écrit ensuite le brief lié — le brief parent recopié à l'identique, précédé d'un
+bloc `## Origin` portant le chemin du parent, la branche parente et le **mandat** : les tâches déléguées
+recopiées intégralement — et ouvre le `log.md` lié. Le plan du parent est annoté
+(`delegated to <chemin> @ <parent>/<BRANCH>`) et son log enregistre le passage de relais. Un tableau récapitulatif
 liste ces actions ; rien ne s'exécute avant une confirmation unique.
 
 L'exécution se fait ensuite dans un **contexte forge étanche** : un sous-agent qui ne reçoit que le chemin
-du projet lié, `<BRANCH>`, ta langue et l'ordre d'y exécuter le skill forge. Aucun `project.md`, aucun
+du projet lié, `<parent>/<BRANCH>`, ta langue et l'ordre d'y exécuter le skill forge. Aucun `project.md`, aucun
 standard, aucun plan, aucun log ne traverse la cloison, dans un sens comme dans l'autre. Le plan lié est
 dérivé du seul mandat — chaque tâche porte sa filiation (`T1 — … ← parent T3`), et un besoin hors mandat
 ne devient jamais une tâche : il est remonté. Une fois le plan validé, le sous-agent enchaîne toutes les
 tâches sans demander de mode d'exécution — la validation du plan vaut accord. Chaque question bloquante
 qu'il rencontre (validation du plan, choix d'approche) t'est relayée telle quelle sous forme de
 `FORGE_QUESTION` et posée via le même `AskUserQuestion` que d'habitude ; la réponse repart vers le
-sous-agent, dont le contexte reste intact.
+sous-agent, dont le contexte reste intact. Une question relayée porte le **contenu entier** à trancher —
+le plan complet, la description complète de la tâche, l'entrée de brief — jamais un résumé d'une ligne :
+le parent te l'affiche tel quel, puis pose la question.
 
 L'exécution se termine par un unique rapport `FORGE_DONE` : tâches faites, tâches bloquées avec leur
 raison, besoins hors mandat, fichiers touchés. Le parent coche alors — et seulement alors — chaque tâche
 déléguée `[x]` ou la marque `[!] blocked` avec la raison, une entrée de log par tâche. Rien n'est commité
 dans le dépôt lié à ce stade : sa livraison est proposée au moment où tu graves le parent (voir plus bas).
+---
+
+## Délégation vers une branche du même dépôt
+
+```
+"lance un agent forge sur la branche X"   → X ouverte dans un worktree frère, forge s'y exécute
+"ouvre la branche X dans un agent"        → même chose
+```
+
+Une demande de lancer un agent — ou un forge délégué — sur une branche du dépôt courant ouvre cette branche
+dans un **worktree** : un worktree existant pour `X` est réutilisé, sinon forge crée `<dossier-du-dépôt>-X`
+à côté du dépôt (`git worktree add`). Deux refus, jamais contournés : `X` est la branche courante (« déjà
+dessus »), ou `X` n'existe pas — forge ne crée jamais une branche à ta place. Un tableau récapitulatif
+liste la branche, le chemin du worktree et l'agent ; rien ne s'exécute avant une confirmation unique.
+
+Aucun mandat ici : le parent n'écrit rien dans le worktree, ni brief, ni log, ni plan, et ne lit jamais
+son code. Le sous-agent reçoit le chemin du worktree, la branche, ta langue et `SCOPE: branch`, puis y
+exécute le skill forge exactement comme tu le ferais sur cette branche — project, brief, log et plan lus
+comme les phases le prescrivent. La différence avec un projet lié : **chaque choix t'est relayé** —
+l'objectif du brief, la validation du plan, le mode d'exécution, le feu vert avant chaque tâche, la
+confirmation de gravure. « Le plan validé vaut accord » ne s'applique pas dans cette portée.
+
+L'exécution se termine par un `FORGE_DONE` d'une ligne : rien n'est écrit dans le plan ni le log du
+parent, puisque rien n'a été délégué. Le worktree reste en place — forge te rappelle
+`git worktree remove <chemin>` pour quand la branche sera gravée.
+
 ---
 
 ## Livraison — commit, push, merge
@@ -371,7 +403,7 @@ exception : un projet lié, pour le positionnement de branche à la délégation
 
 Quand le plan porte des tâches déléguées, graver le parent propose aussi de livrer chaque projet lié qui a des
 modifications non commitées : d'abord s'il faut le livrer, puis sur quelles branches — les mêmes que le parent,
-`<BRANCH>` seule (commit et push, aucun merge), ou une liste de ton choix. Son message de commit est généré
+`<parent>/<BRANCH>` seule (commit et push, aucun merge), ou une liste de ton choix. Son message de commit est généré
 depuis les tâches déléguées cochées, jamais depuis son code, que le parent ne lit pas. Les actions du projet lié
 ont leur propre tableau récapitulatif sous celui du parent, et la confirmation unique couvre tout ; une branche
 cible absente du dépôt lié est ignorée, jamais créée. Le sous-agent délégué n'intervient jamais : la livraison

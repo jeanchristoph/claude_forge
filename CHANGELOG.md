@@ -10,8 +10,17 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ## [Unreleased]
 
+## [0.10.1] — 2026-09-20
+
+### Added
+
+- Delegation to a branch of the same repository: "run a forge agent on branch X", "open branch X in an agent" and the like open `X` in a git worktree — an existing worktree is reused, otherwise `<repo-folder>-X` is created next to the repository — and run the forge skill there in a sealed subagent, after a single confirmation. `X` must exist and differ from the current branch: forge never creates it on your behalf. No mandate is written: the subagent reads project, brief, log and plan as the phases prescribe, and every choice — brief objective, plan validation, execution mode, go-ahead before each task, engrave — is relayed to the user. The run ends with a one-line `FORGE_DONE` that writes nothing into the parent plan; the worktree stays in place with a `git worktree remove` reminder.
+
 ### Changed
 
+- The delegated prompt carries a `SCOPE:` line — `linked` (default: mandate, `## Origin`, a validated plan is the go-ahead) or `branch` (no mandate, every choice relayed). The phases read the scope where they decide whether to ask.
+- The branch opened in a linked project is now named `<parent>/<BRANCH>` — the parent folder name as prefix, the parent branch unchanged on the right (`forge/linked-project`, `forge/CU-123`) — instead of the bare parent branch name. In the linked repository the branch says where it comes from at a glance and never collides with the project's own branches, ticket IDs included. The linked `.forge/branch/` folder, the delegated prompt, the `delegated to <path> @ …` notes and relayed shipping all carry that name; `## Origin` keeps the parent branch.
+- A relayed `FORGE_QUESTION` carries the **full content** being decided on — the whole task description, the whole plan, the brief entry, the recap table — in a `content:` field, never a one-line summary; the parent shows it verbatim before asking. Both scopes.
 - A direct action — a precise order that fits in one command or one local edit and calls for no design decision — is carried out at once and logged, never turned into a plan task nor confirmed again; in doubt, forge treats the request as a direct action.
 - A request whose result is generated content — documentation, export, SQL script, checking workbook, analysis, client deliverable — is a direct action too, whatever its size: produced in `output/` and logged, never turned into a plan task. The plan only tracks the tasks that implement the brief's objective.
 
@@ -211,7 +220,8 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 - Idempotent Unix and Windows installers, with `settings.json` merge and no duplicate entries on reinstall.
 - `main` / `master` guard: on a protected branch, forge asks for a ticket ID or a branch name before continuing.
 
-[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.10.1...HEAD
+[0.10.1]: https://github.com/jeanchristoph/claude_forge/compare/v0.10.0...v0.10.1
 [0.10.0]: https://github.com/jeanchristoph/claude_forge/compare/v0.9.4...v0.10.0
 [0.9.4]: https://github.com/jeanchristoph/claude_forge/compare/v0.9.3...v0.9.4
 [0.9.3]: https://github.com/jeanchristoph/claude_forge/compare/v0.9.2...v0.9.3

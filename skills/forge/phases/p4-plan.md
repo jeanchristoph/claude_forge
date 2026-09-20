@@ -2,12 +2,15 @@
 
 ## Garde — mode délégué
 
-Si BRIEF contient `## Origin` → les étapes ci-dessous s'appliquent avec ces règles :
+En mode délégué (section « Mode délégué » de `SKILL.md`), quelle que soit la portée : étapes 5 et 7 → `FORGE_QUESTION`, mêmes header et options ; l'étape 7 recopie le plan entier dans `content`, l'étape 5 les approches présentées.
+
+Si BRIEF contient `## Origin` (`SCOPE: linked` — mandat) → les étapes ci-dessous s'appliquent avec ces règles :
 - Source unique du plan : `### Delegated tasks` du brief. `## Objective` et `## Scope & rules` cadrent, ils ne génèrent aucune tâche.
 - En-tête supplémentaire, sous `**Date:**` : `**Origin:** <parent> · <BRANCH> · T3, T5` — valeurs reprises de `## Origin`.
 - Titre de tâche : `### T1 — [Titre] ← parent T3`. Une tâche parente peut donner plusieurs tâches enfant ; chaque tâche enfant pointe une seule tâche parente.
 - Aucune tâche hors mandat. Besoin hors périmètre découvert à la rédaction → entrée LOG (`- [AAAA-MM-JJ HH:MM] Out of mandate: [besoin]`), jamais une tâche ; remonté dans `FORGE_DONE`.
-- Étapes 5 et 7 → `FORGE_QUESTION` (section « Mode délégué » de `SKILL.md`), mêmes header et options.
+
+`SCOPE: branch` → aucune règle de mandat : plan rédigé depuis le brief comme pour toute branche.
 
 ## Étapes — dans l'ordre
 

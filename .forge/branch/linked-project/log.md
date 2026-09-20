@@ -1,3 +1,8 @@
+- [2026-09-20 11:40] Release renamed 0.11.0 → 0.10.1 (patch, +0.0.1 from the last published v0.10.0); T22 entry folded into it
+- [2026-09-20 11:32] T22 done — linked branch `<PARENT>/<BRANCH>` (`forge/CU-123`): p5 delegation, return notes, relayed shipping, sub-agent prompt; `## Origin` keeps the parent branch
+- [2026-09-20 11:20] T22 added: linked-project branch named `<parent>/<BRANCH>` (slash namespace chosen over dash — git-native grouping, no ambiguity with the child's own ticket branches)
+- [2026-09-20 10:58] T21 done — engrave from a worktree: a target branch checked out in another worktree is skipped on merge, never forced
+- [2026-09-20 10:51] T21 added: branch delegation in a sibling worktree (SCOPE: branch, every choice relayed) + FORGE_QUESTION carries the full content to decide on, both scopes
 - [2026-09-17 12:05] T20 added: a request whose result is generated content (doc, export, SQL, workbook, analysis, deliverable) is a direct action -> OUTPUT + log, never a plan task; the plan only tracks tasks implementing the brief objective
 - [2026-09-16 21:02] T19 added: direct actions (precise, local, no design decision) run at once and are logged — never a task, never a question; doubt → direct action
 - [2026-09-16 21:02] Direct action: TODO.txt removed from the repository (obsolete notes)

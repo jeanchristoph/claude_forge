@@ -6,7 +6,11 @@
 
 ⚠️ `## Objective` et `## Scope & rules` sont des libellés fixes, écrits tels quels quelle que soit la langue de l'utilisateur — seul le contenu des sections suit sa langue.
 
-En mode délégué, `## Origin` précède ces deux sections : écrit par le parent (section « Délégation — projet lié » de `p5-resume.md`), jamais par cette phase.
+En mode délégué `SCOPE: linked`, `## Origin` précède ces deux sections : écrit par le parent (section « Délégation — projet lié » de `p5-resume.md`), jamais par cette phase. En mode délégué `SCOPE: branch`, le brief est rédigé ici comme pour toute branche.
+
+## Garde — mode délégué
+
+En mode délégué (section « Mode délégué » de `SKILL.md`), les questions de l'étape 2 → `FORGE_QUESTION` : la question d'objectif avec `options: none` et `content: none` ; la validation avec `header` `Objective`, options `Validate` / `Cancel`, l'objectif reformulé entier dans `content`.
 
 ⚠️ Ne jamais utiliser `mkdir` sur les chemins `.forge/` — Write tool crée les dossiers parents automatiquement.
 

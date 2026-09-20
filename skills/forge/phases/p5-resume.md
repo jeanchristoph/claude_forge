@@ -305,6 +305,8 @@ Mode délégué `SCOPE: branch` → git opère sous ROOT (le worktree) ; l'étap
 10. Pour chaque projet lié retenu, dans l'ordre du plan : dérouler les étapes 6 à 9 avec ses branches, `<LINKED_BRANCH>` tenant lieu de `<BRANCH>`, chaque commande préfixée `git -C <LINKED>`. Échec → afficher l'erreur telle quelle, passer au projet lié suivant ; le parent, déjà livré, n'est jamais repris.
 11. Rendre compte : hash de commit et branches mises à jour, parent puis chaque projet lié.
 
+⚠️ Aucune écriture dans LOG ni PLAN après la séquence — le compte rendu est du texte seul, le working tree reste tel que la livraison l'a laissé. Ce qui doit être journalisé l'est avant le `git add`.
+
 ### Livraison relayée — projets liés
 
 **Déclencheur :** PLAN parent porte au moins une note `delegated to <LINKED> @ <LINKED_BRANCH>` (« Délégation — projet lié »). Aucune → étape 2 silencieuse, jamais mentionnée.

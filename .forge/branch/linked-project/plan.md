@@ -130,6 +130,18 @@
 **Description:** Dans « Délégation — projet lié », la branche vérifiée puis extraite ou créée dans `<LINKED>` devient `<PARENT>/<BRANCH>`, `<PARENT>` = nom du dossier ROOT du parent (`forge/linked-project`, `forge/CU-123`) — création depuis la branche par défaut à jour de l'enfant, règle inchangée. Étape 4 et ligne `branch` du tableau de délégation portent ce nom ; chemins enfant `.forge/branch/<PARENT>/<BRANCH>/` ; prompt du sous-agent `BRANCH: <PARENT>/<BRANCH>` ; brief enfant `## Origin` garde `**Branch:** <BRANCH>` (la branche parente) ; notes du plan parent et log `delegated to <LINKED> @ <PARENT>/<BRANCH>` — la livraison relayée s'appuie dessus sans autre changement. Vocabulaire de la section : `<LINKED_BRANCH>`. README en/fr section « Delegating to a linked project », CHANGELOG `Changed` sous Unreleased.
 [x] <LINKED_BRANCH> = <PARENT>/<BRANCH> in p5 delegation + relayed shipping, SKILL.md SCOPE linked, README en/fr, CHANGELOG Unreleased
 
+### T23 — Aucune écriture forge après la séquence de livraison
+**Effort:** XS
+**Files:** `skills/forge/phases/p5-resume.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Dans « Livraison », après l'étape 11 : « ⚠️ Aucune écriture dans LOG ni PLAN après la séquence — le compte rendu est du texte seul, le working tree reste tel que la livraison l'a laissé. » Une phrase dans la section Engrave des README, entrée `Changed` en 0.10.2.
+[x] warning after step 11 in p5 Livraison, README en/fr Engrave sentence, CHANGELOG 0.10.2
+
+### T24 — Description de forge alignée sur son périmètre actuel
+**Effort:** XS
+**Files:** `skills/forge/SKILL.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`, description du dépôt GitHub
+**Description:** Frontmatter `description` de SKILL.md, phrase d'ouverture et paragraphe « Once active » des README en/fr, description GitHub (`gh repo edit --description`, anglais) : forge orchestre le cycle de vie d'une branche — brief validé, plan, exécution suivie, délégation étanche, livraison git avec release, clôture — et non plus un workflow brief/plan/suivi. CHANGELOG `Changed` en 0.10.2.
+[x] SKILL.md description, README en/fr opening + « Once active » paragraph, GitHub description, CHANGELOG 0.10.2
+
 ## Risks
 - Chaque question bloquante du sous-agent coûte un tour complet de relais — acceptable car le brief est hérité et la frappe interdite : validation du plan et choix du mode sont les seuls points attendus.
 - Le sous-agent doit résoudre tous les chemins sous ROOT : un `.forge/` relatif écrit dans le projet parent violerait la cloison. Le test T7 le vérifie explicitement.
@@ -162,4 +174,6 @@ None
 | T20 — Contenu généré = action directe, jamais une tâche | XS | [x] |
 | T21 — Délégation — branche du même dépôt (`SCOPE: branch`) et `FORGE_QUESTION` porteur du contenu entier | M | [x] |
 | T22 — Branche du projet lié nommée `<parent>/<BRANCH>` | S | [x] |
-| **Total** | **6M + 10S + 5XS** | |
+| T23 — Aucune écriture forge après la séquence de livraison | XS | [x] |
+| T24 — Description de forge alignée sur son périmètre actuel | XS | [x] |
+| **Total** | **6M + 10S + 7XS** | |

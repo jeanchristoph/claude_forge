@@ -1,3 +1,5 @@
+- [2026-09-20 12:05] T24 added and done — forge described as orchestrating the whole branch life cycle (SKILL.md, README en/fr, GitHub description)
+- [2026-09-20 11:52] T23 added and done — no log / plan write after the engrave sequence (rule from the user, saved before this engrave)
 - [2026-09-20 11:40] Release renamed 0.11.0 → 0.10.1 (patch, +0.0.1 from the last published v0.10.0); T22 entry folded into it
 - [2026-09-20 11:32] T22 done — linked branch `<PARENT>/<BRANCH>` (`forge/CU-123`): p5 delegation, return notes, relayed shipping, sub-agent prompt; `## Origin` keeps the parent branch
 - [2026-09-20 11:20] T22 added: linked-project branch named `<parent>/<BRANCH>` (slash namespace chosen over dash — git-native grouping, no ambiguity with the child's own ticket branches)

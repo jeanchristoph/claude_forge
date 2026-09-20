@@ -10,6 +10,13 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ## [Unreleased]
 
+## [0.10.2] — 2026-09-20
+
+### Changed
+
+- The skill description, the README opening and the GitHub repository description now state what forge has become: it orchestrates the whole life of a development branch — validated brief, structured plan, tracked execution, sealed delegation, git delivery with releases, closure — rather than a brief-plan-tracking workflow.
+- Once the engrave sequence has run, forge writes nothing more — no log entry, no plan note: the report is plain text and the working tree stays exactly as the delivery left it. Anything worth logging is written before `git add`.
+
 ## [0.10.1] — 2026-09-20
 
 ### Added
@@ -220,7 +227,8 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 - Idempotent Unix and Windows installers, with `settings.json` merge and no duplicate entries on reinstall.
 - `main` / `master` guard: on a protected branch, forge asks for a ticket ID or a branch name before continuing.
 
-[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.10.1...HEAD
+[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.10.2...HEAD
+[0.10.2]: https://github.com/jeanchristoph/claude_forge/compare/v0.10.1...v0.10.2
 [0.10.1]: https://github.com/jeanchristoph/claude_forge/compare/v0.10.0...v0.10.1
 [0.10.0]: https://github.com/jeanchristoph/claude_forge/compare/v0.9.4...v0.10.0
 [0.9.4]: https://github.com/jeanchristoph/claude_forge/compare/v0.9.3...v0.9.4

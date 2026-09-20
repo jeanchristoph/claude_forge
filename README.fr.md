@@ -11,13 +11,15 @@
 
 <sub>Session reconstituée — les sorties sont reproduites à l'identique depuis le skill. Régénération par `vhs docs/demo.tape`, voir [docs/README.md](docs/README.md).</sub>
 
-**Claude_forge** est un système pour Claude Code composé du skill **forge** (invoqué via `/forge`) et d'un hook `PreCompact`. Ensemble, ils imposent un workflow de développement structuré, branche par branche.
+**Claude_forge** est un système pour Claude Code composé du skill **forge** (invoqué via `/forge`), de son compagnon `forge-clickup` et d'un hook `PreCompact`. Ensemble, ils orchestrent tout le cycle de vie d'une branche de développement — du brief validé à la release livrée — sur un ou plusieurs dépôts.
 
 Là où Claude Code part directement dans le code dès qu'on lui décrit un problème, le skill forge intercale trois étapes obligatoires avant la moindre ligne :
 
 1. **Brief** — clarifier l'objectif, le cadre : règles, contraintes, périmètre
 2. **Plan** — décomposer en tâches estimées, attendre une validation explicite
 3. **Actif** — exécuter avec suivi d'avancement en temps réel
+
+Une fois actif, forge ne s'arrête pas au code : il délègue des tâches à des sous-agents étanches — projet lié ou branche du même dépôt — en te relayant chaque question, grave la branche (commit, push, merges, livraison relayée, release) sous une confirmation unique, et la clôt avec un rapport, un commentaire ClickUp et une réponse client.
 
 Le résultat : moins de mauvaises surprises, des implémentations qui restent dans le périmètre défini, et un historique par branche qui survit aux compactions de contexte.
 
@@ -411,7 +413,7 @@ relayée est du git pur, exécuté par le parent.
 
 Tout ce qui est publié sur la forge distante après une livraison — titre et notes de release, description de tag ou de PR — est rédigé en **anglais**, quelle que soit ta langue. Le message de commit suit la langue des commits du dépôt.
 
-Le message de commit est généré automatiquement — pas de confirmation dédiée sur le message lui-même. Avant toute exécution, Forge affiche un tableau récapitulatif des actions git prévues : add, commit avec son message, push, puis une ligne par merge (`<BRANCH>` → cible), et une dernière ligne pour le retour sur `<BRANCH>`. Les changements de branche intermédiaires ne sont jamais listés. Aucune commande git — `git add` compris — n'est lancée avant la confirmation. Une seule confirmation couvre toute la séquence : add, commit, push, puis chaque merge, sans validation intermédiaire.
+Le message de commit est généré automatiquement — pas de confirmation dédiée sur le message lui-même. Avant toute exécution, Forge affiche un tableau récapitulatif des actions git prévues : add, commit avec son message, push, puis une ligne par merge (`<BRANCH>` → cible), et une dernière ligne pour le retour sur `<BRANCH>`. Les changements de branche intermédiaires ne sont jamais listés. Aucune commande git — `git add` compris — n'est lancée avant la confirmation. Une seule confirmation couvre toute la séquence : add, commit, push, puis chaque merge, sans validation intermédiaire. Une fois la séquence exécutée, Forge n'écrit plus rien — ni entrée de log, ni note de plan : le compte rendu est du texte seul et le working tree reste tel que la livraison l'a laissé.
 
 ---
 

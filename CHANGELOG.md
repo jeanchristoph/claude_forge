@@ -10,6 +10,10 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ## [Unreleased]
 
+### Changed
+
+- The README now says what per-branch shared context means for a team: developers work on different branches, and any of them can take over a branch started by another one with the actions already done, the context and the documentation needed to continue, since brief, plan, log and deliverables travel with the branch in git.
+
 ## [0.10.2] — 2026-09-20
 
 ### Changed

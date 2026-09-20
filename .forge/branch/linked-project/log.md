@@ -1,3 +1,5 @@
+- [2026-09-20 12:22] Direct action: team wording refined — different branches, take-over of another developer's branch with actions, context and documentation
+- [2026-09-20 12:15] Direct action: README en/fr state that per-branch shared context eases team work (result paragraph + « Built for teams » bullet), CHANGELOG Unreleased
 - [2026-09-20 12:05] T24 added and done — forge described as orchestrating the whole branch life cycle (SKILL.md, README en/fr, GitHub description)
 - [2026-09-20 11:52] T23 added and done — no log / plan write after the engrave sequence (rule from the user, saved before this engrave)
 - [2026-09-20 11:40] Release renamed 0.11.0 → 0.10.1 (patch, +0.0.1 from the last published v0.10.0); T22 entry folded into it

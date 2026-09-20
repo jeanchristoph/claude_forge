@@ -22,12 +22,13 @@ Where Claude Code jumps straight into code as soon as you describe a problem, th
 
 Once active, forge does not stop at the code: it delegates tasks to sealed subagents — a linked project or a branch of the same repository — with every question relayed to you, engraves the branch (commit, push, merges, relayed shipping, release) under a single confirmation, and closes it with a report, a ClickUp comment and a client reply.
 
-The result: fewer surprises, implementations that stay within the defined scope, and a per-branch history that survives context compaction.
+The result: fewer surprises, implementations that stay within the defined scope, and a per-branch history that survives context compaction. It also makes working as a team of several developers much easier: each one works on their own branch, and taking over a branch started by someone else means inheriting everything needed to carry the development on — the actions already done, the context and the documentation — since everything forge generates (brief, plan, log, deliverables) lives with the branch and travels with it in git.
 
 ### What Claude_forge brings concretely
 
 - **Zero code without validation** — the absolute rule: silence ≠ agreement. The skill waits for an explicit go-ahead before writing anything, asked as a choice and never as free text.
 - **Persistent per-branch context** — `brief.md` and `plan.md` are stored in `.forge/branch/<BRANCH>/`, tracked in git, and re-read on every `/forge`.
+- **Built for teams** — developers work on different branches, yet any of them can pick up a branch started by another one with the actions already done, the context and the documentation needed to continue: brief, plan, log and generated deliverables are shared through git, with no separate hand-over to write.
 - **Generated content stays with the branch** — any doc, SQL script, export, explanation or client deliverable you ask for is written to `.forge/branch/<BRANCH>/output/`, never at the project root, named `YYYYMMDD-` plus a lowercase kebab-case English label, with no exception: `20260910-db-migration.sql`. Forge's own files — `brief.md`, `plan.md`, `log.md`, `report.txt` — stay one level up, untouched.
 - **Living brief & log** — rules, constraints and scope go silently into the brief's `## Scope & rules` section; decisions and user choices are logged silently into `log.md`, without interrupting the workflow.
 - **Last session summary** — on resume, if `log.md` has entries, a one-line recap of the last 10 is displayed before the progress table.

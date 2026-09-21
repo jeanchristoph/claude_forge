@@ -142,6 +142,12 @@
 **Description:** Frontmatter `description` de SKILL.md, phrase d'ouverture et paragraphe « Once active » des README en/fr, description GitHub (`gh repo edit --description`, anglais) : forge orchestre le cycle de vie d'une branche — brief validé, plan, exécution suivie, délégation étanche, livraison git avec release, clôture — et non plus un workflow brief/plan/suivi. CHANGELOG `Changed` en 0.10.2.
 [x] SKILL.md description, README en/fr opening + « Once active » paragraph, GitHub description, CHANGELOG 0.10.2
 
+### T25 — Réponse mail écrite en fichier `.txt` dans OUTPUT
+**Effort:** XS
+**Files:** `skills/forge/phases/p5-resume.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** À l'étape 4 de « Clôture de tâche — rapport & réponse client », sur `Draft a reply` : la réponse générée est affichée dans la conversation **et** écrite dans OUTPUT sous `AAAAMMJJ-client-reply.txt` — texte brut, sans mise en forme Markdown, un paragraphe par ligne, dans la langue du mail reçu. Plusieurs réponses le même jour → suffixe `-2`, `-3`… Aucune confirmation avant l'écriture : c'est un contenu généré au sens de la section « Contenu généré » de `SKILL.md` (règle « Action directe »). Une ligne dans LOG. Le fichier est la copie exacte du brouillon affiché — jamais reformulé. README en/fr : phrase ajoutée au paragraphe final de la section Clôture ; CHANGELOG `Changed` sous Unreleased, qui remplace l'énoncé « drafted as email, not as a text file » de 0.10.0 : le brouillon reste un mail, mais il est désormais aussi conservé en `.txt` avec la branche.
+[x] closure step 4 rule in p5-resume, README en/fr closure paragraph, CHANGELOG Unreleased
+
 ## Risks
 - Chaque question bloquante du sous-agent coûte un tour complet de relais — acceptable car le brief est hérité et la frappe interdite : validation du plan et choix du mode sont les seuls points attendus.
 - Le sous-agent doit résoudre tous les chemins sous ROOT : un `.forge/` relatif écrit dans le projet parent violerait la cloison. Le test T7 le vérifie explicitement.
@@ -176,4 +182,5 @@ None
 | T22 — Branche du projet lié nommée `<parent>/<BRANCH>` | S | [x] |
 | T23 — Aucune écriture forge après la séquence de livraison | XS | [x] |
 | T24 — Description de forge alignée sur son périmètre actuel | XS | [x] |
-| **Total** | **6M + 10S + 7XS** | |
+| T25 — Réponse mail écrite en fichier `.txt` dans OUTPUT | XS | [x] |
+| **Total** | **6M + 10S + 8XS** | |

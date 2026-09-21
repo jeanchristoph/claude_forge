@@ -430,7 +430,9 @@ task whose code is the branch name. The task is fetched before anything is sent,
 nothing goes out without an explicit yes. Without that file, the step stays entirely silent.
 
 Last, it offers to draft a reply to a client email — written in the language of the email received,
-never yours if they differ.
+never yours if they differ. The draft is shown in the conversation and always saved as well, as an exact
+plain-text copy in `.forge/branch/<BRANCH>/output/YYYYMMDD-client-reply.txt`, ready to paste into a
+mail client or attach to the ticket the email came from — ClickUp, Jira or any other tracker.
 
 ---
 

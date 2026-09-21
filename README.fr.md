@@ -433,7 +433,9 @@ devinée, et rien ne part sans accord explicite. Sans ce fichier, l'étape reste
 silencieuse.
 
 Enfin, il propose de rédiger une réponse à un mail client — rédigée dans la langue du mail reçu,
-jamais la tienne si elles diffèrent.
+jamais la tienne si elles diffèrent. Le brouillon est affiché dans la conversation et toujours conservé
+aussi, copie exacte en texte brut dans `.forge/branch/<BRANCH>/output/AAAAMMJJ-client-reply.txt`, prêt à
+coller dans un client de messagerie ou à joindre au ticket d'où vient le mail — ClickUp, Jira ou tout autre.
 
 ---
 

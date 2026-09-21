@@ -1,3 +1,5 @@
+- [2026-09-21 18:07] T25 done — client reply saved as `AAAAMMJJ-client-reply.txt` in OUTPUT (p5 closure step 4, README en/fr, CHANGELOG)
+- [2026-09-21 18:04] T25 added: client reply also written to OUTPUT as `AAAAMMJJ-client-reply.txt` — use case: a ticket opened from an email (ClickUp, Jira or any tracker) needs the reply as a text file
 - [2026-09-20 12:22] Direct action: team wording refined — different branches, take-over of another developer's branch with actions, context and documentation
 - [2026-09-20 12:15] Direct action: README en/fr state that per-branch shared context eases team work (result paragraph + « Built for teams » bullet), CHANGELOG Unreleased
 - [2026-09-20 12:05] T24 added and done — forge described as orchestrating the whole branch life cycle (SKILL.md, README en/fr, GitHub description)

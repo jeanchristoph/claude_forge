@@ -374,4 +374,9 @@ Tableau d'un projet lié : mêmes colonnes, même contenu, titré par `<LINKED>`
      un point. Les retours à la ligne ne séparent que les paragraphes et les éléments d'une liste.
    - **Aller à l'essentiel.** Ce qui figure dans une pièce jointe ou un document remis au client n'est pas reformulé
      dans le corps du mail : on l'y annonce en une phrase. Un mail de quelques paragraphes, pas une page.
+   - **Fichier `.txt` systématique.** La réponse affichée est aussi écrite dans OUTPUT sous `AAAAMMJJ-client-reply.txt`
+     — copie exacte du brouillon, texte brut sans mise en forme Markdown, un paragraphe par ligne. Même jour, autre
+     réponse → `-2`, `-3`… Contenu généré (section « Contenu généré » de `SKILL.md`) : aucune confirmation avant
+     l'écriture, une ligne dans LOG. Le fichier sert tel quel, quel que soit l'outil qui a relayé le mail — ticket
+     ClickUp, Jira ou tout autre.
    - `Finish` → terminer.

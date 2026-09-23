@@ -148,6 +148,12 @@
 **Description:** À l'étape 4 de « Clôture de tâche — rapport & réponse client », sur `Draft a reply` : la réponse générée est affichée dans la conversation **et** écrite dans OUTPUT sous `AAAAMMJJ-client-reply.txt` — texte brut, sans mise en forme Markdown, un paragraphe par ligne, dans la langue du mail reçu. Plusieurs réponses le même jour → suffixe `-2`, `-3`… Aucune confirmation avant l'écriture : c'est un contenu généré au sens de la section « Contenu généré » de `SKILL.md` (règle « Action directe »). Une ligne dans LOG. Le fichier est la copie exacte du brouillon affiché — jamais reformulé. README en/fr : phrase ajoutée au paragraphe final de la section Clôture ; CHANGELOG `Changed` sous Unreleased, qui remplace l'énoncé « drafted as email, not as a text file » de 0.10.0 : le brouillon reste un mail, mais il est désormais aussi conservé en `.txt` avec la branche.
 [x] closure step 4 rule in p5-resume, README en/fr closure paragraph, CHANGELOG Unreleased
 
+### T26 — Fichiers projet initialisés avant le choix de branche
+**Effort:** S
+**Files:** `skills/forge/SKILL.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** La « Garde de sécurité » (`main`/`master` → identifiant de ticket ou création de branche) ne s'exécute plus juste après « Branche de travail » mais avant l'état 2 — Brief, une fois `project.md` et `coding-standards.md` en place. Motif : les états 0 et 1 écrivent des fichiers communs à toutes les branches qui ne résolvent jamais `<BRANCH>` ; seul le brief ouvre `.forge/branch/<BRANCH>/`. Dans un projet neuf ouvert sur `master`, forge demandait un code de branche avant de savoir ce qu'est le projet. `SKILL.md` : section retitrée « exécuter avant l'état 2 », clause `**Garde :**` en tête (PROJECT ou CODING_STANDARDS absent → ne rien poser), ⚠️ sous la table de détection d'état (conditions des états 2 à 5 évaluées après la garde). `p1-coding-standards.md` : les deux renvois vers l'état 2 passent par la garde. README en/fr : puce « main/master guard », État 1, section « Garde de sécurité — main / master ». CHANGELOG : entrée `Changed` sous Unreleased.
+[x] guard anchored as the preliminary step of « Détection d'état » in SKILL.md (single mention, states 0/1 exempt), README en/fr, CHANGELOG Unreleased
+
 ## Risks
 - Chaque question bloquante du sous-agent coûte un tour complet de relais — acceptable car le brief est hérité et la frappe interdite : validation du plan et choix du mode sont les seuls points attendus.
 - Le sous-agent doit résoudre tous les chemins sous ROOT : un `.forge/` relatif écrit dans le projet parent violerait la cloison. Le test T7 le vérifie explicitement.
@@ -183,4 +189,5 @@ None
 | T23 — Aucune écriture forge après la séquence de livraison | XS | [x] |
 | T24 — Description de forge alignée sur son périmètre actuel | XS | [x] |
 | T25 — Réponse mail écrite en fichier `.txt` dans OUTPUT | XS | [x] |
-| **Total** | **6M + 10S + 8XS** | |
+| T26 — Fichiers projet initialisés avant le choix de branche | S | [x] |
+| **Total** | **6M + 11S + 8XS** | |

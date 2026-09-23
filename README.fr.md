@@ -35,7 +35,7 @@ Le résultat : moins de mauvaises surprises, des implémentations qui restent da
 - **Étapes de mise en production dans le plan** — tout ce qui se joue à la main hors du déploiement git — migration SQL, réglage de configuration, procédure d'exploitation — est listé dans la section `## Deployment` de `plan.md` avec son moment et sa copie dans `output/`, renseigné dès que le script est écrit.
 - **Détection hors périmètre** — une demande hors du plan courant devient une tâche du plan : forge la formule, tu valides la formulation, rien de plus.
 - **Branche en argument** — `/forge <nom-de-branche>` bascule sur cette branche, créée depuis la branche par défaut à jour (`master`, sinon `main`) si elle n'existe pas — jamais depuis la branche courante. L'argument est toujours un nom de branche git, jamais un identifiant de ticket.
-- **Garde main/master** — sans argument, sur les branches protégées, forge demande soit un identifiant de ticket, soit un nom de branche avant de continuer.
+- **Garde main/master** — sans argument, sur les branches protégées, forge demande soit un identifiant de ticket, soit un nom de branche — une fois `project.md` et `coding-standards.md` en place, juste avant le brief.
 - **Raccourcis de livraison** — `"grave master"` / `"engrave master"` (ou avec `"dev"`) commit, push et merge en une étape confirmée.
 - **Survie à la compaction** — le hook `PreCompact` injecte l'état forge (branche, objectif, statut des tâches) dans le résumé de contexte compacté.
 - **Cross-platform** — détection automatique Unix/Windows, installeurs séparés.
@@ -218,6 +218,8 @@ doit changer, et ne re-présente jamais un contenu inchangé.
 Sans argument, sur `main` ou `master`, forge pose le choix — pas une question en texte libre :
 1. Rester sur la branche → fournir un identifiant ticket (ex: `CU-123`)
 2. Créer une branche → fournir un nom
+
+La garde s'exécute avant l'État 2 — Brief, jamais avant les États 0 et 1 : `project.md` et `coding-standards.md` sont communs à toutes les branches et ne résolvent jamais `<BRANCH>`. Dans un projet neuf, forge apprend ce qu'est le projet avant de demander sous quelle branche travailler.
 
 Avec un argument (`/forge <nom-de-branche>`), la garde ne s'applique pas : forge est déjà positionné sur `<nom-de-branche>`.
 

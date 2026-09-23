@@ -1,3 +1,5 @@
+- [2026-09-23 09:40] Option A retenue pour T26 — garde ancrée en étape préalable de « Détection d'état » (un seul point de mention) plutôt que déplacée en tête de p2-brief.md : la garde résout `<BRANCH>`, dont dépendent les états 2 à 5, pas seulement le brief
+- [2026-09-22 10:12] T26 added and done — main/master guard moved after states 0 and 1: a project that has never been forged writes project.md and coding-standards.md before being asked for a branch code
 - [2026-09-21 18:07] T25 done — client reply saved as `AAAAMMJJ-client-reply.txt` in OUTPUT (p5 closure step 4, README en/fr, CHANGELOG)
 - [2026-09-21 18:04] T25 added: client reply also written to OUTPUT as `AAAAMMJJ-client-reply.txt` — use case: a ticket opened from an email (ClickUp, Jira or any tracker) needs the reply as a text file
 - [2026-09-20 12:22] Direct action: team wording refined — different branches, take-over of another developer's branch with actions, context and documentation

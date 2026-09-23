@@ -141,7 +141,9 @@ Liste vide → `none`. `SCOPE: branch` → `- T1 — [note]`, sans `← parent`.
 
 ---
 
-## Garde de sécurité — exécuter juste après « Branche de travail »
+## Garde de sécurité — exécutée par « Détection d'état »
+
+**Déclencheur :** étape préalable de « Détection d'état » ci-dessous — jamais avant les états 0 et 1.
 
 **Uniquement sans argument.** `/forge <nom>` a déjà positionné sur `<nom>` : ne rien poser.
 
@@ -166,6 +168,8 @@ Si BRANCH est `main` ou `master` :
 ---
 
 ## Détection d'état
+
+**Étape préalable :** résoudre `<BRANCH>` avant d'évaluer les états 2 à 5 → exécuter la « Garde de sécurité » ci-dessus. Les états 0 et 1 s'évaluent et s'exécutent sans elle : `project.md` et `coding-standards.md` sont communs à toutes les branches et ne résolvent jamais `<BRANCH>`.
 
 Lire la table dans l'ordre, exécuter intégralement le fichier de la première ligne dont la condition s'applique, STOP — ne pas lire les lignes suivantes.
 

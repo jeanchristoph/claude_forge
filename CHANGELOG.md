@@ -12,6 +12,7 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ### Changed
 
+- The main/master safety guard now runs right before the brief instead of right after the branch is read: in a project that has never been forged, `project.md` and `coding-standards.md` are written first — they are shared by every branch and never resolve `<BRANCH>` — and only then does forge ask for a ticket ID or a branch name. A fresh project no longer asks which branch to work under before knowing what the project is.
 - The client reply drafted at closure is now also saved as a file: an exact plain-text copy of the draft lands in `.forge/branch/<BRANCH>/output/YYYYMMDD-client-reply.txt` (`-2`, `-3`… for further replies the same day), with no confirmation, as generated content. The draft is still written as an email — one paragraph per line, no Markdown — but it no longer lives only in the conversation: a ticket opened from an email, whatever the tracker, gets the reply as a text file.
 - The README now says what per-branch shared context means for a team: developers work on different branches, and any of them can take over a branch started by another one with the actions already done, the context and the documentation needed to continue, since brief, plan, log and deliverables travel with the branch in git.
 

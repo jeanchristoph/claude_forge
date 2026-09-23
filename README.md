@@ -36,7 +36,7 @@ The result: fewer surprises, implementations that stay within the defined scope,
 - **Deployment steps in the plan** — anything to run by hand outside the git deployment — an SQL migration, a configuration setting, an operating procedure — is listed in the `## Deployment` section of `plan.md` with its timing and its copy under `output/`, filled in as soon as the script is written.
 - **Out-of-scope detection** — a request outside the current plan becomes a plan task: forge writes it up and you validate the wording, nothing more.
 - **Branch as argument** — `/forge <branch-name>` checks out that branch, creating it from the up-to-date default branch (`master`, else `main`) if it does not exist — never from the current one. The argument is always a git branch name, never a ticket ID.
-- **main/master guard** — without an argument, on protected branches, forge asks for either a ticket ID or a branch name before continuing.
+- **main/master guard** — without an argument, on protected branches, forge asks for either a ticket ID or a branch name — after `project.md` and `coding-standards.md` are in place, right before the brief.
 - **Shipping shortcuts** — `"grave master"` / `"engrave master"` (or with `"dev"`) commit, push, and merge in one confirmed step.
 - **Compaction survival** — the `PreCompact` hook injects the forge state (branch, goal, task statuses) into the compacted context summary.
 - **Cross-platform** — automatic Unix/Windows detection, separate installers.
@@ -218,6 +218,8 @@ content again unchanged.
 Without an argument, on `main` or `master`, forge asks — as a choice, not free text:
 1. Stay on the branch → provide a ticket ID (e.g. `CU-123`)
 2. Create a branch → provide a name
+
+The guard runs before State 2 — Brief, never before States 0 and 1: `project.md` and `coding-standards.md` are shared by every branch and never resolve `<BRANCH>`. In a fresh project, forge learns what the project is before asking which branch to work under.
 
 With an argument (`/forge <branch-name>`) the guard does not apply: forge is already positioned on `<branch-name>`.
 

@@ -42,7 +42,7 @@
 
 **Silencieuse (automatique)** — après tâche terminée ou événement notable :
 - Cocher `[x]`, ajouter note max 1 ligne, marquer `[!]` si bloqué.
-- Script diffusé à part du déploiement git (section « Contenu généré » du SKILL) → ajouter l'étape dans `## Deployment` : quoi, moment d'exécution, chemin de la copie dans OUTPUT. `None` remplacé par la première étape.
+- Script diffusé à part du déploiement git (section « Contenu généré » du SKILL) → ajouter l'étape dans `## Deployment` : quoi, moment d'exécution, numéros des tâches d'origine, chemin de la copie dans OUTPUT. `None` remplacé par la première étape. Étape qui exécute du SQL → section « Script de déploiement SQL » ci-dessous.
 
 **Substantielle (confirmation obligatoire)** — décrire la modification, puis poser le choix avec `AskUserQuestion` — `header` : `Plan`, options `Apply` / `Leave as is` — avant d'appliquer :
 - Ajouter/supprimer une tâche
@@ -54,6 +54,27 @@
 
 **Tâche L/XL** — avant de démarrer, décomposer en micro-étapes et écrire `plan.md` :
 `[ ] T2.1 — ...` · `[ ] T2.2 — ...`
+
+---
+
+## Script de déploiement SQL
+
+**Déclencheur :** `## Deployment` gagne ou modifie une étape qui exécute du SQL — migration, script de reconstruction, requête d'exploitation.
+
+**Réaction — dans l'ordre :**
+1. Écrire ou réécrire sur place `.forge/branch/<BRANCH>/output/AAAAMMJJ-deployment-script.sql`, sans question — un seul fichier par branche, daté de sa création, jamais renommé.
+2. Écrire une entrée dans LOG : `- [AAAA-MM-JJ HH:MM] Deployment script updated: [étapes ajoutées ou modifiées]`.
+
+**Format :**
+- En-tête en commentaire : branche, date, tableau des étapes — numéro, base visée, moment (`before` / `after deploy`), forme (`comment` / `query`), tâches d'origine.
+- Une section par étape SQL, dans l'ordre de `## Deployment`, titrée `-- STEP [n] — [base visée] — [moment] · [T7, T9]`.
+- Script versionné dans le dépôt → commentaire seul : chemin, prérequis, précautions, variantes production et développement. Jamais recopié.
+- Requête autonome (`EXEC`, job, `UPDATE` d'exploitation) → telle quelle, exécutable, suivie de sa requête de contrôle.
+- Valeur qui dépend de la date → calculée dans la requête, jamais laissée à saisir.
+- Section contenant un `USE` → placée en dernier.
+- Étape sans SQL → absente du script.
+
+⚠️ Le script se réécrit en entier à chaque déclencheur, depuis `## Deployment` : jamais d'ajout en fin de fichier qui laisserait une étape obsolète.
 
 ---
 

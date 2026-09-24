@@ -10,8 +10,13 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ## [Unreleased]
 
+### Added
+
+- Generated SQL deployment script: whenever the `## Deployment` section of the plan gains or changes a step that runs SQL — migration, rebuild script, operating query — forge writes or rewrites in place, with no question, a single `output/YYYYMMDD-deployment-script.sql` per branch, dated at creation, and logs it. A header table lists the steps (number, target database, timing, `comment` / `query` form, source tasks); each SQL step gets a `-- STEP [n] — [database] — [timing] · T7, T9` section in plan order. A script versioned in the repository appears as a comment only (path, prerequisites, precautions, production and development variants), never copied; a standalone query (`EXEC`, job, operating `UPDATE`) appears as is, runnable, followed by its check query; date-dependent values are computed in the query; a section holding a `USE` comes last; a step with no SQL is left out.
+
 ### Changed
 
+- Each step of the plan's `## Deployment` section now names the tasks it comes from (`· T1, T3`), and the silent plan-update rule requires those numbers and points to the new deployment script section. Existing plans are updated by hand.
 - The main/master safety guard now runs right before the brief instead of right after the branch is read: in a project that has never been forged, `project.md` and `coding-standards.md` are written first — they are shared by every branch and never resolve `<BRANCH>` — and only then does forge ask for a ticket ID or a branch name. A fresh project no longer asks which branch to work under before knowing what the project is.
 - The client reply drafted at closure is now also saved as a file: an exact plain-text copy of the draft lands in `.forge/branch/<BRANCH>/output/YYYYMMDD-client-reply.txt` (`-2`, `-3`… for further replies the same day), with no confirmation, as generated content. The draft is still written as an email — one paragraph per line, no Markdown — but it no longer lives only in the conversation: a ticket opened from an email, whatever the tracker, gets the reply as a text file.
 - The README now says what per-branch shared context means for a team: developers work on different branches, and any of them can take over a branch started by another one with the actions already done, the context and the documentation needed to continue, since brief, plan, log and deliverables travel with the branch in git.

@@ -60,7 +60,7 @@ Si BRIEF contient `## Origin` (`SCOPE: linked` — mandat) → les étapes ci-de
 
 ## Deployment
 [Étapes manuelles hors déploiement git, dans l'ordre d'exécution — script SQL, réglage de configuration, procédure d'exploitation. Aucune → `None`]
-- [ ] [Quoi — quand : before / after deploy] — `output/AAAAMMJJ-intitule.sql`
+- [ ] [Quoi — quand : before / after deploy] · [T1, T3] — `output/AAAAMMJJ-intitule.sql`
 
 ## Summary
 | Task | Effort | Status |

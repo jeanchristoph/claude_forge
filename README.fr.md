@@ -118,7 +118,7 @@ Fichiers générés dans chaque projet :
 ```
 .forge/                  ← suivi en git, ajouté automatiquement au premier lancement
 ├── project.md
-├── coding-standards.md  ← conventions de code (structure, nommage, principes), complétées au fil du projet
+├── coding-standards.md  ← règles de code par nature : Architecture / Constraints / Conventions, complétées au fil du projet
 ├── clickup.json         ← écrit par `/forge-clickup` : liste cible, branche de base, code de branche
 └── branch/<BRANCH>/
     ├── brief.md         ← `## Objective` + `## Scope & rules`
@@ -147,13 +147,13 @@ Garde `.forge/` suivi en git — le bloc `.gitignore` ci-dessous s'en charge :
 **Condition :** `.forge/project.md` absent
 
 - Projet vide (hors dotfiles/dotfolders) → `project.md` placeholder créé, enchaîne.
-- Sinon → explore stack, structure, conventions, écrit `project.md` après validation.
+- Sinon → explore stack, structure, conventions, écrit `project.md` après validation — `## Key structure` cartographie les dossiers et le rôle de chacun, en descriptif uniquement ; `## Business rules` porte les règles métier valables pour tout le projet, `<!-- pending -->` tant qu'aucune n'est énoncée.
 - `coding-standards.md` est écrit au même moment (uniquement s'il n'existe pas déjà) — voir ci-dessous.
 
 ### État 1 — Coding Standards Init
 **Condition :** `.forge/coding-standards.md` absent
 
-Écrit `coding-standards.md` dans la langue de l'utilisateur, puis enchaîne sur le brief.
+Écrit `coding-standards.md` dans la langue de l'utilisateur à partir de ce que l'État 0 a observé, selon sa structure fixe (voir ci-dessous), puis enchaîne sur le brief.
 
 ### État 2 — Brief
 **Condition :** brief absent
@@ -180,9 +180,46 @@ Lit `coding-standards.md` et les fichiers en silence. Si `log.md` contient des e
 
 ## coding-standards.md
 
-Créé en même temps que `project.md` (État 0), dans la langue de l'utilisateur : un titre (nom du projet) et une courte explication précisant que le fichier contient les conventions de code (structure, nommage, principes) à appliquer au moment d'écrire du code — une norme continue, pas un audit ponctuel — à compléter au fil du projet.
+Créé en même temps que `project.md` (État 0), dans la langue de l'utilisateur : un titre (nom du projet), une courte explication — les règles à appliquer au moment d'écrire du code, une norme continue, pas un audit ponctuel — puis une structure fixe dont les titres restent en anglais :
 
-Il est lu à chaque phase qui touche au code (Bootstrap, Plan, Actif) pour que les conventions restent appliquées tout au long du workflow.
+```markdown
+## Architecture
+### Directory layout   ← dossiers et rôle de chacun : où placer un nouveau fichier
+### Naming             ← tous les identifiants : fichiers, dossiers, classes, méthodes, variables,
+                         constantes, tables et colonnes de base, booléens
+### Dependencies       ← interfaces, injection, qui dépend de quoi
+
+## Constraints
+### [Sujet]            ← non négociable : réalité technique ou décision immuable
+                         dont la violation casse ou fausse un résultat — une sous-section par sujet
+
+## Conventions
+### [Sujet]            ← choix d'équipe pour la cohérence — une sous-section par sujet :
+                         Language, Code, Errors & logs, Tests, Comments, Git…
+```
+
+Le contenu décrit ce que le projet contient réellement — skill, application, bibliothèque, site, scripts — sans jamais présupposer de « modules » ni de couches — et ne contient que ce qui est propre au projet : il ne recopie jamais le `CLAUDE.md` global, il le complète ou y déroge. Une section sans matière observée garde son titre avec `<!-- pending -->` : la structure ne change jamais, seules les sous-sections de `## Constraints` et de `## Conventions` varient.
+
+Il est lu à chaque phase qui touche au code (Bootstrap, Plan, Actif) pour que les conventions restent appliquées tout au long du workflow. La mise à jour de `project.md` ne le réécrit jamais.
+
+---
+
+## Routage de l'information
+
+Dès qu'une information durable apparaît — décision, règle, constat — forge parcourt cette table dans l'ordre et applique la première ligne qui correspond, sans demander où la ranger. Critère : nature d'abord — normatif (à appliquer) ou descriptif (ce qui est), technique ou métier — portée ensuite : tous les projets, tout le projet, la seule branche.
+
+| Condition | Destination |
+|---|---|
+| Règle valable pour tous les projets | `~/.claude/CLAUDE.md` global — proposée, puis validée |
+| Fait technique qui fonde une contrainte | le fait → `project.md` ; la règle qui en découle → `coding-standards.md` `## Constraints` |
+| Règle technique valable pour tout le projet | `coding-standards.md`, dans la section de sa nature : `Architecture`, `Constraints` ou `Conventions` — uniquement ce qui complète le `CLAUDE.md` global ou y déroge |
+| Règle métier valable pour tout le projet | `project.md` `## Business rules` |
+| Description du projet tel qu'il est — stack, carte des dossiers, points d'entrée | `project.md` |
+| Règle technique ou métier valable pour la seule branche | `brief.md` `## Scope & rules` |
+| Décision ponctuelle | `log.md` |
+| Livrable produit à la demande | `output/` |
+
+Quand une proposition de règle globale reçoit `Keep it local`, la règle suit cette même table, selon sa nature et sa portée. La table désigne la destination ; elle ne dispense jamais de la validation qu'exige la phase qui écrit.
 
 ---
 
@@ -325,7 +362,7 @@ Une **action directe** ne devient jamais une tâche : un ordre précis — quoi,
 "ranger la forge" / "clean the forge"
 ```
 
-Met à jour `project.md` — uniquement ce qui a changé, après validation.
+Met à jour `project.md` — uniquement ce qui a changé, après validation. `## Business rules` est normative : jamais réécrite, jamais supprimée, `<!-- pending -->` si vide. `coding-standards.md` est lu, jamais réécrit : un écart normatif est proposé via la table de routage de l'information.
 
 ---
 

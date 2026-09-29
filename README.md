@@ -119,7 +119,7 @@ Files generated in each project:
 ```
 .forge/                  ← tracked in git, added automatically on first run
 ├── project.md
-├── coding-standards.md  ← coding conventions (structure, naming, principles), completed over time
+├── coding-standards.md  ← coding rules by nature: Architecture / Constraints / Conventions, completed over time
 ├── clickup.json         ← written by `/forge-clickup`: target list, base branch, branch code
 └── branch/<BRANCH>/
     ├── brief.md         ← `## Objective` + `## Scope & rules`
@@ -148,13 +148,13 @@ Keep `.forge/` tracked in git — the `.gitignore` block below does it:
 **Condition:** `.forge/project.md` absent
 
 - Empty project (excluding dotfiles/dotfolders) → `project.md` placeholder created, continues.
-- Otherwise → explores stack, structure, conventions, writes `project.md` after validation.
+- Otherwise → explores stack, structure, conventions, writes `project.md` after validation — `## Key structure` maps the folders and the role of each, descriptive only; `## Business rules` holds the project-wide business rules, `<!-- pending -->` until one is stated.
 - `coding-standards.md` is written at the same time (only if it doesn't already exist) — see below.
 
 ### State 1 — Coding Standards Init
 **Condition:** `.forge/coding-standards.md` absent
 
-Writes `coding-standards.md` in the user's language, then continues to brief.
+Writes `coding-standards.md` in the user's language from what State 0 observed, with its fixed structure (see below), then continues to brief.
 
 ### State 2 — Brief
 **Condition:** brief absent
@@ -181,9 +181,46 @@ Reads `coding-standards.md` and files silently. If `log.md` has entries, display
 
 ## coding-standards.md
 
-Created alongside `project.md` (State 0), in the user's language: a title (project name) and a short explanation stating that the file holds the coding conventions (structure, naming, principles) to apply while writing code — an ongoing standard, not a one-off audit — meant to be filled in as the project evolves.
+Created alongside `project.md` (State 0), in the user's language: a title (project name), a short explanation — the rules to apply while writing code, an ongoing standard, not a one-off audit — then a fixed structure whose headings stay in English:
 
-It's read at every phase that touches code (Bootstrap, Plan, Active) so conventions stay applied throughout the workflow.
+```markdown
+## Architecture
+### Directory layout   ← folders and the role of each: where a new file goes
+### Naming             ← every identifier: files, folders, classes, methods, variables,
+                         constants, database tables and columns, booleans
+### Dependencies       ← interfaces, injection, what depends on what
+
+## Constraints
+### [Subject]          ← non-negotiable: a technical reality or an immutable decision
+                         whose violation breaks or skews a result — one subsection per subject
+
+## Conventions
+### [Subject]          ← team choices for consistency — one subsection per subject:
+                         Language, Code, Errors & logs, Tests, Comments, Git…
+```
+
+Content is written from what the project actually contains — skill, application, library, site, scripts — never presupposing "modules" or layers — and holds only what is specific to the project: it never copies the global `CLAUDE.md`, it only adds to it or overrides it. A section with nothing observed yet keeps its heading with `<!-- pending -->`: the structure never changes, only the `## Constraints` and `## Conventions` subsections vary.
+
+It's read at every phase that touches code (Bootstrap, Plan, Active) so conventions stay applied throughout the workflow. Updating `project.md` never rewrites it.
+
+---
+
+## Information routing
+
+Whenever a durable piece of information shows up — decision, rule, finding — forge walks this table in order and applies the first matching row, without asking where it goes. Criterion: nature first — normative (to apply) or descriptive (what is), technical or business — then scope: every project, the whole project, this branch only.
+
+| Condition | Destination |
+|---|---|
+| Rule valid for every project | global `~/.claude/CLAUDE.md` — proposed, then validated |
+| Technical fact that grounds a constraint | the fact → `project.md`; the rule it implies → `coding-standards.md` `## Constraints` |
+| Technical rule valid for the whole project | `coding-standards.md`, in the section matching its nature: `Architecture`, `Constraints` or `Conventions` — only what adds to or overrides the global `CLAUDE.md` |
+| Business rule valid for the whole project | `project.md` `## Business rules` |
+| Description of the project as it is — stack, folder map, entry points | `project.md` |
+| Technical or business rule valid for this branch only | `brief.md` `## Scope & rules` |
+| One-off decision | `log.md` |
+| Deliverable produced on demand | `output/` |
+
+When a global-rule proposal is answered `Keep it local`, the rule follows this same table, by nature and scope. The table picks the destination; it never skips the validation the writing phase requires.
 
 ---
 
@@ -325,7 +362,7 @@ A **direct action** never becomes a task: a precise order — what, where — th
 "ranger la forge" / "clean the forge"
 ```
 
-Updates `project.md` — only what changed, after validation.
+Updates `project.md` — only what changed, after validation. `## Business rules` is normative: never rewritten, never removed, `<!-- pending -->` when empty. `coding-standards.md` is read, never rewritten: a normative gap is proposed through the information routing table.
 
 ---
 

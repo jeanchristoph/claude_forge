@@ -43,6 +43,29 @@ Si erreur ou vide (pas de git) : demander un nom de code (ex: `refonte-auth`), l
 
 ---
 
+## Routage de l'information
+
+**Déclencheur :** une information durable apparaît — décision, règle, constat — à toute phase.
+
+**Réaction :** parcourir la table dans l'ordre, appliquer la première ligne dont la condition s'applique, sans question. Critère : nature d'abord — normatif (à appliquer) ou descriptif (ce qui est), technique ou métier — portée ensuite : tous les projets, tout le projet, la seule branche.
+
+| Condition | Destination |
+|---|---|
+| Règle valable pour tous les projets | `~/.claude/CLAUDE.md` — proposée puis validée, section « Choix d'infrastructure → propagation vers CLAUDE.md global » de `phases/p5-resume.md` |
+| Fait technique qui fonde une contrainte | le fait → PROJECT ; la règle qui en découle → CODING_STANDARDS `## Constraints` |
+| Règle technique valable pour tout le projet | CODING_STANDARDS, dans la section de sa nature : `## Architecture` (disposition des dossiers, nommage, dépendances), `## Constraints` (non négociable : sa violation casse ou fausse un résultat), `## Conventions` (choix d'équipe pour la cohérence) — uniquement ce qui est propre au projet, ajout ou dérogation au `CLAUDE.md` global |
+| Règle métier valable pour tout le projet | PROJECT `## Business rules` |
+| Description du projet tel qu'il est — stack, carte des dossiers et de leur rôle, points d'entrée | PROJECT |
+| Règle technique ou métier valable pour la seule branche | BRIEF `## Scope & rules` — section « Mise à jour du brief et du log » de `phases/p5-resume.md` |
+| Décision ponctuelle | LOG — même section |
+| Livrable produit à la demande | OUTPUT — section « Contenu généré » ci-dessus |
+
+⚠️ La ligne « fait technique » précède la ligne « règle technique » : un fait qui fonde une contrainte s'écrit aux deux endroits, jamais dans CODING_STANDARDS seul.
+⚠️ CODING_STANDARDS ne recopie jamais le `CLAUDE.md` global : il ne contient que ce qui est propre au projet — ajout ou dérogation, la dérogation nommant la règle globale qu'elle remplace.
+⚠️ Une écriture dans PROJECT ou CODING_STANDARDS suit les validations de la phase qui l'écrit — la table désigne la destination, jamais une dispense de confirmation.
+
+---
+
 ## Règle absolue
 
 **Jamais une ligne de code sans confirmation explicite** ("ok", "go", "let's do it"). Silence ≠ validation.

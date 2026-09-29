@@ -1,6 +1,6 @@
 # Project — Claude_forge
 
-**Generated:** 2026-07-30 · updated 2026-09-16
+**Generated:** 2026-07-30 · updated 2026-09-29
 
 ## Stack
 - Langage : Markdown (instructions du skill) + PowerShell / Bash (installeurs et hook)
@@ -64,6 +64,12 @@ Fichiers générés dans **chaque projet cible** par le skill (pas dans ce dép�
 - `hooks/ps1/forge-precompact.ps1` / `hooks/bash/forge-precompact.sh` — hook `PreCompact`, injecte l'état du plan courant dans le contexte compacté
 - `skills/forge/phases/p5-resume.md` — porte les trois commandes de l'état actif : Délégation vers un projet lié, Livraison (`grave` / `engrave`, projets liés compris) et Clôture de tâche
 
+## Business rules
+Règles non négociables du comportement du skill, énoncées dans `skills/forge/SKILL.md` :
+- Jamais une ligne de code sans confirmation explicite ; silence ≠ validation.
+- Aucune mention ni copyright Claude, ni dans git ni dans le code généré.
+- Message de commit : 150 caractères maximum.
+
 ## Detected conventions
 - Nommage : phases numérotées `pN-<nom>.md`, sections `##`/`###` avec mots-clés stricts (« Condition », « Réaction », « STOP »)
 - Architecture : machine à états explicite — chaque phase se termine par un renvoi à la détection d'état ou un `STOP` ; jamais de saut direct entre phases
@@ -72,7 +78,6 @@ Fichiers générés dans **chaque projet cible** par le skill (pas dans ce dép�
 - Gestion d'erreurs : scripts PowerShell en `$ErrorActionPreference = "Stop"` ; hooks silencieux (`exit 0`) si branche/plan absents
 - Idempotence : les installeurs retirent systématiquement les anciennes entrées (règles `permissions.allow`, hooks `PreCompact`) avant d'ajouter les nouvelles — jamais de doublon en settings.json
 - Documentation : un fichier par langue — `README.md` (anglais) et `README.fr.md` (français), même plan de section à section. Sélecteur de langue en badges juste sous le titre, langue courante en bleu, l'autre en gris. Toute évolution de l'un est répercutée sur l'autre dans le même commit
-- Règles non négociables du skill lui-même : pas de code sans confirmation explicite, pas de mention/copyright Claude, message de commit ≤150 caractères
 
 ## Critical files
 - `skills/forge/SKILL.md` — toute modification du comportement du skill passe par ce fichier (routage d'état, mode délégué)

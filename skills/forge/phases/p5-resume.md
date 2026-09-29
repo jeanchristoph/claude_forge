@@ -80,14 +80,14 @@
 
 ## Mise à jour du brief et du log
 
-Le brief est vivant. Les changements de scope sont gérés par la **Surveillance** ci-dessous.
+Le brief est vivant. Les changements de scope sont gérés par la **Surveillance** ci-dessous. La destination de toute information durable → section « Routage de l'information » de `SKILL.md` ; cette section ne fixe que la procédure d'écriture de ses lignes BRIEF et LOG.
 
-**Élément de cadre** (valable pour toute la durée de la branche) → écrire silencieusement dans la section `## Scope & rules` de `brief.md` :
+**Élément de cadre** (ligne BRIEF de la table) → écrire silencieusement dans la section `## Scope & rules` de `brief.md`. Exemples :
 - Contrainte technique découverte en cours de tâche
 - Règle immuable posée par l'utilisateur
 - Remarque utilisateur précisant durablement le périmètre ou le hors périmètre
 
-**Décision ponctuelle** (choix acté et clos à un instant donné) → écrire silencieusement dans LOG (format : `- [AAAA-MM-JJ HH:MM] [1 ligne]`, heure locale) :
+**Décision ponctuelle** (ligne LOG de la table) → écrire silencieusement dans LOG (format : `- [AAAA-MM-JJ HH:MM] [1 ligne]`, heure locale). Exemples :
 - Choix d'implémentation mineur acté sans discussion
 - **Choix utilisateur quand Claude a proposé plusieurs options** (ex: "Option B retenue — raison")
 
@@ -103,9 +103,9 @@ Le brief est vivant. Les changements de scope sont gérés par la **Surveillance
 
 **Réaction — dans l'ordre :**
 1. Logger le choix retenu dans LOG (règle ci-dessus).
-2. Si le choix dépasse le périmètre de cette branche (règle générale, pas spécifique au ticket) → en tirer une règle concise et programmatique, l'afficher telle qu'elle serait écrite, puis poser le choix avec `AskUserQuestion` — `header` : `Global rule`, options `Add to CLAUDE.md` / `Keep it local`.
+2. Si la table « Routage de l'information » de `SKILL.md` désigne le `CLAUDE.md` global (règle valable pour tous les projets) → en tirer une règle concise et programmatique, l'afficher telle qu'elle serait écrite, puis poser le choix avec `AskUserQuestion` — `header` : `Global rule`, options `Add to CLAUDE.md` / `Keep it local`.
 3. **Sur `Add to CLAUDE.md`** → ajouter la règle à `~/.claude/CLAUDE.md` (section existante pertinente ou nouvelle section courte). Jamais d'écriture sans validation explicite.
-4. **Sur `Keep it local`** → rester local au brief, ne jamais reproposer plus tard pour la même décision.
+4. **Sur `Keep it local`** → ranger la règle à la ligne de la table « Routage de l'information » qui correspond à sa nature et à sa portée réelle (tout le projet ou la seule branche), ne jamais reproposer plus tard pour la même décision.
 
 ---
 

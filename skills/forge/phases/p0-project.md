@@ -47,10 +47,13 @@ Si le dossier est vide (rien en dehors des éléments ignorés) :
 - Server: ...
 
 ## Key structure
-[arborescence simplifiée des dossiers principaux et leur rôle]
+[carte des dossiers principaux et du rôle de chacun, en arborescence simplifiée — descriptif uniquement, aucune règle : une règle de placement ou de nommage relève de `coding-standards.md` `## Architecture`]
 
 ## Entry points
 - ...
+
+## Business rules
+[règles métier valables pour tout le projet — normatif ; `<!-- pending -->` si aucune n'est énoncée]
 
 ## Detected conventions
 - Naming: ...
@@ -78,7 +81,9 @@ Si le dossier est vide (rien en dehors des éléments ignorés) :
 ## Mode mise à jour (project.md déjà existant)
 Ne pas réécrire intégralement — modifier uniquement ce qui a changé :
 - Lire l'existant `@.forge/project.md`
+  ⚠️ `## Business rules` est normative : conservée telle quelle, jamais réécrite, jamais supprimée — `<!-- pending -->` si absente ou vide. Une nouvelle règle métier y entre selon la section « Routage de l'information » de `SKILL.md`, après validation.
 - Lire `.forge/coding-standards.md`
+  ⚠️ `.forge/coding-standards.md` est lu, jamais réécrit : un écart normatif constaté (règle absente, obsolète ou contredite par le code) est proposé à l'humain selon la section « Routage de l'information » de `SKILL.md`, jamais écrit d'office.
 - Identifier les sections obsolètes ou incomplètes
 - Proposer les modifications à l'humain avant d'écrire
 - Conserver ce qui est toujours valide tel quel

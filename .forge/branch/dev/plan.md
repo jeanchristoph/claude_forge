@@ -266,6 +266,13 @@ Détecté hors plan initial — ajouté sur confirmation.
 Détecté hors plan initial — ajouté sur confirmation.
 [x]
 
+### T28 — Sous-agents délégués sur le modèle de la session
+**Effort :** XS
+**Fichiers :** `skills/forge/phases/p5-resume.md`, `CHANGELOG.md`
+**Description :** Les deux délégations (projet lié, branche du même dépôt) passent le paramètre `model` = famille du modèle de la session (`opus`, `sonnet`, `haiku`, `fable`) — priorité documentée sur `CLAUDE_CODE_SUBAGENT_MODEL` et le modèle de l'agent. Limites notées : l'effort n'est pas transmissible (aucun champ documenté), le paramètre fixe une famille et non une version exacte. Mode professeur non concerné. Entrée `CHANGELOG.md` sous `[Unreleased]`.
+Détecté hors plan initial — ajouté sur confirmation.
+[ ]
+
 ## Risques
 - L'identification du premier bloc (contraintes) repose sur la mise en forme existante (groupe contigu en tête de `## Décisions & Contraintes`), pas sur une analyse sémantique — la migration est un simple déplacement, sans reformulation.
 
@@ -299,4 +306,5 @@ Détecté hors plan initial — ajouté sur confirmation.
 | T25 — Confirmations posées en choix | M | [x] |
 | T26 — Contenu généré dans le dossier de branche | S | [x] |
 | T27 — Section `## Deployment` du plan | XS | [x] |
+| T28 — Sous-agents délégués sur le modèle de la session | XS | [ ] |
 | **Total estimé** | **~22h** | |

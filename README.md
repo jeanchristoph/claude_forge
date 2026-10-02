@@ -20,7 +20,7 @@ Where Claude Code jumps straight into code as soon as you describe a problem, th
 2. **Plan** — break down into estimated tasks, wait for explicit validation
 3. **Active** — execute with real-time progress tracking
 
-Once active, forge does not stop at the code: it delegates tasks to sealed subagents — a linked project or a branch of the same repository — with every question relayed to you, engraves the branch (commit, push, merges, relayed shipping, release) under a single confirmation, and closes it with a report, a ClickUp comment and a client reply.
+Once active, forge does not stop at the code: it delegates tasks to sealed subagents — a linked project or a branch of the same repository — with every question relayed to you, engraves the branch (commit, push, merges, relayed shipping, release) under a single confirmation, and closes it with a report posted to ClickUp and a client reply.
 
 The result: fewer surprises, implementations that stay within the defined scope, and a per-branch history that survives context compaction. It also makes working as a team of several developers much easier: each one works on their own branch, and taking over a branch started by someone else means inheriting everything needed to carry the development on — the actions already done, the context and the documentation — since everything forge generates (brief, plan, log, deliverables) lives with the branch and travels with it in git.
 
@@ -29,7 +29,7 @@ The result: fewer surprises, implementations that stay within the defined scope,
 - **Zero code without validation** — the absolute rule: silence ≠ agreement. The skill waits for an explicit go-ahead before writing anything, asked as a choice and never as free text.
 - **Persistent per-branch context** — `brief.md` and `plan.md` are stored in `.forge/branch/<BRANCH>/`, tracked in git, and re-read on every `/forge`.
 - **Built for teams** — developers work on different branches, yet any of them can pick up a branch started by another one with the actions already done, the context and the documentation needed to continue: brief, plan, log and generated deliverables are shared through git, with no separate hand-over to write.
-- **Generated content stays with the branch** — any doc, SQL script, export, explanation or client deliverable you ask for is written to `.forge/branch/<BRANCH>/output/`, never at the project root, named `YYYYMMDD-` plus a lowercase kebab-case English label, with no exception: `20260910-db-migration.sql`. Forge's own files — `brief.md`, `plan.md`, `log.md`, `report.txt` — stay one level up, untouched.
+- **Generated content stays with the branch** — any doc, SQL script, export, explanation or client deliverable you ask for is written to `.forge/branch/<BRANCH>/output/`, never at the project root, named `YYYYMMDD-` plus a lowercase kebab-case English label, with no exception: `20260910-db-migration.sql`. Forge's own files — `brief.md`, `plan.md`, `log.md` — stay one level up, untouched.
 - **Living brief & log** — rules, constraints and scope go silently into the brief's `## Scope & rules` section; decisions and user choices are logged silently into `log.md`, without interrupting the workflow.
 - **Last session summary** — on resume, if `log.md` has entries, a one-line recap of the last 10 is displayed before the progress table.
 - **L/XL task decomposition** — large tasks are broken into micro-steps in `plan.md` before implementation starts.
@@ -125,7 +125,6 @@ Files generated in each project:
     ├── brief.md         ← `## Objective` + `## Scope & rules`
     ├── log.md           ← Decisions log (living log, last 10 entries read on resume)
     ├── plan.md
-    ├── report.txt       ← generated on task closure
     └── output/          ← every generated file, named `YYYYMMDD-`
         ├── 20260910-explanation-*.md ← written in the background when a technical concept is explained
         ├── 20260910-db-migration.sql ← docs, SQL scripts, exports, notes
@@ -424,13 +423,15 @@ The commit message is generated automatically — no separate confirmation on th
 
 Triggered once every task is `[x]` and you've validated the tests, or as soon as you say it's done.
 
-Forge first confirms the original goal is actually solved, then writes `report.txt` in the branch
-folder: plain text, structured and schematic, in your language — labels included. It's the only
-generated file exempt from the English structural labels.
+Forge first confirms the original goal is actually solved.
 
-If `.forge/clickup.json` exists, Forge then offers to post that report as a comment on the ClickUp
-task whose code is the branch name. The task is fetched before anything is sent, never guessed, and
-nothing goes out without an explicit yes. Without that file, the step stays entirely silent.
+If `.forge/clickup.json` exists, Forge then writes a closing report for the ClickUp task whose code is
+the branch name: plain text, structured and schematic, in your language — labels included, the only
+generated content exempt from the English structural labels. Like any generated content, it is saved
+in `.forge/branch/<BRANCH>/output/YYYYMMDD-clickup-report.txt`, rewritten in place when you ask for a
+change. The task is fetched before anything is sent, never guessed, and the report is posted as a
+comment only on an explicit yes. Without that file, no report is written and the step stays entirely
+silent.
 
 Last, it offers to draft a reply to a client email — written in the language of the email received,
 never yours if they differ. The draft is shown in the conversation and always saved as well, as an exact

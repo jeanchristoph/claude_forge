@@ -17,7 +17,7 @@ Conventions de formulation pour les fichiers d'instructions du skill (`skill/SKI
 - Fin de séquence toujours explicite : `STOP — ne pas continuer` (halte dure) ou renvoi littéral « Revenir à la section « Détection d'état » de `SKILL.md` pour enchaîner sur l'état suivant. » (halte molle). Jamais de fin implicite.
 - Réplique que Claude doit prononcer à l'exécution → citée verbatim en anglais, en blockquote `>` ou entre guillemets, formulée en question fermée si une confirmation est attendue. Une réplique = une ligne. Exception : une question à choix (`AskUserQuestion`) est rendue dans la langue de l'utilisateur — ses libellés anglais dans le skill sont des références internes, jamais l'affichage.
 - Placeholder à substituer par une valeur d'exécution (branche, chemin réel) → chevrons `<BRANCH>`. Placeholder à remplir dans un gabarit de sortie → crochets `[Titre]`, `[1 phrase]`. Ne jamais mélanger les deux conventions dans le même fichier.
-- Libellé de structure d'un fichier produit (titre de section, nom de champ, en-tête de colonne) → toujours en anglais, figé littéralement dans l'instruction : `## Objective`, `## Scope & rules`, `## Tasks`, `**Effort:**`. Seul le contenu rédigé suit la langue de l'utilisateur. Un libellé traduit rend instable toute relecture programmatique (migration, hook, `grep`) d'un projet à l'autre. Exception unique : `report.txt`, rédigé intégralement dans la langue de l'utilisateur, labels compris — destiné à un lecteur humain, jamais relu programmatiquement.
+- Libellé de structure d'un fichier produit (titre de section, nom de champ, en-tête de colonne) → toujours en anglais, figé littéralement dans l'instruction : `## Objective`, `## Scope & rules`, `## Tasks`, `**Effort:**`. Seul le contenu rédigé suit la langue de l'utilisateur. Un libellé traduit rend instable toute relecture programmatique (migration, hook, `grep`) d'un projet à l'autre. Exception unique : le rapport de clôture ClickUp (`AAAAMMJJ-clickup-report.txt`), rédigé intégralement dans la langue de l'utilisateur, labels compris — destiné à un lecteur humain, jamais relu programmatiquement.
 - Chemin, identifiant, variable → toujours en inline code, jamais en texte nu.
 - Piège connu ou contrainte à ne pas violer → préfixe `⚠️` seul en tête de ligne, jamais noyé dans un paragraphe.
 - Terme du domaine du skill (Brief, Plan, État, Scope & rules, Hors périmètre, Historisation) → toujours le même mot une fois introduit, jamais de synonyme.
@@ -26,7 +26,7 @@ Conventions de formulation pour les fichiers d'instructions du skill (`skill/SKI
 
 - Nom de fichier et de dossier → kebab-case, minuscules : `p0-project.md`, `forge-precompact.sh`, `install-windows.bat`, `explanation-<sujet-slug>.md`. Jamais d'underscore : le kebab-case est la convention des commandes shell (`apt-get`, `docker-compose`), l'underscore reste réservé aux identifiants de code (modules, variables) où le tiret serait un opérateur.
 - Lanceur destiné à un terminal → suffixe de plateforme explicite : `-windows` / `-unix`. `unix` couvre Linux, macOS et WSL — jamais `linux`, qui exclut les deux derniers.
-- Fichier produit par le skill dans un projet cible → nom en anglais, au même titre que les libellés de structure : `brief.md`, `log.md`, `plan.md`, `report.txt`, `explanation-*.md`.
+- Fichier produit par le skill dans un projet cible → nom en anglais, au même titre que les libellés de structure : `brief.md`, `log.md`, `plan.md`, `explanation-*.md`.
 
 ## Fins de ligne
 

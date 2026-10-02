@@ -53,7 +53,6 @@ Fichiers générés dans **chaque projet cible** par le skill (pas dans ce dép�
     ├── brief.md          (## Origin en tête quand la branche est un projet lié : parent, branche, mandat)
     ├── log.md
     ├── plan.md
-    ├── report.txt
     └── output/           (tout contenu généré : AAAAMMJJ-<intitulé>.*, dont AAAAMMJJ-explanation-<sujet>.md)
 ```
 

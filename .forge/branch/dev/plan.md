@@ -266,12 +266,17 @@ Détecté hors plan initial — ajouté sur confirmation.
 Détecté hors plan initial — ajouté sur confirmation.
 [x]
 
-### T28 — Sous-agents délégués sur le modèle de la session
-**Effort :** XS
-**Fichiers :** `skills/forge/phases/p5-resume.md`, `CHANGELOG.md`
-**Description :** Les deux délégations (projet lié, branche du même dépôt) passent le paramètre `model` = famille du modèle de la session (`opus`, `sonnet`, `haiku`, `fable`) — priorité documentée sur `CLAUDE_CODE_SUBAGENT_MODEL` et le modèle de l'agent. Limites notées : l'effort n'est pas transmissible (aucun champ documenté), le paramètre fixe une famille et non une version exacte. Mode professeur non concerné. Entrée `CHANGELOG.md` sous `[Unreleased]`.
+### T29 — Rapport de clôture réservé à ClickUp, écrit dans OUTPUT
+**Effort :** S
+**Fichiers :** `skills/forge/phases/p5-resume.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`, `.forge/project.md`, `.forge/coding-standards.md`
+**Description :** Le rapport de clôture n'existe que pour le commentaire ClickUp, et c'est un contenu généré comme les autres, sans exception.
+- `.forge/clickup.json` absent → clôture directe de `Solved` vers la réponse client, aucun rapport généré ni mentionné.
+- Présent → tâche vérifiée par `clickup_get_task`, rapport généré (règles de rédaction inchangées), écrit dans OUTPUT sous `AAAAMMJJ-clickup-report.txt` sans confirmation, une ligne dans LOG ; réécrit sur place à chaque modification, `-2`, `-3`… même jour.
+- Questions `Report` et `ClickUp` fusionnées : `ClickUp`, `Post the comment` / `Cancel`, motif « Validation d'un contenu ». `Cancel` → rien n'est envoyé, fichier laissé en place.
+- `.forge/branch/<BRANCH>/report.txt` n'est plus écrit ; les existants ne sont ni lus ni supprimés.
+- Documentation : README EN/FR, `project.md`, `coding-standards.md` (exception de libellés reportée sur le rapport ClickUp), `CHANGELOG.md` sous `[Unreleased]`.
 Détecté hors plan initial — ajouté sur confirmation.
-[ ]
+[x]
 
 ## Risques
 - L'identification du premier bloc (contraintes) repose sur la mise en forme existante (groupe contigu en tête de `## Décisions & Contraintes`), pas sur une analyse sémantique — la migration est un simple déplacement, sans reformulation.
@@ -306,5 +311,5 @@ Détecté hors plan initial — ajouté sur confirmation.
 | T25 — Confirmations posées en choix | M | [x] |
 | T26 — Contenu généré dans le dossier de branche | S | [x] |
 | T27 — Section `## Deployment` du plan | XS | [x] |
-| T28 — Sous-agents délégués sur le modèle de la session | XS | [ ] |
+| T29 — Rapport de clôture réservé à ClickUp | S | [x] |
 | **Total estimé** | **~22h** | |

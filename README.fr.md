@@ -19,7 +19,7 @@ Là où Claude Code part directement dans le code dès qu'on lui décrit un prob
 2. **Plan** — décomposer en tâches estimées, attendre une validation explicite
 3. **Actif** — exécuter avec suivi d'avancement en temps réel
 
-Une fois actif, forge ne s'arrête pas au code : il délègue des tâches à des sous-agents étanches — projet lié ou branche du même dépôt — en te relayant chaque question, grave la branche (commit, push, merges, livraison relayée, release) sous une confirmation unique, et la clôt avec un rapport, un commentaire ClickUp et une réponse client.
+Une fois actif, forge ne s'arrête pas au code : il délègue des tâches à des sous-agents étanches — projet lié ou branche du même dépôt — en te relayant chaque question, grave la branche (commit, push, merges, livraison relayée, release) sous une confirmation unique, et la clôt avec un rapport publié dans ClickUp et une réponse client.
 
 Le résultat : moins de mauvaises surprises, des implémentations qui restent dans le périmètre défini, et un historique par branche qui survit aux compactions de contexte. Cela facilite aussi grandement le travail en équipe de plusieurs développeurs : chacun travaille sur sa propre branche, et reprendre une branche commencée par un autre, c'est hériter de tout ce qu'il faut pour poursuivre le développement — les actions déjà faites, le contexte et la documentation — puisque tout ce que forge génère (brief, plan, log, livrables) vit avec la branche et voyage avec elle dans git.
 
@@ -28,7 +28,7 @@ Le résultat : moins de mauvaises surprises, des implémentations qui restent da
 - **Zéro code sans validation** — la règle absolue : silence ≠ accord. Le skill attend une validation explicite avant d'écrire quoi que ce soit, posée en choix et jamais en texte libre.
 - **Contexte persistant par branche** — `brief.md` et `plan.md` sont stockés dans `.forge/branch/<BRANCH>/`, suivis en git, et relus à chaque `/forge`.
 - **Pensé pour l'équipe** — les développeurs travaillent sur des branches différentes, et chacun peut reprendre une branche commencée par un autre avec les actions déjà faites, le contexte et la documentation nécessaires à la suite : brief, plan, log et livrables générés sont partagés via git, sans passation à rédiger à côté.
-- **Contenu généré rangé avec la branche** — toute doc, script SQL, export, explication ou livrable client demandé est écrit dans `.forge/branch/<BRANCH>/output/`, jamais à la racine du projet, nommé `AAAAMMJJ-` suivi d'un intitulé en kebab-case anglais, sans exception : `20260910-db-migration.sql`. Les fichiers propres à forge — `brief.md`, `plan.md`, `log.md`, `report.txt` — restent au niveau du dessus, intacts.
+- **Contenu généré rangé avec la branche** — toute doc, script SQL, export, explication ou livrable client demandé est écrit dans `.forge/branch/<BRANCH>/output/`, jamais à la racine du projet, nommé `AAAAMMJJ-` suivi d'un intitulé en kebab-case anglais, sans exception : `20260910-db-migration.sql`. Les fichiers propres à forge — `brief.md`, `plan.md`, `log.md` — restent au niveau du dessus, intacts.
 - **Brief vivant & log** — le cadre (règles, contraintes, périmètre) va silencieusement dans la section `## Scope & rules` du brief ; les décisions et choix utilisateur sont enregistrés silencieusement dans `log.md`, sans interrompre le flux de travail.
 - **Résumé "Last session"** — à la reprise, si `log.md` contient des entrées, un récapitulatif des 10 dernières en une ligne est affiché avant le tableau d'avancement.
 - **Décomposition des tâches L/XL** — les grandes tâches sont découpées en micro-étapes dans `plan.md` avant de démarrer l'implémentation.
@@ -124,7 +124,6 @@ Fichiers générés dans chaque projet :
     ├── brief.md         ← `## Objective` + `## Scope & rules`
     ├── log.md           ← Journal des décisions (vivant, 10 dernières entrées lues à la reprise)
     ├── plan.md
-    ├── report.txt       ← généré à la clôture de tâche
     └── output/          ← tout fichier généré, nommé `AAAAMMJJ-`
         ├── 20260910-explanation-*.md ← écrit en tâche de fond lors d'une explication de concept
         ├── 20260910-db-migration.sql ← docs, scripts SQL, exports, notes
@@ -426,14 +425,15 @@ Le message de commit est généré automatiquement — pas de confirmation dédi
 Déclenchée quand toutes les tâches sont `[x]` et que tu as validé les tests, ou dès que tu annonces
 que c'est terminé.
 
-Forge confirme d'abord que le problème initial est bien résolu, puis écrit `report.txt` dans le
-dossier de la branche : texte brut, structuré et schématique, dans ta langue — labels compris.
-C'est le seul fichier généré exempté des libellés de structure figés en anglais.
+Forge confirme d'abord que le problème initial est bien résolu.
 
-Si `.forge/clickup.json` existe, Forge propose ensuite de publier ce rapport en commentaire sur la
-tâche ClickUp dont le code est le nom de la branche. La tâche est relue avant tout envoi, jamais
-devinée, et rien ne part sans accord explicite. Sans ce fichier, l'étape reste entièrement
-silencieuse.
+Si `.forge/clickup.json` existe, Forge rédige ensuite un rapport de clôture pour la tâche ClickUp dont
+le code est le nom de la branche : texte brut, structuré et schématique, dans ta langue — labels
+compris, seul contenu généré exempté des libellés de structure figés en anglais. Comme tout contenu
+généré, il est conservé dans `.forge/branch/<BRANCH>/output/AAAAMMJJ-clickup-report.txt`, réécrit sur
+place à chaque modification demandée. La tâche est relue avant tout envoi, jamais devinée, et le
+rapport n'est publié en commentaire que sur accord explicite. Sans ce fichier, aucun rapport n'est
+rédigé et l'étape reste entièrement silencieuse.
 
 Enfin, il propose de rédiger une réponse à un mail client — rédigée dans la langue du mail reçu,
 jamais la tienne si elles diffèrent. Le brouillon est affiché dans la conversation et toujours conservé

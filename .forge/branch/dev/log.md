@@ -1,5 +1,10 @@
 # Log — dev
 
+- [2026-10-02] T28 retirée du plan à la demande de l'utilisateur — les sous-agents délégués ne reçoivent plus de paramètre `model`, skill et CHANGELOG remis à l'état d'origine.
+- [2026-10-02] Famille du modèle délégué déduite de l'identifiant du modèle de la session plutôt que d'une liste en dur — la liste vieillit à chaque nouvelle famille, la déduction reste exécutable.
+- [2026-10-01] Rapport de clôture limité aux projets avec `.forge/clickup.json` et écrit dans OUTPUT comme tout contenu généré — sans ClickUp, `report.txt` n'était relu par personne ; plus de fichier d'état `report.txt`.
+- [2026-10-01] Limites du paramètre `model` (famille seule, effort non transmissible) énoncées une fois sous le prompt de la délégation projet lié — la délégation branche y renvoie plutôt que de les dupliquer.
+
 - [2026-09-15] Section `## Deployment` du plan initialisée à `None` et remplie silencieusement dès qu'un script hors git est écrit — laissée au moment de la clôture, elle serait reconstituée de mémoire ; la case n'a pas de règle de coche, l'humain joue le script en production.
 - [2026-09-15] Copie dans OUTPUT d'un script versionné mais diffusé à part fusionnée dans le déclencheur « Contenu généré » — une phrase dans la condition d'entrée plutôt qu'un paragraphe autonome relu après coup.
 

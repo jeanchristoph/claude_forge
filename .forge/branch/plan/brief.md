@@ -4,4 +4,4 @@
 
 ## Scope & rules
 
-- Livraison directe déclenchée strictement par `grave!` / `engrave!` (`!` collé à la commande) — jamais par un `!` en fin de branche ou isolé.
+- Livraison directe déclenchée par `livre` / `ship` en tête de message, seul ou suivi uniquement de branches existantes — `grave` / `engrave` gardent la confirmation.

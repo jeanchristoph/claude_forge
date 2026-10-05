@@ -1,5 +1,6 @@
 # Log
 
+- [2026-10-05 17:56] T6 done : `livre` / `ship` remplacent `grave!` / `engrave!` — choix utilisateur parmi scelle, soude, ship ; « livre » ajouté comme pendant français
 - [2026-10-05 15:12] Choix utilisateur : livraison directe strictement `grave!` / `engrave!` — `!` en fin de branche ou isolé abandonné
 - [2026-10-05 15:12] Fiche générée : output/20261005-explanation-no-confirmation-vocabulary.md
 - [2026-10-05 15:00] T5 done : livraison directe `grave!` (`!` collé, en fin de dernière branche ou isolé) — tableau en compte rendu, sans confirmation ; arrêt sur conflit ou push rejeté

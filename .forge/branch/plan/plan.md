@@ -34,6 +34,12 @@
 **Description:** Déclencheur de la Livraison : `grave!` / `engrave!` (`!` collé à la commande, seule ou suivie de branches) → livraison directe. Étapes 4-5 sautées : tableau affiché comme compte rendu, séquence exécutée aussitôt — la commande vaut autorisation pour cette séquence. Questions `Linked` / `Linked branches` maintenues (choix de périmètre). `SCOPE: branch` → pas de `FORGE_QUESTION` d'engrave. Conflit de merge ou push rejeté → arrêt, erreur telle quelle ; jamais de `--force`. `grave` sans `!` inchangé. README en miroir, CHANGELOG `### Added`.
 [x]
 
+### T6 — Remplacer `grave!` / `engrave!` par `livre` / `ship`
+**Effort:** XS
+**Files:** `skills/forge/phases/p5-resume.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Livraison directe déclenchée par un message qui commence par `livre` / `ship`, seul ou suivi uniquement de branches existantes ; tout autre texte → pas une livraison. `grave!` / `engrave!` retirés. Comportement inchangé (tableau en compte rendu, questions `Linked` maintenues, arrêt sur conflit ou push rejeté). `grave` / `engrave` gardent la confirmation. README en miroir, CHANGELOG `### Added` réécrit.
+[x]
+
 ## Risks
 - La copie installée (`~/.claude/skills/forge/`) n'évolue qu'après relance de l'installeur.
 - Le mode enchaîné ne pose plus aucune question entre les tâches : les mises à jour substantielles du plan et les demandes hors périmètre restent soumises à confirmation.
@@ -49,4 +55,5 @@ None
 | T3 — `p5-resume.md` : pas de question `Mode` après `Validate and chain` | XS | [x] |
 | T4 — Documentation et CHANGELOG | S | [x] |
 | T5 — `grave!` : livraison sans confirmation | S | [x] |
-| **Total** | **~3h30** | |
+| T6 — Remplacer `grave!` / `engrave!` par `livre` / `ship` | XS | [x] |
+| **Total** | **~4h** | |

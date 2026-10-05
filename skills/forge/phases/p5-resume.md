@@ -304,9 +304,9 @@ Actions et détail associé — aucune autre :
 
 ## Livraison — commit, push, merge
 
-**Déclencheur :** l'utilisateur dit "grave" / "engrave", seul ou suivi d'une ou plusieurs branches existantes, dans l'ordre voulu (ex: "grave", "grave dev", "grave dev master").
+**Déclencheur :** l'utilisateur dit "grave" / "engrave" — ou "livre" / "ship", livraison directe ci-dessous —, seul ou suivi d'une ou plusieurs branches existantes, dans l'ordre voulu (ex: "grave", "grave dev", "grave dev master").
 
-**Livraison directe :** commande `grave!` / `engrave!`, `!` collé au mot, seule ou suivie de branches (`grave!`, `grave! dev master`) → dérouler la Réaction sans les étapes 4 et 5 : le tableau de l'étape 3 vaut compte rendu, la séquence s'exécute aussitôt. La commande vaut autorisation pour cette séquence seulement. Les questions `Linked` / `Linked branches` de l'étape 2 restent posées : elles fixent le périmètre, elles ne confirment rien. Sans `!` → confirmation de l'étape 4 inchangée.
+**Livraison directe :** message qui commence par `livre` / `ship` et ne contient rien d'autre que des branches existantes (`livre`, `ship dev master`) → dérouler la Réaction sans les étapes 4 et 5 : le tableau de l'étape 3 vaut compte rendu, la séquence s'exécute aussitôt. La commande vaut autorisation pour cette séquence seulement. Les questions `Linked` / `Linked branches` de l'étape 2 restent posées : elles fixent le périmètre, elles ne confirment rien. Autre texte dans le message (`livre-moi un export`) → pas une livraison. `grave` / `engrave` → confirmation de l'étape 4 inchangée.
 
 **INVARIANT :** git opère uniquement sur le dépôt courant — jamais sur un autre dépôt ouvert en parallèle. Unique exception : `<LINKED>`, pour le positionnement de branche par la « Délégation — projet lié » et pour la livraison relayée ci-dessous — rien d'autre.
 

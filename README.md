@@ -340,8 +340,8 @@ has already been forged (`.forge/` present — otherwise forge refuses and asks 
 first; it never initializes a project on its own). It needs a real branch on the parent side: a session
 kept on `main`/`master` under a ticket ID cannot delegate.
 
-The parent prepares the ground, and nothing else: it checks out the branch **`<parent>/<BRANCH>`** in the
-linked repository — the parent folder name as prefix, the parent branch unchanged on the right: `forge/linked-project`,
+The parent prepares the ground, and nothing else: it opens the branch **`<parent>/<BRANCH>`** of the
+linked repository in a git worktree — the parent folder name as prefix, the parent branch unchanged on the right: `forge/linked-project`,
 `forge/CU-123` — created from its up-to-date `master`/`main` when missing. In the linked repository the branch
 says where it comes from at a glance, groups under `git branch --list 'forge/*'`, and never collides with the
 linked project's own branches, ticket IDs included; the bare parent name is never used. It then writes the
@@ -350,7 +350,14 @@ parent branch and the **mandate**: the delegated tasks copied in full — and op
 parent's own plan is annotated (`delegated to <path> @ <parent>/<BRANCH>`) and its log records the hand-over. A recap table lists these
 actions; nothing runs before you confirm once.
 
-Execution then happens in a **sealed forge context**: a subagent that receives only the linked path,
+The worktree sits next to the linked repository, in `<linked-folder>.worktrees/<parent>/<BRANCH>` — the branch
+becomes the path, e.g. `topdon_api.worktrees/forge/CU-123` — and is reused when it already exists. The linked repository's own folder is never touched — no checkout,
+no write — so you can keep working in it by hand while the subagent runs. A worktree only holds versioned
+files: no installed dependencies, no `.env`, no local config — a delegated task that needs them comes back
+blocked, and the linked `.forge/` must be committed. Once the linked branch is engraved, forge reminds you of
+`git -C <linked> worktree remove <path>`.
+
+Execution then happens in a **sealed forge context**: a subagent that receives only the worktree path,
 `<parent>/<BRANCH>`, your language and the order to run the forge skill there. No `project.md`, no coding standards,
 no plan, no log cross the wall in either direction. The linked plan is derived from the mandate alone —
 every task carries its lineage (`T1 — … ← parent T3`), and a need outside the mandate is never turned into
@@ -376,8 +383,8 @@ point: shipping it is offered when you engrave the parent (see below).
 ```
 
 A request to run an agent — or a delegated forge — on a branch of the current repository opens that branch
-in a **worktree**: an existing worktree for `X` is reused, otherwise forge creates `<repo-folder>-X` next to
-the repository (`git worktree add`). Two refusals, never worked around: `X` is the current branch ("already
+in a **worktree**: an existing worktree for `X` is reused, otherwise forge creates `<repo-folder>.worktrees/X`
+next to the repository — the branch becomes the path, e.g. `forge.worktrees/feature/x` (`git worktree add`). Two refusals, never worked around: `X` is the current branch ("already
 on it"), or `X` does not exist — forge never creates a branch on your behalf. A recap table lists the
 branch, the worktree path and the agent; nothing runs before you confirm once.
 
@@ -411,14 +418,16 @@ asked — they set the scope, they confirm nothing. A merge conflict or a reject
 with the error as is; nothing is ever forced.
 
 **INVARIANT:** git operates only on the current repo — never on another repo open in parallel. The one
-exception is a linked project: branch positioning when delegating, and the relayed shipping below.
+exception is a linked project: worktree creation when delegating, and the relayed shipping below.
 
 When the plan carries delegated tasks, engraving the parent also offers to ship each linked project that
 has uncommitted changes: first whether to ship it at all, then onto which branches — the same branches as
 the parent, `<parent>/<BRANCH>` only (commit and push, no merge), or a list of your own. Its commit message is
 generated from the delegated tasks marked done, never from its code, which the parent does not read. The
 linked project's actions get their own recap table under the parent's, and the single confirmation covers
-everything; a target branch missing from the linked repository is skipped, never created. The delegated
+everything; a target branch missing from the linked repository is skipped, never created. Shipping runs in the
+worktree; a target branch checked out in another folder — the linked repository's own folder included — is
+skipped, the merge being done from there. The delegated
 subagent is never involved: relayed shipping is plain git, run by the parent.
 
 Anything published on the remote forge after a delivery — release title and notes, tag or PR description — is written in **English**, whatever your language. The commit message follows the language of the repository's commits.

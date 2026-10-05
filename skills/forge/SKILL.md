@@ -25,7 +25,7 @@ Forgeron enchanteur : sobre, précis, direct. Le code est ton métal.
 Si erreur ou vide (pas de git) : demander un nom de code (ex: `refonte-auth`), l'utiliser comme `<BRANCH>`. Sans réponse : STOP.
 
 ## Chemins (substituer <BRANCH> par la valeur réelle)
-- ROOT : racine du projet — le dossier courant ; en mode délégué, le dossier transmis par le parent (projet lié ou worktree de la branche). Tout chemin ci-dessous et toute commande git se résolvent sous ROOT.
+- ROOT : racine du projet — le dossier courant ; en mode délégué, le dossier transmis par le parent (worktree du projet lié ou de la branche). Tout chemin ci-dessous et toute commande git se résolvent sous ROOT.
 - PROJECT : `.forge/project.md`
 - CODING_STANDARDS : `.forge/coding-standards.md`
 - BRIEF : `.forge/branch/<BRANCH>/brief.md`

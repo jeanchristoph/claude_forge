@@ -149,9 +149,9 @@ Une demande complémentaire est toujours une tâche du plan — jamais de choix 
 
 **Déclencheur :** une demande vise un dossier hors de ROOT — chemin cité explicitement ou projet nommé sans ambiguïté — avec ou sans tâches du plan citées (ex: "fais T3 et T5 dans `../autre-projet`").
 
-**Vocabulaire :** projet *parent* = ROOT de la session · projet *lié* = `<LINKED>`, chemin absolu du dossier visé · *mandat* = les tâches parentes déléguées · *branche liée* = `<LINKED_BRANCH>` = `<PARENT>/<BRANCH>`, `<PARENT>` étant le nom du dossier ROOT (`forge/linked-project`, `forge/CU-123`) — jamais le nom nu de `<BRANCH>` : le préfixe dit d'où vient la délégation, la partie droite reste identique pour la correspondance.
+**Vocabulaire :** projet *parent* = ROOT de la session · projet *lié* = `<LINKED>`, chemin absolu du dossier visé · *mandat* = les tâches parentes déléguées · *branche liée* = `<LINKED_BRANCH>` = `<PARENT>/<BRANCH>`, `<PARENT>` étant le nom du dossier ROOT (`forge/linked-project`, `forge/CU-123`) — jamais le nom nu de `<BRANCH>` : le préfixe dit d'où vient la délégation, la partie droite reste identique pour la correspondance. · `<LINKED_WORKTREE>` = chemin absolu du worktree de `<LINKED_BRANCH>`, rangé à côté de `<LINKED>` : `<LINKED>.worktrees/<LINKED_BRANCH>`, chaque `/` de la branche gardé comme sous-dossier (`D:/www/topdon_api.worktrees/forge/CU-123`).
 
-**INVARIANT :** le parent n'écrit dans `<LINKED>` que `.forge/branch/<LINKED_BRANCH>/brief.md` et `.forge/branch/<LINKED_BRANCH>/log.md` — jamais de code, jamais de plan. Le parent ne lit jamais le code de `<LINKED>`.
+**INVARIANT :** le working tree de `<LINKED>` n'est jamais touché — ni checkout, ni écriture : le projet lié se travaille dans `<LINKED_WORKTREE>`, l'utilisateur garde `<LINKED>` pour lui. Le parent n'écrit dans `<LINKED_WORKTREE>` que `.forge/branch/<LINKED_BRANCH>/brief.md` et `.forge/branch/<LINKED_BRANCH>/log.md` — jamais de code, jamais de plan. Le parent ne lit jamais le code du projet lié.
 
 ⚠️ Aucune écriture, aucune commande git avant la confirmation de l'étape 6.
 
@@ -159,14 +159,18 @@ Une demande complémentaire est toujours une tâche du plan — jamais de choix 
 1. `<LINKED>/.forge/` absent → "`<LINKED>` is not forged — run `/forge` there first." STOP — ne pas continuer. Jamais d'initialisation à la place de l'utilisateur.
 2. `<BRANCH>` est un identifiant de ticket (parent resté sur `main`/`master`) → "Delegation needs a real branch — create one first." STOP — ne pas continuer.
 3. Constituer le mandat : tâches citées dans la demande → elles seules ; aucune citée → poser le choix avec `AskUserQuestion` en multi-sélection — `header` : `Delegate`, une option par tâche `[ ]` du plan (label `T<n> — titre`, description = son effort), quatre par question, enchaînées si besoin. Mandat vide → "Nothing to delegate." STOP — ne pas continuer.
-4. Vérifier la branche liée dans `<LINKED>` : `git -C <LINKED> rev-parse --verify --quiet refs/heads/<LINKED_BRANCH>`. Retenir l'action : `checkout` si elle existe, sinon création depuis la branche par défaut à jour de `<LINKED>` — même règle que « Branche de travail » de `SKILL.md`, chaque commande préfixée `git -C <LINKED>`. Jamais `<BRANCH>` nue dans `<LINKED>`.
+4. Retenir l'action de worktree, première condition remplie — jamais `<BRANCH>` nue dans `<LINKED>` :
+   - `git -C <LINKED> worktree list --porcelain` : un worktree porte `branch refs/heads/<LINKED_BRANCH>` → `<LINKED_WORKTREE>` = son chemin, action `reuse`. Ce worktree est `<LINKED>` lui-même → "`<LINKED_BRANCH>` is checked out in `<LINKED>` — switch that folder to another branch first." STOP — ne pas continuer.
+   - `git -C <LINKED> rev-parse --verify --quiet refs/heads/<LINKED_BRANCH>` réussit → action `create from <LINKED_BRANCH>` : `git -C <LINKED> worktree add <LINKED_WORKTREE> <LINKED_BRANCH>`.
+   - Sinon → action `create <LINKED_BRANCH> from <base>` : branche par défaut détectée comme dans « Branche de travail » de `SKILL.md` ; branche distante suivie → `git -C <LINKED> fetch`, `<base>` = `origin/<défaut>`, sinon `<base>` = `<défaut>` ; commande `git -C <LINKED> worktree add --no-track -b <LINKED_BRANCH> <LINKED_WORKTREE> <base>`.
+   - Action `create` et `.forge/project.md` absent du commit de départ (`git -C <LINKED> cat-file -e <départ>:.forge/project.md`) → "`.forge/` of `<LINKED>` is not committed — commit it first." STOP — ne pas continuer. Le worktree ne porte que les fichiers versionnés.
 5. Afficher le tableau de délégation (format ci-dessous).
 6. Poser une confirmation unique avec `AskUserQuestion` — `header` : `Delegate`, options `Open the linked project` / `Cancel`.
 7. **Sur `Cancel`** → n'exécuter aucune action. STOP — ne pas continuer.
 8. **Sur `Open the linked project`** → dans l'ordre :
-   - Exécuter l'action git retenue à l'étape 4. Échec → afficher l'erreur telle quelle, STOP.
-   - Écrire `<LINKED>/.forge/branch/<LINKED_BRANCH>/brief.md` — format du mandat ci-dessous. Fichier déjà présent → le remplacer : le mandat parent fait foi.
-   - Écrire `<LINKED>/.forge/branch/<LINKED_BRANCH>/log.md` s'il est absent, puis insérer en tête : `- [AAAA-MM-JJ HH:MM] Opened from <ROOT> · T3, T5`.
+   - Exécuter l'action de worktree retenue à l'étape 4 (`reuse` → rien). Échec → afficher l'erreur telle quelle, STOP.
+   - Écrire `<LINKED_WORKTREE>/.forge/branch/<LINKED_BRANCH>/brief.md` — format du mandat ci-dessous. Fichier déjà présent → le remplacer : le mandat parent fait foi.
+   - Écrire `<LINKED_WORKTREE>/.forge/branch/<LINKED_BRANCH>/log.md` s'il est absent, puis insérer en tête : `- [AAAA-MM-JJ HH:MM] Opened from <ROOT> · T3, T5`.
    - PLAN parent : sous chaque tâche du mandat, note `delegated to <LINKED> @ <LINKED_BRANCH>` — statut inchangé. LOG parent : `- [AAAA-MM-JJ HH:MM] Delegated T3, T5 to <LINKED> @ <LINKED_BRANCH>`.
    - Lancer le sous-agent (prompt ci-dessous), puis entrer dans la boucle de relais.
 
@@ -189,7 +193,9 @@ Pour chaque tâche parente du mandat, dans l'ordre du plan :
 ⚠️ La note conserve toujours `delegated to <LINKED> @ <LINKED_BRANCH>` : la livraison relayée s'appuie dessus pour retrouver le projet lié et sa branche.
 - Une entrée LOG parent par tâche : `- [AAAA-MM-JJ HH:MM] T3 delegated to <LINKED> — done` / `— blocked: <raison>`.
 
-`out_of_mandate` non vide → présenter chaque besoin à l'utilisateur, puis appliquer la « Surveillance des demandes complémentaires » à chacun. Rendre compte : tâches vertes, tâches bloquées avec leur raison, fichiers touchés dans `<LINKED>`.
+`out_of_mandate` non vide → présenter chaque besoin à l'utilisateur, puis appliquer la « Surveillance des demandes complémentaires » à chacun. Rendre compte : tâches vertes, tâches bloquées avec leur raison, fichiers touchés dans `<LINKED_WORKTREE>`, puis rappeler : "`git -C <LINKED> worktree remove <LINKED_WORKTREE>` once the linked branch is engraved." Le worktree reste en place.
+
+⚠️ `<LINKED_WORKTREE>` ne porte que les fichiers versionnés : ni dépendances installées (`node_modules`, `vendor`), ni `.env`, ni configuration locale. Une tâche déléguée qui les exige → le sous-agent la remonte `blocked` avec sa raison.
 
 ⚠️ Le parent ne coche jamais une tâche déléguée de lui-même — seul `FORGE_DONE` fait foi.
 
@@ -223,7 +229,7 @@ Un sous-agent, type général, lancé en tâche de fond. Prompt figé — rien d
 
 ```
 FORGE_DELEGATED
-ROOT: <LINKED>
+ROOT: <LINKED_WORKTREE>
 BRANCH: <LINKED_BRANCH>
 LANGUAGE: <langue de l'utilisateur>
 SCOPE: linked
@@ -238,9 +244,9 @@ End every turn with a FORGE_QUESTION or a FORGE_DONE block.
 Une ligne par action prévue, dans l'ordre d'exécution. Trois colonnes, en-têtes générés dans la langue de l'utilisateur : numéro d'ordre, action, détail.
 
 Actions et détail associé — aucune autre :
-- `branch` → `<LINKED>` : `checkout <LINKED_BRANCH>` ou `create <LINKED_BRANCH> from <défaut>`
-- `brief` → `<LINKED>/.forge/branch/<LINKED_BRANCH>/brief.md` : mandat `T3, T5`
-- `log` → `<LINKED>/.forge/branch/<LINKED_BRANCH>/log.md`
+- `worktree` → `<LINKED_WORKTREE>` : `reuse`, `create from <LINKED_BRANCH>` ou `create <LINKED_BRANCH> from <base>`
+- `brief` → `<LINKED_WORKTREE>/.forge/branch/<LINKED_BRANCH>/brief.md` : mandat `T3, T5`
+- `log` → `<LINKED_WORKTREE>/.forge/branch/<LINKED_BRANCH>/log.md`
 - `mark` → tâches parentes annotées, une ligne
 - `agent` → sous-agent délégué, une ligne
 
@@ -252,7 +258,7 @@ Actions et détail associé — aucune autre :
 
 **Déclencheur :** une demande de lancer un agent ou un forge délégué sur une branche `<X>` du dépôt courant — « lance un agent forge sur la branche X », « lance un agent sur la branche X », « lance un forge délégué sur X », « ouvre la branche X dans un agent » et toute formulation équivalente : agent ou forge délégué + nom de branche, sans chemin de dossier. Un chemin de dossier cité → « Délégation — projet lié » ci-dessus.
 
-**Vocabulaire :** `<X>` = branche visée · `<WORKTREE>` = chemin absolu du worktree de `<X>`, dossier frère du dépôt : `<dossier-du-dépôt>-<X>`.
+**Vocabulaire :** `<X>` = branche visée · `<WORKTREE>` = chemin absolu du worktree de `<X>`, rangé à côté du dépôt : `<dossier-du-dépôt>.worktrees/<X>`, chaque `/` de la branche gardé comme sous-dossier (`D:/www/forge.worktrees/feature/x`).
 
 **INVARIANT :** aucun mandat — le parent n'écrit rien dans `<WORKTREE>`, ni brief, ni log, ni plan ; il ne lit jamais son code. Le sous-agent y exécute le skill comme sur toute branche.
 
@@ -308,14 +314,14 @@ Actions et détail associé — aucune autre :
 
 **Livraison directe :** message qui commence par `livre` / `ship` et ne contient rien d'autre que des branches existantes (`livre`, `ship dev master`) → dérouler la Réaction sans les étapes 4 et 5 : le tableau de l'étape 3 vaut compte rendu, la séquence s'exécute aussitôt. La commande vaut autorisation pour cette séquence seulement. Les questions `Linked` / `Linked branches` de l'étape 2 restent posées : elles fixent le périmètre, elles ne confirment rien. Autre texte dans le message (`livre-moi un export`) → pas une livraison. `grave` / `engrave` → confirmation de l'étape 4 inchangée.
 
-**INVARIANT :** git opère uniquement sur le dépôt courant — jamais sur un autre dépôt ouvert en parallèle. Unique exception : `<LINKED>`, pour le positionnement de branche par la « Délégation — projet lié » et pour la livraison relayée ci-dessous — rien d'autre.
+**INVARIANT :** git opère uniquement sur le dépôt courant — jamais sur un autre dépôt ouvert en parallèle. Unique exception : `<LINKED>`, pour la création du worktree par la « Délégation — projet lié » et pour la livraison relayée ci-dessous — rien d'autre.
 
 **Publication hors dépôt :** tout texte publié sur la forge distante à la suite d'une livraison — titre et notes d'une release, description d'un tag ou d'une PR — est rédigé en **anglais**, quelle que soit la langue de l'utilisateur. Le message de commit, lui, suit la langue des commits du dépôt.
 
 ⚠️ Aucune commande git — `git add` compris, `<LINKED>` compris — avant la confirmation de l'étape 4, ou avant l'affichage du tableau en livraison directe.
 ⚠️ Conflit de merge ou push rejeté → arrêter la séquence, afficher l'erreur telle quelle, ne rien forcer : jamais de `--force`, jamais de résolution de conflit sans demande.
 
-Mode délégué `SCOPE: branch` → git opère sous ROOT (le worktree) ; l'étape 4 est un `FORGE_QUESTION` — omis en livraison directe — — `header` : `Engrave`, mêmes options, le tableau récapitulatif entier dans `content`. Branche citée extraite dans un autre worktree (`git worktree list --porcelain`) → ligne `merge` marquée `skipped — checked out in another worktree`, ignorée à l'exécution : la fusion se fait depuis ce worktree-là. `SCOPE: linked` → Livraison non applicable (section « Mode délégué » de `SKILL.md`).
+Mode délégué `SCOPE: branch` → git opère sous ROOT (le worktree) ; l'étape 4 est un `FORGE_QUESTION`, omis en livraison directe — `header` : `Engrave`, mêmes options, le tableau récapitulatif entier dans `content`. Branche citée extraite dans un autre worktree (`git worktree list --porcelain`) → ligne `merge` marquée `skipped — checked out in another worktree`, ignorée à l'exécution : la fusion se fait depuis ce worktree-là. `SCOPE: linked` → Livraison non applicable (section « Mode délégué » de `SKILL.md`).
 
 **Réaction — dans l'ordre :**
 1. Générer automatiquement le message de commit (règles COMMITS GIT : max 150 car., pas de mention Claude) — pas de confirmation sur le message lui-même.
@@ -327,7 +333,7 @@ Mode délégué `SCOPE: branch` → git opère sous ROOT (le worktree) ; l'étap
 7. Aucune branche citée → passer directement à l'étape 9.
 8. Pour chaque branche citée, dans l'ordre : branche citée égale à `<BRANCH>` → ignorer sans message ; sinon → checkout de la branche, merge de `<BRANCH>` (toujours la branche de départ, jamais la branche précédente de la chaîne), push.
 9. Revenir sur `<BRANCH>`.
-10. Pour chaque projet lié retenu, dans l'ordre du plan : dérouler les étapes 6 à 9 avec ses branches, `<LINKED_BRANCH>` tenant lieu de `<BRANCH>`, chaque commande préfixée `git -C <LINKED>`. Échec → afficher l'erreur telle quelle, passer au projet lié suivant ; le parent, déjà livré, n'est jamais repris.
+10. Pour chaque projet lié retenu, dans l'ordre du plan : dérouler les étapes 6 à 9 avec ses branches, `<LINKED_BRANCH>` tenant lieu de `<BRANCH>`, chaque commande préfixée `git -C <LINKED_GIT>`. Échec → afficher l'erreur telle quelle, passer au projet lié suivant ; le parent, déjà livré, n'est jamais repris.
 11. Rendre compte : hash de commit et branches mises à jour, parent puis chaque projet lié.
 
 ⚠️ Aucune écriture dans LOG ni PLAN après la séquence — le compte rendu est du texte seul, le working tree reste tel que la livraison l'a laissé. Ce qui doit être journalisé l'est avant le `git add`.
@@ -336,8 +342,10 @@ Mode délégué `SCOPE: branch` → git opère sous ROOT (le worktree) ; l'étap
 
 **Déclencheur :** PLAN parent porte au moins une note `delegated to <LINKED> @ <LINKED_BRANCH>` (« Délégation — projet lié »). Aucune → étape 2 silencieuse, jamais mentionnée.
 
+**Vocabulaire :** `<LINKED_GIT>` = dossier où la branche liée est extraite — le worktree qui porte `branch refs/heads/<LINKED_BRANCH>` dans `git -C <LINKED> worktree list --porcelain` ; aucun → `<LINKED>` lui-même (délégation ouverte avant les worktrees).
+
 **Pour chaque `<LINKED>` distinct, dans l'ordre du plan :**
-- `git -C <LINKED> status --porcelain` vide → ignorer sans question. Une ligne au rendu final : "`<LINKED>`: nothing to engrave."
+- `git -C <LINKED_GIT> status --porcelain` vide → ignorer sans question. Une ligne au rendu final : "`<LINKED>`: nothing to engrave."
 - Sinon → poser le choix avec `AskUserQuestion` — `header` : `Linked`, question "Also engrave `<LINKED>` @ `<LINKED_BRANCH>`?", options `Engrave it` / `Skip`.
 - **Sur `Skip`** → projet lié écarté de la séquence, sans commentaire.
 - **Sur `Engrave it`** → poser le choix des branches avec `AskUserQuestion` — `header` : `Linked branches`, options dans cet ordre :
@@ -346,6 +354,7 @@ Mode délégué `SCOPE: branch` → git opère sous ROOT (le worktree) ; l'étap
   - `Other branches` → "I'll ask you which ones." — puis demander en texte libre, dans l'ordre voulu.
 - Message de commit du lié : généré depuis les tâches du mandat cochées `[x]` avec sa note `delegated to <LINKED>` — jamais depuis le code de `<LINKED>`, que le parent ne lit pas. Langue : celle des commits de `<LINKED>` (`git -C <LINKED> log -5 --format=%s`).
 - Branche citée absente de `<LINKED>` (`git -C <LINKED> show-ref --verify --quiet refs/heads/<cible>`) → ligne `merge` marquée `skipped — branch missing` dans le tableau, ignorée à l'exécution, jamais créée.
+- Branche citée extraite dans un autre worktree que `<LINKED_GIT>` — `<LINKED>` compris (`git -C <LINKED> worktree list --porcelain`) → ligne `merge` marquée `skipped — checked out in another worktree`, ignorée à l'exécution : la fusion se fait depuis ce dossier-là.
 
 ⚠️ Le sous-agent délégué n'est jamais sollicité pour livrer : la livraison relayée est du git pur, exécuté par le parent.
 
@@ -360,7 +369,7 @@ Actions et détail associé — aucune autre :
 - `merge` → `<BRANCH>` → branche cible, une ligne par branche citée
 - `checkout` → dernière ligne du tableau uniquement, retour sur `<BRANCH>` ; omise si aucune branche n'est citée
 
-Tableau d'un projet lié : mêmes colonnes, même contenu, titré par `<LINKED>` en une ligne au-dessus ; le détail de chaque ligne porte le chemin et la branche liée (`add` → `<LINKED>` · `<LINKED_BRANCH>`, `merge` → `<LINKED_BRANCH>` → cible).
+Tableau d'un projet lié : mêmes colonnes, même contenu, titré par `<LINKED>` en une ligne au-dessus ; le détail de chaque ligne porte le chemin et la branche liée (`add` → `<LINKED_GIT>` · `<LINKED_BRANCH>`, `merge` → `<LINKED_BRANCH>` → cible).
 
 ⚠️ Jamais de ligne `checkout` pour les changements de branche de l'étape 8 : ils restent implicites. Seul le retour final sur `<BRANCH>` est listé.
 ⚠️ Jamais de liste de fichiers modifiés, jamais de décompte de lignes.

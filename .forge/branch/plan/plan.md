@@ -40,6 +40,12 @@
 **Description:** Livraison directe déclenchée par un message qui commence par `livre` / `ship`, seul ou suivi uniquement de branches existantes ; tout autre texte → pas une livraison. `grave!` / `engrave!` retirés. Comportement inchangé (tableau en compte rendu, questions `Linked` maintenues, arrêt sur conflit ou push rejeté). `grave` / `engrave` gardent la confirmation. README en miroir, CHANGELOG `### Added` réécrit.
 [x]
 
+### T7 — Délégation vers un projet lié dans un worktree
+**Effort:** M
+**Files:** `skills/forge/phases/p5-resume.md`, `skills/forge/SKILL.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** « Délégation — projet lié » : checkout/création de branche dans `<LINKED>` remplacé par un worktree `<LINKED>-<slug LINKED_BRANCH>` (réutilisé s'il existe), brief/log du lié écrits dedans, `ROOT: <worktree>` dans le prompt. Livraison relayée : add/commit/push dans le worktree, branche cible extraite ailleurs → `skipped`. Fin de délégation : rappel `git worktree remove` + avertissement (ni dépendances ni fichiers ignorés dans le worktree). README miroir, CHANGELOG `### Changed`.
+[x]
+
 ## Risks
 - La copie installée (`~/.claude/skills/forge/`) n'évolue qu'après relance de l'installeur.
 - Le mode enchaîné ne pose plus aucune question entre les tâches : les mises à jour substantielles du plan et les demandes hors périmètre restent soumises à confirmation.
@@ -56,4 +62,5 @@ None
 | T4 — Documentation et CHANGELOG | S | [x] |
 | T5 — `grave!` : livraison sans confirmation | S | [x] |
 | T6 — Remplacer `grave!` / `engrave!` par `livre` / `ship` | XS | [x] |
-| **Total** | **~4h** | |
+| T7 — Délégation vers un projet lié dans un worktree | M | [x] |
+| **Total** | **~7h** | |

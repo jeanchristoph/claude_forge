@@ -340,8 +340,8 @@ Une demande qui vise un dossier hors du projet courant ouvre un **projet lié** 
 projet de lui-même). Il faut une vraie branche côté parent : une session restée sur `main`/`master` sous
 un identifiant de ticket ne peut pas déléguer.
 
-Le parent prépare le terrain, rien de plus : il positionne la branche **`<parent>/<BRANCH>`** dans le dépôt
-lié — le nom du dossier parent en préfixe, la branche parente inchangée à droite : `forge/linked-project`,
+Le parent prépare le terrain, rien de plus : il ouvre la branche **`<parent>/<BRANCH>`** du dépôt
+lié dans un worktree git — le nom du dossier parent en préfixe, la branche parente inchangée à droite : `forge/linked-project`,
 `forge/CU-123` — créée depuis son `master`/`main` à jour si elle manque. Dans le dépôt lié, la branche dit
 d'un coup d'œil d'où elle vient, se regroupe sous `git branch --list 'forge/*'` et n'entre jamais en collision
 avec les branches propres du projet lié, identifiants de ticket compris ; le nom nu de la branche parente
@@ -351,8 +351,15 @@ recopiées intégralement — et ouvre le `log.md` lié. Le plan du parent est a
 (`delegated to <chemin> @ <parent>/<BRANCH>`) et son log enregistre le passage de relais. Un tableau récapitulatif
 liste ces actions ; rien ne s'exécute avant une confirmation unique.
 
+Le worktree est rangé à côté du dépôt lié, dans `<dossier-lié>.worktrees/<parent>/<BRANCH>` — la branche devient
+le chemin, par exemple `topdon_api.worktrees/forge/CU-123` — et réutilisé s'il existe déjà. Le dossier propre du dépôt lié n'est jamais touché — ni checkout, ni écriture : tu
+peux continuer à y travailler à la main pendant que le sous-agent tourne. Un worktree ne porte que les fichiers
+versionnés : ni dépendances installées, ni `.env`, ni configuration locale — une tâche déléguée qui en a besoin
+revient bloquée, et le `.forge/` du lié doit être commité. Une fois la branche liée gravée, forge rappelle
+`git -C <lié> worktree remove <chemin>`.
+
 L'exécution se fait ensuite dans un **contexte forge étanche** : un sous-agent qui ne reçoit que le chemin
-du projet lié, `<parent>/<BRANCH>`, ta langue et l'ordre d'y exécuter le skill forge. Aucun `project.md`, aucun
+du worktree, `<parent>/<BRANCH>`, ta langue et l'ordre d'y exécuter le skill forge. Aucun `project.md`, aucun
 standard, aucun plan, aucun log ne traverse la cloison, dans un sens comme dans l'autre. Le plan lié est
 dérivé du seul mandat — chaque tâche porte sa filiation (`T1 — … ← parent T3`), et un besoin hors mandat
 ne devient jamais une tâche : il est remonté. Une fois le plan validé, le sous-agent enchaîne toutes les
@@ -377,8 +384,8 @@ dans le dépôt lié à ce stade : sa livraison est proposée au moment où tu g
 ```
 
 Une demande de lancer un agent — ou un forge délégué — sur une branche du dépôt courant ouvre cette branche
-dans un **worktree** : un worktree existant pour `X` est réutilisé, sinon forge crée `<dossier-du-dépôt>-X`
-à côté du dépôt (`git worktree add`). Deux refus, jamais contournés : `X` est la branche courante (« déjà
+dans un **worktree** : un worktree existant pour `X` est réutilisé, sinon forge crée `<dossier-du-dépôt>.worktrees/X`
+à côté du dépôt — la branche devient le chemin, par exemple `forge.worktrees/feature/x` (`git worktree add`). Deux refus, jamais contournés : `X` est la branche courante (« déjà
 dessus »), ou `X` n'existe pas — forge ne crée jamais une branche à ta place. Un tableau récapitulatif
 liste la branche, le chemin du worktree et l'agent ; rien ne s'exécute avant une confirmation unique.
 
@@ -413,14 +420,16 @@ conflit de merge ou un push rejeté arrête la séquence et affiche l'erreur tel
 jamais forcé.
 
 **INVARIANT :** git opère uniquement sur le dépôt courant — jamais sur un autre dépôt ouvert en parallèle. Unique
-exception : un projet lié, pour le positionnement de branche à la délégation et pour la livraison relayée ci-dessous.
+exception : un projet lié, pour la création du worktree à la délégation et pour la livraison relayée ci-dessous.
 
 Quand le plan porte des tâches déléguées, graver le parent propose aussi de livrer chaque projet lié qui a des
 modifications non commitées : d'abord s'il faut le livrer, puis sur quelles branches — les mêmes que le parent,
 `<parent>/<BRANCH>` seule (commit et push, aucun merge), ou une liste de ton choix. Son message de commit est généré
 depuis les tâches déléguées cochées, jamais depuis son code, que le parent ne lit pas. Les actions du projet lié
 ont leur propre tableau récapitulatif sous celui du parent, et la confirmation unique couvre tout ; une branche
-cible absente du dépôt lié est ignorée, jamais créée. Le sous-agent délégué n'intervient jamais : la livraison
+cible absente du dépôt lié est ignorée, jamais créée. La livraison s'exécute dans le worktree ; une branche
+cible extraite dans un autre dossier — dossier propre du dépôt lié compris — est ignorée, la fusion se faisant
+depuis ce dossier-là. Le sous-agent délégué n'intervient jamais : la livraison
 relayée est du git pur, exécuté par le parent.
 
 Tout ce qui est publié sur la forge distante après une livraison — titre et notes de release, description de tag ou de PR — est rédigé en **anglais**, quelle que soit ta langue. Le message de commit suit la langue des commits du dépôt.

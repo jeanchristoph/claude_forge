@@ -168,7 +168,7 @@ Silently creates an empty `log.md` and continues to the plan.
 ### State 4 — Plan
 **Condition:** brief present, `log.md` present, plan absent
 
-Reads `coding-standards.md`, generates `plan.md`, waits for validation before any implementation.  
+Reads `coding-standards.md`, generates `plan.md`, waits for validation before any implementation. The validation offers three options: validate and chain (recommended) — the plan is written and every open task runs in order, with no further question —, validate — the execution mode is asked next —, or cancel.  
 L/XL tasks include a commented decomposition block (`T1.1`, `T1.2`, …) to fill in before starting.
 
 ### State 5 — Active
@@ -205,8 +205,8 @@ document are the skill's internal references, not what you see on screen.
 Open questions stay free text, where a fixed list would only get in the way: the goal of the task, a
 branch code name, a ticket ID, the email to paste, what to do next.
 
-Validating a piece of content — the brief's objective, the plan, the closing report — offers two options
-only: validate, or cancel. There is no "rework" option: a change request goes through the question's
+Validating a piece of content — the brief's objective, the plan, the closing report — never offers a
+"rework" or "edit" option: a change request goes through the question's
 free-text field, with its explanation, and the content comes back reworked under the same question. A
 bare "no" is not a change request — forge asks in one line what should change, and never shows the same
 content again unchanged.
@@ -386,7 +386,8 @@ never reads its code. The subagent gets the worktree path, the branch, your lang
 and runs the forge skill there exactly as you would on that branch — project, brief, log and plan read as
 the phases prescribe. The difference with a linked project is that **every choice is relayed to you**:
 the brief objective, the plan validation, the execution mode, the go-ahead before each task, the engrave
-confirmation. "A validated plan is the go-ahead" does not apply in this scope.
+confirmation. "A validated plan is the go-ahead" does not apply in this scope, unless you pick validate
+and chain when validating the plan.
 
 The run ends with a one-line `FORGE_DONE`: nothing is written into the parent plan or log, since nothing
 was delegated. The worktree is left in place — forge reminds you of `git worktree remove <path>` for once

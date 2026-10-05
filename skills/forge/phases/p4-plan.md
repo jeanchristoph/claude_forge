@@ -3,6 +3,8 @@
 ## Garde — mode délégué
 
 En mode délégué (section « Mode délégué » de `SKILL.md`), quelle que soit la portée : étapes 5 et 7 → `FORGE_QUESTION`, mêmes header et options ; l'étape 7 recopie le plan entier dans `content`, l'étape 5 les approches présentées.
+- `SCOPE: linked` → étape 7 sans `Validate and chain` : `Validate` y vaut déjà accord d'enchaîner.
+- `SCOPE: branch` → étape 7 avec ses trois options ; `Validate and chain` retenu remplace la question `Mode` et chaque feu vert `Start T<n>`.
 
 Si BRIEF contient `## Origin` (`SCOPE: linked` — mandat) → les étapes ci-dessous s'appliquent avec ces règles :
 - Source unique du plan : `### Delegated tasks` du brief. `## Objective` et `## Scope & rules` cadrent, ils ne génèrent aucune tâche.
@@ -26,10 +28,15 @@ Si BRIEF contient `## Origin` (`SCOPE: linked` — mandat) → les étapes ci-de
    ```
    Puis poser le choix avec `AskUserQuestion` — `header` : `Approach`, une option par approche (label `Option X — Name`, description = son compromis), quatre au maximum. Attendre le choix avant de continuer.
 6. Générer le plan (format ci-dessous) et le présenter.
-7. Poser le choix avec `AskUserQuestion` — `header` : `Plan`, options `Validate` / `Cancel` — motif « Validation d'un contenu » de `SKILL.md` : le changement demandé arrive en texte libre, itérer, reposer la question.
-8. Écrire `.forge/branch/<BRANCH>/plan.md` après validation.
+7. Poser le choix avec `AskUserQuestion` — `header` : `Plan`, motif « Validation d'un contenu » de `SKILL.md` : le changement demandé arrive en texte libre, itérer, reposer la question. Trois options, dans cet ordre :
+   - `Validate and chain (recommended)` → "Validate the plan and work through every open task in order, without any further question."
+   - `Validate` → "Validate the plan, then choose how to run the tasks."
+   - `Cancel` → "Write nothing and stop."
+8. Écrire `.forge/branch/<BRANCH>/plan.md` après validation — `Validate and chain` ou `Validate`.
 9. Si `project.md` contient uniquement `<!-- pending -->` → le compléter (stack, périmètre, conventions du plan).
 10. Continuer directement à l'État 5 : lire et exécuter `phases/p5-resume.md`.
+    - Sur `Validate and chain` → p5 en mode enchaîné : aucune question `Mode`, aucun feu vert entre les tâches (étape 8 de `p5-resume.md`).
+    - Sur `Validate` → p5 pose la question `Mode`.
 
 ---
 

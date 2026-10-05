@@ -167,7 +167,7 @@ Crée un `log.md` vide en silence et continue vers le plan.
 ### État 4 — Plan
 **Condition :** brief présent, `log.md` présent, plan absent
 
-Lit `coding-standards.md`, génère `plan.md`, attend validation avant toute implémentation.  
+Lit `coding-standards.md`, génère `plan.md`, attend validation avant toute implémentation. La validation propose trois options : valider et enchaîner (recommandé) — le plan est écrit et toutes les tâches ouvertes s'exécutent dans l'ordre, sans autre question —, valider — le mode d'exécution est demandé ensuite —, ou annuler.  
 Les tâches L/XL incluent un bloc de décomposition commenté (`T1.1`, `T1.2`, …) à remplir avant de démarrer.
 
 ### État 5 — Actif
@@ -205,8 +205,8 @@ skill, pas ce que tu vois à l'écran.
 Les questions ouvertes restent en texte libre, là où une liste figée ne ferait que gêner : objectif
 de la tâche, nom de code de branche, identifiant de ticket, mail à coller, quoi faire ensuite.
 
-Valider un contenu — l'objectif du brief, le plan, le rapport de clôture — n'offre que deux options :
-valider, ou annuler. Pas d'option « à retravailler » : une demande de changement passe par le champ de
+Valider un contenu — l'objectif du brief, le plan, le rapport de clôture — n'offre jamais d'option
+« à retravailler » ni « modifier » : une demande de changement passe par le champ de
 texte libre de la question, avec son explication, et le contenu revient retravaillé sous la même
 question. Un simple « non » n'est pas une demande de changement — forge demande en une ligne ce qui
 doit changer, et ne re-présente jamais un contenu inchangé.
@@ -387,7 +387,8 @@ son code. Le sous-agent reçoit le chemin du worktree, la branche, ta langue et 
 exécute le skill forge exactement comme tu le ferais sur cette branche — project, brief, log et plan lus
 comme les phases le prescrivent. La différence avec un projet lié : **chaque choix t'est relayé** —
 l'objectif du brief, la validation du plan, le mode d'exécution, le feu vert avant chaque tâche, la
-confirmation de gravure. « Le plan validé vaut accord » ne s'applique pas dans cette portée.
+confirmation de gravure. « Le plan validé vaut accord » ne s'applique pas dans cette portée, sauf si tu
+choisis valider et enchaîner à la validation du plan.
 
 L'exécution se termine par un `FORGE_DONE` d'une ligne : rien n'est écrit dans le plan ni le log du
 parent, puisque rien n'a été délégué. Le worktree reste en place — forge te rappelle

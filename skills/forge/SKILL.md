@@ -51,7 +51,7 @@ Si erreur ou vide (pas de git) : demander un nom de code (ex: `refonte-auth`), l
 
 ⚠️ Les questions ouvertes restent en texte libre : objectif de la tâche, nom de code de branche, identifiant de ticket, mail à coller, « quoi faire ensuite ». Un choix fermé plaqué sur une réponse libre est une contrainte, pas une aide.
 ⚠️ `AskUserQuestion` plafonne à quatre options : au-delà, enchaîner une seconde question.
-⚠️ Validation d'un contenu présenté (objectif du brief, plan, rapport) → deux options seulement : `Validate` / `Cancel`. Jamais d'option « à retravailler » : une demande de changement arrive par le champ de texte libre de la question, avec son explication. Texte libre reçu → retravailler le contenu, le re-présenter, reposer la même question. Texte libre sans substance (« non », « pas d'accord ») → demander en une ligne ce qui doit changer, puis retravailler ; jamais re-présenter un contenu inchangé. `Cancel` → n'écrire rien, STOP. Sans réponse : STOP.
+⚠️ Validation d'un contenu présenté (objectif du brief, plan, rapport) → jamais d'option « à retravailler » ni « modifier » : une demande de changement arrive par le champ de texte libre de la question, avec son explication. Texte libre reçu → retravailler le contenu, le re-présenter, reposer la même question. Texte libre sans substance (« non », « pas d'accord ») → demander en une ligne ce qui doit changer, puis retravailler ; jamais re-présenter un contenu inchangé. `Cancel` → n'écrire rien, STOP. Sans réponse : STOP.
 ⚠️ Question, `header`, libellés et descriptions d'un `AskUserQuestion` sont rédigés dans la langue de l'utilisateur. Les libellés anglais du skill (`Validate` / `Cancel`, `Run the sequence` / `Cancel`…) sont des références internes : « Sur `Validate` » désigne l'option qui en tient lieu, quelle que soit sa langue à l'écran. Un `FORGE_QUESTION` relayé arrive déjà dans cette langue.
 ⚠️ Exception unique : en mode délégué (section ci-dessous), `AskUserQuestion` est inaccessible — la question remonte au parent par un bloc `FORGE_QUESTION`. La règle reste entière : rien ne s'exécute sans la réponse.
 
@@ -79,7 +79,7 @@ Si erreur ou vide (pas de git) : demander un nom de code (ex: `refonte-auth`), l
 
 **`SCOPE: branch` — branche du même dépôt :**
 - Pas de `## Origin`, pas de mandat : `project.md`, standards, brief, log et plan sont lus comme les phases le prescrivent.
-- **Chaque choix est relayé à l'utilisateur** par `FORGE_QUESTION` — objectif du brief, validation du plan, mode (enchaîner / choisir), feu vert avant chaque tâche, `grave`. Le raccourci « plan validé vaut accord » ne s'applique pas.
+- **Chaque choix est relayé à l'utilisateur** par `FORGE_QUESTION` — objectif du brief, validation du plan, mode (enchaîner / choisir), feu vert avant chaque tâche, `grave`. Le raccourci « plan validé vaut accord » ne s'applique pas, sauf choix explicite de `Validate and chain` à la validation du plan.
 - Livraison applicable, sous ROOT (le worktree) : tableau récapitulatif dans `content`, confirmation `Engrave` relayée.
 - `FORGE_DONE` : `done` / `blocked` sans `← parent`, `out_of_mandate: none`, compte rendu d'une ligne.
 

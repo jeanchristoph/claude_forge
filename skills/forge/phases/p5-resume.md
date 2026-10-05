@@ -17,14 +17,15 @@
    Mode délégué `SCOPE: branch` → la même question en `FORGE_QUESTION`, `options: none`, `content: none`.
 
 8. **Au moins une tâche ouverte** → poser le choix du mode d'exécution avec `AskUserQuestion` — jamais une question en texte libre.
+   - Plan validé dans ce tour par `Validate and chain` (étape 7 de `p4-plan.md`) → aucune question : enchaîner toutes les tâches ouvertes dans l'ordre, sans arrêt ni feu vert entre elles. Mode délégué compris.
    - `header` : `Mode` · deux options, dans cet ordre :
      - `Chain the tasks (recommended)` → "Work through every open task in order, one after another, without stopping between them."
      - `Pick a task` → "Choose which task we tackle now."
    - `Pick a task` retenu → seconde `AskUserQuestion`, `header` : `Task`, une option par tâche ouverte dans l'ordre du plan (label `T<n> — titre`, description = son effort et sa dépendance éventuelle), quatre au maximum.
    - Mode délégué `SCOPE: linked` (BRIEF contient `## Origin`) → aucune question : enchaîner toutes les tâches ouvertes dans l'ordre, sans arrêt entre elles — la validation du plan vaut accord.
-   - Mode délégué `SCOPE: branch` → les mêmes questions `Mode` puis `Task` en `FORGE_QUESTION` ; puis, avant chaque tâche, un `FORGE_QUESTION` — `header` : `Task`, options `Start T<n>` / `Cancel`, la description entière de la tâche dans `content`. Aucun enchaînement sans ce feu vert.
+   - Mode délégué `SCOPE: branch` → les mêmes questions `Mode` puis `Task` en `FORGE_QUESTION` ; puis, avant chaque tâche, un `FORGE_QUESTION` — `header` : `Task`, options `Start T<n>` / `Cancel`, la description entière de la tâche dans `content`. Aucun enchaînement sans ce feu vert, sauf `Validate and chain` (première puce).
 
-   ⚠️ Aucun démarrage avant la réponse à la question — ni enchaînement, ni tâche isolée. En mode délégué `SCOPE: linked`, la réponse est la validation du plan.
+   ⚠️ Aucun démarrage avant la réponse à la question — ni enchaînement, ni tâche isolée. Après `Validate and chain`, ou en mode délégué `SCOPE: linked`, la réponse est la validation du plan.
 
 ---
 

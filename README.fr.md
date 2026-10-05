@@ -445,7 +445,11 @@ rapport n'est publié en commentaire que sur accord explicite. Sans ce fichier, 
 rédigé et l'étape reste entièrement silencieuse.
 
 Enfin, il propose de rédiger une réponse à un mail client — rédigée dans la langue du mail reçu,
-jamais la tienne si elles diffèrent. Le brouillon est affiché dans la conversation et toujours conservé
+jamais la tienne si elles diffèrent, avec la voix d'une équipe support technique : courte, fluide,
+professionnelle, directe et naturelle, empathique sans être trop chaleureuse, orientée vers la résolution
+du problème. Elle ne répète pas ce que le client vient d'écrire, ne reformule pas toute sa demande sans
+nécessité, et écarte les explications techniques inutiles, les phrases trop longues et les tournures
+administratives lourdes. Le brouillon est affiché dans la conversation et toujours conservé
 aussi, copie exacte en texte brut dans `.forge/branch/<BRANCH>/output/AAAAMMJJ-client-reply.txt`, prêt à
 coller dans un client de messagerie ou à joindre au ticket d'où vient le mail — ClickUp, Jira ou tout autre.
 

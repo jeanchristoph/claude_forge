@@ -1,5 +1,6 @@
 # Log
 
+- [2026-10-05 18:14] Action directe : règles de ton de la réponse client (voix support technique, concise, sans répéter le client) intégrées en p5 étape 3 de la clôture, README et CHANGELOG ; « pédagogique » retiré
 - [2026-10-05 17:56] T6 done : `livre` / `ship` remplacent `grave!` / `engrave!` — choix utilisateur parmi scelle, soude, ship ; « livre » ajouté comme pendant français
 - [2026-10-05 15:12] Choix utilisateur : livraison directe strictement `grave!` / `engrave!` — `!` en fin de branche ou isolé abandonné
 - [2026-10-05 15:12] Fiche générée : output/20261005-explanation-no-confirmation-vocabulary.md

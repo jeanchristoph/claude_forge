@@ -391,7 +391,10 @@ Tableau d'un projet lié : mêmes colonnes, même contenu, titré par `<LINKED>`
    ⚠️ Aucun fichier d'état `report.txt` : le rapport n'existe que dans OUTPUT.
 
 3. **Réponse client** — poser le choix avec `AskUserQuestion` — `header` : `Email`, options `Draft a reply` / `Finish`.
-   - `Draft a reply` → attendre que l'utilisateur colle le mail auquel répondre, générer une réponse au ton fluide, professionnel, pédagogique et empathique, rédigée dans la langue du mail reçu — jamais celle de l'utilisateur si elle diffère.
+   - `Draft a reply` → attendre que l'utilisateur colle le mail auquel répondre, générer la réponse d'une équipe support technique à partir du mail reçu et des éléments de réponse de la tâche, rédigée dans la langue du mail reçu — jamais celle de l'utilisateur si elle diffère.
+   - **Ton :** court, fluide, professionnel, direct et naturel. Empathique, sans être trop chaleureux. Orienté vers la résolution du problème.
+   - **Ne pas répéter le client :** ni redire ce qu'il vient d'écrire, ni reformuler toute sa demande quand ce n'est pas nécessaire.
+   - **Pas de surcharge :** aucune explication technique inutile, aucune phrase trop longue, aucune tournure administrative lourde.
    - **Un paragraphe tient sur une seule ligne.** Jamais de retour à la ligne forcé à l'intérieur d'un paragraphe :
      le client de messagerie gère le rendu, un repli à la main coupe les phrases n'importe où, souvent juste avant
      un point. Les retours à la ligne ne séparent que les paragraphes et les éléments d'une liste.

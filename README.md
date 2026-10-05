@@ -168,7 +168,7 @@ Silently creates an empty `log.md` and continues to the plan.
 ### State 4 — Plan
 **Condition:** brief present, `log.md` present, plan absent
 
-Reads `coding-standards.md`, generates `plan.md`, waits for validation before any implementation. The validation offers three options: validate and chain (recommended) — the plan is written and every open task runs in order, with no further question —, validate — the execution mode is asked next —, or cancel.  
+Reads `coding-standards.md`, generates `plan.md`, waits for validation before any implementation. The validation offers three options: validate and chain — the plan is written and every open task runs in order, with no further question —, validate — the execution mode is asked next —, or cancel.  
 L/XL tasks include a commented decomposition block (`T1.1`, `T1.2`, …) to fill in before starting.
 
 ### State 5 — Active

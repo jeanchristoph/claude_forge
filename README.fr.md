@@ -167,7 +167,7 @@ Crée un `log.md` vide en silence et continue vers le plan.
 ### État 4 — Plan
 **Condition :** brief présent, `log.md` présent, plan absent
 
-Lit `coding-standards.md`, génère `plan.md`, attend validation avant toute implémentation. La validation propose trois options : valider et enchaîner (recommandé) — le plan est écrit et toutes les tâches ouvertes s'exécutent dans l'ordre, sans autre question —, valider — le mode d'exécution est demandé ensuite —, ou annuler.  
+Lit `coding-standards.md`, génère `plan.md`, attend validation avant toute implémentation. La validation propose trois options : valider et enchaîner — le plan est écrit et toutes les tâches ouvertes s'exécutent dans l'ordre, sans autre question —, valider — le mode d'exécution est demandé ensuite —, ou annuler.  
 Les tâches L/XL incluent un bloc de décomposition commenté (`T1.1`, `T1.2`, …) à remplir avant de démarrer.
 
 ### État 5 — Actif

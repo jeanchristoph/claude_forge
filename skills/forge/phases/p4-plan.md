@@ -29,7 +29,7 @@ Si BRIEF contient `## Origin` (`SCOPE: linked` — mandat) → les étapes ci-de
    Puis poser le choix avec `AskUserQuestion` — `header` : `Approach`, une option par approche (label `Option X — Name`, description = son compromis), quatre au maximum. Attendre le choix avant de continuer.
 6. Générer le plan (format ci-dessous) et le présenter.
 7. Poser le choix avec `AskUserQuestion` — `header` : `Plan`, motif « Validation d'un contenu » de `SKILL.md` : le changement demandé arrive en texte libre, itérer, reposer la question. Trois options, dans cet ordre :
-   - `Validate and chain (recommended)` → "Validate the plan and work through every open task in order, without any further question."
+   - `Validate and chain` → "Validate the plan and work through every open task in order, without any further question."
    - `Validate` → "Validate the plan, then choose how to run the tasks."
    - `Cancel` → "Write nothing and stop."
 8. Écrire `.forge/branch/<BRANCH>/plan.md` après validation — `Validate and chain` ou `Validate`.

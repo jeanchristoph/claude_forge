@@ -37,7 +37,7 @@ Le résultat : moins de mauvaises surprises, des implémentations qui restent da
 - **Détection hors périmètre** — une demande hors du plan courant devient une tâche du plan : forge la formule, tu valides la formulation, rien de plus.
 - **Branche en argument** — `/forge <nom-de-branche>` bascule sur cette branche, créée depuis la branche par défaut à jour (`master`, sinon `main`) si elle n'existe pas — jamais depuis la branche courante. L'argument est toujours un nom de branche git, jamais un identifiant de ticket.
 - **Garde main/master** — sans argument, sur les branches protégées, forge demande soit un identifiant de ticket, soit un nom de branche — une fois `project.md` et `coding-standards.md` en place, juste avant le brief.
-- **Raccourcis de livraison** — `"grave master"` / `"engrave master"` (ou avec `"dev"`) commit, push et merge en une étape confirmée.
+- **Raccourcis de livraison** — `"grave master"` / `"engrave master"` (ou avec `"dev"`) commit, push et merge en une étape confirmée ; `"grave! master"` l'exécute directement, sans confirmation.
 - **Survie à la compaction** — le hook `PreCompact` injecte l'état forge (branche, objectif, statut des tâches) dans le résumé de contexte compacté.
 - **Cross-platform** — détection automatique Unix/Windows, installeurs séparés.
 
@@ -403,6 +403,13 @@ parent, puisque rien n'a été délégué. Le worktree reste en place — forge 
 ```
 
 Une ou plusieurs branches existantes, citées dans l'ordre voulu (ex : `"grave dev"`, `"grave master"`, `"grave dev master"`). `<BRANCH>` est mergée tour à tour dans chaque branche citée, toujours depuis la branche de départ — jamais en enchaînant une branche citée dans la suivante.
+
+**Livraison directe :** `grave!` / `engrave!` — le `!` collé à la commande, seule ou suivie de branches
+(`grave!`, `grave! dev master`) — supprime la confirmation : le tableau récapitulatif s'affiche comme
+compte rendu et la séquence s'exécute aussitôt. La commande autorise cette séquence seulement. Les
+questions sur les projets liés restent posées — elles fixent le périmètre, elles ne confirment rien. Un
+conflit de merge ou un push rejeté arrête la séquence et affiche l'erreur telle quelle ; rien n'est
+jamais forcé.
 
 **INVARIANT :** git opère uniquement sur le dépôt courant — jamais sur un autre dépôt ouvert en parallèle. Unique
 exception : un projet lié, pour le positionnement de branche à la délégation et pour la livraison relayée ci-dessous.

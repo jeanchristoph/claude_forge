@@ -38,7 +38,7 @@ The result: fewer surprises, implementations that stay within the defined scope,
 - **Out-of-scope detection** — a request outside the current plan becomes a plan task: forge writes it up and you validate the wording, nothing more.
 - **Branch as argument** — `/forge <branch-name>` checks out that branch, creating it from the up-to-date default branch (`master`, else `main`) if it does not exist — never from the current one. The argument is always a git branch name, never a ticket ID.
 - **main/master guard** — without an argument, on protected branches, forge asks for either a ticket ID or a branch name — after `project.md` and `coding-standards.md` are in place, right before the brief.
-- **Shipping shortcuts** — `"grave master"` / `"engrave master"` (or with `"dev"`) commit, push, and merge in one confirmed step.
+- **Shipping shortcuts** — `"grave master"` / `"engrave master"` (or with `"dev"`) commit, push, and merge in one confirmed step; `"grave! master"` runs it straight away, without the confirmation.
 - **Compaction survival** — the `PreCompact` hook injects the forge state (branch, goal, task statuses) into the compacted context summary.
 - **Cross-platform** — automatic Unix/Windows detection, separate installers.
 
@@ -402,6 +402,12 @@ the branch is engraved.
 ```
 
 One or more existing branches, named in the desired order (e.g. `"grave dev"`, `"grave master"`, `"grave dev master"`). `<BRANCH>` is merged into each named branch in turn, always from the starting branch — never chaining one named branch into the next.
+
+**Direct shipping:** `grave!` / `engrave!` — the `!` glued to the command, alone or followed by branches
+(`grave!`, `grave! dev master`) — skips the confirmation: the recap table is shown as a report and the
+sequence runs at once. The command authorizes that sequence only. The linked-project questions are still
+asked — they set the scope, they confirm nothing. A merge conflict or a rejected push stops the sequence
+with the error as is; nothing is ever forced.
 
 **INVARIANT:** git operates only on the current repo — never on another repo open in parallel. The one
 exception is a linked project: branch positioning when delegating, and the relayed shipping below.

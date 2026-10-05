@@ -28,6 +28,12 @@
 **Description:** README (« Confirmations » : retirer « n'offre que deux options », remplacer par la règle « jamais d'option à retravailler » ; État 4 : troisième option ; portée branche : phrase « le plan validé vaut accord »), en miroir dans les deux langues. CHANGELOG `## [Unreleased]` : `### Added` pour l'option, `### Changed` pour la fin de la limite à deux options.
 [x]
 
+### T5 — `grave!` : livraison sans confirmation
+**Effort:** S
+**Files:** `skills/forge/phases/p5-resume.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Déclencheur de la Livraison : `grave!` / `engrave!` (`!` collé à la commande, seule ou suivie de branches) → livraison directe. Étapes 4-5 sautées : tableau affiché comme compte rendu, séquence exécutée aussitôt — la commande vaut autorisation pour cette séquence. Questions `Linked` / `Linked branches` maintenues (choix de périmètre). `SCOPE: branch` → pas de `FORGE_QUESTION` d'engrave. Conflit de merge ou push rejeté → arrêt, erreur telle quelle ; jamais de `--force`. `grave` sans `!` inchangé. README en miroir, CHANGELOG `### Added`.
+[x]
+
 ## Risks
 - La copie installée (`~/.claude/skills/forge/`) n'évolue qu'après relance de l'installeur.
 - Le mode enchaîné ne pose plus aucune question entre les tâches : les mises à jour substantielles du plan et les demandes hors périmètre restent soumises à confirmation.
@@ -42,4 +48,5 @@ None
 | T2 — Option `Validate and chain` à l'étape 7 de `p4-plan.md` | S | [x] |
 | T3 — `p5-resume.md` : pas de question `Mode` après `Validate and chain` | XS | [x] |
 | T4 — Documentation et CHANGELOG | S | [x] |
-| **Total** | **~2h30** | |
+| T5 — `grave!` : livraison sans confirmation | S | [x] |
+| **Total** | **~3h30** | |

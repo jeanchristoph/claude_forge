@@ -306,13 +306,16 @@ Actions et détail associé — aucune autre :
 
 **Déclencheur :** l'utilisateur dit "grave" / "engrave", seul ou suivi d'une ou plusieurs branches existantes, dans l'ordre voulu (ex: "grave", "grave dev", "grave dev master").
 
+**Livraison directe :** commande `grave!` / `engrave!`, `!` collé au mot, seule ou suivie de branches (`grave!`, `grave! dev master`) → dérouler la Réaction sans les étapes 4 et 5 : le tableau de l'étape 3 vaut compte rendu, la séquence s'exécute aussitôt. La commande vaut autorisation pour cette séquence seulement. Les questions `Linked` / `Linked branches` de l'étape 2 restent posées : elles fixent le périmètre, elles ne confirment rien. Sans `!` → confirmation de l'étape 4 inchangée.
+
 **INVARIANT :** git opère uniquement sur le dépôt courant — jamais sur un autre dépôt ouvert en parallèle. Unique exception : `<LINKED>`, pour le positionnement de branche par la « Délégation — projet lié » et pour la livraison relayée ci-dessous — rien d'autre.
 
 **Publication hors dépôt :** tout texte publié sur la forge distante à la suite d'une livraison — titre et notes d'une release, description d'un tag ou d'une PR — est rédigé en **anglais**, quelle que soit la langue de l'utilisateur. Le message de commit, lui, suit la langue des commits du dépôt.
 
-⚠️ Aucune commande git — `git add` compris, `<LINKED>` compris — avant la confirmation de l'étape 4.
+⚠️ Aucune commande git — `git add` compris, `<LINKED>` compris — avant la confirmation de l'étape 4, ou avant l'affichage du tableau en livraison directe.
+⚠️ Conflit de merge ou push rejeté → arrêter la séquence, afficher l'erreur telle quelle, ne rien forcer : jamais de `--force`, jamais de résolution de conflit sans demande.
 
-Mode délégué `SCOPE: branch` → git opère sous ROOT (le worktree) ; l'étape 4 est un `FORGE_QUESTION` — `header` : `Engrave`, mêmes options, le tableau récapitulatif entier dans `content`. Branche citée extraite dans un autre worktree (`git worktree list --porcelain`) → ligne `merge` marquée `skipped — checked out in another worktree`, ignorée à l'exécution : la fusion se fait depuis ce worktree-là. `SCOPE: linked` → Livraison non applicable (section « Mode délégué » de `SKILL.md`).
+Mode délégué `SCOPE: branch` → git opère sous ROOT (le worktree) ; l'étape 4 est un `FORGE_QUESTION` — omis en livraison directe — — `header` : `Engrave`, mêmes options, le tableau récapitulatif entier dans `content`. Branche citée extraite dans un autre worktree (`git worktree list --porcelain`) → ligne `merge` marquée `skipped — checked out in another worktree`, ignorée à l'exécution : la fusion se fait depuis ce worktree-là. `SCOPE: linked` → Livraison non applicable (section « Mode délégué » de `SKILL.md`).
 
 **Réaction — dans l'ordre :**
 1. Générer automatiquement le message de commit (règles COMMITS GIT : max 150 car., pas de mention Claude) — pas de confirmation sur le message lui-même.

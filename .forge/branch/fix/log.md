@@ -1,0 +1,1 @@
+- [2026-10-06] Règle « contenu écrit en entier avant la question » posée dans SKILL.md, p5 alignée, CHANGELOG.

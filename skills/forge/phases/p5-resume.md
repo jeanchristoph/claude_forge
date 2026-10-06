@@ -51,7 +51,7 @@
 - Changer l'effort estimé
 - Réécrire la description
 
-⚠️ La modification est décrite en clair avant la question — jamais réduite à l'intitulé d'une option. Mode délégué → `FORGE_QUESTION`, la modification décrite entière dans `content`.
+⚠️ La modification est écrite en entier avant la question (« Règle absolue » de `SKILL.md`). Mode délégué → `FORGE_QUESTION`, la modification décrite entière dans `content`.
 
 **Tâche L/XL** — avant de démarrer, décomposer en micro-étapes et écrire `plan.md` :
 `[ ] T2.1 — ...` · `[ ] T2.2 — ...`

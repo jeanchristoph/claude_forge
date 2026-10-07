@@ -1,0 +1,1 @@
+- [2026-10-07] Decision: bash script only (`forge-ship.sh`), no PowerShell twin — the skill already requires bash (`bash -c "git branch --show-current"` allowed by both installers); one source of truth, one test suite.

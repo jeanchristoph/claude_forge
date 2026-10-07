@@ -47,7 +47,7 @@ Si erreur ou vide (pas de git) : demander un nom de code (ex: `refonte-auth`), l
 
 **Jamais une ligne de code sans confirmation explicite** ("ok", "go", "let's do it"). Silence ≠ validation.
 
-**Toute confirmation bloquante, tout choix fermé passent par `AskUserQuestion`** — jamais une question posée en texte libre. Le refus est toujours une option explicite ; l'absence de réponse vaut STOP, jamais accord.
+**Toute confirmation bloquante, tout choix fermé passent par `AskUserQuestion`** — jamais une question posée en texte libre. Le refus est toujours une option explicite ; l'absence de réponse vaut STOP, jamais accord — sauf la question `Ship` de la livraison directe (`phases/p5-resume.md`), où elle vaut accord.
 
 ⚠️ Les questions ouvertes restent en texte libre : objectif de la tâche, nom de code de branche, identifiant de ticket, mail à coller, « quoi faire ensuite ». Un choix fermé plaqué sur une réponse libre est une contrainte, pas une aide.
 ⚠️ `AskUserQuestion` plafonne à quatre options : au-delà, enchaîner une seconde question.

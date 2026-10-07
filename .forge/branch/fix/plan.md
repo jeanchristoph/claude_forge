@@ -22,6 +22,12 @@
 **Description:** Ajouter une puce sous `[Unreleased]` › `### Changed`, en anglais : le contenu soumis à validation est désormais écrit en entier avant la question, et n'est plus seulement annoncé.
 [x]
 
+### T4 — `ship` : question annulable 60 s, sans réponse = accord
+**Effort:** S
+**Files:** `skills/forge/SKILL.md`, `skills/forge/phases/p5-resume.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`, `~/.claude/settings.json`
+**Description:** `ship` / `livre` affiche le tableau puis pose la question `Ship` (`Run the sequence` / `Cancel`) ; `Run the sequence` ou fermeture sans réponse au délai → la séquence s'exécute ; `Cancel` ou texte libre → STOP. Action refusée par l'outil → arrêt, état affiché, `grave` ou `!` proposé, jamais de nouvelle tentative. Une commande git par appel. Exception unique ajoutée à la « Règle absolue » de `SKILL.md`. `askUserQuestionTimeout: "60s"` dans `~/.claude/settings.json` (effet de bord : toute question se ferme après 60 s, forge s'arrête hors `ship`). README FR/EN, entrée CHANGELOG « Direct shipping » réécrite.
+[ ]
+
 ## Risks
 - Le README ne décrit pas ce détail du fonctionnement, donc je ne le modifie pas.
 
@@ -34,4 +40,5 @@ None
 | T1 — Règle dans SKILL.md | XS | [x] |
 | T2 — Alignement p5-resume.md | XS | [x] |
 | T3 — CHANGELOG | XS | [x] |
+| T4 — `ship` annulable 60 s | S | [ ] |
 | **Total** | **~1h** | |

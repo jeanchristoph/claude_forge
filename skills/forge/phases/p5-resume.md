@@ -312,13 +312,19 @@ Actions et détail associé — aucune autre :
 
 **Déclencheur :** l'utilisateur dit "grave" / "engrave" — ou "livre" / "ship", livraison directe ci-dessous —, seul ou suivi d'une ou plusieurs branches existantes, dans l'ordre voulu (ex: "grave", "grave dev", "grave dev master").
 
-**Livraison directe :** message qui commence par `livre` / `ship` et ne contient rien d'autre que des branches existantes (`livre`, `ship dev master`) → dérouler la Réaction sans les étapes 4 et 5 : le tableau de l'étape 3 vaut compte rendu, la séquence s'exécute aussitôt. La commande vaut autorisation pour cette séquence seulement. Les questions `Linked` / `Linked branches` de l'étape 2 restent posées : elles fixent le périmètre, elles ne confirment rien. Autre texte dans le message (`livre-moi un export`) → pas une livraison. `grave` / `engrave` → confirmation de l'étape 4 inchangée.
+**Livraison directe :** message qui commence par `livre` / `ship` et ne contient rien d'autre que des branches existantes (`livre`, `ship dev master`) → dérouler la Réaction, l'étape 4 remplacée par la question `Ship` ci-dessous. La commande vaut autorisation pour cette séquence seulement. Les questions `Linked` / `Linked branches` de l'étape 2 restent posées : elles fixent le périmètre, elles ne confirment rien. Autre texte dans le message (`livre-moi un export`) → pas une livraison. `grave` / `engrave` → confirmation de l'étape 4 inchangée.
+
+**Question `Ship` :** tableau de l'étape 3 affiché → poser le choix avec `AskUserQuestion` — `header` : `Ship`, options `Run the sequence` / `Cancel`, question « Livraison lancée sans réponse à l'expiration du délai — annuler ? » rendue dans la langue de l'utilisateur.
+- `Run the sequence`, ou question fermée sans réponse à l'expiration de `askUserQuestionTimeout` → étape 6, sans autre question.
+
+⚠️ Délai de `ship` pour réponse : `askUserQuestionTimeout` équivaut à `60s`
+- `Cancel` ou texte libre → n'exécuter aucune action. STOP — ne pas continuer.
 
 **INVARIANT :** git opère uniquement sur le dépôt courant — jamais sur un autre dépôt ouvert en parallèle. Unique exception : `<LINKED>`, pour la création du worktree par la « Délégation — projet lié » et pour la livraison relayée ci-dessous — rien d'autre.
 
 **Publication hors dépôt :** tout texte publié sur la forge distante à la suite d'une livraison — titre et notes d'une release, description d'un tag ou d'une PR — est rédigé en **anglais**, quelle que soit la langue de l'utilisateur. Le message de commit, lui, suit la langue des commits du dépôt.
 
-⚠️ Aucune commande git — `git add` compris, `<LINKED>` compris — avant la confirmation de l'étape 4, ou avant l'affichage du tableau en livraison directe.
+⚠️ Aucune commande git — `git add` compris, `<LINKED>` compris — avant la confirmation de l'étape 4, ou avant l'issue de la question `Ship` en livraison directe.
 ⚠️ Conflit de merge ou push rejeté → arrêter la séquence, afficher l'erreur telle quelle, ne rien forcer : jamais de `--force`, jamais de résolution de conflit sans demande.
 
 Mode délégué `SCOPE: branch` → git opère sous ROOT (le worktree) ; l'étape 4 est un `FORGE_QUESTION`, omis en livraison directe — `header` : `Engrave`, mêmes options, le tableau récapitulatif entier dans `content`. Branche citée extraite dans un autre worktree (`git worktree list --porcelain`) → ligne `merge` marquée `skipped — checked out in another worktree`, ignorée à l'exécution : la fusion se fait depuis ce worktree-là. `SCOPE: linked` → Livraison non applicable (section « Mode délégué » de `SKILL.md`).

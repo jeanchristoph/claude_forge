@@ -5,3 +5,4 @@
 ## Scope & rules
 
 - Livraison directe déclenchée par `livre` / `ship` en tête de message, seul ou suivi uniquement de branches existantes — `grave` / `engrave` gardent la confirmation.
+- Worktree dont le travail est commité (poussé ou non) → supprimé (`git worktree remove`) dès la fin de la séquence qui l'utilise ; jamais un rappel à la place, jamais de `--force`. Travail non commité → worktree conservé, raison affichée.

@@ -1,5 +1,7 @@
 # Log
 
+- [2026-10-07 11:07] T9 ajoutée (commande courte, pistes coule/cast, bouture, scinde/split, essaime/spawn — choix reporté) ; T9→T10, T10→T11
+- [2026-10-07 11:05] T9 (délégation vers une nouvelle branche amorcée) et T10 (suppression des worktrees commités) ajoutées au plan, non exécutées — règle immuable worktree ajoutée à `## Scope & rules`
 - [2026-10-07 10:59] Choix utilisateur : ordre de l'étape 7 = `Validate and chain`, `Validate`, `Validate and engrave`, `Cancel`, partout
 - [2026-10-07 10:58] Option A retenue : mêmes quatre options en projet lié ; `Validate` y relaie la question `Mode` au lieu d'enchaîner — plus de règle « plan validé vaut accord » en `SCOPE: linked`
 - [2026-10-07 10:55] Choix utilisateur : ordre unique partout à l'étape 7 — `Validate`, `Validate and engrave`, `Validate and chain`, `Cancel` ; `Validate and chain` n'est plus en première position

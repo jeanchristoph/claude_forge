@@ -46,6 +46,12 @@
 **Description:** « Délégation — projet lié » : checkout/création de branche dans `<LINKED>` remplacé par un worktree `<LINKED>-<slug LINKED_BRANCH>` (réutilisé s'il existe), brief/log du lié écrits dedans, `ROOT: <worktree>` dans le prompt. Livraison relayée : add/commit/push dans le worktree, branche cible extraite ailleurs → `skipped`. Fin de délégation : rappel `git worktree remove` + avertissement (ni dépendances ni fichiers ignorés dans le worktree). README miroir, CHANGELOG `### Changed`.
 [x]
 
+### T8 — Option `Validate and engrave` à la validation du plan
+**Effort:** S
+**Files:** `skills/forge/phases/p4-plan.md`, `skills/forge/phases/p5-resume.md`, `skills/forge/SKILL.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Étape 7 de p4 : quatre options, même ordre partout, projet lié compris — `Validate and chain`, `Validate`, `Validate and engrave`, `Cancel`. `SCOPE: linked` : `Validate` relaie désormais la question `Mode` (plus d'enchaînement implicite). La nouvelle option écrit le plan, déroule aussitôt la livraison directe comme `livre` seul (add, commit, push de `<BRANCH>`, aucun merge, aucune confirmation `Engrave`), puis p5 pose la question `Mode`. Conflit ou push rejeté → arrêt, erreur telle quelle. Option proposée partout, sans `FORGE_QUESTION` d'engrave : `SCOPE: branch` → question `Mode` ensuite ; `SCOPE: linked` → gravure dans le worktree lié, puis question `Mode` relayée (push rejeté → LOG, suite maintenue) ; `SKILL.md` : exception à « Livraison non applicable ». README miroir, CHANGELOG `### Added`.
+[x] Remplace la version erronée « Validate, chain and engrave » ; étape 9 de p5 retirée.
+
 ## Risks
 - La copie installée (`~/.claude/skills/forge/`) n'évolue qu'après relance de l'installeur.
 - Le mode enchaîné ne pose plus aucune question entre les tâches : les mises à jour substantielles du plan et les demandes hors périmètre restent soumises à confirmation.
@@ -63,4 +69,5 @@ None
 | T5 — `grave!` : livraison sans confirmation | S | [x] |
 | T6 — Remplacer `grave!` / `engrave!` par `livre` / `ship` | XS | [x] |
 | T7 — Délégation vers un projet lié dans un worktree | M | [x] |
-| **Total** | **~7h** | |
+| T8 — Option `Validate and engrave` à la validation du plan | S | [x] |
+| **Total** | **~8h** | |

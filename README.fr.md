@@ -167,7 +167,7 @@ Crée un `log.md` vide en silence et continue vers le plan.
 ### État 4 — Plan
 **Condition :** brief présent, `log.md` présent, plan absent
 
-Lit `coding-standards.md`, génère `plan.md`, attend validation avant toute implémentation. La validation propose trois options : valider et enchaîner — le plan est écrit et toutes les tâches ouvertes s'exécutent dans l'ordre, sans autre question —, valider — le mode d'exécution est demandé ensuite —, ou annuler.  
+Lit `coding-standards.md`, génère `plan.md`, attend validation avant toute implémentation. La validation propose quatre options, dans cet ordre : valider et enchaîner — le plan est écrit et toutes les tâches ouvertes s'exécutent dans l'ordre, sans autre question —, valider — le mode d'exécution est demandé ensuite —, valider et graver — le plan est écrit, puis commité et poussé aussitôt sur la branche courante, sans confirmation ni merge, avant toute tâche ; le mode d'exécution est demandé ensuite —, ou annuler. L'ordre est le même partout, projet lié compris.  
 Les tâches L/XL incluent un bloc de décomposition commenté (`T1.1`, `T1.2`, …) à remplir avant de démarrer.
 
 ### État 5 — Actif
@@ -362,8 +362,9 @@ L'exécution se fait ensuite dans un **contexte forge étanche** : un sous-agent
 du worktree, `<parent>/<BRANCH>`, ta langue et l'ordre d'y exécuter le skill forge. Aucun `project.md`, aucun
 standard, aucun plan, aucun log ne traverse la cloison, dans un sens comme dans l'autre. Le plan lié est
 dérivé du seul mandat — chaque tâche porte sa filiation (`T1 — … ← parent T3`), et un besoin hors mandat
-ne devient jamais une tâche : il est remonté. Une fois le plan validé, le sous-agent enchaîne toutes les
-tâches sans demander de mode d'exécution — la validation du plan vaut accord. Chaque question bloquante
+ne devient jamais une tâche : il est remonté. La validation du plan propose les mêmes quatre options
+qu'ailleurs : valider te relaie la question du mode d'exécution, valider et enchaîner la saute, et valider et
+graver commite et pousse le plan lié dans le worktree, sans confirmation ni merge, puis demande le mode. Chaque question bloquante
 qu'il rencontre (validation du plan, choix d'approche) t'est relayée telle quelle sous forme de
 `FORGE_QUESTION` et posée via le même `AskUserQuestion` que d'habitude ; la réponse repart vers le
 sous-agent, dont le contexte reste intact. Une question relayée porte le **contenu entier** à trancher —
@@ -394,7 +395,7 @@ son code. Le sous-agent reçoit le chemin du worktree, la branche, ta langue et 
 exécute le skill forge exactement comme tu le ferais sur cette branche — project, brief, log et plan lus
 comme les phases le prescrivent. La différence avec un projet lié : **chaque choix t'est relayé** —
 l'objectif du brief, la validation du plan, le mode d'exécution, le feu vert avant chaque tâche, la
-confirmation de gravure. « Le plan validé vaut accord » ne s'applique pas dans cette portée, sauf si tu
+confirmation de gravure. Contrairement au projet lié, chaque tâche attend son propre feu vert, sauf si tu
 choisis valider et enchaîner à la validation du plan.
 
 L'exécution se termine par un `FORGE_DONE` d'une ligne : rien n'est écrit dans le plan ni le log du

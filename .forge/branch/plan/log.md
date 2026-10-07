@@ -1,5 +1,13 @@
 # Log
 
+- [2026-10-07 10:59] Choix utilisateur : ordre de l'étape 7 = `Validate and chain`, `Validate`, `Validate and engrave`, `Cancel`, partout
+- [2026-10-07 10:58] Option A retenue : mêmes quatre options en projet lié ; `Validate` y relaie la question `Mode` au lieu d'enchaîner — plus de règle « plan validé vaut accord » en `SCOPE: linked`
+- [2026-10-07 10:55] Choix utilisateur : ordre unique partout à l'étape 7 — `Validate`, `Validate and engrave`, `Validate and chain`, `Cancel` ; `Validate and chain` n'est plus en première position
+- [2026-10-07 10:55] Choix utilisateur : en `SCOPE: linked`, ordre de l'étape 7 = `Validate`, `Validate and engrave`, `Cancel`
+- [2026-10-07 10:54] Choix utilisateur : `Validate and engrave` disponible partout, `SCOPE: linked` compris (gravure du plan dans le worktree lié, puis enchaînement)
+- [2026-10-07 10:53] Choix utilisateur : `Validate and engrave` grave sans confirmation `Engrave` et sans aucun merge (livraison directe type `livre` seul)
+- [2026-10-07 10:52] Choix utilisateur : T8 corrigée — `Validate and engrave` (plan validé puis gravé aussitôt, avant toute tâche, puis question `Mode`) remplace `Validate, chain and engrave`
+- [2026-10-07 10:50] T8 done : option `Validate, chain and engrave` en p4 étape 7 (2e position) ; p5 étape 9 : livraison type `grave` seul en fin d'enchaînement, confirmation `Engrave` maintenue, aucune livraison si une tâche `[!]`
 - [2026-10-05 19:06] Choix utilisateur : worktrees rangés à côté de leur dépôt dans `<dépôt>.worktrees/<branche>`, `/` gardés en sous-dossiers — enfant (projet lié) à côté de l'enfant, branche du parent à côté du parent ; jamais dans `.forge/`
 - [2026-10-05 19:06] Fiches générées : output/20261005-explanation-linked-worktree.md, output/20261005-explanation-branch-vs-worktree.md
 - [2026-10-05 18:47] T7 done : délégation liée dans un worktree `<LINKED>-<slug>` ; note `delegated to <LINKED>` conservée, `<LINKED_GIT>` résolu par `worktree list` (repli sur `<LINKED>` pour les délégations antérieures) ; `.forge/` du lié exigé commité ; `--no-track` sur la création depuis `origin/<défaut>`

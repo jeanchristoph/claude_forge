@@ -168,7 +168,7 @@ Silently creates an empty `log.md` and continues to the plan.
 ### State 4 — Plan
 **Condition:** brief present, `log.md` present, plan absent
 
-Reads `coding-standards.md`, generates `plan.md`, waits for validation before any implementation. The validation offers three options: validate and chain — the plan is written and every open task runs in order, with no further question —, validate — the execution mode is asked next —, or cancel.  
+Reads `coding-standards.md`, generates `plan.md`, waits for validation before any implementation. The validation offers four options, in this order: validate and chain — the plan is written and every open task runs in order, with no further question —, validate — the execution mode is asked next —, validate and engrave — the plan is written, then committed and pushed right away on the current branch, with no confirmation and no merge, before any task; the execution mode is asked next —, or cancel. The order is the same everywhere, linked projects included.  
 L/XL tasks include a commented decomposition block (`T1.1`, `T1.2`, …) to fill in before starting.
 
 ### State 5 — Active
@@ -361,8 +361,9 @@ Execution then happens in a **sealed forge context**: a subagent that receives o
 `<parent>/<BRANCH>`, your language and the order to run the forge skill there. No `project.md`, no coding standards,
 no plan, no log cross the wall in either direction. The linked plan is derived from the mandate alone —
 every task carries its lineage (`T1 — … ← parent T3`), and a need outside the mandate is never turned into
-a task: it is reported back. Once the plan is validated the subagent chains every task without asking
-for an execution mode — validating the plan is the go-ahead. Every blocking question it meets (plan
+a task: it is reported back. Plan validation offers the same four options as anywhere
+else: validate relays the execution-mode question to you, validate and chain skips it, and validate and engrave
+commits and pushes the linked plan in the worktree with no confirmation and no merge, then asks for the mode. Every blocking question it meets (plan
 validation, an approach to choose) is relayed to you verbatim as a `FORGE_QUESTION` and answered through the same
 `AskUserQuestion` you know; the answer goes back to the subagent, whose context stays intact. A relayed
 question carries the **full content** you are deciding on — the whole plan, the whole task description,
@@ -393,7 +394,7 @@ never reads its code. The subagent gets the worktree path, the branch, your lang
 and runs the forge skill there exactly as you would on that branch — project, brief, log and plan read as
 the phases prescribe. The difference with a linked project is that **every choice is relayed to you**:
 the brief objective, the plan validation, the execution mode, the go-ahead before each task, the engrave
-confirmation. "A validated plan is the go-ahead" does not apply in this scope, unless you pick validate
+confirmation. Unlike a linked project, each task waits for its own go-ahead, unless you pick validate
 and chain when validating the plan.
 
 The run ends with a one-line `FORGE_DONE`: nothing is written into the parent plan or log, since nothing

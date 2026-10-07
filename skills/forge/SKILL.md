@@ -74,13 +74,13 @@ Si erreur ou vide (pas de git) : demander un nom de code (ex: `refonte-auth`), l
 **`SCOPE: linked` — projet lié :**
 - BRIEF porte `## Origin` : le mandat du parent, marqueur lu par les phases.
 - BRANCH = valeur de la ligne `BRANCH:` du prompt, de la forme `<parent>/<branche parente>` (`forge/linked-project`, `forge/CU-123`) : le préfixe nomme le dossier du parent, la partie droite est sa branche telle quelle. Tous les chemins `.forge/branch/<BRANCH>/` la contiennent telle quelle, slash compris — jamais le nom nu de la branche parente.
-- Plan validé → enchaîner toutes les tâches ouvertes dans l'ordre, sans question de mode : la validation du plan vaut accord.
-- Livraison non applicable : la livraison du projet lié est proposée au parent lors de son propre « grave ».
+- Plan validé → question `Mode` relayée comme sur toute branche, sauf `Validate and chain`. Aucun feu vert `Start T<n>` entre les tâches.
+- Livraison non applicable, sauf la gravure du plan par `Validate and engrave` (étape 7 de `p4-plan.md`) : la livraison du code du projet lié est proposée au parent lors de son propre « grave ».
 - `FORGE_DONE` : `done` / `blocked` tracés `← parent T<n>`, `out_of_mandate` renseigné.
 
 **`SCOPE: branch` — branche du même dépôt :**
 - Pas de `## Origin`, pas de mandat : `project.md`, standards, brief, log et plan sont lus comme les phases le prescrivent.
-- **Chaque choix est relayé à l'utilisateur** par `FORGE_QUESTION` — objectif du brief, validation du plan, mode (enchaîner / choisir), feu vert avant chaque tâche, `grave`. Le raccourci « plan validé vaut accord » ne s'applique pas, sauf choix explicite de `Validate and chain` à la validation du plan.
+- **Chaque choix est relayé à l'utilisateur** par `FORGE_QUESTION` — objectif du brief, validation du plan, mode (enchaîner / choisir), feu vert avant chaque tâche, `grave`. Chaque tâche attend son feu vert `Start T<n>`, sauf choix explicite de `Validate and chain` à la validation du plan.
 - Livraison applicable, sous ROOT (le worktree) : tableau récapitulatif dans `content`, confirmation `Engrave` relayée.
 - `FORGE_DONE` : `done` / `blocked` sans `← parent`, `out_of_mandate: none`, compte rendu d'une ligne.
 

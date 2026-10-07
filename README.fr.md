@@ -82,13 +82,15 @@ forge/
 ├── skills/                   → chaque sous-dossier est copié dans ~/.claude/skills/<nom>/
 │   ├── forge/
 │   │   ├── SKILL.md
-│   │   └── phases/
-│   │       ├── p0-project.md          (État 0 — Project Init)
-│   │       ├── p1-coding-standards.md (État 1 — Coding Standards Init)
-│   │       ├── p2-brief.md            (État 2 — Brief)
-│   │       ├── p3-log.md              (État 3 — Log)
-│   │       ├── p4-plan.md             (État 4 — Plan)
-│   │       └── p5-resume.md           (État 5 — Actif)
+│   │   ├── phases/
+│   │   │   ├── p0-project.md          (État 0 — Project Init)
+│   │   │   ├── p1-coding-standards.md (État 1 — Coding Standards Init)
+│   │   │   ├── p2-brief.md            (État 2 — Brief)
+│   │   │   ├── p3-log.md              (État 3 — Log)
+│   │   │   ├── p4-plan.md             (État 4 — Plan)
+│   │   │   └── p5-resume.md           (État 5 — Actif)
+│   │   └── scripts/
+│   │       └── engrave.sh             (séquence de livraison : preview / run)
 │   └── forge-clickup/        → extension : ouverture de tâche ClickUp
 │       └── SKILL.md
 ├── hooks/
@@ -109,6 +111,8 @@ forge/
 │   ├── demo.sh
 │   ├── demo.tape
 │   └── README.md             (how to regenerate)
+├── tests/
+│   └── engrave.test.sh       → bash tests/engrave.test.sh, dépôts jetables uniquement
 ├── .gitattributes
 └── .gitignore
 ```
@@ -410,6 +414,13 @@ parent, puisque rien n'a été délégué. Le worktree reste en place — forge 
 ```
 
 Une ou plusieurs branches existantes, citées dans l'ordre voulu (ex : `"grave dev"`, `"grave master"`, `"grave dev master"`). `<BRANCH>` est mergée tour à tour dans chaque branche citée, toujours depuis la branche de départ — jamais en enchaînant une branche citée dans la suivante.
+
+La séquence est exécutée par `skills/forge/scripts/engrave.sh`, jamais recomposée à la main : `preview` affiche
+le tableau récapitulatif sur un template fixe (`| # | Action | Detail |` — `add`, `commit`, `push`, un `merge` par
+branche citée, `checkout` final de retour sur `<BRANCH>`), `run` exécute exactement la même liste, quel que soit
+le nombre de branches. Une branche égale à `<BRANCH>` est écartée ; une branche absente, ou extraite dans un autre
+worktree, est marquée `skipped` ; un working tree propre saute `add` et `commit` et pousse quand même. Lancer
+`bash tests/engrave.test.sh` pour le vérifier.
 
 **Livraison directe :** `livre` / `ship` en tête de message, seul ou suivi uniquement de branches
 existantes (`livre`, `livre dev master`) — supprime la confirmation ; tout autre texte dans le message

@@ -318,23 +318,22 @@ Actions et détail associé — aucune autre :
 
 **Publication hors dépôt :** tout texte publié sur la forge distante à la suite d'une livraison — titre et notes d'une release, description d'un tag ou d'une PR — est rédigé en **anglais**, quelle que soit la langue de l'utilisateur. Le message de commit, lui, suit la langue des commits du dépôt.
 
-⚠️ Aucune commande git — `git add` compris, `<LINKED>` compris — avant la confirmation de l'étape 4, ou avant l'affichage du tableau en livraison directe.
-⚠️ Conflit de merge ou push rejeté → arrêter la séquence, afficher l'erreur telle quelle, ne rien forcer : jamais de `--force`, jamais de résolution de conflit sans demande.
+⚠️ Aucune commande git en écriture — `git add` compris, `<LINKED>` compris — avant la confirmation de l'étape 4, ou avant l'affichage du tableau en livraison directe. Le mode `preview` du script est en lecture seule.
+⚠️ Sortie `2` du script (conflit de merge, push rejeté) → séquence déjà arrêtée par le script ; ne rien forcer : jamais de `--force`, jamais de résolution de conflit sans demande.
 
-Mode délégué `SCOPE: branch` → git opère sous ROOT (le worktree) ; l'étape 4 est un `FORGE_QUESTION`, omis en livraison directe — `header` : `Engrave`, mêmes options, le tableau récapitulatif entier dans `content`. Branche citée extraite dans un autre worktree (`git worktree list --porcelain`) → ligne `merge` marquée `skipped — checked out in another worktree`, ignorée à l'exécution : la fusion se fait depuis ce worktree-là. `SCOPE: linked` → Livraison non applicable (section « Mode délégué » de `SKILL.md`).
+Mode délégué `SCOPE: branch` → `--root` vaut ROOT (le worktree) ; l'étape 4 est un `FORGE_QUESTION`, omis en livraison directe — `header` : `Engrave`, mêmes options, le tableau récapitulatif entier dans `content`. `SCOPE: linked` → Livraison non applicable (section « Mode délégué » de `SKILL.md`).
 
 **Réaction — dans l'ordre :**
 1. Générer automatiquement le message de commit (règles COMMITS GIT : max 150 car., pas de mention Claude) — pas de confirmation sur le message lui-même.
 2. Livraison relayée — pour chaque projet lié (ci-dessous) : poser les deux questions, retenir la séquence du lié.
-3. Afficher le tableau récapitulatif des actions prévues (format ci-dessous), puis un tableau par projet lié retenu.
+3. Exécuter le script en `preview` pour le parent, puis pour chaque projet lié retenu (« Script de livraison » ci-dessous). Afficher chaque sortie telle quelle, celle d'un projet lié titrée par `<LINKED>` en une ligne au-dessus.
 4. Poser une confirmation unique couvrant toute la séquence — parent et projets liés — avec `AskUserQuestion` — `header` : `Engrave`, options `Run the sequence` / `Cancel`.
 5. **Sur `Cancel`** → n'exécuter aucune action, parent et liés. STOP — ne pas continuer.
-6. **Sur `Run the sequence`** → exécuter la séquence entière sans validation intermédiaire, dans l'ordre : `git add`, `git commit`, `git push` sur `<BRANCH>`.
-7. Aucune branche citée → passer directement à l'étape 9.
-8. Pour chaque branche citée, dans l'ordre : branche citée égale à `<BRANCH>` → ignorer sans message ; sinon → checkout de la branche, merge de `<BRANCH>` (toujours la branche de départ, jamais la branche précédente de la chaîne), push.
-9. Revenir sur `<BRANCH>`.
-10. Pour chaque projet lié retenu, dans l'ordre du plan : dérouler les étapes 6 à 9 avec ses branches, `<LINKED_BRANCH>` tenant lieu de `<BRANCH>`, chaque commande préfixée `git -C <LINKED_GIT>`. Échec → afficher l'erreur telle quelle, passer au projet lié suivant ; le parent, déjà livré, n'est jamais repris.
-11. Rendre compte : hash de commit et branches mises à jour, parent puis chaque projet lié.
+6. **Sur `Run the sequence`** → exécuter le script en `run` pour le parent, mêmes arguments qu'à l'étape 3, sans validation intermédiaire.
+   - Sortie `0` → étape 7.
+   - Sortie `1` ou `2` → afficher l'erreur telle quelle, aucun projet lié livré. STOP — ne pas continuer.
+7. Pour chaque projet lié retenu, dans l'ordre du plan : exécuter le script en `run` avec ses arguments. Sortie non nulle → afficher l'erreur telle quelle, passer au projet lié suivant ; le parent, déjà livré, n'est jamais repris.
+8. Rendre compte : lignes `commit`, `updated` et `skipped` de chaque sortie, parent puis chaque projet lié — une branche ignorée est toujours citée avec sa raison.
 
 ⚠️ Aucune écriture dans LOG ni PLAN après la séquence — le compte rendu est du texte seul, le working tree reste tel que la livraison l'a laissé. Ce qui doit être journalisé l'est avant le `git add`.
 
@@ -353,26 +352,21 @@ Mode délégué `SCOPE: branch` → git opère sous ROOT (le worktree) ; l'étap
   - `<LINKED_BRANCH> only` → "Commit and push `<LINKED_BRANCH>`, no merge."
   - `Other branches` → "I'll ask you which ones." — puis demander en texte libre, dans l'ordre voulu.
 - Message de commit du lié : généré depuis les tâches du mandat cochées `[x]` avec sa note `delegated to <LINKED>` — jamais depuis le code de `<LINKED>`, que le parent ne lit pas. Langue : celle des commits de `<LINKED>` (`git -C <LINKED> log -5 --format=%s`).
-- Branche citée absente de `<LINKED>` (`git -C <LINKED> show-ref --verify --quiet refs/heads/<cible>`) → ligne `merge` marquée `skipped — branch missing` dans le tableau, ignorée à l'exécution, jamais créée.
-- Branche citée extraite dans un autre worktree que `<LINKED_GIT>` — `<LINKED>` compris (`git -C <LINKED> worktree list --porcelain`) → ligne `merge` marquée `skipped — checked out in another worktree`, ignorée à l'exécution : la fusion se fait depuis ce dossier-là.
+- Script du lié : `--root <LINKED_GIT>`, `--branch <LINKED_BRANCH>`, son message, ses branches retenues.
 
 ⚠️ Le sous-agent délégué n'est jamais sollicité pour livrer : la livraison relayée est du git pur, exécuté par le parent.
 
-### Format du tableau récapitulatif
+### Script de livraison
 
-Une ligne par action git prévue, dans l'ordre d'exécution. Trois colonnes, en-têtes générés dans la langue de l'utilisateur : numéro d'ordre, action git, détail.
+**Appel :** `bash <SKILL_DIR>/scripts/engrave.sh <preview|run> --root <ROOT> --branch <BRANCH> --message "<message>" [branches citées, dans l'ordre]` — autant de branches qu'en cite l'utilisateur, aucune comprise.
 
-Actions et détail associé — aucune autre :
-- `add` → branche courante
-- `commit` → message généré, entre guillemets
-- `push` → remote et branche poussée
-- `merge` → `<BRANCH>` → branche cible, une ligne par branche citée
-- `checkout` → dernière ligne du tableau uniquement, retour sur `<BRANCH>` ; omise si aucune branche n'est citée
+**Le script porte la séquence entière** — ne jamais la recomposer en commandes git à la main :
+- `preview` → tableau récapitulatif au template fixe `| # | Action | Detail |`, une ligne par action dans l'ordre d'exécution : `add`, `commit`, `push`, un `merge` par branche citée, `checkout` final de retour sur `<BRANCH>`. N'écrit rien.
+- `run` → exécute ces actions dans cet ordre ; chaque `merge` fusionne toujours `<BRANCH>`, jamais la branche précédente de la chaîne, puis pousse la cible. Premier échec git → arrêt, erreur git sur la sortie d'erreur.
+- Branche citée égale à `<BRANCH>` → absente du tableau. Branche absente → `skipped — branch missing`, jamais créée. Branche extraite dans un autre worktree → `skipped — checked out in another worktree`. Working tree propre → `add` et `commit` en `skipped — nothing to commit`, le `push` reste.
+- Sorties : `0` succès · `1` usage ou garde (branche courante différente de `--branch`, message vide ou au-delà de 150 caractères) · `2` échec git.
 
-Tableau d'un projet lié : mêmes colonnes, même contenu, titré par `<LINKED>` en une ligne au-dessus ; le détail de chaque ligne porte le chemin et la branche liée (`add` → `<LINKED_GIT>` · `<LINKED_BRANCH>`, `merge` → `<LINKED_BRANCH>` → cible).
-
-⚠️ Jamais de ligne `checkout` pour les changements de branche de l'étape 8 : ils restent implicites. Seul le retour final sur `<BRANCH>` est listé.
-⚠️ Jamais de liste de fichiers modifiés, jamais de décompte de lignes.
+⚠️ Sortie de `preview` affichée telle quelle : jamais retraduite, jamais complétée d'une liste de fichiers ni d'un décompte de lignes.
 
 ---
 

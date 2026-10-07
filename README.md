@@ -83,13 +83,15 @@ forge/
 ├── skills/                   → each subfolder is copied to ~/.claude/skills/<name>/
 │   ├── forge/
 │   │   ├── SKILL.md
-│   │   └── phases/
-│   │       ├── p0-project.md          (State 0 — Project Init)
-│   │       ├── p1-coding-standards.md (State 1 — Coding Standards Init)
-│   │       ├── p2-brief.md            (State 2 — Brief)
-│   │       ├── p3-log.md              (State 3 — Log)
-│   │       ├── p4-plan.md             (State 4 — Plan)
-│   │       └── p5-resume.md           (State 5 — Active)
+│   │   ├── phases/
+│   │   │   ├── p0-project.md          (State 0 — Project Init)
+│   │   │   ├── p1-coding-standards.md (State 1 — Coding Standards Init)
+│   │   │   ├── p2-brief.md            (State 2 — Brief)
+│   │   │   ├── p3-log.md              (State 3 — Log)
+│   │   │   ├── p4-plan.md             (State 4 — Plan)
+│   │   │   └── p5-resume.md           (State 5 — Active)
+│   │   └── scripts/
+│   │       └── engrave.sh             (shipping sequence: preview / run)
 │   └── forge-clickup/        → extension: ClickUp task kickoff
 │       └── SKILL.md
 ├── hooks/
@@ -110,6 +112,8 @@ forge/
 │   ├── demo.sh
 │   ├── demo.tape
 │   └── README.md             (how to regenerate)
+├── tests/
+│   └── engrave.test.sh       → bash tests/engrave.test.sh, throwaway repositories only
 ├── .gitattributes
 └── .gitignore
 ```
@@ -409,6 +413,13 @@ the branch is engraved.
 ```
 
 One or more existing branches, named in the desired order (e.g. `"grave dev"`, `"grave master"`, `"grave dev master"`). `<BRANCH>` is merged into each named branch in turn, always from the starting branch — never chaining one named branch into the next.
+
+The sequence is run by `skills/forge/scripts/engrave.sh`, never rebuilt by hand: `preview` prints the recap
+table on a fixed template (`| # | Action | Detail |` — `add`, `commit`, `push`, one `merge` per named branch,
+final `checkout` back to `<BRANCH>`), `run` executes the very same list, whatever the number of branches. A
+branch equal to `<BRANCH>` is left out; a missing branch, or one checked out in another worktree, is marked
+`skipped`; a clean working tree skips `add` and `commit` and still pushes. Run `bash tests/engrave.test.sh`
+to check it.
 
 **Direct shipping:** `ship` / `livre` at the start of the message, alone or followed only by existing
 branches (`ship`, `ship dev master`) — skips the confirmation; any other text in the message means it is

@@ -15,13 +15,15 @@ forge/
 ├── skills/                        → chaque dossier copié vers ~/.claude/skills/<nom>/
 │   ├── forge/
 │   │   ├── SKILL.md               (machine à états : branche → garde main/master → détection d'état ; mode délégué)
-│   │   └── phases/
-│   │       ├── p0-project.md         (État 0 — Project Init)
-│   │       ├── p1-coding-standards.md (État 1)
-│   │       ├── p2-brief.md           (État 2 — Brief)
-│   │       ├── p3-log.md             (État 3 — Log)
-│   │       ├── p4-plan.md            (État 4 — Plan)
-│   │       └── p5-resume.md          (État 5 — Actif)
+│   │   ├── phases/
+│   │   │   ├── p0-project.md         (État 0 — Project Init)
+│   │   │   ├── p1-coding-standards.md (État 1)
+│   │   │   ├── p2-brief.md           (État 2 — Brief)
+│   │   │   ├── p3-log.md             (État 3 — Log)
+│   │   │   ├── p4-plan.md            (État 4 — Plan)
+│   │   │   └── p5-resume.md          (État 5 — Actif)
+│   │   └── scripts/
+│   │       └── engrave.sh            (séquence git de la livraison : preview / run, appelée par p5-resume.md)
 │   └── forge-clickup/
 │       └── SKILL.md               (guichet ClickUp : ouvre la tâche, crée la branche, passe la main à forge)
 ├── hooks/
@@ -39,6 +41,8 @@ forge/
 │   ├── demo.tape              (pilote l'enregistrement vhs)
 │   ├── demo.gif               (généré — jamais édité à la main)
 │   └── README.md              (prérequis de régénération, WSL requis)
+├── tests/
+│   └── engrave.test.sh        (tests du script de livraison, dépôts jetables : bash tests/engrave.test.sh)
 ├── README.md                  (documentation, anglais)
 └── README.fr.md               (même documentation, français)
 ```
@@ -62,6 +66,7 @@ Fichiers générés dans **chaque projet cible** par le skill (pas dans ce dép�
 - `install/install.ps1` / `install/install.sh` — déploient skills + hook vers `~/.claude/` et fusionnent `settings.json`
 - `hooks/ps1/forge-precompact.ps1` / `hooks/bash/forge-precompact.sh` — hook `PreCompact`, injecte l'état du plan courant dans le contexte compacté
 - `skills/forge/phases/p5-resume.md` — porte les trois commandes de l'état actif : Délégation vers un projet lié, Livraison (`grave` / `engrave`, projets liés compris) et Clôture de tâche
+- `skills/forge/scripts/engrave.sh` — séquence git de la Livraison, `preview` (tableau au template fixe) puis `run` ; toute évolution de la séquence passe par ce script et `tests/engrave.test.sh`
 
 ## Detected conventions
 - Nommage : phases numérotées `pN-<nom>.md`, sections `##`/`###` avec mots-clés stricts (« Condition », « Réaction », « STOP »)

@@ -26,6 +26,7 @@ Si erreur ou vide (pas de git) : demander un nom de code (ex: `refonte-auth`), l
 
 ## Chemins (substituer <BRANCH> par la valeur réelle)
 - ROOT : racine du projet — le dossier courant ; en mode délégué, le dossier transmis par le parent (worktree du projet lié ou de la branche). Tout chemin ci-dessous et toute commande git se résolvent sous ROOT.
+- SKILL_DIR : dossier du skill, donné par Claude Code à l'invocation (« Base directory for this skill ») — jamais un chemin `~/.claude` écrit en dur. Seuls les scripts du skill s'y résolvent, jamais les chemins ci-dessous.
 - PROJECT : `.forge/project.md`
 - CODING_STANDARDS : `.forge/coding-standards.md`
 - BRIEF : `.forge/branch/<BRANCH>/brief.md`

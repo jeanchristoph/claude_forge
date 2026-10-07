@@ -66,7 +66,7 @@ Fichiers générés dans **chaque projet cible** par le skill (pas dans ce dép�
 - `install/install.ps1` / `install/install.sh` — déploient skills + hook vers `~/.claude/` et fusionnent `settings.json`
 - `hooks/ps1/forge-precompact.ps1` / `hooks/bash/forge-precompact.sh` — hook `PreCompact`, injecte l'état du plan courant dans le contexte compacté
 - `skills/forge/phases/p5-resume.md` — porte les trois commandes de l'état actif : Délégation vers un projet lié, Livraison (`grave` / `engrave`, projets liés compris) et Clôture de tâche
-- `skills/forge/scripts/engrave.sh` — séquence git de la Livraison, `preview` (JSON, mis en page par le skill) puis `run` ; toute évolution de la séquence passe par ce script et `tests/engrave.test.sh`
+- `skills/forge/scripts/engrave.sh` — séquence git de la Livraison, `preview` puis `run`, tous deux en JSON mis en page par le skill (tableau récapitulatif, compte rendu) ; toute évolution de la séquence passe par ce script et `tests/engrave.test.sh`
 
 ## Detected conventions
 - Nommage : phases numérotées `pN-<nom>.md`, sections `##`/`###` avec mots-clés stricts (« Condition », « Réaction », « STOP »)

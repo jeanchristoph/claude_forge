@@ -167,8 +167,7 @@ test_run_ships_and_merges_every_target() {
   git -C "$REMOTE" merge-base --is-ancestor "$shipped" "$(remote_head dev)" || exit 1
   git -C "$REMOTE" merge-base --is-ancestor "$shipped" "$(remote_head master)" || exit 1
   assert_equals "ship" "$(git -C "$WORK" branch --show-current)"
-  assert_contains "commit $(git -C "$WORK" rev-parse --short ship)" "$output"
-  assert_contains "updated: ship, dev, master" "$output"
+  assert_equals "{\"branch\":\"ship\",\"commit\":\"$(git -C "$WORK" rev-parse --short ship)\",\"updated\":[\"ship\",\"dev\",\"master\"],\"skipped\":[]}" "$output"
 }
 
 test_run_merges_starting_branch_never_previous_target() {
@@ -196,7 +195,7 @@ test_run_with_clean_tree_only_pushes_and_merges() {
   assert_equals 0 $?
   assert_equals "edit local.txt" "$(git -C "$WORK" log -1 --format=%s ship)"
   assert_equals "$(git -C "$WORK" rev-parse ship)" "$(remote_head ship)"
-  assert_contains "commit none — nothing to commit" "$output"
+  assert_contains '"commit":null' "$output"
 }
 
 test_run_never_creates_missing_branch() {
@@ -213,15 +212,15 @@ test_run_reports_every_skipped_branch_with_its_reason() {
   local output
   output=$(engrave run --root "$WORK" --branch ship --message "m" ghost dev master)
   assert_equals 0 $?
-  assert_contains "updated: ship, master" "$output"
-  assert_contains "skipped: ghost (branch missing), dev (checked out in another worktree)" "$output"
+  assert_contains '"updated":["ship","master"]' "$output"
+  assert_contains '"skipped":[{"branch":"ghost","reason":"branch missing"},{"branch":"dev","reason":"checked out in another worktree"}]' "$output"
 }
 
-test_run_without_skip_prints_no_skipped_line() {
+test_run_without_skip_reports_empty_skipped_list() {
   printf 'feature\n' > "$WORK/feature.txt"
   local output
   output=$(engrave run --root "$WORK" --branch ship --message "m" dev)
-  assert_not_contains "skipped:" "$output"
+  assert_contains '"skipped":[]}' "$output"
 }
 
 test_run_stops_at_first_merge_conflict() {
@@ -330,7 +329,7 @@ run_test test_run_without_target_stays_on_starting_branch "sans branche citée, 
 run_test test_run_with_clean_tree_only_pushes_and_merges "working tree propre : aucun commit, push et merges exécutés"
 run_test test_run_never_creates_missing_branch "ne crée jamais une branche citée absente et livre les suivantes"
 run_test test_run_reports_every_skipped_branch_with_its_reason "le compte rendu liste chaque branche ignorée avec sa raison"
-run_test test_run_without_skip_prints_no_skipped_line "sans branche ignorée, le compte rendu n'a pas de ligne skipped"
+run_test test_run_without_skip_reports_empty_skipped_list "sans branche ignorée, le compte rendu porte une liste skipped vide"
 run_test test_run_stops_at_first_merge_conflict "s'arrête au premier conflit de merge sans toucher les branches suivantes"
 run_test test_run_stops_on_rejected_push "s'arrête sur un push rejeté et affiche l'erreur git"
 run_test test_run_from_another_directory_with_root "livre un dépôt situé ailleurs grâce à --root"

@@ -57,6 +57,12 @@
 **Description:** Étapes 3 et 4 de la Livraison : le tableau récapitulatif, au format actuel (`#` / action git / détail, une ligne par action du JSON de `preview`), est le dernier texte du tour, juste avant l'`AskUserQuestion` `Engrave` — aucun appel d'outil entre les deux, `preview` et `status` exécutés avant. Rien d'autre d'imposé autour du tableau ; la question garde sa phrase seule. Mode délégué `SCOPE: branch` : le tableau dans `content`, inchangé. `engrave.sh` inchangé. Section Shipping des deux README, `### Changed` dans `[Unreleased]` du CHANGELOG.
 [x] Corrigé : gabarit figé — tableau dans la réponse, liste numérotée en dur dans `question` (texte avant la question masqué à l'écran), jamais de `preview` ; README ×2, CHANGELOG réécrit.
 
+### T9 — `engrave.sh run` renvoie du JSON, gabarit figé du compte rendu final
+**Effort:** S
+**Files:** `skills/forge/scripts/engrave.sh`, `tests/engrave.test.sh`, `skills/forge/phases/p5-resume.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`, `.forge/project.md`
+**Description:** En cas de succès, `run` écrit un objet JSON sur une ligne au lieu des lignes `commit` / `updated` / `skipped` : `{"branch":…,"commit":"<hash court>"|null,"updated":[…],"skipped":[{"branch":…,"reason":…}]}`. `commit` vaut `null` si le working tree était propre et `skipped` vaut `[]` si rien n'est ignoré. `render_report` est réécrit sur `json_string`, sans `jq`. Gardes, codes de sortie, arrêt sur échec et erreurs sur stderr inchangés. Tests de `run` réécrits sur le JSON. Dans `p5-resume.md`, l'étape 8 renvoie vers un « Gabarit — compte rendu de livraison » : un tableau par projet (branche / résultat / détail), départ et commit, branches fusionnées, branches ignorées avec leur raison, parent puis chaque `<LINKED>` ; JSON jamais affiché brut. README ×2 (Shipping), `### Changed` au CHANGELOG, `project.md`.
+[x] `run` en JSON, 26 tests verts ; gabarit du compte rendu en tableaux (un par projet, une ligne par branche) dans `p5-resume.md`, README ×2, CHANGELOG, `project.md`.
+
 ## Risks
 - Appeler le script déclenche une demande de permission Bash, sauf en mode auto. En livraison directe, cette demande peut bloquer la séquence au-delà des 60 s de la question `Ship`. Aucune règle `permissions.allow` n'est ajoutée : autoriser d'office un script qui commit et pousse irait contre la règle des commits.
 - Sous Windows, le script dépend de Git Bash, comme le reste du skill.
@@ -75,4 +81,5 @@ None
 | T6 — Tableau dans le texte de la question `Engrave` | S | [x] |
 | T7 — `preview` en JSON, mise en page par Claude | M | [x] |
 | T8 — Tableau toujours affiché à la confirmation `grave` | S | [x] |
-| **Total** | **2M + 6S** | |
+| T9 — `run` en JSON, gabarit du compte rendu final | S | [x] |
+| **Total** | **2M + 7S** | |

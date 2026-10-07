@@ -1,3 +1,5 @@
+- [2026-10-07 19:50] T9 reworked at user request: delivery report rendered as tables — one per project, columns branch / result / detail, one row per branch; README ×2, CHANGELOG adjusted.
+- [2026-10-07 19:40] T9 added and done: `engrave.sh run` returns one-line JSON (`commit` hash or null, `updated`, `skipped`); fixed template « Gabarit — compte rendu de livraison » in p5-resume.md; 26 tests green; README ×2, CHANGELOG, project.md.
 - [2026-10-07 19:05] T8: text before the `Engrave` question confirmed hidden on user's screen — actions hard-coded as a numbered list in `question` (user choice over end-of-turn `go`); reply table kept.
 - [2026-10-07 18:55] T8 preview rendering dropped at user request: recap table as Markdown, right above the `Engrave` question, as on master; fixed template kept (table + question, no `preview`).
 - [2026-10-07 18:45] T8 corrected: text before the `Engrave` question was not shown on screen — recap table copied as aligned plain text into the `preview` of `Run the sequence`; fixed template « Gabarit — confirmation `Engrave` » added; README ×2, CHANGELOG rewritten.

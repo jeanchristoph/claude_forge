@@ -1,7 +1,7 @@
 #!/bin/bash
 # Séquence git de la livraison forge (grave / engrave / ship).
 #   preview → décrit la séquence en JSON sur une ligne, n'écrit rien
-#   run     → exécute la séquence, s'arrête au premier échec git
+#   run     → exécute la séquence, s'arrête au premier échec git, rend compte en JSON sur une ligne
 # Usage : engrave.sh <preview|run> --branch <BRANCH> --message <msg> [--root <dir>] [target...]
 # Sortie : 0 succès · 1 usage ou garde · 2 échec git (conflit, push rejeté)
 
@@ -174,22 +174,31 @@ run_action() {
   esac
 }
 
+commit_json() {
+  [ -n "${ACTION_SKIPS[1]}" ] && { printf null; return; }
+  json_string "$(git_in_root rev-parse --short "$BRANCH")"
+}
+
+render_skipped_target() {
+  printf '{"branch":%s,"reason":%s}' "$(json_string "${ACTION_TARGETS[$1]}")" \
+    "$(json_string "${ACTION_SKIPS[$1]#skipped — }")"
+}
+
+# Données seules, comme render_json : le compte rendu est mis en page par le skill.
 render_report() {
-  local commit_line="commit none — nothing to commit"
-  [ -z "${ACTION_SKIPS[1]}" ] && commit_line="commit $(git_in_root rev-parse --short "$BRANCH")"
-  echo "$commit_line"
-  local updated=$BRANCH skipped="" i
+  local updated skipped="" separator="" i
+  updated=$(json_string "$BRANCH")
   for i in "${!ACTION_KINDS[@]}"; do
     [ "${ACTION_KINDS[$i]}" = merge ] || continue
     if [ -z "${ACTION_SKIPS[$i]}" ]; then
-      updated="$updated, ${ACTION_TARGETS[$i]}"
+      updated+=",$(json_string "${ACTION_TARGETS[$i]}")"
     else
-      skipped="$skipped, ${ACTION_TARGETS[$i]} (${ACTION_SKIPS[$i]#skipped — })"
+      skipped+="$separator$(render_skipped_target "$i")"
+      separator=","
     fi
   done
-  echo "updated: $updated"
-  [ -n "$skipped" ] && echo "skipped: ${skipped#, }"
-  return 0
+  printf '{"branch":%s,"commit":%s,"updated":[%s],"skipped":[%s]}\n' \
+    "$(json_string "$BRANCH")" "$(commit_json)" "$updated" "$skipped"
 }
 
 run_actions() {

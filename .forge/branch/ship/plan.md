@@ -33,9 +33,26 @@
 **Description:** Après validation par l'utilisateur des tests de T1 à T3 en l'état : `grave` / `engrave` adoptent le déroulé actuel de la livraison directe — tableau `preview` affiché comme compte rendu, `run` aussitôt, sans question `Engrave` (mode délégué `SCOPE: branch` compris) ; le déclencheur reste strict (le message commence par `grave` / `engrave`, branches existantes uniquement). Commandes `ship` / `livre` et paragraphe « Livraison directe » supprimés ; questions `Linked` / `Linked branches` gardées. `engrave.sh` inchangé : `preview` reste disponible pour une future commande de dry run, à nommer plus tard. Docs : puce « Shipping shortcuts », section Livraison et intro des deux README ; entrée « Direct shipping » de `[Unreleased]` dans le CHANGELOG réécrite. Au merge de `fix` : écarter sa question `Ship` (60 s).
 [!] blocked — en attente des tests de l'utilisateur sur T1 à T3 en l'état.
 
+### T5 — Tableau récapitulatif dans la question `Engrave`
+**Effort:** S
+**Files:** `skills/forge/phases/p5-resume.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Étape 4 de la Livraison : la sortie de `preview` — parent puis chaque projet lié titré par `<LINKED>` — est recopiée telle quelle dans le champ `preview` de l'option `Run the sequence` : la boîte de dialogue masque le texte qui la précède. L'affichage texte de l'étape 3 reste. Mode délégué `SCOPE: branch` : le tableau part déjà dans `content`, le parent le recopie dans `preview` au relais. Entrée `### Fixed` dans `[Unreleased]` du CHANGELOG. Après T4 (plus de question `Engrave` pour `grave`), le tableau s'affiche en compte rendu, sans dialogue pour le masquer.
+[x] `preview` de `Run the sequence` + relais `SCOPE: branch`, README ×2, `### Fixed` au CHANGELOG. Remplacé par T6.
+
+### T6 — Tableau récapitulatif dans le texte de la question `Engrave`
+**Effort:** S
+**Files:** `skills/forge/phases/p5-resume.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Étape 4 de la Livraison : la sortie de `preview` (parent puis chaque projet lié titré par `<LINKED>`) est recopiée telle quelle en tête du champ `question` de `AskUserQuestion`, suivie d'une ligne vide et de la phrase de question. Le champ `preview` de `Run the sequence` est retiré, parce qu'il casse le rendu du tableau. Le `⚠️` sur la boîte de dialogue qui masque le texte précédent reste, avec le nouveau remède. L'affichage texte de l'étape 3 ne change pas. En mode délégué `SCOPE: branch`, le parent recopie le `content` en tête de la question. Dans les deux README, la mention du `preview` est remplacée ; l'entrée `### Fixed` de T5 dans le CHANGELOG est réécrite.
+[x] Tableau en tête de `question`, `preview` retiré, README ×2, CHANGELOG `### Fixed` réécrit. Remplacé par T7 : tableau dans la réponse seule, comme sur master.
+
+### T7 — `engrave.sh preview` renvoie du JSON, Claude met en forme
+**Effort:** M
+**Files:** `skills/forge/scripts/engrave.sh`, `tests/engrave.test.sh`, `skills/forge/phases/p5-resume.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`, `.forge/project.md`
+**Description:** `preview` écrit un objet JSON sur une ligne (`branch`, puis `step`, `action`, `detail`, `skip` par action), sans `jq` ; `json_string` échappe `"`, `\` et les contrôles ; `render_table` et `escape_cell` supprimées ; `run`, gardes et codes de sortie inchangés. Tests de `preview` réécrits sur le JSON, échappement couvert. `p5-resume.md` fixe un seul rendu : le tableau récapitulatif de master (en-têtes dans la langue de l'utilisateur) dans la réponse ; la question `Engrave` ne porte que sa phrase, comme sur master (T5/T6 annulées). JSON jamais affiché brut. README ×2, CHANGELOG (`### Fixed` de T5/T6 retiré), `project.md`.
+[x] 26 tests verts, rendu de master restauré, docs à jour.
+
 ## Risks
 - Appeler le script déclenche une demande de permission Bash, sauf en mode auto. En livraison directe, cette demande peut bloquer la séquence au-delà des 60 s de la question `Ship`. Aucune règle `permissions.allow` n'est ajoutée : autoriser d'office un script qui commit et pousse irait contre la règle des commits.
-- En-têtes du tableau figés en anglais : rupture assumée avec « en-têtes générés dans la langue de l'utilisateur ».
 - Sous Windows, le script dépend de Git Bash, comme le reste du skill.
 
 ## Deployment
@@ -48,4 +65,7 @@ None
 | T2 — Brancher `p5-resume.md` sur le script | S | [x] |
 | T3 — Documentation et métadonnées | S | [x] |
 | T4 — `grave` en mode `ship`, suppression de `ship` / `livre` | S | [!] blocked — tests utilisateur |
-| **Total** | **M + 3S** | |
+| T5 — Tableau dans la question `Engrave` | S | [x] |
+| T6 — Tableau dans le texte de la question `Engrave` | S | [x] |
+| T7 — `preview` en JSON, mise en page par Claude | M | [x] |
+| **Total** | **2M + 5S** | |

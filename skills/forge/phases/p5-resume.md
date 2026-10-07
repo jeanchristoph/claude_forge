@@ -326,8 +326,8 @@ Mode délégué `SCOPE: branch` → `--root` vaut ROOT (le worktree) ; l'étape 
 **Réaction — dans l'ordre :**
 1. Générer automatiquement le message de commit (règles COMMITS GIT : max 150 car., pas de mention Claude) — pas de confirmation sur le message lui-même.
 2. Livraison relayée — pour chaque projet lié (ci-dessous) : poser les deux questions, retenir la séquence du lié.
-3. Exécuter le script en `preview` pour le parent, puis pour chaque projet lié retenu (« Script de livraison » ci-dessous). Afficher chaque sortie telle quelle, celle d'un projet lié titrée par `<LINKED>` en une ligne au-dessus.
-4. Poser une confirmation unique couvrant toute la séquence — parent et projets liés — avec `AskUserQuestion` — `header` : `Engrave`, options `Run the sequence` / `Cancel`.
+3. Exécuter le script en `preview` pour le parent, puis pour chaque projet lié retenu (« Script de livraison » ci-dessous). Afficher chaque sortie rendue en tableau récapitulatif, celle d'un projet lié titrée par `<LINKED>` en une ligne au-dessus.
+4. Poser une confirmation unique couvrant toute la séquence — parent et projets liés — avec `AskUserQuestion` — `header` : `Engrave`, options `Run the sequence` / `Cancel`. Champ `question` = la phrase de question seule : le tableau reste dans la réponse, jamais dans `question` ni dans le champ `preview` d'une option.
 5. **Sur `Cancel`** → n'exécuter aucune action, parent et liés. STOP — ne pas continuer.
 6. **Sur `Run the sequence`** → exécuter le script en `run` pour le parent, mêmes arguments qu'à l'étape 3, sans validation intermédiaire.
    - Sortie `0` → étape 7.
@@ -361,12 +361,14 @@ Mode délégué `SCOPE: branch` → `--root` vaut ROOT (le worktree) ; l'étape 
 **Appel :** `bash <SKILL_DIR>/scripts/engrave.sh <preview|run> --root <ROOT> --branch <BRANCH> --message "<message>" [branches citées, dans l'ordre]` — autant de branches qu'en cite l'utilisateur, aucune comprise.
 
 **Le script porte la séquence entière** — ne jamais la recomposer en commandes git à la main :
-- `preview` → tableau récapitulatif au template fixe `| # | Action | Detail |`, une ligne par action dans l'ordre d'exécution : `add`, `commit`, `push`, un `merge` par branche citée, `checkout` final de retour sur `<BRANCH>`. N'écrit rien.
+- `preview` → un objet JSON sur une ligne : `{"branch":"<BRANCH>","actions":[{"step":1,"action":"add","detail":"<BRANCH>","skip":null},…]}`, une action par étape dans l'ordre d'exécution : `add`, `commit` (détail = message), `push`, un `merge` par branche citée, `checkout` final de retour sur `<BRANCH>`. `skip` = raison d'une action ignorée, sinon `null`. N'écrit rien.
 - `run` → exécute ces actions dans cet ordre ; chaque `merge` fusionne toujours `<BRANCH>`, jamais la branche précédente de la chaîne, puis pousse la cible. Premier échec git → arrêt, erreur git sur la sortie d'erreur.
-- Branche citée égale à `<BRANCH>` → absente du tableau. Branche absente → `skipped — branch missing`, jamais créée. Branche extraite dans un autre worktree → `skipped — checked out in another worktree`. Working tree propre → `add` et `commit` en `skipped — nothing to commit`, le `push` reste.
+- Branche citée égale à `<BRANCH>` → absente des actions. Branche absente → `skip` `branch missing`, jamais créée. Branche extraite dans un autre worktree → `skip` `checked out in another worktree`. Working tree propre → `add` et `commit` en `skip` `nothing to commit`, le `push` reste.
 - Sorties : `0` succès · `1` usage ou garde (branche courante différente de `--branch`, message vide ou au-delà de 150 caractères) · `2` échec git.
 
-⚠️ Sortie de `preview` affichée telle quelle : jamais retraduite, jamais complétée d'une liste de fichiers ni d'un décompte de lignes.
+**Rendu de `preview` — tableau récapitulatif, aucun autre format :** tableau Markdown, trois colonnes, en-têtes générés dans la langue de l'utilisateur : numéro d'ordre, action git, détail. Une ligne par action dans l'ordre du JSON : ``| <step> | `<action>` | <detail> |`` ; détail de `commit` entre guillemets ; `skip` non nul → ` — skipped — <skip>` ajouté au détail ; `|` du détail échappé en `\|`.
+
+⚠️ JSON jamais affiché brut ; tableau jamais complété d'une liste de fichiers ni d'un décompte de lignes.
 
 ---
 

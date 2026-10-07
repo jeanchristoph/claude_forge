@@ -1,3 +1,8 @@
+- [2026-10-07 18:05] Layout back to master: recap table (headers in user language) in the reply only, `Engrave` question holds its sentence alone — T5/T6 in-question rendering dropped, CHANGELOG `### Fixed` removed.
+- [2026-10-07 17:55] T7 added and done: `engrave.sh preview` returns one-line JSON, the skill renders it (recap table at step 3, plain numbered list in the `Engrave` question); 26 tests green.
+- [2026-10-07 17:45] Decision: JSON + Claude layout chosen over script-side column alignment — global rule « SCRIPT ↔ IA » added to `~/.claude/CLAUDE.md` at user request.
+- [2026-10-07 16:35] T6 added and done: engrave recap table moved to the top of the `question` field (option `preview` broke the table rendering); README ×2, CHANGELOG `### Fixed` rewritten.
+- [2026-10-07 16:20] T5 added and done: engrave recap table copied into the `preview` field of `Run the sequence` (dialog hid the text table); README ×2, CHANGELOG `### Fixed`.
 - [2026-10-07 16:05] Renamed `scripts/grave.sh` → `scripts/engrave.sh`, tests → `tests/engrave.test.sh`, error prefix `engrave:` — English verb (`grave` is a noun in English); plan, READMEs, CHANGELOG, project.md updated; 25 tests green.
 - [2026-10-07 16:00] Renamed `scripts/ship.sh` → `scripts/grave.sh`, tests → `tests/grave.test.sh`, error prefix `grave:`; 25 tests green.
 - [2026-10-07 15:55] T4 added blocked: once user tests T1–T3 as is, `grave` takes the `ship` flow (no confirmation) and `ship` / `livre` are removed; `ship.sh` untouched, `preview` kept for a future dry-run command (name not chosen: trace / esquisse / grave? rejected).

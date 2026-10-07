@@ -1,6 +1,6 @@
 #!/bin/bash
 # Séquence git de la livraison forge (grave / engrave / ship).
-#   preview → affiche le tableau récapitulatif, n'écrit rien
+#   preview → décrit la séquence en JSON sur une ligne, n'écrit rien
 #   run     → exécute la séquence, s'arrête au premier échec git
 # Usage : engrave.sh <preview|run> --branch <BRANCH> --message <msg> [--root <dir>] [target...]
 # Sortie : 0 succès · 1 usage ou garde · 2 échec git (conflit, push rejeté)
@@ -118,7 +118,7 @@ build_actions() {
   local commit_skip=""
   is_tree_clean && commit_skip=$SKIP_NOTHING_TO_COMMIT
   add_action add "$BRANCH" "" "$commit_skip"
-  add_action commit "\"$MESSAGE\"" "" "$commit_skip"
+  add_action commit "$MESSAGE" "" "$commit_skip"
   add_action push "$(push_remote "$BRANCH") · $BRANCH" "" ""
   local target has_target=""
   for target in ${TARGETS[@]+"${TARGETS[@]}"}; do
@@ -129,19 +129,31 @@ build_actions() {
   [ -n "$has_target" ] && add_action checkout "$BRANCH" "" ""
 }
 
-escape_cell() {
-  printf '%s' "${1//|/\\|}"
+# Chaîne JSON sans jq (absent de Git Bash) : barre oblique inverse, guillemet et contrôles échappés.
+json_string() {
+  local text=${1//\\/\\\\}
+  text=${text//\"/\\\"}
+  text=${text//$'\n'/\\n}
+  text=${text//$'\r'/\\r}
+  text=${text//$'\t'/\\t}
+  printf '"%s"' "$text"
 }
 
-render_table() {
-  echo "| # | Action | Detail |"
-  echo "|---|---|---|"
-  local i detail
+render_json_action() {
+  local skip=${ACTION_SKIPS[$1]#skipped — } skip_json=null
+  [ -n "$skip" ] && skip_json=$(json_string "$skip")
+  printf '{"step":%d,"action":%s,"detail":%s,"skip":%s}' $(($1 + 1)) \
+    "$(json_string "${ACTION_KINDS[$1]}")" "$(json_string "${ACTION_DETAILS[$1]}")" "$skip_json"
+}
+
+# Données seules : la mise en page revient au skill (« Script de livraison » de p5-resume.md).
+render_json() {
+  local i separator="" actions=""
   for i in "${!ACTION_KINDS[@]}"; do
-    detail=$(escape_cell "${ACTION_DETAILS[$i]}")
-    [ -n "${ACTION_SKIPS[$i]}" ] && detail="$detail — ${ACTION_SKIPS[$i]}"
-    echo "| $((i + 1)) | \`${ACTION_KINDS[$i]}\` | $detail |"
+    actions+="$separator$(render_json_action "$i")"
+    separator=","
   done
+  printf '{"branch":%s,"actions":[%s]}\n' "$(json_string "$BRANCH")" "$actions"
 }
 
 push_branch() {
@@ -197,7 +209,7 @@ main() {
   validate_arguments
   build_actions
   case $MODE in
-    preview) render_table ;;
+    preview) render_json ;;
     run)     run_actions ;;
   esac
 }

@@ -414,9 +414,10 @@ the branch is engraved.
 
 One or more existing branches, named in the desired order (e.g. `"grave dev"`, `"grave master"`, `"grave dev master"`). `<BRANCH>` is merged into each named branch in turn, always from the starting branch — never chaining one named branch into the next.
 
-The sequence is run by `skills/forge/scripts/engrave.sh`, never rebuilt by hand: `preview` prints the recap
-table on a fixed template (`| # | Action | Detail |` — `add`, `commit`, `push`, one `merge` per named branch,
-final `checkout` back to `<BRANCH>`), `run` executes the very same list, whatever the number of branches. A
+The sequence is run by `skills/forge/scripts/engrave.sh`, never rebuilt by hand: `preview` returns the planned
+actions as JSON (`add`, `commit`, `push`, one `merge` per named branch, final `checkout` back to `<BRANCH>`) and
+Forge lays them out as the recap table (`#`, action, detail — headers in your language) in its reply; `run` executes the very same list, whatever the number of branches.
+The script does the work, the model does the layout. A
 branch equal to `<BRANCH>` is left out; a missing branch, or one checked out in another worktree, is marked
 `skipped`; a clean working tree skips `add` and `commit` and still pushes. Run `bash tests/engrave.test.sh`
 to check it.

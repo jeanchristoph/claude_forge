@@ -79,19 +79,14 @@ test_preview_without_target() {
   printf 'change\n' >> "$WORK/readme.txt"
   local output
   output=$(engrave preview --root "$WORK" --branch ship --message "Livre la branche")
-  assert_equals "| # | Action | Detail |
-|---|---|---|
-| 1 | \`add\` | ship |
-| 2 | \`commit\` | \"Livre la branche\" |
-| 3 | \`push\` | origin · ship |" "$output"
+  assert_equals '{"branch":"ship","actions":[{"step":1,"action":"add","detail":"ship","skip":null},{"step":2,"action":"commit","detail":"Livre la branche","skip":null},{"step":3,"action":"push","detail":"origin · ship","skip":null}]}' "$output"
 }
 
 test_preview_with_one_target() {
   printf 'change\n' >> "$WORK/readme.txt"
   local output
   output=$(engrave preview --root "$WORK" --branch ship --message "m" master)
-  assert_contains "| 4 | \`merge\` | ship → master |" "$output"
-  assert_contains "| 5 | \`checkout\` | ship |" "$output"
+  assert_contains '{"step":4,"action":"merge","detail":"ship → master","skip":null},{"step":5,"action":"checkout","detail":"ship","skip":null}]}' "$output"
 }
 
 test_preview_with_three_targets() {
@@ -99,10 +94,7 @@ test_preview_with_three_targets() {
   printf 'change\n' >> "$WORK/readme.txt"
   local output
   output=$(engrave preview --root "$WORK" --branch ship --message "m" dev master release)
-  assert_contains "| 4 | \`merge\` | ship → dev |
-| 5 | \`merge\` | ship → master |
-| 6 | \`merge\` | ship → release |
-| 7 | \`checkout\` | ship |" "$output"
+  assert_contains '{"step":4,"action":"merge","detail":"ship → dev","skip":null},{"step":5,"action":"merge","detail":"ship → master","skip":null},{"step":6,"action":"merge","detail":"ship → release","skip":null},{"step":7,"action":"checkout","detail":"ship","skip":null}]}' "$output"
 }
 
 test_preview_ignores_starting_branch() {
@@ -110,14 +102,14 @@ test_preview_ignores_starting_branch() {
   local output
   output=$(engrave preview --root "$WORK" --branch ship --message "m" ship dev)
   assert_not_contains "ship → ship" "$output"
-  assert_contains "| 4 | \`merge\` | ship → dev |" "$output"
+  assert_contains '{"step":4,"action":"merge","detail":"ship → dev","skip":null}' "$output"
 }
 
 test_preview_skips_missing_branch() {
   printf 'change\n' >> "$WORK/readme.txt"
   local output
   output=$(engrave preview --root "$WORK" --branch ship --message "m" ghost)
-  assert_contains "| 4 | \`merge\` | ship → ghost — skipped — branch missing |" "$output"
+  assert_contains '{"step":4,"action":"merge","detail":"ship → ghost","skip":"branch missing"}' "$output"
 }
 
 test_preview_skips_branch_checked_out_elsewhere() {
@@ -125,22 +117,29 @@ test_preview_skips_branch_checked_out_elsewhere() {
   printf 'change\n' >> "$WORK/readme.txt"
   local output
   output=$(engrave preview --root "$WORK" --branch ship --message "m" dev)
-  assert_contains "| 4 | \`merge\` | ship → dev — skipped — checked out in another worktree |" "$output"
+  assert_contains '{"step":4,"action":"merge","detail":"ship → dev","skip":"checked out in another worktree"}' "$output"
 }
 
 test_preview_skips_commit_when_tree_is_clean() {
   local output
   output=$(engrave preview --root "$WORK" --branch ship --message "m")
-  assert_contains "| 1 | \`add\` | ship — skipped — nothing to commit |" "$output"
-  assert_contains "| 2 | \`commit\` | \"m\" — skipped — nothing to commit |" "$output"
-  assert_contains "| 3 | \`push\` | origin · ship |" "$output"
+  assert_contains '{"step":1,"action":"add","detail":"ship","skip":"nothing to commit"}' "$output"
+  assert_contains '{"step":2,"action":"commit","detail":"m","skip":"nothing to commit"}' "$output"
+  assert_contains '{"step":3,"action":"push","detail":"origin · ship","skip":null}' "$output"
 }
 
-test_preview_escapes_pipe_in_message() {
+test_preview_escapes_json_special_characters_in_message() {
+  printf 'change\n' >> "$WORK/readme.txt"
+  local output
+  output=$(engrave preview --root "$WORK" --branch ship --message $'dit "oui" \\ a\tb')
+  assert_equals '{"step":2,"action":"commit","detail":"dit \"oui\" \\ a\tb","skip":null}' "$(printf '%s' "$output" | grep -o '{"step":2[^}]*}')"
+}
+
+test_preview_keeps_pipe_unescaped_in_message() {
   printf 'change\n' >> "$WORK/readme.txt"
   local output
   output=$(engrave preview --root "$WORK" --branch ship --message "a | b")
-  assert_contains "| 2 | \`commit\` | \"a \\| b\" |" "$output"
+  assert_contains '"detail":"a | b"' "$output"
 }
 
 test_preview_writes_nothing() {
@@ -322,7 +321,8 @@ run_test test_preview_ignores_starting_branch "ignore la branche citée égale �
 run_test test_preview_skips_missing_branch "marque une branche absente comme ignorée"
 run_test test_preview_skips_branch_checked_out_elsewhere "marque une branche extraite dans un autre worktree comme ignorée"
 run_test test_preview_skips_commit_when_tree_is_clean "marque add et commit ignorés quand rien n'est à commiter"
-run_test test_preview_escapes_pipe_in_message "échappe la barre verticale du message dans le tableau"
+run_test test_preview_escapes_json_special_characters_in_message "échappe guillemet, barre oblique inverse et tabulation du message dans le JSON"
+run_test test_preview_keeps_pipe_unescaped_in_message "garde la barre verticale du message telle quelle dans le JSON"
 run_test test_preview_writes_nothing "l'aperçu ne modifie ni le working tree, ni HEAD, ni la branche courante"
 run_test test_run_ships_and_merges_every_target "livre la branche et la fusionne dans chaque branche citée, poussées sur le remote"
 run_test test_run_merges_starting_branch_never_previous_target "fusionne toujours la branche de départ, jamais la branche précédente de la chaîne"

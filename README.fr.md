@@ -415,10 +415,11 @@ parent, puisque rien n'a été délégué. Le worktree reste en place — forge 
 
 Une ou plusieurs branches existantes, citées dans l'ordre voulu (ex : `"grave dev"`, `"grave master"`, `"grave dev master"`). `<BRANCH>` est mergée tour à tour dans chaque branche citée, toujours depuis la branche de départ — jamais en enchaînant une branche citée dans la suivante.
 
-La séquence est exécutée par `skills/forge/scripts/engrave.sh`, jamais recomposée à la main : `preview` affiche
-le tableau récapitulatif sur un template fixe (`| # | Action | Detail |` — `add`, `commit`, `push`, un `merge` par
-branche citée, `checkout` final de retour sur `<BRANCH>`), `run` exécute exactement la même liste, quel que soit
-le nombre de branches. Une branche égale à `<BRANCH>` est écartée ; une branche absente, ou extraite dans un autre
+La séquence est exécutée par `skills/forge/scripts/engrave.sh`, jamais recomposée à la main : `preview` renvoie
+les actions prévues en JSON (`add`, `commit`, `push`, un `merge` par branche citée, `checkout` final de retour sur
+`<BRANCH>`) et Forge les met en page en tableau récapitulatif (`#`, action, détail — en-têtes dans ta langue) dans sa
+réponse ; `run` exécute exactement la même
+liste, quel que soit le nombre de branches. Le script fait le traitement, le modèle fait la mise en page. Une branche égale à `<BRANCH>` est écartée ; une branche absente, ou extraite dans un autre
 worktree, est marquée `skipped` ; un working tree propre saute `add` et `commit` et pousse quand même. Lancer
 `bash tests/engrave.test.sh` pour le vérifier.
 

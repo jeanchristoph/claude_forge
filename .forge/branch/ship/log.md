@@ -1,3 +1,7 @@
+- [2026-10-07 19:05] T8: text before the `Engrave` question confirmed hidden on user's screen — actions hard-coded as a numbered list in `question` (user choice over end-of-turn `go`); reply table kept.
+- [2026-10-07 18:55] T8 preview rendering dropped at user request: recap table as Markdown, right above the `Engrave` question, as on master; fixed template kept (table + question, no `preview`).
+- [2026-10-07 18:45] T8 corrected: text before the `Engrave` question was not shown on screen — recap table copied as aligned plain text into the `preview` of `Run the sequence`; fixed template « Gabarit — confirmation `Engrave` » added; README ×2, CHANGELOG rewritten.
+- [2026-10-07 18:20] T8 added and done: engrave recap table always the last text of the turn, right before the `Engrave` question, no tool call in between; README ×2, CHANGELOG `### Changed`.
 - [2026-10-07 18:05] Layout back to master: recap table (headers in user language) in the reply only, `Engrave` question holds its sentence alone — T5/T6 in-question rendering dropped, CHANGELOG `### Fixed` removed.
 - [2026-10-07 17:55] T7 added and done: `engrave.sh preview` returns one-line JSON, the skill renders it (recap table at step 3, plain numbered list in the `Engrave` question); 26 tests green.
 - [2026-10-07 17:45] Decision: JSON + Claude layout chosen over script-side column alignment — global rule « SCRIPT ↔ IA » added to `~/.claude/CLAUDE.md` at user request.

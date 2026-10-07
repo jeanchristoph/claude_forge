@@ -7,6 +7,7 @@
 [![License](https://img.shields.io/github/license/jeanchristoph/claude_forge)](LICENSE)
 [![Changelog](https://img.shields.io/badge/changelog-keep%20a%20changelog-orange)](CHANGELOG.md)
 
+
 **Claude_forge** is a Claude Code system made of the **forge** skill (invoked via `/forge`), its `forge-clickup` companion and a `PreCompact` hook. Together they orchestrate the whole life of a development branch — from the validated brief to the delivered release — across one or several repositories.
 
 ![Forge in action](docs/demo.gif)
@@ -444,7 +445,7 @@ subagent is never involved: relayed shipping is plain git, run by the parent.
 
 Anything published on the remote forge after a delivery — release title and notes, tag or PR description — is written in **English**, whatever your language. The commit message follows the language of the repository's commits.
 
-The commit message is generated automatically — no separate confirmation on the message itself. Before anything runs, Forge prints a recap table of the planned git actions: add, commit with its message, push, then one row per merge (`<BRANCH>` → target), and a final row for the return to `<BRANCH>`. Intermediate branch switches are never listed. No git command — `git add` included — runs before you confirm. A single confirmation covers the whole sequence: add, commit, push, then every merge, with no further prompt in between. Once the sequence has run, Forge writes nothing more — no log entry, no plan note: the report is plain text and the working tree stays exactly as the delivery left it.
+The commit message is generated automatically — no separate confirmation on the message itself. Before anything runs, Forge prints a recap table of the planned git actions: add, commit with its message, push, then one row per merge (`<BRANCH>` → target), and a final row for the return to `<BRANCH>`. Intermediate branch switches are never listed. The table follows a fixed template, and the same actions are written as a numbered list inside the confirmation question itself, so they stay on screen even when the text above the dialog is hidden — never skipped, never replaced by an announcement. No git command — `git add` included — runs before you confirm. A single confirmation covers the whole sequence: add, commit, push, then every merge, with no further prompt in between. Once the sequence has run, Forge writes nothing more — no log entry, no plan note: the report is plain text and the working tree stays exactly as the delivery left it.
 
 ---
 

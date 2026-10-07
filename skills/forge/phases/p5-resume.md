@@ -321,13 +321,15 @@ Actions et détail associé — aucune autre :
 ⚠️ Aucune commande git en écriture — `git add` compris, `<LINKED>` compris — avant la confirmation de l'étape 4, ou avant l'affichage du tableau en livraison directe. Le mode `preview` du script est en lecture seule.
 ⚠️ Sortie `2` du script (conflit de merge, push rejeté) → séquence déjà arrêtée par le script ; ne rien forcer : jamais de `--force`, jamais de résolution de conflit sans demande.
 
-Mode délégué `SCOPE: branch` → `--root` vaut ROOT (le worktree) ; l'étape 4 est un `FORGE_QUESTION`, omis en livraison directe — `header` : `Engrave`, mêmes options, le tableau récapitulatif entier dans `content`. `SCOPE: linked` → Livraison non applicable (section « Mode délégué » de `SKILL.md`).
+Mode délégué `SCOPE: branch` → `--root` vaut ROOT (le worktree) ; l'étape 4 est un `FORGE_QUESTION`, omis en livraison directe — `header` : `Engrave`, mêmes options, le tableau récapitulatif entier dans `content`, recopié par le parent en liste numérotée dans `question` au relais. `SCOPE: linked` → Livraison non applicable (section « Mode délégué » de `SKILL.md`).
 
 **Réaction — dans l'ordre :**
 1. Générer automatiquement le message de commit (règles COMMITS GIT : max 150 car., pas de mention Claude) — pas de confirmation sur le message lui-même.
 2. Livraison relayée — pour chaque projet lié (ci-dessous) : poser les deux questions, retenir la séquence du lié.
-3. Exécuter le script en `preview` pour le parent, puis pour chaque projet lié retenu (« Script de livraison » ci-dessous). Afficher chaque sortie rendue en tableau récapitulatif, celle d'un projet lié titrée par `<LINKED>` en une ligne au-dessus.
-4. Poser une confirmation unique couvrant toute la séquence — parent et projets liés — avec `AskUserQuestion` — `header` : `Engrave`, options `Run the sequence` / `Cancel`. Champ `question` = la phrase de question seule : le tableau reste dans la réponse, jamais dans `question` ni dans le champ `preview` d'une option.
+3. Exécuter le script en `preview` pour le parent, puis pour chaque projet lié retenu (« Script de livraison » ci-dessous). Afficher chaque sortie rendue en tableau récapitulatif selon le « Gabarit — confirmation `Engrave` » ci-dessous, celle d'un projet lié titrée par `<LINKED>` en une ligne au-dessus. Jamais omis, jamais remplacés par une annonce ni par une phrase de résumé.
+4. Poser une confirmation unique couvrant toute la séquence — parent et projets liés — avec `AskUserQuestion` — `header` : `Engrave`, options `Run the sequence` / `Cancel`. Champ `question` = la liste numérotée des actions, recopiée en dur selon le « Gabarit — confirmation `Engrave` » ci-dessous, puis une ligne vide et la phrase de question. Aucun champ `preview`.
+
+   ⚠️ Le texte écrit avant `AskUserQuestion` peut être masqué à l'écran de l'utilisateur : la liste dans `question` est la seule copie garantie visible avec la confirmation.
 5. **Sur `Cancel`** → n'exécuter aucune action, parent et liés. STOP — ne pas continuer.
 6. **Sur `Run the sequence`** → exécuter le script en `run` pour le parent, mêmes arguments qu'à l'étape 3, sans validation intermédiaire.
    - Sortie `0` → étape 7.
@@ -369,6 +371,41 @@ Mode délégué `SCOPE: branch` → `--root` vaut ROOT (le worktree) ; l'étape 
 **Rendu de `preview` — tableau récapitulatif, aucun autre format :** tableau Markdown, trois colonnes, en-têtes générés dans la langue de l'utilisateur : numéro d'ordre, action git, détail. Une ligne par action dans l'ordre du JSON : ``| <step> | `<action>` | <detail> |`` ; détail de `commit` entre guillemets ; `skip` non nul → ` — skipped — <skip>` ajouté au détail ; `|` du détail échappé en `\|`.
 
 ⚠️ JSON jamais affiché brut ; tableau jamais complété d'une liste de fichiers ni d'un décompte de lignes.
+
+### Gabarit — confirmation `Engrave`
+
+Gabarit figé des étapes 3 et 4, rempli depuis le JSON de `preview` — crochets à remplir, rien d'autre ne change. Exemple : `grave dev`, sans projet lié.
+
+Réponse — étape 3, tableau récapitulatif :
+
+```markdown
+| # | [Action git] | [Détail] |
+|---|---|---|
+| 1 | `add` | ship |
+| 2 | `commit` | "[message]" |
+| 3 | `push` | origin · ship |
+| 4 | `merge` | ship → dev |
+| 5 | `checkout` | ship |
+```
+
+Appel `AskUserQuestion` — étape 4, liste numérotée en dur dans `question`, une ligne par action dans l'ordre du JSON : `<step>. <action> — <detail>` ; détail de `commit` entre guillemets ; `skip` non nul → ` — skipped — <skip>` ajouté au détail :
+
+```
+header:   Engrave
+question: 1. add — ship
+          2. commit — "[message]"
+          3. push — origin · ship
+          4. merge — ship → dev
+          5. checkout — ship
+
+          [Lancer la séquence de livraison ?]
+option 1: [Lancer la séquence] — [Exécute les actions du tableau, dans l'ordre.]
+option 2: [Annuler] — [N'exécute rien.]
+```
+
+⚠️ Réponse → tableau Markdown à trois colonnes ; `question` → liste numérotée, jamais un tableau Markdown (non rendu dans la boîte de dialogue). Jamais une phrase qui résume les actions à la place de l'un ou de l'autre.
+
+Projet lié retenu → sous le bloc du parent, dans la réponse comme dans `question` : une ligne `<LINKED>` seule, puis son bloc au même format, numérotation reprise à 1.
 
 ---
 

@@ -51,6 +51,12 @@
 **Description:** `preview` écrit un objet JSON sur une ligne (`branch`, puis `step`, `action`, `detail`, `skip` par action), sans `jq` ; `json_string` échappe `"`, `\` et les contrôles ; `render_table` et `escape_cell` supprimées ; `run`, gardes et codes de sortie inchangés. Tests de `preview` réécrits sur le JSON, échappement couvert. `p5-resume.md` fixe un seul rendu : le tableau récapitulatif de master (en-têtes dans la langue de l'utilisateur) dans la réponse ; la question `Engrave` ne porte que sa phrase, comme sur master (T5/T6 annulées). JSON jamais affiché brut. README ×2, CHANGELOG (`### Fixed` de T5/T6 retiré), `project.md`.
 [x] 26 tests verts, rendu de master restauré, docs à jour.
 
+### T8 — Tableau récapitulatif toujours affiché à la confirmation `grave`
+**Effort:** S
+**Files:** `skills/forge/phases/p5-resume.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Étapes 3 et 4 de la Livraison : le tableau récapitulatif, au format actuel (`#` / action git / détail, une ligne par action du JSON de `preview`), est le dernier texte du tour, juste avant l'`AskUserQuestion` `Engrave` — aucun appel d'outil entre les deux, `preview` et `status` exécutés avant. Rien d'autre d'imposé autour du tableau ; la question garde sa phrase seule. Mode délégué `SCOPE: branch` : le tableau dans `content`, inchangé. `engrave.sh` inchangé. Section Shipping des deux README, `### Changed` dans `[Unreleased]` du CHANGELOG.
+[x] Corrigé : gabarit figé — tableau dans la réponse, liste numérotée en dur dans `question` (texte avant la question masqué à l'écran), jamais de `preview` ; README ×2, CHANGELOG réécrit.
+
 ## Risks
 - Appeler le script déclenche une demande de permission Bash, sauf en mode auto. En livraison directe, cette demande peut bloquer la séquence au-delà des 60 s de la question `Ship`. Aucune règle `permissions.allow` n'est ajoutée : autoriser d'office un script qui commit et pousse irait contre la règle des commits.
 - Sous Windows, le script dépend de Git Bash, comme le reste du skill.
@@ -68,4 +74,5 @@ None
 | T5 — Tableau dans la question `Engrave` | S | [x] |
 | T6 — Tableau dans le texte de la question `Engrave` | S | [x] |
 | T7 — `preview` en JSON, mise en page par Claude | M | [x] |
-| **Total** | **2M + 5S** | |
+| T8 — Tableau toujours affiché à la confirmation `grave` | S | [x] |
+| **Total** | **2M + 6S** | |

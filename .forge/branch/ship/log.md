@@ -1,3 +1,7 @@
+- [2026-10-15 11:40] Delivery report results renamed `DONE` / `SKIPPED` / `FAILED` / `HALTED` (past participles, same in every language).
+- [2026-10-15 11:30] Delivery report: `not_run` shown as `CANCEL` instead of `WAITING` (never runs later); `failed` shown as `FAIL`.
+- [2026-10-15 11:20] Delivery report results fixed in every language: `OK` / `SKIP` / `FAIL` / `WAITING`, never translated; README ×2, CHANGELOG.
+- [2026-10-15 11:10] Delivery report: `done` shown as `OK` in every language, other results still translated; README ×2, CHANGELOG.
 - [2026-10-15 10:55] T11 adjusted at user request: delivery report results shown in the user's language (fait / ignoré / échec / non exécuté for a French user), JSON codes unchanged; README ×2, CHANGELOG.
 - [2026-10-15 10:40] T11 added and done: `engrave.sh run` reports one row per git operation (merge split into checkout / merge / push), statuses done / skipped / failed / not_run, JSON on git failure too, conflicted files listed; report columns # / branch / operation / result / detail (user order); 33 tests green; README ×2, CHANGELOG, project.md.
 - [2026-10-15 10:10] « Gabarit — question `Plan` » adjusted at user request: no files nor `Scope & rules` in `question`, description as bullets (numbered when order matters); README ×2, CHANGELOG.

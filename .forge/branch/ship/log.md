@@ -1,3 +1,4 @@
+- [2026-10-15 11:55] Delivery report: merge operation names the merged branch (`merge <BRANCH>`), detail keeps the outcome only.
 - [2026-10-15 11:40] Delivery report results renamed `DONE` / `SKIPPED` / `FAILED` / `HALTED` (past participles, same in every language).
 - [2026-10-15 11:30] Delivery report: `not_run` shown as `CANCEL` instead of `WAITING` (never runs later); `failed` shown as `FAIL`.
 - [2026-10-15 11:20] Delivery report results fixed in every language: `OK` / `SKIP` / `FAIL` / `WAITING`, never translated; README ×2, CHANGELOG.

@@ -396,11 +396,11 @@ Gabarit figé de l'étape 5, rempli depuis le JSON de `run` — crochets à remp
 | 2 | `ship` | `commit` | DONE | `a3f9c12` "[message]" |
 | 3 | `ship` | `push` | DONE | origin: `9e1b2c4..a3f9c12` |
 | 4 | `dev` | `checkout` | DONE | |
-| 5 | `dev` | `merge` | DONE | `ship` → `dev` · fast-forward |
+| 5 | `dev` | `merge ship` | DONE | fast-forward |
 | 6 | `dev` | `push` | DONE | origin: `7d0e3a1..a3f9c12` |
-| 7 | `staging` | `merge` | SKIPPED | branch missing |
+| 7 | `staging` | `merge ship` | SKIPPED | branch missing |
 | 8 | `master` | `checkout` | DONE | |
-| 9 | `master` | `merge` | FAILED | conflict — `README.md`, `CHANGELOG.md` |
+| 9 | `master` | `merge ship` | FAILED | conflict — `README.md`, `CHANGELOG.md` |
 | 10 | `master` | `push` | HALTED | |
 | 11 | `ship` | `checkout` | HALTED | |
 
@@ -415,9 +415,9 @@ Gabarit figé de l'étape 5, rempli depuis le JSON de `run` — crochets à remp
 | 3 | `forge/ship` | `push` | DONE | origin: new branch |
 ```
 
-- Une ligne par action du JSON, dans son ordre : `step`, `branch`, `action`, libellé du `status`, puis le détail.
+- Une ligne par action du JSON, dans son ordre : `step`, `branch`, `action` — `merge` suivi de la branche fusionnée, `merge <BRANCH>` —, libellé du `status`, puis le détail.
 - Libellé du `status`, figé dans toutes les langues — jamais le code brut, jamais traduit : `done` → `DONE` · `skipped` → `SKIPPED` · `failed` → `FAILED` · `not_run` → `HALTED`. Raisons et détails gardés tels que le JSON les donne.
-- Détail `done` : `commit` → hash en inline code suivi du message de l'appel entre guillemets ; `push` → `detail` tel quel, plage en inline code ; `merge` → ``` `<BRANCH>` → `<branch>` · <detail> ``` ; `detail` à `null` → cellule vide.
+- Détail `done` : `commit` → hash en inline code suivi du message de l'appel entre guillemets ; `push` → `detail` tel quel, plage en inline code ; `merge` → `detail` tel quel ; `detail` à `null` → cellule vide.
 - Détail `skipped` → `reason`. Détail `failed` → `reason`, suivie de ` — ` et des fichiers en inline code si `detail` est non nul. Détail `not_run` → cellule vide.
 - `status` du JSON à `failed` → erreur git telle quelle sous le tableau.
 - Projet lié → une ligne `<LINKED>` seule, puis son tableau au même format. Projet lié sans rien à graver → sa ligne "`<LINKED>`: nothing to engrave." à la place du tableau. Projet lié en sortie `1` → sa ligne `<LINKED>`, puis l'erreur telle quelle.

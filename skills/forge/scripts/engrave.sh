@@ -1,18 +1,26 @@
 #!/bin/bash
-# Séquence git de la livraison forge (grave / engrave / ship).
+# Séquence git de la livraison forge (grave / engrave).
 #   preview → décrit la séquence en JSON sur une ligne, n'écrit rien
-#   run     → exécute la séquence, s'arrête au premier échec git, rend compte en JSON sur une ligne
+#   run     → exécute la séquence, s'arrête au premier échec git, rend compte de chaque opération en JSON sur une ligne
 # Usage : engrave.sh <preview|run> --branch <BRANCH> --message <msg> [--root <dir>] [target...]
-# Sortie : 0 succès · 1 usage ou garde · 2 échec git (conflit, push rejeté)
+# Sortie : 0 succès · 1 usage ou garde · 2 échec git (conflit, push rejeté) — le JSON de run est écrit dans les deux cas
 
 set -u
 
 readonly EXIT_USAGE=1
 readonly EXIT_GIT=2
 readonly MAX_MESSAGE_LENGTH=150
-readonly SKIP_NOTHING_TO_COMMIT="skipped — nothing to commit"
-readonly SKIP_BRANCH_MISSING="skipped — branch missing"
-readonly SKIP_CHECKED_OUT_ELSEWHERE="skipped — checked out in another worktree"
+readonly REASON_NOTHING_TO_COMMIT="nothing to commit"
+readonly REASON_BRANCH_MISSING="branch missing"
+readonly REASON_CHECKED_OUT_ELSEWHERE="checked out in another worktree"
+readonly REASON_CONFLICT="conflict"
+readonly REASON_REJECTED="rejected"
+readonly REASON_GIT_ERROR="git error"
+readonly STATUS_PLANNED="planned"
+readonly STATUS_SKIPPED="skipped"
+readonly STATUS_DONE="done"
+readonly STATUS_FAILED="failed"
+readonly STATUS_NOT_RUN="not_run"
 
 MODE=""
 BRANCH=""
@@ -20,10 +28,17 @@ MESSAGE=""
 ROOT="."
 TARGETS=()
 
+# Une action = une opération git sur une branche ; les tableaux sont indexés par action.
 ACTION_KINDS=()
+ACTION_BRANCHES=()
+ACTION_STATUSES=()
 ACTION_DETAILS=()
-ACTION_TARGETS=()
-ACTION_SKIPS=()
+ACTION_REASONS=()
+SEQUENCE_STATUS=$STATUS_PLANNED
+
+# Résultat de la dernière opération exécutée, lu par run_action.
+RESULT_DETAIL=""
+RESULT_REASON=""
 
 # ── Arguments et gardes ───────────────────────────────────────────────────────
 
@@ -100,34 +115,160 @@ push_remote() {
 }
 
 target_skip_reason() {
-  if ! branch_exists "$1"; then echo "$SKIP_BRANCH_MISSING"; return; fi
-  if is_checked_out_elsewhere "$1"; then echo "$SKIP_CHECKED_OUT_ELSEWHERE"; return; fi
+  if ! branch_exists "$1"; then echo "$REASON_BRANCH_MISSING"; return; fi
+  if is_checked_out_elsewhere "$1"; then echo "$REASON_CHECKED_OUT_ELSEWHERE"; return; fi
   echo ""
 }
 
 # ── Séquence — une seule liste, rendue par preview, exécutée par run ──────────
 
+# add_action <kind> <branch> <planned detail> <skip reason>
 add_action() {
+  local status=$STATUS_PLANNED
+  [ -n "$4" ] && status=$STATUS_SKIPPED
   ACTION_KINDS+=("$1")
-  ACTION_DETAILS+=("$2")
-  ACTION_TARGETS+=("$3")
-  ACTION_SKIPS+=("$4")
+  ACTION_BRANCHES+=("$2")
+  ACTION_DETAILS+=("$3")
+  ACTION_REASONS+=("$4")
+  ACTION_STATUSES+=("$status")
+}
+
+# Cible ignorée → une seule ligne merge ; sinon checkout, merge, push de la cible.
+add_target_actions() {
+  local reason
+  reason=$(target_skip_reason "$1")
+  if [ -n "$reason" ]; then
+    add_action merge "$1" "" "$reason"
+    return
+  fi
+  add_action checkout "$1" "" ""
+  add_action merge "$1" "" ""
+  add_action push "$1" "$(push_remote "$1")" ""
 }
 
 build_actions() {
   local commit_skip=""
-  is_tree_clean && commit_skip=$SKIP_NOTHING_TO_COMMIT
+  is_tree_clean && commit_skip=$REASON_NOTHING_TO_COMMIT
   add_action add "$BRANCH" "" "$commit_skip"
-  add_action commit "$MESSAGE" "" "$commit_skip"
-  add_action push "$(push_remote "$BRANCH") · $BRANCH" "" ""
+  add_action commit "$BRANCH" "$MESSAGE" "$commit_skip"
+  add_action push "$BRANCH" "$(push_remote "$BRANCH")" ""
   local target has_target=""
   for target in ${TARGETS[@]+"${TARGETS[@]}"}; do
     [ "$target" = "$BRANCH" ] && continue
-    add_action merge "$BRANCH → $target" "$target" "$(target_skip_reason "$target")"
+    add_target_actions "$target"
     has_target=1
   done
   [ -n "$has_target" ] && add_action checkout "$BRANCH" "" ""
 }
+
+# ── Opérations git — stdout de git renvoyé sur stderr : stdout porte le JSON seul ──
+
+run_add() {
+  git_in_root add -A >&2
+}
+
+run_commit() {
+  git_in_root commit -q -m "$MESSAGE" >&2 || return 1
+  RESULT_DETAIL=$(git_in_root rev-parse --short HEAD)
+}
+
+run_checkout() {
+  git_in_root checkout -q "$1" >&2
+}
+
+conflicted_files() {
+  local file list="" separator=""
+  while IFS= read -r file; do
+    list+="$separator$file"
+    separator=", "
+  done < <(git_in_root diff --name-only --diff-filter=U)
+  echo "$list"
+}
+
+merge_outcome() {
+  local before=$1 after=$2
+  if [ "$before" = "$after" ]; then echo "already up to date"; return; fi
+  if [ "$after" = "$(git_in_root rev-parse "$BRANCH")" ]; then echo "fast-forward"; return; fi
+  echo "merge commit $(git_in_root rev-parse --short "$after")"
+}
+
+# Toujours <BRANCH> fusionnée dans la branche extraite, jamais la cible précédente de la chaîne.
+run_merge() {
+  local before
+  before=$(git_in_root rev-parse HEAD)
+  if ! git_in_root merge -q --no-edit "$BRANCH" >&2; then
+    RESULT_DETAIL=$(conflicted_files)
+    [ -n "$RESULT_DETAIL" ] && RESULT_REASON=$REASON_CONFLICT
+    return 1
+  fi
+  RESULT_DETAIL=$(merge_outcome "$before" "$(git_in_root rev-parse HEAD)")
+}
+
+# Ligne --porcelain de la ref poussée : « <flag>\t<src>:<dst>\t<résumé> » → « <flag>\t<résumé> ».
+push_ref_line() {
+  printf '%s\n' "$1" | awk -F '\t' -v ref="refs/heads/$2:refs/heads/$2" '$2 == ref { print $1 "\t" $3 }'
+}
+
+run_push() {
+  local remote report line summary
+  remote=$(push_remote "$1")
+  report=$(git_in_root push --porcelain -u "$remote" "$1")
+  local status=$?
+  line=$(push_ref_line "$report" "$1")
+  summary=${line#*$'\t'}
+  summary=${summary//[\[\]]/}
+  RESULT_DETAIL="$remote: $summary"
+  [ $status -eq 0 ] && return 0
+  printf '%s\n' "$report" >&2
+  [ "${line%%$'\t'*}" = "!" ] && RESULT_REASON=$REASON_REJECTED
+  return 1
+}
+
+# ── Exécution ─────────────────────────────────────────────────────────────────
+
+record_result() {
+  ACTION_STATUSES[$1]=$2
+  ACTION_DETAILS[$1]=$RESULT_DETAIL
+  ACTION_REASONS[$1]=$3
+}
+
+run_action() {
+  local i=$1
+  RESULT_DETAIL=""
+  RESULT_REASON=$REASON_GIT_ERROR
+  if "run_${ACTION_KINDS[$i]}" "${ACTION_BRANCHES[$i]}"; then
+    record_result "$i" "$STATUS_DONE" ""
+    return 0
+  fi
+  record_result "$i" "$STATUS_FAILED" "$RESULT_REASON"
+  echo "engrave: stopped at step $((i + 1)) (${ACTION_KINDS[$i]} ${ACTION_BRANCHES[$i]})" >&2
+  return 1
+}
+
+mark_remaining_not_run() {
+  local i
+  for ((i = $1; i < ${#ACTION_KINDS[@]}; i++)); do
+    [ "${ACTION_STATUSES[$i]}" = "$STATUS_SKIPPED" ] && continue
+    ACTION_STATUSES[$i]=$STATUS_NOT_RUN
+    ACTION_DETAILS[$i]=""
+  done
+}
+
+run_actions() {
+  local i
+  SEQUENCE_STATUS=$STATUS_DONE
+  for i in "${!ACTION_KINDS[@]}"; do
+    [ "${ACTION_STATUSES[$i]}" = "$STATUS_SKIPPED" ] && continue
+    run_action "$i" && continue
+    SEQUENCE_STATUS=$STATUS_FAILED
+    mark_remaining_not_run $((i + 1))
+    break
+  done
+  render_json
+  [ "$SEQUENCE_STATUS" = "$STATUS_DONE" ] || exit $EXIT_GIT
+}
+
+# ── Rendu — données seules, la mise en page revient au skill (p5-resume.md) ───
 
 # Chaîne JSON sans jq (absent de Git Bash) : barre oblique inverse, guillemet et contrôles échappés.
 json_string() {
@@ -139,78 +280,25 @@ json_string() {
   printf '"%s"' "$text"
 }
 
-render_json_action() {
-  local skip=${ACTION_SKIPS[$1]#skipped — } skip_json=null
-  [ -n "$skip" ] && skip_json=$(json_string "$skip")
-  printf '{"step":%d,"action":%s,"detail":%s,"skip":%s}' $(($1 + 1)) \
-    "$(json_string "${ACTION_KINDS[$1]}")" "$(json_string "${ACTION_DETAILS[$1]}")" "$skip_json"
+json_nullable() {
+  if [ -z "$1" ]; then printf null; else json_string "$1"; fi
 }
 
-# Données seules : la mise en page revient au skill (« Script de livraison » de p5-resume.md).
+render_json_action() {
+  printf '{"step":%d,"action":%s,"branch":%s,"status":%s,"detail":%s,"reason":%s}' $(($1 + 1)) \
+    "$(json_string "${ACTION_KINDS[$1]}")" "$(json_string "${ACTION_BRANCHES[$1]}")" \
+    "$(json_string "${ACTION_STATUSES[$1]}")" "$(json_nullable "${ACTION_DETAILS[$1]}")" \
+    "$(json_nullable "${ACTION_REASONS[$1]}")"
+}
+
 render_json() {
   local i separator="" actions=""
   for i in "${!ACTION_KINDS[@]}"; do
     actions+="$separator$(render_json_action "$i")"
     separator=","
   done
-  printf '{"branch":%s,"actions":[%s]}\n' "$(json_string "$BRANCH")" "$actions"
-}
-
-push_branch() {
-  git_in_root push -q -u "$(push_remote "$1")" "$1"
-}
-
-merge_into() {
-  git_in_root checkout -q "$1" && git_in_root merge -q --no-edit "$BRANCH" && push_branch "$1"
-}
-
-run_action() {
-  case $1 in
-    add)      git_in_root add -A ;;
-    commit)   git_in_root commit -q -m "$MESSAGE" ;;
-    push)     push_branch "$BRANCH" ;;
-    merge)    merge_into "$2" ;;
-    checkout) git_in_root checkout -q "$BRANCH" ;;
-  esac
-}
-
-commit_json() {
-  [ -n "${ACTION_SKIPS[1]}" ] && { printf null; return; }
-  json_string "$(git_in_root rev-parse --short "$BRANCH")"
-}
-
-render_skipped_target() {
-  printf '{"branch":%s,"reason":%s}' "$(json_string "${ACTION_TARGETS[$1]}")" \
-    "$(json_string "${ACTION_SKIPS[$1]#skipped — }")"
-}
-
-# Données seules, comme render_json : le compte rendu est mis en page par le skill.
-render_report() {
-  local updated skipped="" separator="" i
-  updated=$(json_string "$BRANCH")
-  for i in "${!ACTION_KINDS[@]}"; do
-    [ "${ACTION_KINDS[$i]}" = merge ] || continue
-    if [ -z "${ACTION_SKIPS[$i]}" ]; then
-      updated+=",$(json_string "${ACTION_TARGETS[$i]}")"
-    else
-      skipped+="$separator$(render_skipped_target "$i")"
-      separator=","
-    fi
-  done
-  printf '{"branch":%s,"commit":%s,"updated":[%s],"skipped":[%s]}\n' \
-    "$(json_string "$BRANCH")" "$(commit_json)" "$updated" "$skipped"
-}
-
-run_actions() {
-  local i
-  for i in "${!ACTION_KINDS[@]}"; do
-    [ -n "${ACTION_SKIPS[$i]}" ] && continue
-    if ! run_action "${ACTION_KINDS[$i]}" "${ACTION_TARGETS[$i]}"; then
-      echo "engrave: stopped at step $((i + 1)) (${ACTION_KINDS[$i]} ${ACTION_DETAILS[$i]})" >&2
-      exit $EXIT_GIT
-    fi
-  done
-  render_report
+  printf '{"branch":%s,"status":%s,"actions":[%s]}\n' \
+    "$(json_string "$BRANCH")" "$(json_string "$SEQUENCE_STATUS")" "$actions"
 }
 
 main() {

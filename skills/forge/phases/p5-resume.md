@@ -137,11 +137,30 @@ Une demande complémentaire est toujours une tâche du plan — jamais de choix 
    > "This request isn't in the current plan."
    Si la demande change durablement le périmètre → ajouter à la même présentation l'entrée proposée pour `## Scope & rules` du brief.
 
-2. **Poser une seule question** avec `AskUserQuestion` — `header` : `Plan`, options `Validate` / `Cancel` — motif « Validation d'un contenu » de `SKILL.md` : le changement demandé arrive en texte libre, reformuler, reposer la question. Mode délégué → `FORGE_QUESTION`, la tâche formulée entière dans `content`.
+2. **Poser une seule question** avec `AskUserQuestion` — `header` : `Plan`, options `Validate` / `Cancel` — motif « Validation d'un contenu » de `SKILL.md` : le changement demandé arrive en texte libre, reformuler, reposer la question. Champ `question` = la tâche formulée, recopiée en dur selon le « Gabarit — question `Plan` » ci-dessous, puis une ligne vide et la phrase de question. Aucun champ `preview`. Mode délégué → `FORGE_QUESTION`, la tâche formulée entière dans `content`.
+
+   ⚠️ Le texte écrit avant `AskUserQuestion` peut être masqué à l'écran de l'utilisateur : la tâche recopiée dans `question` est la seule copie garantie visible avec la question.
 
 3. **Sur `Validate`** → appliquer la mise à jour du plan (tâche ajoutée, effort, position dans la séquence), écrire `.forge/branch/<BRANCH>/plan.md`, écrire `.forge/branch/<BRANCH>/brief.md` si `## Scope & rules` change, puis exécuter la tâche selon le mode en cours.
 
 4. **Sur `Cancel`** → rien n'entre au plan, la demande n'est pas traitée. STOP — ne pas continuer.
+
+### Gabarit — question `Plan`
+
+Gabarit figé du champ `question` de l'étape 2 — crochets à remplir, rien d'autre ne change. Texte brut : jamais de titre Markdown, jamais de tableau Markdown (non rendus dans la boîte de dialogue). Fichiers et entrée `## Scope & rules` jamais recopiés dans `question` : ils restent dans la présentation de la réponse. Description entière, jamais résumée, découpée en puces `-` — puces numérotées `1.` `2.` quand l'ordre compte —, une idée par puce.
+
+```
+header:   Plan
+question: T[n] — [Titre]
+          Effort : [S|M|L|XL]
+          Description :
+          - [idée 1]
+          - [idée 2]
+
+          [Ajouter cette tâche au plan et l'exécuter ?]
+option 1: [Valider] — [Ajoute T[n] au plan et l'exécute.]
+option 2: [Annuler] — [Rien n'entre au plan.]
+```
 
 ---
 
@@ -177,7 +196,7 @@ Une demande complémentaire est toujours une tâche du plan — jamais de choix 
 ### Boucle de relais
 
 À chaque rapport du sous-agent :
-- Rapport contenant `FORGE_QUESTION` → afficher `content` **intégralement** à l'utilisateur, tel quel, jamais résumé (`none` → rien à afficher), puis poser la question avec `AskUserQuestion`, `header` et options recopiés tels quels ; `options: none` → question en texte libre. Renvoyer la réponse au même sous-agent par `SendMessage`, message `FORGE_ANSWER: <réponse>`. Reprendre la boucle.
+- Rapport contenant `FORGE_QUESTION` → afficher `content` **intégralement** à l'utilisateur, tel quel, jamais résumé (`none` → rien à afficher), puis poser la question avec `AskUserQuestion`, `header` et options recopiés tels quels ; `header` `Plan` → `content` recopié en tête de `question` selon le « Gabarit — question `Plan` » ; `options: none` → question en texte libre. Renvoyer la réponse au même sous-agent par `SendMessage`, message `FORGE_ANSWER: <réponse>`. Reprendre la boucle.
 - Rapport contenant `FORGE_DONE` → sortir de la boucle, appliquer le retour ci-dessous.
 - Rapport sans aucun des deux blocs → le renvoyer au sous-agent par `SendMessage` : `FORGE_ANSWER: end your turn with a FORGE_QUESTION or a FORGE_DONE block.` Deux rappels au maximum, puis marquer chaque tâche du mandat `[!] blocked — delegated run ended without report` et sortir.
 
@@ -310,32 +329,27 @@ Actions et détail associé — aucune autre :
 
 ## Livraison — commit, push, merge
 
-**Déclencheur :** l'utilisateur dit "grave" / "engrave" — ou "livre" / "ship", livraison directe ci-dessous —, seul ou suivi d'une ou plusieurs branches existantes, dans l'ordre voulu (ex: "grave", "grave dev", "grave dev master").
+**Déclencheur :** message qui commence par "grave" / "engrave" et ne contient rien d'autre que des branches existantes, dans l'ordre voulu (ex: "grave", "grave dev", "grave dev master"). Autre texte dans le message → pas une livraison.
 
-**Livraison directe :** message qui commence par `livre` / `ship` et ne contient rien d'autre que des branches existantes (`livre`, `ship dev master`) → dérouler la Réaction sans les étapes 4 et 5 : le tableau de l'étape 3 vaut compte rendu, la séquence s'exécute aussitôt. La commande vaut autorisation pour cette séquence seulement. Les questions `Linked` / `Linked branches` de l'étape 2 restent posées : elles fixent le périmètre, elles ne confirment rien. Autre texte dans le message (`livre-moi un export`) → pas une livraison. `grave` / `engrave` → confirmation de l'étape 4 inchangée.
+**Autorisation :** la commande vaut autorisation pour cette séquence seulement — aucune confirmation avant `run`. Les questions `Linked` / `Linked branches` de l'étape 2 restent posées : elles fixent le périmètre, elles ne confirment rien.
 
 **INVARIANT :** git opère uniquement sur le dépôt courant — jamais sur un autre dépôt ouvert en parallèle. Unique exception : `<LINKED>`, pour la création du worktree par la « Délégation — projet lié » et pour la livraison relayée ci-dessous — rien d'autre.
 
 **Publication hors dépôt :** tout texte publié sur la forge distante à la suite d'une livraison — titre et notes d'une release, description d'un tag ou d'une PR — est rédigé en **anglais**, quelle que soit la langue de l'utilisateur. Le message de commit, lui, suit la langue des commits du dépôt.
 
-⚠️ Aucune commande git en écriture — `git add` compris, `<LINKED>` compris — avant la confirmation de l'étape 4, ou avant l'affichage du tableau en livraison directe. Le mode `preview` du script est en lecture seule.
 ⚠️ Sortie `2` du script (conflit de merge, push rejeté) → séquence déjà arrêtée par le script ; ne rien forcer : jamais de `--force`, jamais de résolution de conflit sans demande.
 
-Mode délégué `SCOPE: branch` → `--root` vaut ROOT (le worktree) ; l'étape 4 est un `FORGE_QUESTION`, omis en livraison directe — `header` : `Engrave`, mêmes options, le tableau récapitulatif entier dans `content`, recopié par le parent en liste numérotée dans `question` au relais. `SCOPE: linked` → Livraison non applicable (section « Mode délégué » de `SKILL.md`).
+Mode délégué `SCOPE: branch` → `--root` vaut ROOT (le worktree) ; compte rendu de livraison recopié entier dans le `content` du bloc qui termine le tour. `SCOPE: linked` → Livraison non applicable (section « Mode délégué » de `SKILL.md`).
 
 **Réaction — dans l'ordre :**
 1. Générer automatiquement le message de commit (règles COMMITS GIT : max 150 car., pas de mention Claude) — pas de confirmation sur le message lui-même.
 2. Livraison relayée — pour chaque projet lié (ci-dessous) : poser les deux questions, retenir la séquence du lié.
-3. Exécuter le script en `preview` pour le parent, puis pour chaque projet lié retenu (« Script de livraison » ci-dessous). Afficher chaque sortie rendue en tableau récapitulatif selon le « Gabarit — confirmation `Engrave` » ci-dessous, celle d'un projet lié titrée par `<LINKED>` en une ligne au-dessus. Jamais omis, jamais remplacés par une annonce ni par une phrase de résumé.
-4. Poser une confirmation unique couvrant toute la séquence — parent et projets liés — avec `AskUserQuestion` — `header` : `Engrave`, options `Run the sequence` / `Cancel`. Champ `question` = la liste numérotée des actions, recopiée en dur selon le « Gabarit — confirmation `Engrave` » ci-dessous, puis une ligne vide et la phrase de question. Aucun champ `preview`.
-
-   ⚠️ Le texte écrit avant `AskUserQuestion` peut être masqué à l'écran de l'utilisateur : la liste dans `question` est la seule copie garantie visible avec la confirmation.
-5. **Sur `Cancel`** → n'exécuter aucune action, parent et liés. STOP — ne pas continuer.
-6. **Sur `Run the sequence`** → exécuter le script en `run` pour le parent, mêmes arguments qu'à l'étape 3, sans validation intermédiaire.
-   - Sortie `0` → étape 7.
-   - Sortie `1` ou `2` → afficher l'erreur telle quelle, aucun projet lié livré. STOP — ne pas continuer.
-7. Pour chaque projet lié retenu, dans l'ordre du plan : exécuter le script en `run` avec ses arguments. Sortie non nulle → afficher l'erreur telle quelle, passer au projet lié suivant ; le parent, déjà livré, n'est jamais repris.
-8. Rendre compte depuis le JSON de chaque `run`, parent puis chaque projet lié, selon le « Gabarit — compte rendu de livraison » ci-dessous.
+3. Exécuter aussitôt le script en `run` pour le parent (« Script de livraison » ci-dessous), sans question ni affichage préalable.
+   - Sortie `0` → étape 4.
+   - Sortie `1` → afficher l'erreur telle quelle, aucun projet lié livré. STOP — ne pas continuer.
+   - Sortie `2` → rendre compte du parent selon le « Gabarit — compte rendu de livraison » ci-dessous, erreur git telle quelle sous le tableau, aucun projet lié livré. STOP — ne pas continuer.
+4. Pour chaque projet lié retenu, dans l'ordre du plan : exécuter le script en `run` avec ses arguments. Sortie `1` → retenir l'erreur ; sortie `2` → retenir le JSON et l'erreur. Passer au projet lié suivant ; le parent, déjà livré, n'est jamais repris.
+5. Rendre compte depuis le JSON de chaque `run`, parent puis chaque projet lié, selon le « Gabarit — compte rendu de livraison » ci-dessous.
 
 ⚠️ Aucune écriture dans LOG ni PLAN après la séquence — le compte rendu est du texte seul, le working tree reste tel que la livraison l'a laissé. Ce qui doit être journalisé l'est avant le `git add`.
 
@@ -360,78 +374,55 @@ Mode délégué `SCOPE: branch` → `--root` vaut ROOT (le worktree) ; l'étape 
 
 ### Script de livraison
 
-**Appel :** `bash <SKILL_DIR>/scripts/engrave.sh <preview|run> --root <ROOT> --branch <BRANCH> --message "<message>" [branches citées, dans l'ordre]` — autant de branches qu'en cite l'utilisateur, aucune comprise.
+**Appel :** `bash <SKILL_DIR>/scripts/engrave.sh run --root <ROOT> --branch <BRANCH> --message "<message>" [branches citées, dans l'ordre]` — autant de branches qu'en cite l'utilisateur, aucune comprise.
 
 **Le script porte la séquence entière** — ne jamais la recomposer en commandes git à la main :
-- `preview` → un objet JSON sur une ligne : `{"branch":"<BRANCH>","actions":[{"step":1,"action":"add","detail":"<BRANCH>","skip":null},…]}`, une action par étape dans l'ordre d'exécution : `add`, `commit` (détail = message), `push`, un `merge` par branche citée, `checkout` final de retour sur `<BRANCH>`. `skip` = raison d'une action ignorée, sinon `null`. N'écrit rien.
-- `run` → exécute ces actions dans cet ordre ; chaque `merge` fusionne toujours `<BRANCH>`, jamais la branche précédente de la chaîne, puis pousse la cible. Premier échec git → arrêt, erreur git sur la sortie d'erreur. Succès → un objet JSON sur une ligne : `{"branch":"<BRANCH>","commit":"<hash court>","updated":["<BRANCH>",…],"skipped":[{"branch":"<cible>","reason":"<raison>"},…]}` — `commit` à `null` si rien n'a été commité, `updated` = `<BRANCH>` puis chaque cible fusionnée, `skipped` vide si aucune cible ignorée.
-- Branche citée égale à `<BRANCH>` → absente des actions. Branche absente → `skip` `branch missing`, jamais créée. Branche extraite dans un autre worktree → `skip` `checked out in another worktree`. Working tree propre → `add` et `commit` en `skip` `nothing to commit`, le `push` reste.
-- Sorties : `0` succès · `1` usage ou garde (branche courante différente de `--branch`, message vide ou au-delà de 150 caractères) · `2` échec git.
-
-**Rendu de `preview` — tableau récapitulatif, aucun autre format :** tableau Markdown, trois colonnes, en-têtes générés dans la langue de l'utilisateur : numéro d'ordre, action git, détail. Une ligne par action dans l'ordre du JSON : ``| <step> | `<action>` | <detail> |`` ; détail de `commit` entre guillemets ; `skip` non nul → ` — skipped — <skip>` ajouté au détail ; `|` du détail échappé en `\|`.
-
-⚠️ JSON jamais affiché brut ; tableau jamais complété d'une liste de fichiers ni d'un décompte de lignes.
-
-### Gabarit — confirmation `Engrave`
-
-Gabarit figé des étapes 3 et 4, rempli depuis le JSON de `preview` — crochets à remplir, rien d'autre ne change. Exemple : `grave dev`, sans projet lié.
-
-Réponse — étape 3, tableau récapitulatif :
-
-```markdown
-| # | [Action git] | [Détail] |
-|---|---|---|
-| 1 | `add` | ship |
-| 2 | `commit` | "[message]" |
-| 3 | `push` | origin · ship |
-| 4 | `merge` | ship → dev |
-| 5 | `checkout` | ship |
-```
-
-Appel `AskUserQuestion` — étape 4, liste numérotée en dur dans `question`, une ligne par action dans l'ordre du JSON : `<step>. <action> — <detail>` ; détail de `commit` entre guillemets ; `skip` non nul → ` — skipped — <skip>` ajouté au détail :
-
-```
-header:   Engrave
-question: 1. add — ship
-          2. commit — "[message]"
-          3. push — origin · ship
-          4. merge — ship → dev
-          5. checkout — ship
-
-          [Lancer la séquence de livraison ?]
-option 1: [Lancer la séquence] — [Exécute les actions du tableau, dans l'ordre.]
-option 2: [Annuler] — [N'exécute rien.]
-```
-
-⚠️ Réponse → tableau Markdown à trois colonnes ; `question` → liste numérotée, jamais un tableau Markdown (non rendu dans la boîte de dialogue). Jamais une phrase qui résume les actions à la place de l'un ou de l'autre.
-
-Projet lié retenu → sous le bloc du parent, dans la réponse comme dans `question` : une ligne `<LINKED>` seule, puis son bloc au même format, numérotation reprise à 1.
+- `run` → exécute une opération git par action, dans cet ordre : `add`, `commit`, `push` de `<BRANCH>` ; pour chaque branche citée, `checkout` de la cible, `merge` de `<BRANCH>` — jamais la branche précédente de la chaîne —, `push` de la cible ; `checkout` final de retour sur `<BRANCH>` dès qu'une branche est citée. Premier échec git → arrêt, erreur git sur la sortie d'erreur ; conflit → dépôt laissé sur la cible, merge en cours.
+- JSON de `run`, écrit sur une ligne en succès comme en échec git : `{"branch":"<BRANCH>","status":"done|failed","actions":[{"step":1,"action":"add","branch":"<branche>","status":"<statut>","detail":<détail|null>,"reason":<raison|null>},…]}`.
+- Statut d'une action : `done` exécutée · `skipped` écartée avant exécution, `reason` dit pourquoi · `failed` en échec, `reason` = `conflict`, `rejected` ou `git error` · `not_run` non exécutée, la séquence s'étant arrêtée avant elle.
+- `detail` d'une action `done` : `commit` → hash court ; `push` → `<remote>: <ancien>..<nouveau>`, `<remote>: up to date` ou `<remote>: new branch` ; `merge` → `fast-forward`, `merge commit <hash court>` ou `already up to date` ; `add` / `checkout` → `null`. Action `failed` sur conflit → fichiers en conflit, séparés par `, `.
+- Branche citée égale à `<BRANCH>` → absente des actions. Branche absente → une seule action `merge` en `skipped`, `branch missing`, jamais créée. Branche extraite dans un autre worktree → idem, `checked out in another worktree`. Working tree propre → `add` et `commit` en `skipped`, `nothing to commit`, le `push` reste. Après un échec, une action `skipped` garde son statut et sa raison.
+- Sorties : `0` succès · `1` usage ou garde (branche courante différente de `--branch`, message vide ou au-delà de 150 caractères), sans JSON · `2` échec git, JSON écrit.
+- `preview` → même liste d'actions en JSON, statut `planned` ou `skipped`, sans rien exécuter — jamais appelé par la Livraison.
 
 ### Gabarit — compte rendu de livraison
 
-Gabarit figé de l'étape 8, rempli depuis le JSON de `run` — crochets à remplir, rien d'autre ne change. Un tableau par projet, trois colonnes, en-têtes générés dans la langue de l'utilisateur : branche, résultat, détail. Exemple : `grave dev staging master`, `staging` absente, un projet lié livré sur sa seule branche.
+Gabarit figé de l'étape 5, rempli depuis le JSON de `run` — crochets à remplir, rien d'autre ne change. Un tableau par projet, cinq colonnes dans cet ordre, en-têtes générés dans la langue de l'utilisateur : numéro d'ordre, branche, opération, résultat, détail. Exemple : `grave dev staging master`, `staging` absente, conflit sur `master` ; un projet lié livré sur sa seule branche.
 
 ```markdown
-| [Branche] | [Résultat] | [Détail] |
-|---|---|---|
-| `ship` | `updated` | commit `a3f9c12` |
-| `dev` | `updated` | merge `ship` → `dev` |
-| `master` | `updated` | merge `ship` → `master` |
-| `staging` | `skipped` | branch missing |
+| # | [Branche] | [Opération] | [Résultat] | [Détail] |
+|---|---|---|---|---|
+| 1 | `ship` | `add` | [fait] | |
+| 2 | `ship` | `commit` | [fait] | `a3f9c12` "[message]" |
+| 3 | `ship` | `push` | [fait] | origin: `9e1b2c4..a3f9c12` |
+| 4 | `dev` | `checkout` | [fait] | |
+| 5 | `dev` | `merge` | [fait] | `ship` → `dev` · fast-forward |
+| 6 | `dev` | `push` | [fait] | origin: `7d0e3a1..a3f9c12` |
+| 7 | `staging` | `merge` | [ignoré] | branch missing |
+| 8 | `master` | `checkout` | [fait] | |
+| 9 | `master` | `merge` | [échec] | conflict — `README.md`, `CHANGELOG.md` |
+| 10 | `master` | `push` | [non exécuté] | |
+| 11 | `ship` | `checkout` | [non exécuté] | |
+
+[erreur git telle quelle]
 
 `D:/www/topdon_api`
 
-| [Branche] | [Résultat] | [Détail] |
-|---|---|---|
-| `forge/ship` | `updated` | commit `7be04d1` |
+| # | [Branche] | [Opération] | [Résultat] | [Détail] |
+|---|---|---|---|---|
+| 1 | `forge/ship` | `add` | [fait] | |
+| 2 | `forge/ship` | `commit` | [fait] | `7be04d1` "[message]" |
+| 3 | `forge/ship` | `push` | [fait] | origin: new branch |
 ```
 
-- Première ligne → `<branch>` du JSON, `updated`, ``commit `<commit>` `` ; `commit` à `null` → `nothing to commit`.
-- Puis une ligne par autre branche de `updated`, dans l'ordre du JSON : `updated`, ``merge `<branch>` → `<cible>` ``.
-- Puis une ligne par entrée de `skipped`, dans l'ordre du JSON : `skipped`, `<reason>`.
-- Projet lié → une ligne `<LINKED>` seule, puis son tableau au même format. Projet lié sans rien à graver → sa ligne "`<LINKED>`: nothing to engrave." à la place du tableau. Projet lié en échec → sa ligne `<LINKED>`, puis l'erreur telle quelle (étape 7).
+- Une ligne par action du JSON, dans son ordre : `step`, `branch`, `action`, libellé du `status` dans la langue de l'utilisateur, puis le détail.
+- Libellé du `status` — jamais le code brut ; en français : `done` → fait · `skipped` → ignoré · `failed` → échec · `not_run` → non exécuté. Raisons et détails gardés tels que le JSON les donne.
+- Détail `done` : `commit` → hash en inline code suivi du message de l'appel entre guillemets ; `push` → `detail` tel quel, plage en inline code ; `merge` → ``` `<BRANCH>` → `<branch>` · <detail> ``` ; `detail` à `null` → cellule vide.
+- Détail `skipped` → `reason`. Détail `failed` → `reason`, suivie de ` — ` et des fichiers en inline code si `detail` est non nul. Détail `not_run` → cellule vide.
+- `status` du JSON à `failed` → erreur git telle quelle sous le tableau.
+- Projet lié → une ligne `<LINKED>` seule, puis son tableau au même format. Projet lié sans rien à graver → sa ligne "`<LINKED>`: nothing to engrave." à la place du tableau. Projet lié en sortie `1` → sa ligne `<LINKED>`, puis l'erreur telle quelle.
 
-⚠️ JSON jamais affiché brut ; compte rendu jamais complété d'une liste de fichiers ni d'un décompte de lignes, jamais remplacé par une phrase de résumé.
+⚠️ JSON jamais affiché brut ; compte rendu jamais complété d'une liste de fichiers — hors fichiers en conflit — ni d'un décompte de lignes, jamais remplacé par une phrase de résumé.
 
 ---
 

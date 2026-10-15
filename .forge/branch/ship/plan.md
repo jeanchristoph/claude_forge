@@ -31,7 +31,7 @@
 **Effort:** S
 **Files:** `skills/forge/phases/p5-resume.md`, `skills/forge/SKILL.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
 **Description:** Après validation par l'utilisateur des tests de T1 à T3 en l'état : `grave` / `engrave` adoptent le déroulé actuel de la livraison directe — tableau `preview` affiché comme compte rendu, `run` aussitôt, sans question `Engrave` (mode délégué `SCOPE: branch` compris) ; le déclencheur reste strict (le message commence par `grave` / `engrave`, branches existantes uniquement). Commandes `ship` / `livre` et paragraphe « Livraison directe » supprimés ; questions `Linked` / `Linked branches` gardées. `engrave.sh` inchangé : `preview` reste disponible pour une future commande de dry run, à nommer plus tard. Docs : puce « Shipping shortcuts », section Livraison et intro des deux README ; entrée « Direct shipping » de `[Unreleased]` dans le CHANGELOG réécrite. Au merge de `fix` : écarter sa question `Ship` (60 s).
-[!] blocked — en attente des tests de l'utilisateur sur T1 à T3 en l'état.
+[x] Débloquée sur ordre de l'utilisateur : `grave` sans confirmation, `ship` / `livre` supprimés, plus de tableau récapitulatif avant `run` — compte rendu final seul, `preview` n'est plus appelé, `engrave.sh` inchangé ; README ×2, CHANGELOG, SKILL.md.
 
 ### T5 — Tableau récapitulatif dans la question `Engrave`
 **Effort:** S
@@ -63,6 +63,18 @@
 **Description:** En cas de succès, `run` écrit un objet JSON sur une ligne au lieu des lignes `commit` / `updated` / `skipped` : `{"branch":…,"commit":"<hash court>"|null,"updated":[…],"skipped":[{"branch":…,"reason":…}]}`. `commit` vaut `null` si le working tree était propre et `skipped` vaut `[]` si rien n'est ignoré. `render_report` est réécrit sur `json_string`, sans `jq`. Gardes, codes de sortie, arrêt sur échec et erreurs sur stderr inchangés. Tests de `run` réécrits sur le JSON. Dans `p5-resume.md`, l'étape 8 renvoie vers un « Gabarit — compte rendu de livraison » : un tableau par projet (branche / résultat / détail), départ et commit, branches fusionnées, branches ignorées avec leur raison, parent puis chaque `<LINKED>` ; JSON jamais affiché brut. README ×2 (Shipping), `### Changed` au CHANGELOG, `project.md`.
 [x] `run` en JSON, 26 tests verts ; gabarit du compte rendu en tableaux (un par projet, une ligne par branche) dans `p5-resume.md`, README ×2, CHANGELOG, `project.md`.
 
+### T10 — Tâche proposée recopiée dans la question `Plan`
+**Effort:** S
+**Files:** `skills/forge/phases/p5-resume.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Section « Surveillance des demandes complémentaires », étape 2. Le champ `question` de la question `AskUserQuestion` `Plan` (`Validate` / `Cancel`) reçoit une copie en dur de la tâche formulée : titre, effort, fichiers, description, et l'entrée `## Scope & rules` proposée s'il y en a une. Cette copie est en texte brut, suivie d'une ligne vide puis de la phrase de question. Elle n'utilise jamais de tableau Markdown ni de champ `preview`. La réponse garde la présentation complète. On ajoute un `⚠️` : le texte écrit avant la question peut être masqué à l'écran. Le gabarit est figé, comme celui de la confirmation `Engrave` en T8. En mode délégué, le `content` ne change pas ; c'est le parent qui le recopie en tête de `question` quand il relaie une question `Plan`. Mises à jour : section Out-of-scope des deux README et une entrée `### Changed` dans le CHANGELOG. Les autres validations (plan, brief, rapport) ne changent pas.
+[x] « Gabarit — question `Plan` » dans `p5-resume.md`, relais `header` `Plan`, README ×2, CHANGELOG.
+
+### T11 — Compte rendu de livraison détaillé, une ligne par opération git
+**Effort:** M
+**Files:** `skills/forge/scripts/engrave.sh`, `tests/engrave.test.sh`, `skills/forge/phases/p5-resume.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`, `.forge/project.md`
+**Description:** Chaque merge est décomposé en `checkout <cible>`, `merge <BRANCH>`, `push <cible>` ; séquence = `add`, `commit`, `push`, ce trio par cible, `checkout` de retour. `run` renvoie `{"branch","status":"done|failed","actions":[{step, action, branch, status, detail, reason}]}`, statut d'action `done` / `skipped` / `failed` / `not_run`, à la place de `commit` / `updated` / `skipped`. Détail : `commit` → hash court ; `push` → remote et plage `ancien..nouveau`, ou `up to date` ; `merge` → `fast-forward`, `merge commit <hash>` ou `already up to date` ; action ignorée → sa raison. JSON produit même en échec (sortie `2`) : action en échec `failed`, suivantes `not_run`, erreur git sur stderr. Conflit → `failed`, raison `conflict`, fichiers en conflit en détail (seule liste de fichiers autorisée). Aucune résolution automatique : arrêt, dépôt laissé sur la cible, merge en cours. `preview` suit la même liste. Gabarit du compte rendu réécrit : un tableau par projet, colonnes `#` / opération / branche / résultat / détail, une ligne par action, erreur git sous le tableau. Étape 3 : sortie `2` → tableau aussi. Tests de `run` réécrits. README ×2, CHANGELOG `### Changed`, `project.md`.
+[x] Une ligne par opération git, statuts `done` / `skipped` / `failed` / `not_run`, JSON aussi en échec ; colonnes `#` / branche / opération / résultat / détail ; 33 tests verts, mutations détectées.
+
 ## Risks
 - Appeler le script déclenche une demande de permission Bash, sauf en mode auto. En livraison directe, cette demande peut bloquer la séquence au-delà des 60 s de la question `Ship`. Aucune règle `permissions.allow` n'est ajoutée : autoriser d'office un script qui commit et pousse irait contre la règle des commits.
 - Sous Windows, le script dépend de Git Bash, comme le reste du skill.
@@ -76,10 +88,12 @@ None
 | T1 — Script `engrave.sh` et tests | M | [x] |
 | T2 — Brancher `p5-resume.md` sur le script | S | [x] |
 | T3 — Documentation et métadonnées | S | [x] |
-| T4 — `grave` en mode `ship`, suppression de `ship` / `livre` | S | [!] blocked — tests utilisateur |
+| T4 — `grave` en mode `ship`, suppression de `ship` / `livre` | S | [x] |
 | T5 — Tableau dans la question `Engrave` | S | [x] |
 | T6 — Tableau dans le texte de la question `Engrave` | S | [x] |
 | T7 — `preview` en JSON, mise en page par Claude | M | [x] |
 | T8 — Tableau toujours affiché à la confirmation `grave` | S | [x] |
 | T9 — `run` en JSON, gabarit du compte rendu final | S | [x] |
-| **Total** | **2M + 7S** | |
+| T10 — Tâche proposée recopiée dans la question `Plan` | S | [x] |
+| T11 — Compte rendu détaillé, une ligne par opération git | M | [x] |
+| **Total** | **3M + 8S** | |

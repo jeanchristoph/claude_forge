@@ -19,7 +19,7 @@ Là où Claude Code part directement dans le code dès qu'on lui décrit un prob
 2. **Plan** — décomposer en tâches estimées, attendre une validation explicite
 3. **Actif** — exécuter avec suivi d'avancement en temps réel
 
-Une fois actif, forge ne s'arrête pas au code : il délègue des tâches à des sous-agents étanches — projet lié ou branche du même dépôt — en te relayant chaque question, grave la branche (commit, push, merges, livraison relayée, release) sous une confirmation unique, et la clôt avec un rapport publié dans ClickUp et une réponse client.
+Une fois actif, forge ne s'arrête pas au code : il délègue des tâches à des sous-agents étanches — projet lié ou branche du même dépôt — en te relayant chaque question, grave la branche (commit, push, merges, livraison relayée, release) en une seule commande, et la clôt avec un rapport publié dans ClickUp et une réponse client.
 
 Le résultat : moins de mauvaises surprises, des implémentations qui restent dans le périmètre défini, et un historique par branche qui survit aux compactions de contexte. Cela facilite aussi grandement le travail en équipe de plusieurs développeurs : chacun travaille sur sa propre branche, et reprendre une branche commencée par un autre, c'est hériter de tout ce qu'il faut pour poursuivre le développement — les actions déjà faites, le contexte et la documentation — puisque tout ce que forge génère (brief, plan, log, livrables) vit avec la branche et voyage avec elle dans git.
 
@@ -37,7 +37,7 @@ Le résultat : moins de mauvaises surprises, des implémentations qui restent da
 - **Détection hors périmètre** — une demande hors du plan courant devient une tâche du plan : forge la formule, tu valides la formulation, rien de plus.
 - **Branche en argument** — `/forge <nom-de-branche>` bascule sur cette branche, créée depuis la branche par défaut à jour (`master`, sinon `main`) si elle n'existe pas — jamais depuis la branche courante. L'argument est toujours un nom de branche git, jamais un identifiant de ticket.
 - **Garde main/master** — sans argument, sur les branches protégées, forge demande soit un identifiant de ticket, soit un nom de branche — une fois `project.md` et `coding-standards.md` en place, juste avant le brief.
-- **Raccourcis de livraison** — `"grave master"` / `"engrave master"` (ou avec `"dev"`) commit, push et merge en une étape confirmée ; `"livre master"` / `"ship master"` l'exécute directement, sans confirmation.
+- **Raccourci de livraison** — `"grave master"` / `"engrave master"` (ou avec `"dev"`) commit, push et merge directement : la commande vaut feu vert, aucune confirmation demandée.
 - **Survie à la compaction** — le hook `PreCompact` injecte l'état forge (branche, objectif, statut des tâches) dans le résumé de contexte compacté.
 - **Cross-platform** — détection automatique Unix/Windows, installeurs séparés.
 
@@ -317,7 +317,7 @@ Une **action directe** ne devient jamais une tâche : un ordre précis — quoi,
 
 **Réaction :** une nouvelle demande est toujours une nouvelle tâche du plan — forge ne demande jamais s'il faut l'ajouter ou la traiter hors plan.
 1. Signaler : `"This request isn't in the current plan."`, puis formuler la tâche telle qu'elle entre au plan — titre, effort, fichiers, description — avec l'entrée `## Scope & rules` qu'elle implique, si le périmètre change durablement.
-2. Poser une seule question : valider, ou annuler. Un changement de formulation passe par le champ de texte libre, comme pour toute validation de contenu.
+2. Poser une seule question : valider, ou annuler. La tâche est recopiée en texte brut en tête de la question elle-même, sur un gabarit figé — titre, effort et description entière en puces, numérotées quand l'ordre compte ; fichiers et entrée de périmètre restent dans la réponse — : elle reste à l'écran même quand le texte au-dessus de la boîte de dialogue est masqué. Un changement de formulation passe par le champ de texte libre, comme pour toute validation de contenu.
 3. Validée → la tâche entre au plan (et au brief, si son périmètre a changé) et s'exécute selon le mode en cours. Annulée → rien n'entre au plan, la demande n'est pas traitée.
 
 ---
@@ -397,8 +397,7 @@ Aucun mandat ici : le parent n'écrit rien dans le worktree, ni brief, ni log, n
 son code. Le sous-agent reçoit le chemin du worktree, la branche, ta langue et `SCOPE: branch`, puis y
 exécute le skill forge exactement comme tu le ferais sur cette branche — project, brief, log et plan lus
 comme les phases le prescrivent. La différence avec un projet lié : **chaque choix t'est relayé** —
-l'objectif du brief, la validation du plan, le mode d'exécution, le feu vert avant chaque tâche, la
-confirmation de gravure. « Le plan validé vaut accord » ne s'applique pas dans cette portée, sauf si tu
+l'objectif du brief, la validation du plan, le mode d'exécution, le feu vert avant chaque tâche. « Le plan validé vaut accord » ne s'applique pas dans cette portée, sauf si tu
 choisis valider et enchaîner à la validation du plan.
 
 L'exécution se termine par un `FORGE_DONE` d'une ligne : rien n'est écrit dans le plan ni le log du
@@ -415,18 +414,21 @@ parent, puisque rien n'a été délégué. Le worktree reste en place — forge 
 
 Une ou plusieurs branches existantes, citées dans l'ordre voulu (ex : `"grave dev"`, `"grave master"`, `"grave dev master"`). `<BRANCH>` est mergée tour à tour dans chaque branche citée, toujours depuis la branche de départ — jamais en enchaînant une branche citée dans la suivante.
 
-La séquence est exécutée par `skills/forge/scripts/engrave.sh`, jamais recomposée à la main : `preview` renvoie
-les actions prévues en JSON (`add`, `commit`, `push`, un `merge` par branche citée, `checkout` final de retour sur
-`<BRANCH>`) et Forge les met en page en tableau récapitulatif (`#`, action, détail — en-têtes dans ta langue) dans sa
-réponse ; `run` exécute exactement la même
-liste, quel que soit le nombre de branches. Le script fait le traitement, le modèle fait la mise en page. Une branche égale à `<BRANCH>` est écartée ; une branche absente, ou extraite dans un autre
-worktree, est marquée `skipped` ; un working tree propre saute `add` et `commit` et pousse quand même. Lancer
+La séquence est exécutée par `skills/forge/scripts/engrave.sh`, jamais recomposée à la main : `run` exécute `add`, `commit`,
+`push`, puis pour chaque branche citée `checkout`, `merge` et `push` de cette branche, et un `checkout` final de retour
+sur `<BRANCH>`, quel que soit le nombre de branches — une opération git par étape —, puis renvoie du JSON que Forge
+met en page en compte rendu, même quand une étape échoue (`preview` liste les mêmes actions sans rien
+exécuter ; la livraison ne l'appelle pas). Le script fait le traitement, le modèle fait la mise en page. Une branche égale à `<BRANCH>` est écartée ; une branche absente, ou extraite dans un autre
+worktree, est marquée `skipped` ; un working tree propre saute `add` et `commit` et pousse quand même. Sur un conflit de merge ou un push
+rejeté, le script s'arrête : l'étape en échec est `failed` avec sa raison (les fichiers en conflit pour un conflit),
+chaque étape suivante `not_run` — jamais exécutée, la séquence s'étant arrêtée avant elle — et le conflit reste en
+place, résolu seulement à ta demande. Lancer
 `bash tests/engrave.test.sh` pour le vérifier.
 
-**Livraison directe :** `livre` / `ship` en tête de message, seul ou suivi uniquement de branches
-existantes (`livre`, `livre dev master`) — supprime la confirmation ; tout autre texte dans le message
-(`livre-moi un export`) n'est pas une livraison : le tableau récapitulatif s'affiche comme
-compte rendu et la séquence s'exécute aussitôt. La commande autorise cette séquence seulement. Les
+**Sans confirmation :** `grave` / `engrave` en tête de message, seul ou suivi uniquement de branches
+existantes (`grave`, `grave dev master`) — la séquence s'exécute aussitôt, sans récapitulatif
+préalable ; tout autre texte dans le message n'est pas une livraison. La commande autorise cette séquence
+seulement. Les
 questions sur les projets liés restent posées — elles fixent le périmètre, elles ne confirment rien. Un
 conflit de merge ou un push rejeté arrête la séquence et affiche l'erreur telle quelle ; rien n'est
 jamais forcé.
@@ -438,7 +440,7 @@ Quand le plan porte des tâches déléguées, graver le parent propose aussi de 
 modifications non commitées : d'abord s'il faut le livrer, puis sur quelles branches — les mêmes que le parent,
 `<parent>/<BRANCH>` seule (commit et push, aucun merge), ou une liste de ton choix. Son message de commit est généré
 depuis les tâches déléguées cochées, jamais depuis son code, que le parent ne lit pas. Les actions du projet lié
-ont leur propre tableau récapitulatif sous celui du parent, et la confirmation unique couvre tout ; une branche
+ont leur propre tableau de compte rendu sous celui du parent, et la même commande livre tout ; une branche
 cible absente du dépôt lié est ignorée, jamais créée. La livraison s'exécute dans le worktree ; une branche
 cible extraite dans un autre dossier — dossier propre du dépôt lié compris — est ignorée, la fusion se faisant
 depuis ce dossier-là. Le sous-agent délégué n'intervient jamais : la livraison
@@ -446,7 +448,7 @@ relayée est du git pur, exécuté par le parent.
 
 Tout ce qui est publié sur la forge distante après une livraison — titre et notes de release, description de tag ou de PR — est rédigé en **anglais**, quelle que soit ta langue. Le message de commit suit la langue des commits du dépôt.
 
-Le message de commit est généré automatiquement — pas de confirmation dédiée sur le message lui-même. Avant toute exécution, Forge affiche un tableau récapitulatif des actions git prévues : add, commit avec son message, push, puis une ligne par merge (`<BRANCH>` → cible), et une dernière ligne pour le retour sur `<BRANCH>`. Les changements de branche intermédiaires ne sont jamais listés. Le tableau suit un gabarit figé, et les mêmes actions sont recopiées en liste numérotée dans le texte même de la question de confirmation : elles restent à l'écran même quand le texte au-dessus de la boîte de dialogue est masqué — jamais omis, jamais remplacé par une annonce. Aucune commande git — `git add` compris — n'est lancée avant la confirmation. Une seule confirmation couvre toute la séquence : add, commit, push, puis chaque merge, sans validation intermédiaire. Une fois la séquence exécutée, Forge n'écrit plus rien — ni entrée de log, ni note de plan : le compte rendu est du texte seul, sur un gabarit figé — un tableau par projet, une ligne par branche : la branche de départ avec le hash de son commit (ou none), chaque branche fusionnée, chaque branche ignorée avec sa raison — et le working tree reste tel que la livraison l'a laissé.
+Le message de commit est généré automatiquement — pas de confirmation dédiée sur le message lui-même. Aucun récapitulatif préalable : toute la séquence s'exécute d'un trait — add, commit, push, puis chaque merge, sans validation intermédiaire. Une fois la séquence exécutée, Forge n'écrit plus rien — ni entrée de log, ni note de plan : le compte rendu est du texte seul, sur un gabarit figé — un tableau par projet, une ligne par opération git, colonnes `#`, branche, opération, résultat dans ta langue (pour un utilisateur français : fait, ignoré, échec, non exécuté — `done`, `skipped`, `failed`, `not_run` dans le JSON), détail : hash et message du commit, plage poussée ou `up to date`, `fast-forward` / commit de merge / `already up to date`, raison d'un saut ou d'un échec, erreur git sous le tableau en cas d'échec — et le working tree reste tel que la livraison l'a laissé.
 
 ---
 

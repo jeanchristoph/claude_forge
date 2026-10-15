@@ -21,7 +21,7 @@ Where Claude Code jumps straight into code as soon as you describe a problem, th
 2. **Plan** — break down into estimated tasks, wait for explicit validation
 3. **Active** — execute with real-time progress tracking
 
-Once active, forge does not stop at the code: it delegates tasks to sealed subagents — a linked project or a branch of the same repository — with every question relayed to you, engraves the branch (commit, push, merges, relayed shipping, release) under a single confirmation, and closes it with a report posted to ClickUp and a client reply.
+Once active, forge does not stop at the code: it delegates tasks to sealed subagents — a linked project or a branch of the same repository — with every question relayed to you, engraves the branch (commit, push, merges, relayed shipping, release) in a single command, and closes it with a report posted to ClickUp and a client reply.
 
 The result: fewer surprises, implementations that stay within the defined scope, and a per-branch history that survives context compaction. It also makes working as a team of several developers much easier: each one works on their own branch, and taking over a branch started by someone else means inheriting everything needed to carry the development on — the actions already done, the context and the documentation — since everything forge generates (brief, plan, log, deliverables) lives with the branch and travels with it in git.
 
@@ -39,7 +39,7 @@ The result: fewer surprises, implementations that stay within the defined scope,
 - **Out-of-scope detection** — a request outside the current plan becomes a plan task: forge writes it up and you validate the wording, nothing more.
 - **Branch as argument** — `/forge <branch-name>` checks out that branch, creating it from the up-to-date default branch (`master`, else `main`) if it does not exist — never from the current one. The argument is always a git branch name, never a ticket ID.
 - **main/master guard** — without an argument, on protected branches, forge asks for either a ticket ID or a branch name — after `project.md` and `coding-standards.md` are in place, right before the brief.
-- **Shipping shortcuts** — `"grave master"` / `"engrave master"` (or with `"dev"`) commit, push, and merge in one confirmed step; `"ship master"` / `"livre master"` runs it straight away, without the confirmation.
+- **Shipping shortcut** — `"grave master"` / `"engrave master"` (or with `"dev"`) commit, push, and merge straight away: the command is the go-ahead, no confirmation asked.
 - **Compaction survival** — the `PreCompact` hook injects the forge state (branch, goal, task statuses) into the compacted context summary.
 - **Cross-platform** — automatic Unix/Windows detection, separate installers.
 
@@ -318,7 +318,7 @@ A **direct action** never becomes a task: a precise order — what, where — th
 
 **Reaction:** a new request is always a new plan task — forge never asks whether to add it or handle it off-plan.
 1. Flag it: `"This request isn't in the current plan."`, then write the task up as it would enter the plan — title, effort, files, description — together with the `## Scope & rules` entry it implies, if the scope changes durably.
-2. Ask one question only: validate, or cancel. A change to the wording goes through the free-text field, as for any content validation.
+2. Ask one question only: validate, or cancel. The task is copied as plain text at the top of the question itself, on a fixed template — title, effort, and the full description as bullets, numbered when order matters; files and scope entry stay in the reply — so it stays on screen even when the text above the dialog is hidden. A change to the wording goes through the free-text field, as for any content validation.
 3. Validated → the task enters the plan (and the brief, if its scope changed) and runs under the current mode. Cancelled → nothing enters the plan and the request is not handled.
 
 ---
@@ -397,8 +397,7 @@ There is no mandate here: the parent writes nothing in the worktree, neither bri
 never reads its code. The subagent gets the worktree path, the branch, your language and `SCOPE: branch`,
 and runs the forge skill there exactly as you would on that branch — project, brief, log and plan read as
 the phases prescribe. The difference with a linked project is that **every choice is relayed to you**:
-the brief objective, the plan validation, the execution mode, the go-ahead before each task, the engrave
-confirmation. "A validated plan is the go-ahead" does not apply in this scope, unless you pick validate
+the brief objective, the plan validation, the execution mode, the go-ahead before each task. "A validated plan is the go-ahead" does not apply in this scope, unless you pick validate
 and chain when validating the plan.
 
 The run ends with a one-line `FORGE_DONE`: nothing is written into the parent plan or log, since nothing
@@ -415,18 +414,21 @@ the branch is engraved.
 
 One or more existing branches, named in the desired order (e.g. `"grave dev"`, `"grave master"`, `"grave dev master"`). `<BRANCH>` is merged into each named branch in turn, always from the starting branch — never chaining one named branch into the next.
 
-The sequence is run by `skills/forge/scripts/engrave.sh`, never rebuilt by hand: `preview` returns the planned
-actions as JSON (`add`, `commit`, `push`, one `merge` per named branch, final `checkout` back to `<BRANCH>`) and
-Forge lays them out as the recap table (`#`, action, detail — headers in your language) in its reply; `run` executes the very same list, whatever the number of branches.
-The script does the work, the model does the layout. A
+The sequence is run by `skills/forge/scripts/engrave.sh`, never rebuilt by hand: `run` executes `add`, `commit`, `push`,
+then for each named branch `checkout`, `merge` and `push` of that branch, and a final `checkout` back to `<BRANCH>`,
+whatever the number of branches — one git operation per step — and returns JSON that Forge lays out as the report,
+even when a step fails (`preview` lists the same actions without running anything; the
+delivery does not call it). The script does the work, the model does the layout. A
 branch equal to `<BRANCH>` is left out; a missing branch, or one checked out in another worktree, is marked
-`skipped`; a clean working tree skips `add` and `commit` and still pushes. Run `bash tests/engrave.test.sh`
+`skipped`; a clean working tree skips `add` and `commit` and still pushes. On a merge conflict or a rejected push the
+script stops: the failed step is `failed` with its reason (the conflicted files for a conflict), every later step
+`not_run` — never executed because the sequence stopped before it — and the conflict is left in place, resolved
+only when you ask. Run `bash tests/engrave.test.sh`
 to check it.
 
-**Direct shipping:** `ship` / `livre` at the start of the message, alone or followed only by existing
-branches (`ship`, `ship dev master`) — skips the confirmation; any other text in the message means it is
-not a shipping request: the recap table is shown as a report and the
-sequence runs at once. The command authorizes that sequence only. The linked-project questions are still
+**No confirmation:** `grave` / `engrave` at the start of the message, alone or followed only by existing
+branches (`grave`, `grave dev master`) — the sequence runs at once, with no recap beforehand; any other
+text in the message means it is not a shipping request. The command authorizes that sequence only. The linked-project questions are still
 asked — they set the scope, they confirm nothing. A merge conflict or a rejected push stops the sequence
 with the error as is; nothing is ever forced.
 
@@ -437,7 +439,7 @@ When the plan carries delegated tasks, engraving the parent also offers to ship 
 has uncommitted changes: first whether to ship it at all, then onto which branches — the same branches as
 the parent, `<parent>/<BRANCH>` only (commit and push, no merge), or a list of your own. Its commit message is
 generated from the delegated tasks marked done, never from its code, which the parent does not read. The
-linked project's actions get their own recap table under the parent's, and the single confirmation covers
+linked project gets its own report table under the parent's, and the same command ships
 everything; a target branch missing from the linked repository is skipped, never created. Shipping runs in the
 worktree; a target branch checked out in another folder — the linked repository's own folder included — is
 skipped, the merge being done from there. The delegated
@@ -445,7 +447,7 @@ subagent is never involved: relayed shipping is plain git, run by the parent.
 
 Anything published on the remote forge after a delivery — release title and notes, tag or PR description — is written in **English**, whatever your language. The commit message follows the language of the repository's commits.
 
-The commit message is generated automatically — no separate confirmation on the message itself. Before anything runs, Forge prints a recap table of the planned git actions: add, commit with its message, push, then one row per merge (`<BRANCH>` → target), and a final row for the return to `<BRANCH>`. Intermediate branch switches are never listed. The table follows a fixed template, and the same actions are written as a numbered list inside the confirmation question itself, so they stay on screen even when the text above the dialog is hidden — never skipped, never replaced by an announcement. No git command — `git add` included — runs before you confirm. A single confirmation covers the whole sequence: add, commit, push, then every merge, with no further prompt in between. Once the sequence has run, Forge writes nothing more — no log entry, no plan note: the report is plain text, on a fixed template — one table per project, one row per branch: the starting branch with its commit hash (or none), each merged branch, each skipped branch with its reason — and the working tree stays exactly as the delivery left it.
+The commit message is generated automatically — no separate confirmation on the message itself. No recap is shown beforehand: the whole sequence runs at once — add, commit, push, then every merge, with no prompt in between. Once the sequence has run, Forge writes nothing more — no log entry, no plan note: the report is plain text, on a fixed template — one table per project, one row per git operation, columns `#`, branch, operation, result in your language (for a French user: fait, ignoré, échec, non exécuté — `done`, `skipped`, `failed`, `not_run` in the JSON), detail: commit hash and message, pushed range or `up to date`, `fast-forward` / merge commit / `already up to date`, skip or failure reason, the git error under the table on failure — and the working tree stays exactly as the delivery left it.
 
 ---
 

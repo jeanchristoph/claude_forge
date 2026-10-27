@@ -38,7 +38,7 @@ The result: fewer surprises, implementations that stay within the defined scope,
 - **Generated SQL deployment script** — every SQL step of `## Deployment` is gathered, with no question asked, into a single `output/YYYYMMDD-deployment-script.sql` per branch, rewritten in place: one `-- STEP` section per step, a versioned script referenced in a comment, a standalone query ready to run with its check query, date-dependent values computed in SQL, any `USE` section last.
 - **Out-of-scope detection** — a request outside the current plan becomes a plan task: forge writes it up and you validate the wording, nothing more.
 - **Branch as argument** — `/forge <branch-name>` checks out that branch, creating it from the up-to-date default branch (`master`, else `main`) if it does not exist — never from the current one. The argument is always a git branch name, never a ticket ID.
-- **main/master guard** — without an argument, on protected branches, forge asks for either a ticket ID or a branch name — after `project.md` and `coding-standards.md` are in place, right before the brief.
+- **main/master guard** — without an argument, on protected branches, forge offers a temporary branch named for you (`tmp/<you>-<ddmmyyyy>`), a ticket ID or a branch name — after `project.md` and `coding-standards.md` are in place, right before the brief.
 - **Shipping shortcut** — `"grave master"` / `"engrave master"` (or with `"dev"`) commit, push, and merge straight away: the command is the go-ahead, no confirmation asked.
 - **Compaction survival** — the `PreCompact` hook injects the forge state (branch, goal, task statuses) into the compacted context summary.
 - **Cross-platform** — automatic Unix/Windows detection, separate installers.
@@ -92,7 +92,8 @@ forge/
 │   │   │   ├── p4-plan.md             (State 4 — Plan)
 │   │   │   └── p5-resume.md           (State 5 — Active)
 │   │   └── scripts/
-│   │       └── engrave.sh             (shipping sequence: preview / run)
+│   │       ├── engrave.sh             (shipping sequence: preview / run)
+│   │       └── temp-branch.sh         (temporary branch from the main/master guard)
 │   └── forge-clickup/        → extension: ClickUp task kickoff
 │       └── SKILL.md
 ├── hooks/
@@ -114,7 +115,8 @@ forge/
 │   ├── demo.tape
 │   └── README.md             (how to regenerate)
 ├── tests/
-│   └── engrave.test.sh       → bash tests/engrave.test.sh, throwaway repositories only
+│   ├── engrave.test.sh       → bash tests/engrave.test.sh, throwaway repositories only
+│   └── temp-branch.test.sh   → bash tests/temp-branch.test.sh, throwaway repositories only
 ├── .gitattributes
 └── .gitignore
 ```
@@ -221,8 +223,16 @@ content again unchanged.
 ## Safety guard — main / master
 
 Without an argument, on `main` or `master`, forge asks — as a choice, not free text:
-1. Stay on the branch → provide a ticket ID (e.g. `CU-123`)
-2. Create a branch → provide a name
+1. Temporary branch → no name asked: forge creates `tmp/<you>-<ddmmyyyy>`, switches to it and goes straight to the objective
+2. Stay on the branch → provide a ticket ID (e.g. `CU-123`)
+3. Create a branch → provide a name
+
+The temporary branch name is computed by `skills/forge/scripts/temp-branch.sh`, never by hand. `<you>` is the local part of
+`git config user.email` — the part before `@` — with the numeric prefix of GitHub / GitLab noreply addresses removed,
+lowercased, accents dropped, any other character turned into `-`: `64985971+jeanchristoph@users.noreply.github.com` gives
+`tmp/jeanchristoph-27102026`, `claude.malaval@example.com` gives `tmp/claude-malaval-27102026`. The `tmp/` prefix sets it
+apart from a feature branch. A second temporary branch the same day gets `-2`, then `-3`… With no git email configured,
+forge says so and asks for a branch name instead. Run `bash tests/temp-branch.test.sh` to check it.
 
 The guard runs before State 2 — Brief, never before States 0 and 1: `project.md` and `coding-standards.md` are shared by every branch and never resolve `<BRANCH>`. In a fresh project, forge learns what the project is before asking which branch to work under.
 

@@ -23,7 +23,8 @@ forge/
 │   │   │   ├── p4-plan.md            (État 4 — Plan)
 │   │   │   └── p5-resume.md          (État 5 — Actif)
 │   │   └── scripts/
-│   │       └── engrave.sh            (séquence git de la livraison : preview / run, appelée par p5-resume.md)
+│   │       ├── engrave.sh            (séquence git de la livraison : preview / run, appelée par p5-resume.md)
+│   │       └── temp-branch.sh        (branche temporaire tmp/<identité>-<ddmmyyyy> de la garde main/master, appelée par SKILL.md)
 │   └── forge-clickup/
 │       └── SKILL.md               (guichet ClickUp : ouvre la tâche, crée la branche, passe la main à forge)
 ├── hooks/
@@ -42,7 +43,8 @@ forge/
 │   ├── demo.gif               (généré — jamais édité à la main)
 │   └── README.md              (prérequis de régénération, WSL requis)
 ├── tests/
-│   └── engrave.test.sh        (tests du script de livraison, dépôts jetables : bash tests/engrave.test.sh)
+│   ├── engrave.test.sh        (tests du script de livraison, dépôts jetables : bash tests/engrave.test.sh)
+│   └── temp-branch.test.sh    (tests de la branche temporaire, dépôts jetables : bash tests/temp-branch.test.sh)
 ├── README.md                  (documentation, anglais)
 └── README.fr.md               (même documentation, français)
 ```

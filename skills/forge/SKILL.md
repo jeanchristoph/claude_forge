@@ -150,12 +150,19 @@ Liste vide → `none`. `SCOPE: branch` → `- T1 — [note]`, sans `← parent`.
 **Uniquement sans argument.** `/forge <nom>` a déjà positionné sur `<nom>` : ne rien poser.
 
 Si BRANCH est `main` ou `master` :
-- Poser le choix avec `AskUserQuestion` — `header` : `Branch`, deux options :
+- Poser le choix avec `AskUserQuestion` — `header` : `Branch`, trois options, dans cet ordre :
+  - `Temporary branch` → "I create `tmp/<you>-<ddmmyyyy>` and switch to it — no name asked."
   - `Stay on <BRANCH>` → "Work under a ticket ID used as reference — I'll ask you for it."
   - `Create a branch` → "I create a new branch and switch to it — I'll ask you for the name."
+- **Si `Temporary branch`** : exécuter `bash <SKILL_DIR>/scripts/temp-branch.sh --root <ROOT>`, lire le JSON :
+  - `created` → utiliser `branch` comme `<BRANCH>` pour la suite. Informer en une ligne : "On branch `<branch>`."
+  - `no_identity` → informer en une ligne : "No git email configured — branch name required.", puis appliquer `Create a branch`.
+  - `failed` → afficher `detail` tel quel, STOP.
 - **Si `Stay on <BRANCH>`** : demander l'identifiant en texte libre (ex: CU-123, PROJ-456), puis l'utiliser à la place de `<BRANCH>` dans tous les chemins pour la suite.
 - **Si `Create a branch`** : demander le nom en texte libre, exécuter `!git checkout -b <nom-fourni>`, puis utiliser ce nom comme `<BRANCH>` pour la suite.
 - Sans réponse : "Choice required. Operation cancelled." et STOP.
+
+⚠️ Nom de la branche temporaire calculé par `temp-branch.sh` seul, jamais composé à la main : `tmp/` + partie locale de `user.email` (préfixe noreply GitHub / GitLab retiré, en slug) + `-<ddmmyyyy>`, suffixé `-2`, `-3`… si le nom du jour existe déjà.
 
 ---
 

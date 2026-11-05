@@ -202,7 +202,7 @@ Erreur ou résultat vide (pas de dépôt git) : demande un nom de code utilisé 
 
 Toute confirmation bloquante, tout choix fermé est posé sous forme de question à choix, jamais en
 texte libre : mode d'exécution, approche architecturale, validation du plan, mise à jour
-substantielle, demande hors périmètre, propagation d'une règle globale, livraison, livraison du projet
+substantielle, demande hors périmètre, propagation d'une règle vers `CLAUDE.md`, livraison, livraison du projet
 lié, clôture, publication ClickUp, réponse client. Le refus est toujours une option explicite, et
 l'absence de réponse vaut STOP — jamais accord. La question, ses options et leurs descriptions sont
 rédigées dans ta langue — les libellés anglais cités dans ce document sont les références internes du
@@ -311,6 +311,14 @@ Le brief est un document vivant. Les changements de scope passent par la **Déte
 **Décision ponctuelle** (choix acté et clos à un instant donné) → écrite silencieusement dans `log.md` (format : `- [AAAA-MM-JJ HH:MM] [1 ligne]`, heure locale) :
 - Choix d'implémentation mineur acté sans discussion
 - Choix utilisateur quand Claude a proposé plusieurs options (ex : "Option B retenue — raison")
+
+---
+
+## Propagation d'une règle vers CLAUDE.md
+
+Quand tu demandes une correction de syntaxe, de structure ou de convention de code (nommage, format, organisation) sur un contenu produit par Claude, forge l'applique, la journalise, puis rédige une règle générale au format `Quand [cas] → [conduite]`, pour que Claude agisse ainsi d'emblée la prochaine fois. Il en va de même pour les choix d'infrastructure et pour les choix de Claude que tu invalides. Un bug fonctionnel ou un changement de besoin ne déclenche rien.
+
+La règle est affichée en entier, puis forge demande où l'écrire : dans le `~/.claude/CLAUDE.md` global, dans le `CLAUDE.md` à la racine du projet (créé s'il est absent), ou nulle part. **Aucun `CLAUDE.md` n'est écrit sans ta réponse.** Rien n'est proposé pour un cas ponctuel ou déjà couvert par l'un des deux fichiers, et une règle gardée en local n'est jamais reproposée. Une exécution déléguée ne propose rien.
 
 ---
 

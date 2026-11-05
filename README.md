@@ -204,7 +204,7 @@ Error or empty result (no git repo): asks for a code name used as `<BRANCH>`. No
 
 Every blocking confirmation and every closed choice is asked as a selectable question, never as free
 text: execution mode, architectural approach, plan validation, substantial plan updates, out-of-scope
-requests, global rule propagation, shipping, linked-project shipping, closure, ClickUp posting, client reply.
+requests, `CLAUDE.md` rule propagation, shipping, linked-project shipping, closure, ClickUp posting, client reply.
 Refusal is always an explicit option, and no answer means STOP — never consent. The question, its
 options and their descriptions are written in your language — the English labels quoted in this
 document are the skill's internal references, not what you see on screen.
@@ -312,6 +312,14 @@ The brief is a living document. Changes of scope go through **Out-of-scope detec
 **One-off decision** (settled and closed at a point in time) → written silently into `log.md` (`- [YYYY-MM-DD HH:MM] [1 line]`, local time):
 - Minor implementation choice made without discussion
 - User's choice when Claude presented several options (e.g. "Option B chosen — reason")
+
+---
+
+## Rule propagation to CLAUDE.md
+
+When you ask for a correction of syntax, structure or code convention (naming, format, organisation) on content Claude produced, forge applies it, logs it, then drafts a general rule in the form `When [case] → [behaviour]`, so that Claude acts that way from the start next time. The same applies to infrastructure choices and to choices of Claude's that you overturn. A functional bug or a change of need triggers nothing.
+
+The rule is shown in full, then forge asks where it goes: the global `~/.claude/CLAUDE.md`, the `CLAUDE.md` at the project root (created if absent), or nowhere. **No `CLAUDE.md` is ever written without your answer.** Nothing is proposed for a one-off case or one already covered by either file, and a rule kept local is never proposed again. A delegated run proposes nothing.
 
 ---
 

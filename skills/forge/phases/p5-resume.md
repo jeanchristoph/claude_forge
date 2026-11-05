@@ -96,17 +96,34 @@ Le brief est vivant. Les changements de scope sont gérés par la **Surveillance
 
 ---
 
-## Choix d'infrastructure → propagation vers CLAUDE.md global
+## Correction ou choix d'infrastructure → propagation vers CLAUDE.md
+
+### Garde
+
+Mode délégué → aucune proposition : `AskUserQuestion` est inaccessible et aucune écriture n'a lieu hors de ROOT. STOP — ne pas continuer cette section.
 
 **Déclencheur :**
 - Un choix d'infrastructure se pose (techno, lib, pattern, service)
 - L'utilisateur revient sur un choix fait instinctivement par Claude (le corrige, l'invalide)
+- L'utilisateur demande une correction de syntaxe, de structure ou de convention de code (nommage, format, organisation) sur un contenu produit par Claude
+
+⚠️ Bug fonctionnel, changement de besoin → aucun déclenchement.
 
 **Réaction — dans l'ordre :**
-1. Logger le choix retenu dans LOG (règle ci-dessus).
-2. Si le choix dépasse le périmètre de cette branche (règle générale, pas spécifique au ticket) → en tirer une règle concise et programmatique, l'afficher telle qu'elle serait écrite, puis poser le choix avec `AskUserQuestion` — `header` : `Global rule`, options `Add to CLAUDE.md` / `Keep it local`.
-3. **Sur `Add to CLAUDE.md`** → ajouter la règle à `~/.claude/CLAUDE.md` (section existante pertinente ou nouvelle section courte). Jamais d'écriture sans validation explicite.
-4. **Sur `Keep it local`** → rester local au brief, ne jamais reproposer plus tard pour la même décision.
+1. Correction demandée → l'appliquer d'abord.
+2. Logger le choix retenu ou la correction dans LOG (règle ci-dessus).
+3. Si le cas est propre à cette branche ou à une seule occurrence (coquille isolée) → STOP — ne pas continuer cette section.
+4. Si `~/.claude/CLAUDE.md` ou le `CLAUDE.md` à la racine du projet couvre déjà le cas → STOP — ne pas continuer cette section.
+5. En tirer une règle concise et programmatique au format `Quand [cas] → [conduite]`, généralisée, sans nom de fichier ni de ticket, et l'afficher telle qu'elle serait écrite.
+6. Poser le choix avec `AskUserQuestion` — `header` : `Rule`, trois options, dans cet ordre :
+   - `Add to global CLAUDE.md` → "Add this rule to `~/.claude/CLAUDE.md`, for all your projects."
+   - `Add to project CLAUDE.md` → "Add this rule to the `CLAUDE.md` at the project root, created if absent."
+   - `Keep it local` → "Write nothing to any `CLAUDE.md`."
+7. **Sur `Add to global CLAUDE.md`** → ajouter la règle à `~/.claude/CLAUDE.md` (section existante pertinente ou nouvelle section courte).
+8. **Sur `Add to project CLAUDE.md`** → ajouter la règle au `CLAUDE.md` à la racine du projet (section existante pertinente ou nouvelle section courte), créé s'il est absent.
+9. **Sur `Keep it local`** → n'écrire dans aucun `CLAUDE.md`, ne jamais reproposer plus tard pour le même cas.
+
+⚠️ Aucune écriture dans un `CLAUDE.md` sans réponse à cette question. Sans réponse → n'écrire rien.
 
 ---
 

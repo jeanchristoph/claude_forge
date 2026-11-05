@@ -7,6 +7,8 @@
 
 set -u
 
+source "$(dirname "${BASH_SOURCE[0]}")/json.sh"
+
 readonly EXIT_USAGE=1
 readonly EXIT_GIT=2
 readonly MAX_MESSAGE_LENGTH=150
@@ -269,16 +271,6 @@ run_actions() {
 }
 
 # ── Rendu — données seules, la mise en page revient au skill (p5-resume.md) ───
-
-# Chaîne JSON sans jq (absent de Git Bash) : barre oblique inverse, guillemet et contrôles échappés.
-json_string() {
-  local text=${1//\\/\\\\}
-  text=${text//\"/\\\"}
-  text=${text//$'\n'/\\n}
-  text=${text//$'\r'/\\r}
-  text=${text//$'\t'/\\t}
-  printf '"%s"' "$text"
-}
 
 json_nullable() {
   if [ -z "$1" ]; then printf null; else json_string "$1"; fi

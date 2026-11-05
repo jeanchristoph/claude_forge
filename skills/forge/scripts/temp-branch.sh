@@ -8,6 +8,8 @@
 
 set -u
 
+source "$(dirname "${BASH_SOURCE[0]}")/json.sh"
+
 readonly EXIT_USAGE=1
 readonly EXIT_NO_IDENTITY=1
 readonly EXIT_GIT=2
@@ -93,16 +95,6 @@ free_branch_name() {
 }
 
 # ── Rendu — données seules, la mise en page revient au skill (SKILL.md) ───────
-
-# Chaîne JSON sans jq (absent de Git Bash) : barre oblique inverse, guillemet et contrôles échappés.
-json_string() {
-  local text=${1//\\/\\\\}
-  text=${text//\"/\\\"}
-  text=${text//$'\n'/\\n}
-  text=${text//$'\r'/\\r}
-  text=${text//$'\t'/\\t}
-  printf '"%s"' "$text"
-}
 
 main() {
   parse_arguments "$@"

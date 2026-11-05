@@ -32,6 +32,8 @@ Si BRIEF contient `## Origin` (`SCOPE: linked` — mandat) → les étapes ci-de
    - `Validate and chain` → "Validate the plan and work through every open task in order, without any further question."
    - `Validate` → "Validate the plan, then choose how to run the tasks."
    - `Cancel` → "Write nothing and stop."
+
+   Plan d'une seule tâche d'effort XS → sans l'option `Validate` : le feu vert unique vaut pour le plan et la tâche.
 8. Écrire `.forge/branch/<BRANCH>/plan.md` après validation — `Validate and chain` ou `Validate`.
 9. Si `project.md` contient uniquement `<!-- pending -->` → le compléter (stack, périmètre, conventions du plan).
 10. Continuer directement à l'État 5 : lire et exécuter `phases/p5-resume.md`.

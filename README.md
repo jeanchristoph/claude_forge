@@ -37,8 +37,8 @@ The result: fewer surprises, implementations that stay within the defined scope,
 - **Deployment steps in the plan** — anything to run by hand outside the git deployment — an SQL migration, a configuration setting, an operating procedure — is listed in the `## Deployment` section of `plan.md` with its timing, the tasks it comes from and its copy under `output/`, filled in as soon as the script is written.
 - **Generated SQL deployment script** — every SQL step of `## Deployment` is gathered, with no question asked, into a single `output/YYYYMMDD-deployment-script.sql` per branch, rewritten in place: one `-- STEP` section per step, a versioned script referenced in a comment, a standalone query ready to run with its check query, date-dependent values computed in SQL, any `USE` section last.
 - **Out-of-scope detection** — a request outside the current plan becomes a plan task: forge writes it up and you validate the wording, nothing more.
-- **Branch as argument** — `/forge <branch-name>` checks out that branch, creating it from the up-to-date default branch (`master`, else `main`) if it does not exist — never from the current one. The argument is always a git branch name, never a ticket ID.
-- **main/master guard** — without an argument, on protected branches, forge offers a temporary branch named for you (`tmp/<you>-<ddmmyyyy>`), a ticket ID or a branch name — after `project.md` and `coding-standards.md` are in place, right before the brief.
+- **Branch, goal or ClickUp code as argument** — `/forge <branch-name>` checks out that branch, creating it from the up-to-date default branch (`master`, else `main`) if it does not exist — never from the current branch. A goal in words skips the goal question; with `.forge/clickup.json`, a task code (`PRJ-1133` or raw id) opens the existing task.
+- **main/master guard** — without a branch as argument, on protected branches, forge offers to resume a branch with open tasks, asks the goal, then offers a branch named after it, a temporary branch (`tmp/<you>-<ddmmyyyy>`), a ticket ID or a branch name — after `project.md` and `coding-standards.md`, which are shared by every branch.
 - **Shipping shortcut** — `"grave master"` / `"engrave master"` (or with `"dev"`) commit, push, and merge straight away: the command is the go-ahead, no confirmation asked.
 - **Compaction survival** — the `PreCompact` hook injects the forge state (branch, goal, task statuses) into the compacted context summary.
 - **Cross-platform** — automatic Unix/Windows detection, separate installers.
@@ -72,7 +72,11 @@ The `/forge-clickup` extension additionally requires the ClickUp MCP connector t
 ```
 /forge                  # works on the current branch (main/master guard applies)
 /forge <branch-name>    # checks out <branch-name>, creating it from master/main if missing
+/forge <goal in words>  # takes the text as the goal, no goal question asked
+/forge <clickup-code>   # with .forge/clickup.json: reads the existing task (PRJ-1133 or raw id), then hands over to forge-clickup
 /forge-clickup          # extension: asks the goal, opens the ClickUp task (title and description derived from it), creates the branch, hands over to forge
+/forge-clickup <goal>   # same, with the goal given as text
+/forge-clickup <code>   # reads the existing task (PRJ-1133 or raw id), creates or resumes its branch, hands over to forge
 ```
 
 ---
@@ -84,15 +88,21 @@ forge/
 ├── skills/                   → each subfolder is copied to ~/.claude/skills/<name>/
 │   ├── forge/
 │   │   ├── SKILL.md
+│   │   ├── commands/          (commands loaded on demand)
+│   │   │   ├── closure.md             (task closure)
+│   │   │   ├── delegated-mode.md      (delegated mode rules)
+│   │   │   ├── delegation.md          (linked project, same-repo branch)
+│   │   │   └── engrave.md             (shipping)
 │   │   ├── phases/
 │   │   │   ├── p0-project.md          (State 0 — Project Init)
 │   │   │   ├── p1-coding-standards.md (State 1 — Coding Standards Init)
 │   │   │   ├── p2-brief.md            (State 2 — Brief)
-│   │   │   ├── p3-log.md              (State 3 — Log)
 │   │   │   ├── p4-plan.md             (State 4 — Plan)
 │   │   │   └── p5-resume.md           (State 5 — Active)
 │   │   └── scripts/
 │   │       ├── engrave.sh             (shipping sequence: preview / run)
+│   │       ├── json.sh                (JSON rendering shared by the scripts)
+│   │       ├── status.sh              (startup status: state, progress, resumable branches, as JSON)
 │   │       └── temp-branch.sh         (temporary branch from the main/master guard)
 │   └── forge-clickup/        → extension: ClickUp task kickoff
 │       └── SKILL.md
@@ -116,6 +126,7 @@ forge/
 │   └── README.md             (how to regenerate)
 ├── tests/
 │   ├── engrave.test.sh       → bash tests/engrave.test.sh, throwaway repositories only
+│   ├── status.test.sh        → bash tests/status.test.sh, throwaway repositories only
 │   └── temp-branch.test.sh   → bash tests/temp-branch.test.sh, throwaway repositories only
 ├── .gitattributes
 └── .gitignore
@@ -167,13 +178,8 @@ Writes `coding-standards.md` in the user's language, then continues to brief.
 
 Reads `coding-standards.md`. Creates `.forge/branch/<BRANCH>/brief.md` with an `## Objective` section and an empty `## Scope & rules` section, clarifies the goal, continues to plan.
 
-### State 3 — Log
-**Condition:** brief present, `log.md` absent
-
-Silently creates an empty `log.md` and continues to the plan.
-
 ### State 4 — Plan
-**Condition:** brief present, `log.md` present, plan absent
+**Condition:** brief present, plan absent
 
 Reads `coding-standards.md`, generates `plan.md`, waits for validation before any implementation. The validation offers three options: validate and chain — the plan is written and every open task runs in order, with no further question —, validate — the execution mode is asked next —, or cancel.  
 L/XL tasks include a commented decomposition block (`T1.1`, `T1.2`, …) to fill in before starting.
@@ -222,10 +228,11 @@ content again unchanged.
 
 ## Safety guard — main / master
 
-Without an argument, on `main` or `master`, forge asks — as a choice, not free text:
-1. Temporary branch → no name asked: forge creates `tmp/<you>-<ddmmyyyy>`, switches to it and goes straight to the objective
-2. Stay on the branch → provide a ticket ID (e.g. `CU-123`)
-3. Create a branch → provide a name
+Without a branch as argument, on `main` or `master`, forge first offers to resume any local branch with open tasks. It then asks the goal, unless it was given as an argument, and derives a branch name from it. The branch choice comes last — as a choice, not free text:
+1. Create the suggested branch
+2. Temporary branch → no name asked: forge creates `tmp/<you>-<ddmmyyyy>` and switches to it
+3. Stay on the branch → provide a ticket ID (e.g. `CU-123`)
+4. Create a branch → provide a name
 
 The temporary branch name is computed by `skills/forge/scripts/temp-branch.sh`, never by hand. `<you>` is the local part of
 `git config user.email` — the part before `@` — with the numeric prefix of GitHub / GitLab noreply addresses removed,
@@ -236,7 +243,7 @@ forge says so and asks for a branch name instead. Run `bash tests/temp-branch.te
 
 The guard runs before State 2 — Brief, never before States 0 and 1: `project.md` and `coding-standards.md` are shared by every branch and never resolve `<BRANCH>`. In a fresh project, forge learns what the project is before asking which branch to work under.
 
-With an argument (`/forge <branch-name>`) the guard does not apply: forge is already positioned on `<branch-name>`.
+With a branch as argument (`/forge <branch-name>`) the guard does not apply: forge is already positioned on `<branch-name>`.
 
 ---
 

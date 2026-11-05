@@ -6,7 +6,7 @@
 
 ⚠️ `## Objective` et `## Scope & rules` sont des libellés fixes, écrits tels quels quelle que soit la langue de l'utilisateur — seul le contenu des sections suit sa langue.
 
-En mode délégué `SCOPE: linked`, `## Origin` précède ces deux sections : écrit par le parent (section « Délégation — projet lié » de `p5-resume.md`), jamais par cette phase. En mode délégué `SCOPE: branch`, le brief est rédigé ici comme pour toute branche.
+En mode délégué `SCOPE: linked`, `## Origin` précède ces deux sections : écrit par le parent (section « Délégation — projet lié » de `commands/delegation.md`), jamais par cette phase. En mode délégué `SCOPE: branch`, le brief est rédigé ici comme pour toute branche.
 
 ## Garde — mode délégué
 
@@ -16,16 +16,16 @@ En mode délégué (section « Mode délégué » de `SKILL.md`), les questions 
 
 ## Actions — dans l'ordre
 
-1. Pré-remplir `## Objective` si l'intention est exprimée dans le trigger ou la conversation.
+1. Pré-remplir `## Objective` si l'intention est exprimée dans l'argument, le trigger ou la conversation.
 2. Si `## Objective` ne peut pas être pré-remplie :
    - Poser la question : "What's the goal of this task?"
    - Reformuler en 2-3 phrases claires, puis poser le choix avec `AskUserQuestion` — `header` : `Objective`, options `Validate` / `Cancel` — motif « Validation d'un contenu » de `SKILL.md` : le changement demandé arrive en texte libre, reformuler, reposer la question.
    - Questions sur les points flous → attendre réponse ; relancer si flou persiste.
    - Écrire `## Objective` uniquement après validation explicite.
-3. Écrire `.forge/branch/<BRANCH>/brief.md` — `## Objective` remplie, `## Scope & rules` vide.
+3. Écrire `.forge/branch/<BRANCH>/brief.md` — `## Objective` remplie, `## Scope & rules` vide — et `.forge/branch/<BRANCH>/log.md` vide, s'il est absent.
 
 ## Analyse
 
 Lire `.forge/coding-standards.md`.
 
-Croiser `@.forge/project.md` avec l'objectif. Points flous → clarifier avant de continuer. Si tout clair → continuer directement à l'État 3 : lire et exécuter `phases/p3-log.md`.
+Croiser `@.forge/project.md` avec l'objectif. Points flous → clarifier avant de continuer. Si tout clair → continuer directement à l'État 4 : lire et exécuter `phases/p4-plan.md`.

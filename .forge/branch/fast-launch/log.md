@@ -1,0 +1,6 @@
+- [2026-11-05 19:30] T9 : `json_string` extrait dans `scripts/json.sh`, chargé par engrave.sh, temp-branch.sh et status.sh.
+- [2026-11-05 19:20] Règle DRY de CLAUDE.md global passée à la 2e occurrence. Installeurs inchangés : ils vident déjà le dossier du skill avant copie.
+- [2026-11-05 19:05] T1 à T8 terminées ; tests status 27/27, temp-branch 16/16, engrave 33/33.
+- [2026-11-05 19:05] `status.sh` réécrit en variables : 9,7 s au premier essai, environ 180 ms ensuite.
+- [2026-11-05 19:05] Dossier `commands/` retenu pour les commandes chargées à la demande ; numéros d'État conservés sans l'État 3.
+- [2026-11-05 18:23] Lots 1, 2 et 3 retenus ; alias de liste supprimés ; code ClickUp complet seul, sans numéro nu.

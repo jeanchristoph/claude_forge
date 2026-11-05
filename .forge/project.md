@@ -1,6 +1,6 @@
 # Project — Claude_forge
 
-**Generated:** 2026-07-30 · updated 2026-09-16
+**Generated:** 2026-07-30 · updated 2026-11-05
 
 ## Stack
 - Langage : Markdown (instructions du skill) + PowerShell / Bash (installeurs et hook)
@@ -15,15 +15,21 @@ forge/
 ├── skills/                        → chaque dossier copié vers ~/.claude/skills/<nom>/
 │   ├── forge/
 │   │   ├── SKILL.md               (machine à états : branche → garde main/master → détection d'état ; mode délégué)
+│   │   ├── commands/              (commandes chargées à la demande, déclencheurs dans p5-resume.md)
+│   │   │   ├── closure.md            (Clôture de tâche)
+│   │   │   ├── delegated-mode.md     (règles du sous-agent délégué, condition dans SKILL.md)
+│   │   │   ├── delegation.md         (Délégation — projet lié, branche du même dépôt)
+│   │   │   └── engrave.md            (Livraison)
 │   │   ├── phases/
 │   │   │   ├── p0-project.md         (État 0 — Project Init)
 │   │   │   ├── p1-coding-standards.md (État 1)
 │   │   │   ├── p2-brief.md           (État 2 — Brief)
-│   │   │   ├── p3-log.md             (État 3 — Log)
 │   │   │   ├── p4-plan.md            (État 4 — Plan)
 │   │   │   └── p5-resume.md          (État 5 — Actif)
 │   │   └── scripts/
 │   │       ├── engrave.sh            (séquence git de la livraison : preview / run, appelée par p5-resume.md)
+│   │       ├── json.sh               (rendu JSON sans jq, chargé par les scripts du skill)
+│   │       ├── status.sh             (état au lancement en JSON, lecture seule, appelé par SKILL.md ; peu de processus, Git Bash les paie cher)
 │   │       └── temp-branch.sh        (branche temporaire tmp/<identité>-<ddmmyyyy> de la garde main/master, appelée par SKILL.md)
 │   └── forge-clickup/
 │       └── SKILL.md               (guichet ClickUp : ouvre la tâche, crée la branche, passe la main à forge)
@@ -44,6 +50,7 @@ forge/
 │   └── README.md              (prérequis de régénération, WSL requis)
 ├── tests/
 │   ├── engrave.test.sh        (tests du script de livraison, dépôts jetables : bash tests/engrave.test.sh)
+│   ├── status.test.sh         (tests de l'état au lancement, dépôts jetables : bash tests/status.test.sh)
 │   └── temp-branch.test.sh    (tests de la branche temporaire, dépôts jetables : bash tests/temp-branch.test.sh)
 ├── README.md                  (documentation, anglais)
 └── README.fr.md               (même documentation, français)
@@ -67,12 +74,13 @@ Fichiers générés dans **chaque projet cible** par le skill (pas dans ce dép�
 - `skills/forge-clickup/SKILL.md` — point d'entrée de `/forge-clickup`, en amont de forge
 - `install/install.ps1` / `install/install.sh` — déploient skills + hook vers `~/.claude/` et fusionnent `settings.json`
 - `hooks/ps1/forge-precompact.ps1` / `hooks/bash/forge-precompact.sh` — hook `PreCompact`, injecte l'état du plan courant dans le contexte compacté
-- `skills/forge/phases/p5-resume.md` — porte les trois commandes de l'état actif : Délégation vers un projet lié, Livraison (`grave` / `engrave`, projets liés compris) et Clôture de tâche
+- `skills/forge/phases/p5-resume.md` — reprise, règles de mise à jour, surveillance, et déclencheurs des commandes de `skills/forge/commands/` : Délégation, Livraison (`grave` / `engrave`, projets liés compris) et Clôture de tâche
+- `skills/forge/scripts/status.sh` — état de la branche en JSON, lu une fois par « Détection d'état » ; toute évolution passe par ce script et `tests/status.test.sh`
 - `skills/forge/scripts/engrave.sh` — séquence git de la Livraison, `preview` puis `run`, tous deux en JSON mis en page par le skill (compte rendu : une ligne par opération git, statut `done` / `skipped` / `failed` / `not_run`) ; toute évolution de la séquence passe par ce script et `tests/engrave.test.sh`
 
 ## Detected conventions
 - Nommage : phases numérotées `pN-<nom>.md`, sections `##`/`###` avec mots-clés stricts (« Condition », « Réaction », « STOP »)
-- Architecture : machine à états explicite — chaque phase se termine par un renvoi à la détection d'état ou un `STOP` ; jamais de saut direct entre phases
+- Architecture : machine à états explicite (États 0, 1, 2, 4, 5 — l'État 3 a disparu, numéros conservés) — chaque phase se termine par un renvoi à la détection d'état ou un `STOP` ; jamais de saut direct entre phases. Commande rare → fichier de `commands/` chargé à la demande, déclencheur gardé dans `p5-resume.md`
 - Projet lié / mode délégué : un sous-agent étanche exécute le skill dans un autre dépôt forgé — prompt `FORGE_DELEGATED` (ROOT, BRANCH, LANGUAGE), marqueur `## Origin` dans le brief, questions relayées par `FORGE_QUESTION` / `FORGE_ANSWER`, rapport final `FORGE_DONE` ; le parent n'écrit là-bas que brief et log, et livre en `git -C`
 - Questions à choix : toujours dans la langue de l'utilisateur, libellés anglais du skill = références internes ; validation d'un contenu = `Validate` / `Cancel` + texte libre expliqué, jamais d'option « à retravailler »
 - Gestion d'erreurs : scripts PowerShell en `$ErrorActionPreference = "Stop"` ; hooks silencieux (`exit 0`) si branche/plan absents

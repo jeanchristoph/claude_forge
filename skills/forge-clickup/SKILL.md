@@ -1,6 +1,6 @@
 ---
 name: forge-clickup
-description: Ouvre une tâche ClickUp, crée la branche git associée et enchaîne sur forge.
+description: Ouvre une tâche ClickUp, existante par son code ou nouvelle depuis un objectif, crée la branche git associée et enchaîne sur forge.
 disable-model-invocation: false
 ---
 
@@ -8,7 +8,8 @@ Always respond in the user's language.
 
 ## Rôle
 
-Guichet d'ouverture de tâche, en amont de `forge`. Tu ouvres le ticket, tu prépares
+Guichet d'ouverture de tâche, en amont de `forge`. Tu ouvres le ticket, existant ou
+nouveau, tu prépares
 le terrain git, tu passes la main à `forge`. Tu ne codes pas, tu ne planifies pas, tu
 ne rédiges aucun brief. Rien d'autre.
 
@@ -63,7 +64,6 @@ S'il ne manque qu'un champ, compléter ce champ seul — ne pas tout redemander.
 {
   "workspace_id": "20462132",
   "default": { "list_id": "210826715", "path": "TOPDATA / TOPDATA / TOPWEB" },
-  "aliases": {},
   "branch_from": "master",
   "branch_code": "custom_id"
 }
@@ -71,15 +71,27 @@ S'il ne manque qu'un champ, compléter ce champ seul — ne pas tout redemander.
 
 | Clé | Rôle |
 |---|---|
-| `default` | liste visée quand aucun alias n'est passé en argument |
-| `aliases` | listes secondaires : `{ "topmail": { "list_id": "…", "path": "…" } }` |
+| `default` | liste où sont créées les tâches |
 | `branch_from` | branche de départ (`master`, `dev`…) |
 | `branch_code` | `custom_id` (ex. `PRJ-1133`) ou `id` (ex. `869eyzy2b`) |
 
 L'utilisateur n'édite jamais ce fichier à la main. S'il demande de changer la liste
-par défaut ou d'ajouter un alias, réécrire le fichier.
+par défaut, réécrire le fichier. Une clé `aliases` restée dans un ancien fichier est ignorée.
 
-## Étape 1 — Objectif
+## Étape 1 — Argument
+
+Première condition remplie, dans cet ordre :
+
+- Aucun argument → étape 2.
+- Argument contenant une espace → objectif : étape 2, sans poser la question.
+- Argument sans espace → code d'une tâche existante, complet (`PRJ-1133`) ou `id` brut.
+  `clickup_get_task` sur l'argument, avec `include: ["description"]` :
+  - Tâche trouvée → aucune création. CODE = le champ désigné par `branch_code`, selon la
+    règle de l'étape 4. Passer à l'étape 5.
+  - Tâche introuvable → "Task `<argument>` not found." STOP.
+  - Autre erreur → afficher l'erreur telle quelle, STOP.
+
+## Étape 2 — Objectif
 
 Demander l'objectif de la tâche, en texte libre — jamais le titre :
 
@@ -96,16 +108,9 @@ Présenter les deux, puis poser le choix avec `AskUserQuestion` — `header` : `
 Priorité, échéance, assigné : ne jamais les demander. Les appliquer seulement si
 l'utilisateur les a mentionnés spontanément.
 
-## Étape 2 — Liste cible
-
-- Argument passé à la commande (`/forge-clickup topmail`) → utiliser l'alias
-  correspondant, **pour ce ticket uniquement**, sans modifier `default`.
-- Alias inconnu : le signaler, lister les alias disponibles, STOP.
-- Aucun argument → `default`.
-
 ## Étape 3 — Créer la tâche
 
-`clickup_create_task` avec `name` = le titre, `description` = la description et `list_id` = la liste cible.
+`clickup_create_task` avec `name` = le titre, `description` = la description et `list_id` = `default.list_id`.
 
 ## Étape 4 — Récupérer le code
 
@@ -123,7 +128,9 @@ le signaler à l'utilisateur.
 1. Vérifier que l'arbre de travail est propre : `git status --porcelain`.
    Sortie non vide → STOP, lister les fichiers en cours, attendre les instructions.
    Ne jamais basculer de branche avec des modifications en cours.
-2. Exécuter, dans cet ordre (`<BASE>` = `branch_from`) :
+2. `<CODE>` existe déjà, en local (`refs/heads/<CODE>`) ou sur le distant
+   (`refs/remotes/origin/<CODE>`) → `git checkout <CODE>`, rien d'autre.
+3. Sinon, exécuter dans cet ordre (`<BASE>` = `branch_from`) :
    ```
    git checkout <BASE>
    git pull
@@ -139,12 +146,14 @@ ultérieur, qui restent soumis à accord explicite au cas par cas.
 
 Afficher d'abord :
 
-> Tâche `<CODE>` créée — <URL>
-> Branche `<CODE>` poussée depuis `<BASE>`.
+> Tâche `<CODE>` créée ou ouverte — <URL>
+> Branche `<CODE>` prête.
+
+Tâche existante → afficher aussi son nom et sa description : l'objectif de `forge` en est tiré.
 
 Puis **invoquer `forge` via l'outil Skill**, sans demander de confirmation. La branche
-`<CODE>` est déjà la branche courante : `forge` la reprend telle quelle et amorce
-`.forge/branch/<CODE>/brief.md` — l'objectif est déjà dans la conversation, `forge` en pré-remplit `## Objective` sans le redemander.
+`<CODE>` est déjà la branche courante : `forge` la reprend telle quelle — sans argument —
+et amorce `.forge/branch/<CODE>/brief.md` si celui-ci est absent — l'objectif est déjà dans la conversation, `forge` en pré-remplit `## Objective` sans le redemander.
 
 Ne rien faire au-delà : à partir de là, c'est `forge` qui mène. Ne pas coder, ne pas
 planifier, ne pas devancer ses étapes.

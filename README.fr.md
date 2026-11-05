@@ -35,8 +35,8 @@ Le résultat : moins de mauvaises surprises, des implémentations qui restent da
 - **Étapes de mise en production dans le plan** — tout ce qui se joue à la main hors du déploiement git — migration SQL, réglage de configuration, procédure d'exploitation — est listé dans la section `## Deployment` de `plan.md` avec son moment, ses tâches d'origine et sa copie dans `output/`, renseigné dès que le script est écrit.
 - **Script SQL de déploiement généré** — toutes les étapes SQL de `## Deployment` sont regroupées, sans question, dans un seul `output/AAAAMMJJ-deployment-script.sql` par branche, réécrit sur place : une section `-- STEP` par étape, un script versionné référencé en commentaire, une requête autonome prête à exécuter avec sa requête de contrôle, les valeurs datées calculées en SQL, toute section `USE` en dernier.
 - **Détection hors périmètre** — une demande hors du plan courant devient une tâche du plan : forge la formule, tu valides la formulation, rien de plus.
-- **Branche en argument** — `/forge <nom-de-branche>` bascule sur cette branche, créée depuis la branche par défaut à jour (`master`, sinon `main`) si elle n'existe pas — jamais depuis la branche courante. L'argument est toujours un nom de branche git, jamais un identifiant de ticket.
-- **Garde main/master** — sans argument, sur les branches protégées, forge propose une branche temporaire nommée pour vous (`tmp/<vous>-<ddmmyyyy>`), un identifiant de ticket ou un nom de branche — une fois `project.md` et `coding-standards.md` en place, juste avant le brief.
+- **Branche, objectif ou code ClickUp en argument** — `/forge <nom-de-branche>` bascule sur cette branche, créée depuis la branche par défaut à jour (`master`, sinon `main`) si elle n'existe pas — jamais depuis la branche courante. Un objectif en mots évite la question d'objectif ; avec `.forge/clickup.json`, un code de tâche (`PRJ-1133` ou id brut) ouvre la tâche existante.
+- **Garde main/master** — sans branche en argument, sur les branches protégées, forge propose de reprendre une branche qui a des tâches ouvertes, demande l'objectif, puis propose une branche nommée d'après lui, une branche temporaire (`tmp/<vous>-<ddmmyyyy>`), un identifiant de ticket ou un nom de branche — après `project.md` et `coding-standards.md`, communs à toutes les branches.
 - **Raccourci de livraison** — `"grave master"` / `"engrave master"` (ou avec `"dev"`) commit, push et merge directement : la commande vaut feu vert, aucune confirmation demandée.
 - **Survie à la compaction** — le hook `PreCompact` injecte l'état forge (branche, objectif, statut des tâches) dans le résumé de contexte compacté.
 - **Cross-platform** — détection automatique Unix/Windows, installeurs séparés.
@@ -70,7 +70,11 @@ L'extension `/forge-clickup` requiert en plus le connecteur MCP ClickUp authenti
 ```
 /forge                  # travaille sur la branche courante (garde main/master)
 /forge <nom-de-branche> # bascule sur <nom-de-branche>, créée depuis master/main si absente
+/forge <objectif en mots> # prend le texte comme objectif, sans question d'objectif
+/forge <code-clickup>   # avec .forge/clickup.json : lit la tâche existante (PRJ-1133 ou id brut), puis passe la main à forge-clickup
 /forge-clickup          # extension : demande l'objectif, ouvre la tâche ClickUp (titre et description déduits), crée la branche, enchaîne sur forge
+/forge-clickup <objectif> # idem, avec l'objectif donné en texte
+/forge-clickup <code>   # lit la tâche existante (PRJ-1133 ou id brut), crée ou reprend sa branche, enchaîne sur forge
 ```
 
 ---
@@ -82,15 +86,21 @@ forge/
 ├── skills/                   → chaque sous-dossier est copié dans ~/.claude/skills/<nom>/
 │   ├── forge/
 │   │   ├── SKILL.md
+│   │   ├── commands/          (commandes chargées à la demande)
+│   │   │   ├── closure.md             (clôture de tâche)
+│   │   │   ├── delegated-mode.md      (règles du mode délégué)
+│   │   │   ├── delegation.md          (projet lié, branche du même dépôt)
+│   │   │   └── engrave.md             (livraison)
 │   │   ├── phases/
 │   │   │   ├── p0-project.md          (État 0 — Project Init)
 │   │   │   ├── p1-coding-standards.md (État 1 — Coding Standards Init)
 │   │   │   ├── p2-brief.md            (État 2 — Brief)
-│   │   │   ├── p3-log.md              (État 3 — Log)
 │   │   │   ├── p4-plan.md             (État 4 — Plan)
 │   │   │   └── p5-resume.md           (État 5 — Actif)
 │   │   └── scripts/
 │   │       ├── engrave.sh             (séquence de livraison : preview / run)
+│   │       ├── json.sh                (rendu JSON partagé par les scripts)
+│   │       ├── status.sh              (état au lancement : état, avancement, branches à reprendre, en JSON)
 │   │       └── temp-branch.sh         (branche temporaire de la garde main/master)
 │   └── forge-clickup/        → extension : ouverture de tâche ClickUp
 │       └── SKILL.md
@@ -114,6 +124,7 @@ forge/
 │   └── README.md             (how to regenerate)
 ├── tests/
 │   ├── engrave.test.sh       → bash tests/engrave.test.sh, dépôts jetables uniquement
+│   ├── status.test.sh        → bash tests/status.test.sh, dépôts jetables uniquement
 │   └── temp-branch.test.sh   → bash tests/temp-branch.test.sh, dépôts jetables uniquement
 ├── .gitattributes
 └── .gitignore
@@ -165,13 +176,8 @@ Garde `.forge/` suivi en git — le bloc `.gitignore` ci-dessous s'en charge :
 
 Lit `coding-standards.md`. Crée `.forge/branch/<BRANCH>/brief.md` avec une section `## Objective` et une section `## Scope & rules` vide, clarifie l'objectif, enchaîne sur le plan.
 
-### État 3 — Log
-**Condition :** brief présent, `log.md` absent
-
-Crée un `log.md` vide en silence et continue vers le plan.
-
 ### État 4 — Plan
-**Condition :** brief présent, `log.md` présent, plan absent
+**Condition :** brief présent, plan absent
 
 Lit `coding-standards.md`, génère `plan.md`, attend validation avant toute implémentation. La validation propose trois options : valider et enchaîner — le plan est écrit et toutes les tâches ouvertes s'exécutent dans l'ordre, sans autre question —, valider — le mode d'exécution est demandé ensuite —, ou annuler.  
 Les tâches L/XL incluent un bloc de décomposition commenté (`T1.1`, `T1.2`, …) à remplir avant de démarrer.
@@ -221,10 +227,11 @@ doit changer, et ne re-présente jamais un contenu inchangé.
 
 ## Garde de sécurité — main / master
 
-Sans argument, sur `main` ou `master`, forge pose le choix — pas une question en texte libre :
-1. Branche temporaire → aucun nom demandé : forge crée `tmp/<vous>-<ddmmyyyy>`, bascule dessus et passe directement à l'objectif
-2. Rester sur la branche → fournir un identifiant ticket (ex: `CU-123`)
-3. Créer une branche → fournir un nom
+Sans branche en argument, sur `main` ou `master`, forge propose d'abord de reprendre une branche locale qui a des tâches ouvertes. Il demande ensuite l'objectif, sauf s'il a été donné en argument, et en déduit un nom de branche. Le choix de la branche vient en dernier — un choix, pas une question en texte libre :
+1. Créer la branche proposée
+2. Branche temporaire → aucun nom demandé : forge crée `tmp/<vous>-<ddmmyyyy>` et bascule dessus
+3. Rester sur la branche → fournir un identifiant ticket (ex: `CU-123`)
+4. Créer une branche → fournir un nom
 
 Le nom de la branche temporaire est calculé par `skills/forge/scripts/temp-branch.sh`, jamais à la main. `<vous>` est la partie
 locale de `git config user.email` — ce qui précède le `@` — sans le préfixe numérique des adresses noreply GitHub / GitLab,
@@ -235,7 +242,7 @@ forge le signale et demande un nom de branche à la place. `bash tests/temp-bran
 
 La garde s'exécute avant l'État 2 — Brief, jamais avant les États 0 et 1 : `project.md` et `coding-standards.md` sont communs à toutes les branches et ne résolvent jamais `<BRANCH>`. Dans un projet neuf, forge apprend ce qu'est le projet avant de demander sous quelle branche travailler.
 
-Avec un argument (`/forge <nom-de-branche>`), la garde ne s'applique pas : forge est déjà positionné sur `<nom-de-branche>`.
+Avec une branche en argument (`/forge <nom-de-branche>`), la garde ne s'applique pas : forge est déjà positionné sur `<nom-de-branche>`.
 
 ---
 

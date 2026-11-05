@@ -36,7 +36,7 @@ Le résultat : moins de mauvaises surprises, des implémentations qui restent da
 - **Script SQL de déploiement généré** — toutes les étapes SQL de `## Deployment` sont regroupées, sans question, dans un seul `output/AAAAMMJJ-deployment-script.sql` par branche, réécrit sur place : une section `-- STEP` par étape, un script versionné référencé en commentaire, une requête autonome prête à exécuter avec sa requête de contrôle, les valeurs datées calculées en SQL, toute section `USE` en dernier.
 - **Détection hors périmètre** — une demande hors du plan courant devient une tâche du plan : forge la formule, tu valides la formulation, rien de plus.
 - **Branche, objectif ou code ClickUp en argument** — `/forge <nom-de-branche>` bascule sur cette branche, créée depuis la branche par défaut à jour (`master`, sinon `main`) si elle n'existe pas — jamais depuis la branche courante. Un objectif en mots évite la question d'objectif ; avec `.forge/clickup.json`, un code de tâche (`PRJ-1133` ou id brut) ouvre la tâche existante.
-- **Garde main/master** — sans branche en argument, sur les branches protégées, forge propose de reprendre une branche qui a des tâches ouvertes, demande l'objectif, puis propose une branche nommée d'après lui, une branche temporaire (`tmp/<vous>-<ddmmyyyy>`), un identifiant de ticket ou un nom de branche — après `project.md` et `coding-standards.md`, communs à toutes les branches.
+- **Garde main/master** — sans branche en argument, sur les branches protégées, forge propose de reprendre une branche qui a des tâches ouvertes, demande l'objectif, puis crée une branche nommée d'après lui — après `project.md` et `coding-standards.md`, communs à toutes les branches. `/forge master` travaille directement sur `master`.
 - **Raccourci de livraison** — `"grave master"` / `"engrave master"` (ou avec `"dev"`) commit, push et merge directement : la commande vaut feu vert, aucune confirmation demandée.
 - **Survie à la compaction** — le hook `PreCompact` injecte l'état forge (branche, objectif, statut des tâches) dans le résumé de contexte compacté.
 - **Cross-platform** — détection automatique Unix/Windows, installeurs séparés.
@@ -100,8 +100,7 @@ forge/
 │   │   └── scripts/
 │   │       ├── engrave.sh             (séquence de livraison : preview / run)
 │   │       ├── json.sh                (rendu JSON partagé par les scripts)
-│   │       ├── status.sh              (état au lancement : état, avancement, branches à reprendre, en JSON)
-│   │       └── temp-branch.sh         (branche temporaire de la garde main/master)
+│   │       └── status.sh              (état au lancement : état, avancement, branches à reprendre, en JSON)
 │   └── forge-clickup/        → extension : ouverture de tâche ClickUp
 │       └── SKILL.md
 ├── hooks/
@@ -124,8 +123,7 @@ forge/
 │   └── README.md             (how to regenerate)
 ├── tests/
 │   ├── engrave.test.sh       → bash tests/engrave.test.sh, dépôts jetables uniquement
-│   ├── status.test.sh        → bash tests/status.test.sh, dépôts jetables uniquement
-│   └── temp-branch.test.sh   → bash tests/temp-branch.test.sh, dépôts jetables uniquement
+│   └── status.test.sh        → bash tests/status.test.sh, dépôts jetables uniquement
 ├── .gitattributes
 └── .gitignore
 ```
@@ -215,7 +213,7 @@ rédigées dans ta langue — les libellés anglais cités dans ce document sont
 skill, pas ce que tu vois à l'écran.
 
 Les questions ouvertes restent en texte libre, là où une liste figée ne ferait que gêner : objectif
-de la tâche, nom de code de branche, identifiant de ticket, mail à coller, quoi faire ensuite.
+de la tâche, nom de code de branche, mail à coller, quoi faire ensuite.
 
 Valider un contenu — l'objectif du brief, le plan, le rapport de clôture — n'offre jamais d'option
 « à retravailler » ni « modifier » : une demande de changement passe par le champ de
@@ -227,18 +225,7 @@ doit changer, et ne re-présente jamais un contenu inchangé.
 
 ## Garde de sécurité — main / master
 
-Sans branche en argument, sur `main` ou `master`, forge propose d'abord de reprendre une branche locale qui a des tâches ouvertes. Il demande ensuite l'objectif, sauf s'il a été donné en argument, et en déduit un nom de branche. Le choix de la branche vient en dernier — un choix, pas une question en texte libre :
-1. Créer la branche proposée
-2. Branche temporaire → aucun nom demandé : forge crée `tmp/<vous>-<ddmmyyyy>` et bascule dessus
-3. Rester sur la branche → fournir un identifiant ticket (ex: `CU-123`)
-4. Créer une branche → fournir un nom
-
-Le nom de la branche temporaire est calculé par `skills/forge/scripts/temp-branch.sh`, jamais à la main. `<vous>` est la partie
-locale de `git config user.email` — ce qui précède le `@` — sans le préfixe numérique des adresses noreply GitHub / GitLab,
-en minuscules, sans accents, tout autre caractère remplacé par `-` : `64985971+jeanchristoph@users.noreply.github.com` donne
-`tmp/jeanchristoph-27102026`, `claude.malaval@example.com` donne `tmp/claude-malaval-27102026`. Le préfixe `tmp/` la distingue
-d'une branche de feature. Une deuxième branche temporaire le même jour reçoit `-2`, puis `-3`… Sans e-mail git configuré,
-forge le signale et demande un nom de branche à la place. `bash tests/temp-branch.test.sh` pour le vérifier.
+Sans branche en argument, sur `main` ou `master`, forge propose d'abord de reprendre une branche locale qui a des tâches ouvertes. Il demande ensuite l'objectif, sauf s'il a été donné en argument, et crée une branche nommée d'après lui, sans question : nom court en kebab-case, suffixé `-2`, `-3`… s'il existe déjà. Demande à tout moment de renommer la branche : forge exécute `git branch -m` et déplace `.forge/branch/<nom>/`. Pour travailler directement sur `master`, lance `/forge master`.
 
 La garde s'exécute avant l'État 2 — Brief, jamais avant les États 0 et 1 : `project.md` et `coding-standards.md` sont communs à toutes les branches et ne résolvent jamais `<BRANCH>`. Dans un projet neuf, forge apprend ce qu'est le projet avant de demander sous quelle branche travailler.
 
@@ -366,8 +353,8 @@ Met à jour `project.md` — uniquement ce qui a changé, après validation.
 
 Une demande qui vise un dossier hors du projet courant ouvre un **projet lié** : un dépôt déjà forgé
 (`.forge/` présent — sinon forge refuse et demande d'y lancer `/forge` d'abord ; il n'initialise jamais un
-projet de lui-même). Il faut une vraie branche côté parent : une session restée sur `main`/`master` sous
-un identifiant de ticket ne peut pas déléguer.
+projet de lui-même). Il faut une vraie branche côté parent : un nom de code utilisé hors git
+ne peut pas déléguer.
 
 Le parent prépare le terrain, rien de plus : il ouvre la branche **`<parent>/<BRANCH>`** du dépôt
 lié dans un worktree git — le nom du dossier parent en préfixe, la branche parente inchangée à droite : `forge/linked-project`,

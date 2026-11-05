@@ -29,8 +29,7 @@ forge/
 │   │   └── scripts/
 │   │       ├── engrave.sh            (séquence git de la livraison : preview / run, appelée par p5-resume.md)
 │   │       ├── json.sh               (rendu JSON sans jq, chargé par les scripts du skill)
-│   │       ├── status.sh             (état au lancement en JSON, lecture seule, appelé par SKILL.md ; peu de processus, Git Bash les paie cher)
-│   │       └── temp-branch.sh        (branche temporaire tmp/<identité>-<ddmmyyyy> de la garde main/master, appelée par SKILL.md)
+│   │       └── status.sh             (état au lancement en JSON, lecture seule, appelé par SKILL.md ; peu de processus, Git Bash les paie cher)
 │   └── forge-clickup/
 │       └── SKILL.md               (guichet ClickUp : ouvre la tâche, crée la branche, passe la main à forge)
 ├── hooks/
@@ -50,8 +49,7 @@ forge/
 │   └── README.md              (prérequis de régénération, WSL requis)
 ├── tests/
 │   ├── engrave.test.sh        (tests du script de livraison, dépôts jetables : bash tests/engrave.test.sh)
-│   ├── status.test.sh         (tests de l'état au lancement, dépôts jetables : bash tests/status.test.sh)
-│   └── temp-branch.test.sh    (tests de la branche temporaire, dépôts jetables : bash tests/temp-branch.test.sh)
+│   └── status.test.sh         (tests de l'état au lancement, dépôts jetables : bash tests/status.test.sh)
 ├── README.md                  (documentation, anglais)
 └── README.fr.md               (même documentation, français)
 ```

@@ -58,6 +58,12 @@
 **Description:** Créer `json.sh` avec `json_escape`, qui écrit dans `REPLY` sans lancer de processus, et `json_string`, qui l'affiche. Le charger dans les trois scripts à la place de leurs copies, `status.sh` utilisant `json_escape` pour garder sa vitesse. Relancer les trois suites de tests, sans changer les sorties JSON.
 [x]
 
+### T10 — Branche automatique sur `master`
+**Effort:** S
+**Files:** `skills/forge/SKILL.md`, `skills/forge/phases/p5-resume.md`, `skills/forge/scripts/temp-branch.sh`, `tests/temp-branch.test.sh`, `README.md`, `README.fr.md`, `CHANGELOG.md`, `.forge/project.md`
+**Description:** Remplacer la question `Branch` par une création directe depuis l'objectif : nom court en kebab-case, suffixé `-2`, `-3`… s'il existe déjà. Retirer les options branche temporaire, rester sur master et créer une branche. Ajouter à `p5-resume.md` le renommage à la demande : `git branch -m`, déplacement du dossier `.forge/branch/`, signalement si l'ancien nom existe sur le distant. Supprimer `temp-branch.sh` et ses tests, mettre à jour la documentation.
+[x]
+
 ## Risks
 - Le découpage de T1 peut casser un renvoi croisé sans que rien ne le signale : relire chaque renvoi par recherche dans tout le skill.
 - Seul `status.sh` a des tests automatiques. Les fichiers Markdown se vérifient à l'usage, après installation.
@@ -78,4 +84,5 @@
 | T7 — Mode express et question `Mode` | XS | [x] |
 | T8 — Documentation | S | [x] |
 | T9 — Extraire `json_string` dans un script partagé | S | [x] |
-| **Total** | **3 M, 5 S, 1 XS** | |
+| T10 — Branche automatique sur `master` | S | [x] |
+| **Total** | **3 M, 6 S, 1 XS** | |

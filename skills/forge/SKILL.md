@@ -56,7 +56,7 @@ Forgeron enchanteur : sobre, précis, direct. Le code est ton métal.
 
 **Toute confirmation bloquante, tout choix fermé passent par `AskUserQuestion`** — jamais une question posée en texte libre. Le refus est toujours une option explicite ; l'absence de réponse vaut STOP, jamais accord.
 
-⚠️ Les questions ouvertes restent en texte libre : objectif de la tâche, nom de code de branche, identifiant de ticket, mail à coller, « quoi faire ensuite ». Un choix fermé plaqué sur une réponse libre est une contrainte, pas une aide.
+⚠️ Les questions ouvertes restent en texte libre : objectif de la tâche, nom de code de branche, mail à coller, « quoi faire ensuite ». Un choix fermé plaqué sur une réponse libre est une contrainte, pas une aide.
 ⚠️ `AskUserQuestion` plafonne à quatre options : au-delà, enchaîner une seconde question.
 ⚠️ Question portant sur un contenu (objectif, plan, modification, rapport, ticket, message, tableau récapitulatif, règle proposée) → écrire ce contenu **en entier** dans le texte de la réponse, juste avant l'appel à `AskUserQuestion`, dans le même tour. Jamais résumé, jamais réduit à l'intitulé d'une option ni à la question ; annoncer « je rédige X » n'affiche pas X. Mode délégué → le champ `content` en tient lieu.
 ⚠️ Validation d'un contenu présenté (objectif du brief, plan, rapport) → jamais d'option « à retravailler » ni « modifier » : une demande de changement arrive par le champ de texte libre de la question, avec son explication. Texte libre reçu → retravailler le contenu, le re-présenter, reposer la même question. Texte libre sans substance (« non », « pas d'accord ») → demander en une ligne ce qui doit changer, puis retravailler ; jamais re-présenter un contenu inchangé. `Cancel` → n'écrire rien, STOP. Sans réponse : STOP.
@@ -110,22 +110,8 @@ Si BRANCH est `main` ou `master`, dans l'ordre :
    - Branche choisie → `!git checkout <branch>`, BRANCH = `<branch>`, informer en une ligne : "On branch `<branch>`.", retour à « Détection d'état ». La suite de la garde ne s'applique pas.
    - `New task` → étape 2.
 2. Objectif absent de l'argument → poser la question en texte libre : "What's the goal of this task?" Le retenir pour pré-remplir `## Objective`. Sans réponse : "Goal required. Operation cancelled." et STOP.
-3. Déduire de l'objectif `<slug>` : nom de branche court, kebab-case, minuscules, anglais.
-4. Poser le choix avec `AskUserQuestion` — `header` : `Branch`, quatre options, dans cet ordre :
-  - `Create <slug>` → "I create this branch and switch to it."
-  - `Temporary branch` → "I create `tmp/<you>-<ddmmyyyy>` and switch to it — no name asked."
-  - `Stay on <BRANCH>` → "Work under a ticket ID used as reference — I'll ask you for it."
-  - `Create a branch` → "I create a new branch and switch to it — I'll ask you for the name."
-- **Si `Create <slug>`** : exécuter `!git checkout -b <slug>`, puis utiliser ce nom comme `<BRANCH>` pour la suite.
-- **Si `Temporary branch`** : exécuter `bash <SKILL_DIR>/scripts/temp-branch.sh --root <ROOT>`, lire le JSON :
-  - `created` → utiliser `branch` comme `<BRANCH>` pour la suite. Informer en une ligne : "On branch `<branch>`."
-  - `no_identity` → informer en une ligne : "No git email configured — branch name required.", puis appliquer `Create a branch`.
-  - `failed` → afficher `detail` tel quel, STOP.
-- **Si `Stay on <BRANCH>`** : demander l'identifiant en texte libre (ex: CU-123, PROJ-456), puis l'utiliser à la place de `<BRANCH>` dans tous les chemins pour la suite.
-- **Si `Create a branch`** : demander le nom en texte libre, exécuter `!git checkout -b <nom-fourni>`, puis utiliser ce nom comme `<BRANCH>` pour la suite.
-- Sans réponse : "Choice required. Operation cancelled." et STOP.
-
-⚠️ Nom de la branche temporaire calculé par `temp-branch.sh` seul, jamais composé à la main : `tmp/` + partie locale de `user.email` (préfixe noreply GitHub / GitLab retiré, en slug) + `-<ddmmyyyy>`, suffixé `-2`, `-3`… si le nom du jour existe déjà.
+3. Déduire de l'objectif `<slug>` : nom de branche court, kebab-case, minuscules, anglais. `refs/heads/<slug>` existe déjà → suffixer `-2`, `-3`…
+4. Exécuter `!git checkout -b <slug>`, BRANCH = `<slug>`, informer en une ligne : "On branch `<slug>`." Aucune question. Échec git → afficher l'erreur telle quelle, STOP.
 
 ---
 
@@ -142,7 +128,7 @@ Si BRANCH est `main` ou `master`, dans l'ordre :
 ## Détection d'état
 
 **Étape préalable — dans l'ordre :**
-1. Exécuter `bash <SKILL_DIR>/scripts/status.sh --root <ROOT>` — ajouter `--branch <BRANCH>` quand `<BRANCH>` n'est pas la branche git courante (identifiant de ticket). Lire le JSON : contexte interne, jamais affiché brut.
+1. Exécuter `bash <SKILL_DIR>/scripts/status.sh --root <ROOT>` — ajouter `--branch <BRANCH>` quand `<BRANCH>` n'est pas la branche git courante (nom de code hors git). Lire le JSON : contexte interne, jamais affiché brut.
 2. `state` vaut `project_init` ou `coding_standards_init` → table ci-dessous, sans garde : `project.md` et `coding-standards.md` sont communs à toutes les branches et ne résolvent jamais `<BRANCH>`.
 3. `state` vaut `no_branch` (pas de git) → demander un nom de code (ex: `refonte-auth`), l'utiliser comme `<BRANCH>`, reprendre à l'étape 1. Sans réponse : STOP.
 4. Exécuter la « Garde de sécurité » ci-dessus. `<BRANCH>` changée → reprendre à l'étape 1.

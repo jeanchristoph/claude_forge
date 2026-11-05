@@ -38,7 +38,7 @@ The result: fewer surprises, implementations that stay within the defined scope,
 - **Generated SQL deployment script** — every SQL step of `## Deployment` is gathered, with no question asked, into a single `output/YYYYMMDD-deployment-script.sql` per branch, rewritten in place: one `-- STEP` section per step, a versioned script referenced in a comment, a standalone query ready to run with its check query, date-dependent values computed in SQL, any `USE` section last.
 - **Out-of-scope detection** — a request outside the current plan becomes a plan task: forge writes it up and you validate the wording, nothing more.
 - **Branch, goal or ClickUp code as argument** — `/forge <branch-name>` checks out that branch, creating it from the up-to-date default branch (`master`, else `main`) if it does not exist — never from the current branch. A goal in words skips the goal question; with `.forge/clickup.json`, a task code (`PRJ-1133` or raw id) opens the existing task.
-- **main/master guard** — without a branch as argument, on protected branches, forge offers to resume a branch with open tasks, asks the goal, then offers a branch named after it, a temporary branch (`tmp/<you>-<ddmmyyyy>`), a ticket ID or a branch name — after `project.md` and `coding-standards.md`, which are shared by every branch.
+- **main/master guard** — without a branch as argument, on protected branches, forge offers to resume a branch with open tasks, asks the goal, then creates a branch named after it — after `project.md` and `coding-standards.md`, which are shared by every branch. `/forge master` works directly on `master`.
 - **Shipping shortcut** — `"grave master"` / `"engrave master"` (or with `"dev"`) commit, push, and merge straight away: the command is the go-ahead, no confirmation asked.
 - **Compaction survival** — the `PreCompact` hook injects the forge state (branch, goal, task statuses) into the compacted context summary.
 - **Cross-platform** — automatic Unix/Windows detection, separate installers.
@@ -102,8 +102,7 @@ forge/
 │   │   └── scripts/
 │   │       ├── engrave.sh             (shipping sequence: preview / run)
 │   │       ├── json.sh                (JSON rendering shared by the scripts)
-│   │       ├── status.sh              (startup status: state, progress, resumable branches, as JSON)
-│   │       └── temp-branch.sh         (temporary branch from the main/master guard)
+│   │       └── status.sh              (startup status: state, progress, resumable branches, as JSON)
 │   └── forge-clickup/        → extension: ClickUp task kickoff
 │       └── SKILL.md
 ├── hooks/
@@ -126,8 +125,7 @@ forge/
 │   └── README.md             (how to regenerate)
 ├── tests/
 │   ├── engrave.test.sh       → bash tests/engrave.test.sh, throwaway repositories only
-│   ├── status.test.sh        → bash tests/status.test.sh, throwaway repositories only
-│   └── temp-branch.test.sh   → bash tests/temp-branch.test.sh, throwaway repositories only
+│   └── status.test.sh        → bash tests/status.test.sh, throwaway repositories only
 ├── .gitattributes
 └── .gitignore
 ```
@@ -216,7 +214,7 @@ options and their descriptions are written in your language — the English labe
 document are the skill's internal references, not what you see on screen.
 
 Open questions stay free text, where a fixed list would only get in the way: the goal of the task, a
-branch code name, a ticket ID, the email to paste, what to do next.
+branch code name, the email to paste, what to do next.
 
 Validating a piece of content — the brief's objective, the plan, the closing report — never offers a
 "rework" or "edit" option: a change request goes through the question's
@@ -228,18 +226,7 @@ content again unchanged.
 
 ## Safety guard — main / master
 
-Without a branch as argument, on `main` or `master`, forge first offers to resume any local branch with open tasks. It then asks the goal, unless it was given as an argument, and derives a branch name from it. The branch choice comes last — as a choice, not free text:
-1. Create the suggested branch
-2. Temporary branch → no name asked: forge creates `tmp/<you>-<ddmmyyyy>` and switches to it
-3. Stay on the branch → provide a ticket ID (e.g. `CU-123`)
-4. Create a branch → provide a name
-
-The temporary branch name is computed by `skills/forge/scripts/temp-branch.sh`, never by hand. `<you>` is the local part of
-`git config user.email` — the part before `@` — with the numeric prefix of GitHub / GitLab noreply addresses removed,
-lowercased, accents dropped, any other character turned into `-`: `64985971+jeanchristoph@users.noreply.github.com` gives
-`tmp/jeanchristoph-27102026`, `claude.malaval@example.com` gives `tmp/claude-malaval-27102026`. The `tmp/` prefix sets it
-apart from a feature branch. A second temporary branch the same day gets `-2`, then `-3`… With no git email configured,
-forge says so and asks for a branch name instead. Run `bash tests/temp-branch.test.sh` to check it.
+Without a branch as argument, on `main` or `master`, forge first offers to resume any local branch with open tasks. It then asks the goal, unless it was given as an argument, and creates a branch named after it, with no question: short kebab-case name, suffixed `-2`, `-3`… if it already exists. Ask to rename the branch at any time: forge runs `git branch -m` and moves `.forge/branch/<name>/`. To work directly on `master`, run `/forge master`.
 
 The guard runs before State 2 — Brief, never before States 0 and 1: `project.md` and `coding-standards.md` are shared by every branch and never resolve `<BRANCH>`. In a fresh project, forge learns what the project is before asking which branch to work under.
 
@@ -367,8 +354,8 @@ Updates `project.md` — only what changed, after validation.
 
 A request that targets a folder outside the current project opens a **linked project**: a repository that
 has already been forged (`.forge/` present — otherwise forge refuses and asks you to run `/forge` there
-first; it never initializes a project on its own). It needs a real branch on the parent side: a session
-kept on `main`/`master` under a ticket ID cannot delegate.
+first; it never initializes a project on its own). It needs a real branch on the parent side: a code name
+used outside git cannot delegate.
 
 The parent prepares the ground, and nothing else: it opens the branch **`<parent>/<BRANCH>`** of the
 linked repository in a git worktree — the parent folder name as prefix, the parent branch unchanged on the right: `forge/linked-project`,

@@ -1,3 +1,4 @@
+- [2026-11-05 19:50] T10 : branche créée sans question sur master depuis l'objectif, renommage à la demande, temp-branch.sh et ses tests supprimés.
 - [2026-11-05 19:30] T9 : `json_string` extrait dans `scripts/json.sh`, chargé par engrave.sh, temp-branch.sh et status.sh.
 - [2026-11-05 19:20] Règle DRY de CLAUDE.md global passée à la 2e occurrence. Installeurs inchangés : ils vident déjà le dossier du skill avant copie.
 - [2026-11-05 19:05] T1 à T8 terminées ; tests status 27/27, temp-branch 16/16, engrave 33/33.

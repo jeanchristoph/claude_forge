@@ -4,7 +4,7 @@
 #   Rend compte en JSON sur une ligne — la mise en page revient au skill
 #   Appelé à chaque lancement : lancer un processus coûte cher sous Git Bash, d'où le travail en variables
 # Usage : status.sh [--root <dir>] [--branch <name>]
-#   --branch : branche à évaluer à la place de la branche git courante (identifiant de ticket sur main / master)
+#   --branch : branche à évaluer à la place de la branche git courante (nom de code hors git)
 # Sortie : 0 état écrit · 1 usage, sans JSON
 
 set -u

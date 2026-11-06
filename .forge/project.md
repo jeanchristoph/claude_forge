@@ -1,6 +1,6 @@
 # Project — Claude_forge
 
-**Generated:** 2026-07-30 · updated 2026-11-05
+**Generated:** 2026-07-30 · updated 2026-11-06
 
 ## Stack
 - Langage : Markdown (instructions du skill) + PowerShell / Bash (installeurs et hook)
@@ -64,6 +64,7 @@ Fichiers générés dans **chaque projet cible** par le skill (pas dans ce dép�
     ├── brief.md          (## Origin en tête quand la branche est un projet lié : parent, branche, mandat)
     ├── log.md
     ├── plan.md
+    ├── ticket.json       (écrit par forge-clickup : tracker, code, url ; lu par la clôture, lien affiché à la reprise)
     └── output/           (tout contenu généré : AAAAMMJJ-<intitulé>.*, dont AAAAMMJJ-explanation-<sujet>.md)
 ```
 

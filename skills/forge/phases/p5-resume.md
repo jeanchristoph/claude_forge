@@ -9,7 +9,7 @@
    - Des entrées existent → afficher un résumé en tête : "**Last session :** [points clés]"
    - ⚠️ Jamais de lecture directe de `log.md` — la taille du fichier ne doit jamais peser sur le coût de la reprise.
 5. Lire `@.forge/branch/<BRANCH>/plan.md`
-6. Afficher le tableau d'avancement (format ci-dessous).
+6. Afficher le tableau d'avancement (format ci-dessous). `.forge/branch/<BRANCH>/ticket.json` présent → afficher au-dessus une ligne `Ticket: [<code>](<url>)`.
 7. **Aucune tâche ouverte** — une `[!] blocked` n'est pas ouverte → aucun mode proposé. Demander en une ligne quoi faire ensuite, puis STOP.
    > "Nothing open — what do we do next?"
 

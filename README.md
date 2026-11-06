@@ -141,6 +141,7 @@ Files generated in each project:
     ├── brief.md         ← `## Objective` + `## Scope & rules`
     ├── log.md           ← Decisions log (living log, last 10 entries read on resume)
     ├── plan.md
+    ├── ticket.json      ← written by `/forge-clickup`: tracker, code, url; link shown on resume and at closure
     └── output/          ← every generated file, named `YYYYMMDD-`
         ├── 20260910-explanation-*.md ← written in the background when a technical concept is explained
         ├── 20260910-db-migration.sql ← docs, SQL scripts, exports, notes
@@ -467,15 +468,17 @@ The commit message is generated automatically — no separate confirmation on th
 
 Triggered once every task is `[x]` and you've validated the tests, or as soon as you say it's done.
 
-Forge first confirms the original goal is actually solved.
+Forge first confirms the original goal is actually solved, listing the tasks still open. Any left are
+settled one by one: done (`[x]`), dropped (`[-]`) or kept open. A blocked `[!]` task is never touched, and
+`Solved` alone checks nothing.
 
-If `.forge/clickup.json` exists, Forge then writes a closing report for the ClickUp task whose code is
-the branch name: plain text, structured and schematic, in your language — labels included, the only
+If the branch has an open ClickUp task, Forge then writes a closing report for the task named by its
+`ticket.json` marker, written by `/forge-clickup`: plain text, structured and schematic, in your language — labels included, the only
 generated content exempt from the English structural labels. Like any generated content, it is saved
 in `.forge/branch/<BRANCH>/output/YYYYMMDD-clickup-report.txt`, rewritten in place when you ask for a
 change. The task is fetched before anything is sent, never guessed, and the report is posted as a
-comment only on an explicit yes. Without that file, no report is written and the step stays entirely
-silent.
+comment only on an explicit yes. Without a marker, Forge still looks for a task named after the branch, for
+branches opened before the marker; if none matches, no report is written and the step stays entirely silent: closure never creates a ClickUp task, nor offers to.
 
 Last, it offers to draft a reply to a client email — written in the language of the email received,
 never yours if they differ, in the voice of a technical support team: short, fluent, professional, direct
@@ -514,7 +517,7 @@ mail client or attach to the ticket the email came from — ClickUp, Jira or any
 | **Total** | **2h** | |
 ```
 
-**Statuses:** `[ ]` to do · `[x]` done · `[!]` blocked  
+**Statuses:** `[ ]` to do · `[x]` done · `[!]` blocked · `[-]` dropped  
 **Effort:** XS <30min · S 30min-2h · M 2-4h · L 4-8h · XL >1d → split
 
 ---

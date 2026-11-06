@@ -139,6 +139,7 @@ Fichiers générés dans chaque projet :
     ├── brief.md         ← `## Objective` + `## Scope & rules`
     ├── log.md           ← Journal des décisions (vivant, 10 dernières entrées lues à la reprise)
     ├── plan.md
+    ├── ticket.json      ← écrit par `/forge-clickup` : tracker, code, url ; lien affiché à la reprise et à la clôture
     └── output/          ← tout fichier généré, nommé `AAAAMMJJ-`
         ├── 20260910-explanation-*.md ← écrit en tâche de fond lors d'une explication de concept
         ├── 20260910-db-migration.sql ← docs, scripts SQL, exports, notes
@@ -469,15 +470,18 @@ Le message de commit est généré automatiquement — pas de confirmation dédi
 Déclenchée quand toutes les tâches sont `[x]` et que tu as validé les tests, ou dès que tu annonces
 que c'est terminé.
 
-Forge confirme d'abord que le problème initial est bien résolu.
+Forge confirme d'abord que le problème initial est bien résolu, en listant les tâches encore ouvertes.
+S'il en reste, chacune est soldée : terminée (`[x]`), abandonnée (`[-]`) ou laissée ouverte. Une tâche
+bloquée `[!]` n'est jamais touchée, et `Solved` seul ne coche rien.
 
-Si `.forge/clickup.json` existe, Forge rédige ensuite un rapport de clôture pour la tâche ClickUp dont
-le code est le nom de la branche : texte brut, structuré et schématique, dans ta langue — labels
+Si la branche a une tâche ClickUp ouverte, Forge rédige ensuite un rapport de clôture pour la tâche désignée
+par son marqueur `ticket.json`, écrit par `/forge-clickup` : texte brut, structuré et schématique, dans ta langue — labels
 compris, seul contenu généré exempté des libellés de structure figés en anglais. Comme tout contenu
 généré, il est conservé dans `.forge/branch/<BRANCH>/output/AAAAMMJJ-clickup-report.txt`, réécrit sur
 place à chaque modification demandée. La tâche est relue avant tout envoi, jamais devinée, et le
-rapport n'est publié en commentaire que sur accord explicite. Sans ce fichier, aucun rapport n'est
-rédigé et l'étape reste entièrement silencieuse.
+rapport n'est publié en commentaire que sur accord explicite. Sans marqueur, Forge cherche encore une
+tâche au nom de la branche, pour les branches ouvertes avant le marqueur ; si aucune ne correspond, aucun rapport n'est rédigé et l'étape reste entièrement silencieuse :
+la clôture ne crée jamais de tâche ClickUp et n'en propose jamais.
 
 Enfin, il propose de rédiger une réponse à un mail client — rédigée dans la langue du mail reçu,
 jamais la tienne si elles diffèrent, avec la voix d'une équipe support technique : courte, fluide,
@@ -517,7 +521,7 @@ coller dans un client de messagerie ou à joindre au ticket d'où vient le mail 
 | **Total** | **2h** | |
 ```
 
-**Statuts :** `[ ]` à faire · `[x]` terminé · `[!]` bloqué  
+**Statuts :** `[ ]` à faire · `[x]` terminé · `[!]` bloqué · `[-]` abandonné  
 **Effort :** XS <30min · S 30min-2h · M 2-4h · L 4h-1j · XL >1j → découper
 
 ---

@@ -12,6 +12,8 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ### Added
 
+- Ticket marker: `/forge-clickup` writes `.forge/branch/<CODE>/ticket.json` (`tracker`, `code`, `url`) when it creates or resumes a branch. Closure reads it to target the task, so renaming the branch no longer breaks the link. The task link is shown on resume and at closure.
+- Closure settles open tasks: they are listed next to the objective and, after `Solved`, each one is marked done, dropped or kept open. Dropped tasks use the new `[-] dropped` status, which `status.sh` neither counts nor offers for resuming. Blocked tasks are left alone.
 - `/forge` now accepts a goal in words or a ClickUp code as argument. With a space, the text becomes the objective. With `.forge/clickup.json` present, a word that is no existing branch but matches a task (`PRJ-1133` or raw id) opens that task through `forge-clickup`; otherwise it stays a new branch name.
 - `/forge-clickup` now accepts the same two forms: a goal in words skips the goal question, a code reads the existing task and creates or resumes its branch, without creating a task.
 - `skills/forge/scripts/status.sh`, tested by `tests/status.test.sh`: read-only JSON status of the branch (state, progress, recent log, resumable branches), called once at startup and shown as a one-line status.
@@ -24,6 +26,7 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ### Changed
 
+- The closing ClickUp report now depends on the branch, not only on the project: without a marker or a task named after the branch, the step stays silent. Closure no longer asks for a task identifier and never creates or offers a ClickUp task.
 - `p5-resume.md` and `SKILL.md` are split: delegation, shipping, closure and delegated mode move to `skills/forge/commands/`, read only when triggered. What every resume loads drops from 40 KB to 15 KB for `p5-resume.md`.
 - A file already read in the turn is no longer read again across phases.
 - On `main` / `master`, the goal now comes first and forge creates a branch named after it, with no branch question. The temporary branch, stay-on-branch and name-a-branch options are gone; `/forge master` still works directly on `master`.

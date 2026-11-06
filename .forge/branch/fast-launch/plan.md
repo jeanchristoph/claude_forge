@@ -64,13 +64,25 @@
 **Description:** Remplacer la question `Branch` par une création directe depuis l'objectif : nom court en kebab-case, suffixé `-2`, `-3`… s'il existe déjà. Retirer les options branche temporaire, rester sur master et créer une branche. Ajouter à `p5-resume.md` le renommage à la demande : `git branch -m`, déplacement du dossier `.forge/branch/`, signalement si l'ancien nom existe sur le distant. Supprimer `temp-branch.sh` et ses tests, mettre à jour la documentation.
 [x]
 
+### T11 — Solder les tâches ouvertes à la clôture
+**Effort:** S
+**Files:** `skills/forge/commands/closure.md`, `skills/forge/scripts/status.sh`, `tests/status.test.sh`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Lister les tâches `[ ]` avant la question `Closure`. Sur `Solved`, question `Tasks` : `Mark done` → `[x]`, `Drop` → `[-] dropped`, `Keep open` → rien ; texte libre pour un traitement par tâche ; `## Summary` et log mis à jour ; tâches `[!]` intactes. `status.sh` reconnaît `[-]` : ni ouverte, ni comptée, jamais à reprendre. Sans tâche ouverte, clôture inchangée. Ajout en cours de tâche : rapport ClickUp seulement si une tâche porte le nom de la branche, sinon silence, jamais de création ni d'identifiant demandé.
+[x]
+
+### T12 — Marqueur de ticket par branche
+**Effort:** S
+**Files:** `skills/forge-clickup/SKILL.md`, `skills/forge/commands/closure.md`, `skills/forge/phases/p5-resume.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`, `.forge/project.md`
+**Description:** `forge-clickup` écrit `.forge/branch/<CODE>/ticket.json` (`tracker`, `code`, `url`) quand la branche est créée ou reprise, s'il est absent. La clôture vise le `code` du marqueur. Sans marqueur et avec `.forge/clickup.json`, elle essaie `clickup_get_task` sur le nom de la branche pour les branches déjà ouvertes ; introuvable → silence. Jamais de création ni d'identifiant demandé. La reprise et la clôture affichent l'`url`.
+[x]
+
 ## Risks
 - Le découpage de T1 peut casser un renvoi croisé sans que rien ne le signale : relire chaque renvoi par recherche dans tout le skill.
 - Seul `status.sh` a des tests automatiques. Les fichiers Markdown se vérifient à l'usage, après installation.
 - Une erreur ClickUp autre que « introuvable » ne doit pas créer de branche par erreur : erreur affichée, STOP.
 
 ## Deployment
-- [ ] Relancer `install-windows.bat` — after deploy · [T1, T2, T3, T4, T5, T6, T7]
+- [ ] Relancer `install-windows.bat` — after deploy · [T1, T2, T3, T4, T5, T6, T7, T11, T12]
 
 ## Summary
 | Task | Effort | Status |
@@ -85,4 +97,6 @@
 | T8 — Documentation | S | [x] |
 | T9 — Extraire `json_string` dans un script partagé | S | [x] |
 | T10 — Branche automatique sur `master` | S | [x] |
-| **Total** | **3 M, 6 S, 1 XS** | |
+| T11 — Solder les tâches ouvertes à la clôture | S | [x] |
+| T12 — Marqueur de ticket par branche | S | [x] |
+| **Total** | **3 M, 8 S, 1 XS** | |

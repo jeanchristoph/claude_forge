@@ -138,6 +138,16 @@ le signaler à l'utilisateur.
    git push -u origin <CODE>
    ```
 
+4. `.forge/branch/<CODE>/ticket.json` absent → l'écrire, `url` étant celle renvoyée par `clickup_get_task` :
+   ```json
+   {
+     "tracker": "clickup",
+     "code": "<CODE>",
+     "url": "<URL>"
+   }
+   ```
+   Marqueur de ticket de la branche : la clôture le lit pour viser la tâche, la reprise et la clôture affichent son `url`, le dossier le suit en cas de renommage.
+
 **Autorisation :** cette séquence — `checkout`, `pull`, `push -u` de la branche neuve —
 est autorisée de façon permanente. Elle ne s'étend à **aucun** `add`, `commit` ou `push`
 ultérieur, qui restent soumis à accord explicite au cas par cas.

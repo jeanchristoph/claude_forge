@@ -23,7 +23,7 @@ readonly LOG_ENTRIES_KEPT=10
 readonly TAB=$'\t'
 readonly CARRIAGE_RETURN=$'\r'
 
-# Une ligne « fichier<TAB>statut<TAB>titre » par tâche : le statut est la ligne [ ] / [x] / [!] sous le titre,
+# Une ligne « fichier<TAB>statut<TAB>titre » par tâche : le statut est la ligne [ ] / [x] / [!] / [-] sous le titre,
 # les micro-étapes [ ] T1.1 n'en sont pas. Tâche sans ligne de statut → ouverte.
 readonly TASKS_PROGRAM='
   function flush() { if (title != "") printf "%s\t%s\t%s\n", plan, status, title; title = "" }
@@ -31,9 +31,9 @@ readonly TASKS_PROGRAM='
                  { sub(/\r$/, "") }
   /^### T[0-9]+/ { flush(); title = substr($0, 5); status = "open"; next }
   /^## /         { flush(); next }
-  title != "" && /^\[[ x!]\]/ && !/^\[.\] T[0-9]+\.[0-9]+/ {
+  title != "" && /^\[[ x!-]\]/ && !/^\[.\] T[0-9]+\.[0-9]+/ {
     mark = substr($0, 2, 1)
-    status = (mark == "x") ? "done" : (mark == "!") ? "blocked" : "open"
+    status = (mark == "x") ? "done" : (mark == "!") ? "blocked" : (mark == "-") ? "dropped" : "open"
   }
   END { flush() }'
 

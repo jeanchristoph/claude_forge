@@ -149,6 +149,37 @@ test_reports_zero_tasks_without_plan() {
   assert_contains '"open_tasks":[]' "$output"
 }
 
+test_excludes_dropped_task_from_open_and_total() {
+  forge_project
+  write_branch_file master brief.md "# Brief
+"
+  write_branch_file master plan.md "## Tasks
+
+### T1 — Faite
+[x]
+
+### T2 — Abandonnée
+[-] dropped
+"
+  local output
+  output=$(status)
+  assert_contains '"tasks":{"done":1,"open":0,"blocked":0,"total":1}' "$output"
+  assert_contains '"open_tasks":[]' "$output"
+}
+
+test_ignores_dropped_micro_step() {
+  forge_project
+  write_branch_file master brief.md "# Brief
+"
+  write_branch_file master plan.md "## Tasks
+
+### T1 — Tâche
+[-] T1.1 — micro
+[ ]
+"
+  assert_contains '"tasks":{"done":0,"open":1,"blocked":0,"total":1}' "$(status)"
+}
+
 test_ignores_micro_steps_and_summary_table() {
   forge_project
   write_branch_file master brief.md '## Objective\n'
@@ -208,6 +239,17 @@ test_excludes_finished_branches() {
   forge_project
   git -C "$WORK" branch feature
   write_branch_file feature plan.md '## Tasks\n\n### T1 — Tâche\n[x]\n'
+  assert_contains '"resumable":[]' "$(status)"
+}
+
+test_excludes_branch_with_only_dropped_tasks() {
+  forge_project
+  git -C "$WORK" branch feature
+  write_branch_file feature plan.md "## Tasks
+
+### T1 — Abandonnée
+[-] dropped
+"
   assert_contains '"resumable":[]' "$(status)"
 }
 
@@ -284,6 +326,8 @@ run_test test_reads_branch_folder_containing_a_slash "lit le dossier d'une branc
 run_test test_counts_tasks_by_status "compte les tâches par statut"
 run_test test_lists_only_open_task_titles "liste uniquement les titres des tâches ouvertes"
 run_test test_reports_zero_tasks_without_plan "rend zéro tâche sans plan"
+run_test test_excludes_dropped_task_from_open_and_total "écarte une tâche abandonnée des ouvertes et du total"
+run_test test_ignores_dropped_micro_step "ignore une micro-étape abandonnée"
 run_test test_ignores_micro_steps_and_summary_table "ignore les micro-étapes et le tableau récapitulatif"
 run_test test_counts_task_without_status_line_as_open "compte comme ouverte une tâche sans ligne de statut"
 run_test test_reads_plan_with_crlf_line_endings "lit un plan en fins de ligne CRLF"
@@ -292,6 +336,7 @@ run_test test_keeps_ten_most_recent_log_entries "garde les dix entrées les plus
 run_test test_escapes_quotes_and_backslashes_in_log "échappe guillemets et barres obliques inverses du journal"
 run_test test_lists_other_local_branches_with_open_tasks "liste les autres branches locales ayant des tâches ouvertes"
 run_test test_excludes_finished_branches "écarte les branches sans tâche ouverte"
+run_test test_excludes_branch_with_only_dropped_tasks "écarte une branche dont il ne reste que des tâches abandonnées"
 run_test test_excludes_plan_of_branch_that_no_longer_exists "écarte le plan d'une branche disparue"
 run_test test_excludes_current_branch "écarte la branche courante"
 run_test test_finds_resumable_branch_containing_a_slash "trouve une branche à reprendre contenant un slash"

@@ -1,3 +1,6 @@
+- [2026-11-06 11:45] `url` du marqueur affichée à la reprise et à la clôture : information utile à l'utilisateur, pas seulement une donnée technique.
+- [2026-11-06 11:30] T12 : marqueur `ticket.json` (`tracker`, `code`, `url`) écrit par forge-clickup et lu par la clôture ; `url` conservée à la demande de l'utilisateur malgré sa relecture possible.
+- [2026-11-06 11:06] T11 : clôture soldant les tâches ouvertes (`[x]`, `[-] dropped`, ouvertes), `[-]` reconnu par status.sh ; rapport ClickUp seulement si une tâche porte le nom de la branche. Tests status 30/30, engrave 33/33.
 - [2026-11-05 19:50] T10 : branche créée sans question sur master depuis l'objectif, renommage à la demande, temp-branch.sh et ses tests supprimés.
 - [2026-11-05 19:30] T9 : `json_string` extrait dans `scripts/json.sh`, chargé par engrave.sh, temp-branch.sh et status.sh.
 - [2026-11-05 19:20] Règle DRY de CLAUDE.md global passée à la 2e occurrence. Installeurs inchangés : ils vident déjà le dossier du skill avant copie.

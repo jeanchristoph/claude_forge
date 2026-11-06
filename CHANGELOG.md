@@ -10,6 +10,8 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ## [Unreleased]
 
+## [0.11.0] — 2026-11-06
+
 ### Added
 
 - Ticket marker: `/forge-clickup` writes `.forge/branch/<CODE>/ticket.json` (`tracker`, `code`, `url`) when it creates or resumes a branch. Closure reads it to target the task, so renaming the branch no longer breaks the link. The task link is shown on resume and at closure.
@@ -268,7 +270,8 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 - Idempotent Unix and Windows installers, with `settings.json` merge and no duplicate entries on reinstall.
 - `main` / `master` guard: on a protected branch, forge asks for a ticket ID or a branch name before continuing.
 
-[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.10.2...HEAD
+[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/jeanchristoph/claude_forge/compare/v0.10.2...v0.11.0
 [0.10.2]: https://github.com/jeanchristoph/claude_forge/compare/v0.10.1...v0.10.2
 [0.10.1]: https://github.com/jeanchristoph/claude_forge/compare/v0.10.0...v0.10.1
 [0.10.0]: https://github.com/jeanchristoph/claude_forge/compare/v0.9.4...v0.10.0

@@ -1,3 +1,4 @@
+- [2026-11-09 13:05] Section « Teacher mode » / « Mode professeur » ajoutée aux deux README, avant la mise à jour de project.md.
 - [2026-11-09 12:58] T13 : `project.md` écrit sans question à la première génération ; « ranger la forge » garde sa validation.
 - [2026-11-06 11:45] `url` du marqueur affichée à la reprise et à la clôture : information utile à l'utilisateur, pas seulement une donnée technique.
 - [2026-11-06 11:30] T12 : marqueur `ticket.json` (`tracker`, `code`, `url`) écrit par forge-clickup et lu par la clôture ; `url` conservée à la demande de l'utilisateur malgré sa relecture possible.

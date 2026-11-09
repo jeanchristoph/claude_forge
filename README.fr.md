@@ -335,6 +335,16 @@ Une **action directe** ne devient jamais une tâche : un ordre précis — quoi,
 
 ---
 
+## Mode professeur
+
+```
+"c'est quoi X" / "explique-moi Y" / "je ne comprends pas Z"
+```
+
+Une question de compréhension sur un concept technique — pas une question de décision ni de périmètre — fait passer forge en mode pédagogique : une explication claire, avec un exemple concret tiré du projet quand c'est utile. Un agent en tâche de fond la consigne dans `output/AAAAMMJJ-explanation-<sujet>.md`, en ajoutant une section datée si le sujet a déjà son fichier, pendant que la tâche en cours reprend aussitôt. Une ligne signale le fichier une fois écrit ; aucune confirmation n'est demandée.
+
+---
+
 ## Mise à jour de project.md
 
 ```

@@ -336,6 +336,16 @@ A **direct action** never becomes a task: a precise order — what, where — th
 
 ---
 
+## Teacher mode
+
+```
+"what is X" / "explain Y" / "I don't understand Z"
+```
+
+A question about a technical concept — not a scope or decision question — switches forge to teaching: a clear explanation, with a concrete example taken from the project when it helps. A background agent writes it down in `output/YYYYMMDD-explanation-<topic>.md`, adding a dated section if the topic already has a file, while the current task resumes right away. One line reports the file once written; no confirmation is asked.
+
+---
+
 ## Updating project.md
 
 ```

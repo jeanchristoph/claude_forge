@@ -10,6 +10,8 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ## [Unreleased]
 
+## [0.12.0] — 2026-11-09
+
 ### Added
 
 - Skill update: at most once every 7 days, `/forge` asks the repository for its latest `vX.Y.Z` tag in a detached background process, never delaying startup (`skills/forge/scripts/update.sh check`, a few milliseconds on the fast path, silent offline). A newer version is offered at the next `/forge`; on `Update now`, `update.sh run` clones the tag in a temporary folder, runs the platform installer, and forge asks to relaunch; on failure, the last five lines of the clone or installer output are shown. `Later` skips that version (`update.sh dismiss`): only a newer one is offered at startup. "update the forge" checks at once, whatever the delay, skipped version included. Installers write `~/.claude/skills/forge/install.json` (version, repository, last check, latest known tag); an install without it is checked at once and offered the latest version. Tested by `tests/update.test.sh`.
@@ -284,7 +286,8 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 - Idempotent Unix and Windows installers, with `settings.json` merge and no duplicate entries on reinstall.
 - `main` / `master` guard: on a protected branch, forge asks for a ticket ID or a branch name before continuing.
 
-[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/jeanchristoph/claude_forge/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/jeanchristoph/claude_forge/compare/v0.10.2...v0.11.0
 [0.10.2]: https://github.com/jeanchristoph/claude_forge/compare/v0.10.1...v0.10.2
 [0.10.1]: https://github.com/jeanchristoph/claude_forge/compare/v0.10.0...v0.10.1

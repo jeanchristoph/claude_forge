@@ -61,6 +61,8 @@ Les scripts sont idempotents — relancer après une mise à jour écrase propre
 
 Les archives de release (« Source code » zip / tar.gz sur la [page des releases](https://github.com/jeanchristoph/claude_forge/releases)) ne contiennent que ce dont les installeurs ont besoin : `.forge/`, `docs/` et les fichiers `.git*` en sont exclus.
 
+Les installeurs écrivent `~/.claude/skills/forge/install.json` (version installée, URL du dépôt, dernier contrôle de mise à jour), lu par la mise à jour du skill ci-dessous.
+
 L'extension `/forge-clickup` requiert en plus le connecteur MCP ClickUp authentifié (`/mcp` dans Claude Code). Aucun script ne peut faire cette étape à ta place : c'est un OAuth navigateur.
 
 ---
@@ -90,7 +92,8 @@ forge/
 │   │   │   ├── closure.md             (clôture de tâche)
 │   │   │   ├── delegated-mode.md      (règles du mode délégué)
 │   │   │   ├── delegation.md          (projet lié, branche du même dépôt)
-│   │   │   └── engrave.md             (livraison)
+│   │   │   ├── engrave.md             (livraison)
+│   │   │   └── update.md              (mise à jour du skill : proposition, contrôle manuel)
 │   │   ├── phases/
 │   │   │   ├── p0-project.md          (État 0 — Project Init)
 │   │   │   ├── p1-coding-standards.md (État 1 — Coding Standards Init)
@@ -100,7 +103,8 @@ forge/
 │   │   └── scripts/
 │   │       ├── engrave.sh             (séquence de livraison : preview / run)
 │   │       ├── json.sh                (rendu JSON partagé par les scripts)
-│   │       └── status.sh              (état au lancement : état, avancement, branches à reprendre, en JSON)
+│   │       ├── status.sh              (état au lancement : état, avancement, branches à reprendre, en JSON)
+│   │       └── update.sh              (mise à jour du skill : check / run, en JSON)
 │   └── forge-clickup/        → extension : ouverture de tâche ClickUp
 │       └── SKILL.md
 ├── hooks/
@@ -123,7 +127,9 @@ forge/
 │   └── README.md             (how to regenerate)
 ├── tests/
 │   ├── engrave.test.sh       → bash tests/engrave.test.sh, dépôts jetables uniquement
-│   └── status.test.sh        → bash tests/status.test.sh, dépôts jetables uniquement
+│   ├── install.test.sh       → bash tests/install.test.sh, HOME jetable uniquement
+│   ├── status.test.sh        → bash tests/status.test.sh, dépôts jetables uniquement
+│   └── update.test.sh        → bash tests/update.test.sh, dépôts jetables uniquement
 ├── .gitattributes
 └── .gitignore
 ```
@@ -352,6 +358,20 @@ Une question de compréhension sur un concept technique — pas une question de 
 ```
 
 Met à jour `project.md` — uniquement ce qui a changé, après validation.
+
+---
+
+## Mise à jour du skill
+
+```
+"mettre à jour la forge" / "update the forge"
+```
+
+Au plus une fois tous les 7 jours, `/forge` interroge le dépôt sur son dernier tag `vX.Y.Z` en arrière-plan, sans l'attendre : le démarrage coûte quelques millisecondes, hors réseau tout reste silencieux. Une version plus récente ainsi trouvée est proposée au `/forge` suivant ; sur `Mettre à jour`, forge clone ce tag dans un dossier temporaire, lance l'installeur de la plateforme et demande de relancer `/forge`. `Plus tard` écarte cette version : seule une version plus récente est proposée au démarrage.
+
+La phrase ci-dessus contrôle tout de suite, quel que soit le délai, repropose une version écartée, et signale aussi une version à jour ou un dépôt injoignable.
+
+Une installation sans `install.json` (antérieure à cette fonction, ou depuis une archive hors git) est contrôlée aussitôt et se voit proposer la dernière version. Un forge délégué ne contrôle jamais.
 
 ---
 

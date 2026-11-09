@@ -17,6 +17,29 @@ foreach ($d in Get-ChildItem "$root\skills" -Directory) {
     Write-Host "  $($d.Name)"
 }
 
+# ── Install record ────────────────────────────────────────────────────────────
+# Version installée et dépôt d'origine, lus par skills/forge/scripts/update.sh.
+# Installation hors git → version et dépôt nuls : la mise à jour sera proposée au premier contrôle.
+Write-Host "Install record..."
+
+# Sortie git, ou $null si git est absent ou échoue ; « Stop » ne doit pas transformer stderr en erreur fatale.
+function Read-GitValue([string[]] $arguments) {
+    $ErrorActionPreference = "Continue"
+    try { $value = & git -C $root @arguments 2>$null } catch { return $null }
+    if ($LASTEXITCODE -ne 0 -or -not $value) { return $null }
+    return "$value".Trim()
+}
+
+$installedVersion = Read-GitValue @("describe", "--tags", "--abbrev=0", "--match", "v[0-9]*")
+$record = [ordered]@{
+    version    = $installedVersion
+    repository = Read-GitValue @("remote", "get-url", "origin")
+    last_check = if ($installedVersion) { [DateTimeOffset]::UtcNow.ToUnixTimeSeconds() } else { 0 }
+    latest     = $installedVersion
+}
+$recordJson = ([PSCustomObject]$record | ConvertTo-Json -Compress) + "`n"
+[IO.File]::WriteAllText("$claudeDir\skills\forge\install.json", $recordJson, (New-Object Text.UTF8Encoding $false))
+
 # ── Hook ──────────────────────────────────────────────────────────────────────
 Write-Host "Hook..."
 $hookDir = "$claudeDir\hooks\forge"
@@ -71,5 +94,6 @@ $s.hooks.PreCompact = $s.hooks.PreCompact + [PSCustomObject]@{
     hooks = @([PSCustomObject]@{ type = "command"; command = $cmd; shell = "powershell" })
 }
 
-$s | ConvertTo-Json -Depth 10 | Set-Content $sp -Encoding UTF8
+# Sans BOM : install.sh et les autres lecteurs JSON le refusent.
+[IO.File]::WriteAllText($sp, ($s | ConvertTo-Json -Depth 10), (New-Object Text.UTF8Encoding $false))
 Write-Host "Done."

@@ -18,6 +18,22 @@ for src in "$ROOT"/skills/*/; do
   echo "  $name"
 done
 
+# Version installée et dépôt d'origine, lus par skills/forge/scripts/update.sh.
+# Installation hors git → version et dépôt nuls : la mise à jour sera proposée au premier contrôle.
+echo "► Install record..."
+node -e "
+const [file, version, repository] = process.argv.slice(1);
+const record = {
+  version: version || null,
+  repository: repository || null,
+  last_check: version ? Math.floor(Date.now() / 1000) : 0,
+  latest: version || null
+};
+require('fs').writeFileSync(file, JSON.stringify(record) + '\n');
+" "$CLAUDE_DIR/skills/forge/install.json" \
+  "$(git -C "$ROOT" describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null)" \
+  "$(git -C "$ROOT" remote get-url origin 2>/dev/null)"
+
 echo "► Hook..."
 HOOK_DIR="$CLAUDE_DIR/hooks/forge"
 mkdir -p "$HOOK_DIR"
@@ -32,7 +48,8 @@ const sp = path.join(H, '.claude', 'settings.json');
 const names = process.argv.slice(1);
 
 let s = {};
-try { s = JSON.parse(fs.readFileSync(sp, 'utf8')); } catch(e) {}
+// BOM retiré : les anciennes versions de install.ps1 en écrivaient un, que JSON.parse refuse.
+try { s = JSON.parse(fs.readFileSync(sp, 'utf8').replace(/^﻿/, '')); } catch(e) {}
 
 s.permissions = s.permissions || {};
 s.permissions.allow = s.permissions.allow || [];

@@ -78,6 +78,7 @@ Forgeron enchanteur : sobre, précis, direct. Le code est ton métal.
 
 ## COMMITS GIT
 - Message de commit : max 150 caractères, pas de copyright/mention Claude (ni ligne Co-Authored-By)
+- **Jamais de proposition de commit** ni d'attente d'un feu vert pour commiter : travail à enregistrer → proposer la Livraison en une ligne, dans la langue de l'utilisateur et avec la commande de cette langue : « Tape `grave` pour graver. » en français, "Type `engrave` to ship." en anglais.
 
 ---
 
@@ -125,10 +126,20 @@ Si BRANCH est `main` ou `master`, dans l'ordre :
 
 ---
 
+## Mise à jour du skill
+
+**Déclencheur :** l'humain demande de "mettre à jour la forge" ou "update the forge".
+
+**Réaction :**
+- Lire et exécuter intégralement : `commands/update.md`, section « Contrôle manuel »
+- STOP — ne pas continuer vers la détection d'état.
+
+---
+
 ## Détection d'état
 
 **Étape préalable — dans l'ordre :**
-1. Exécuter `bash <SKILL_DIR>/scripts/status.sh --root <ROOT>` — ajouter `--branch <BRANCH>` quand `<BRANCH>` n'est pas la branche git courante (nom de code hors git). Lire le JSON : contexte interne, jamais affiché brut.
+1. Exécuter, en un seul appel Bash, `bash <SKILL_DIR>/scripts/status.sh --root <ROOT>` puis, hors mode délégué, `bash <SKILL_DIR>/scripts/update.sh check` — ajouter `--branch <BRANCH>` à `status.sh` quand `<BRANCH>` n'est pas la branche git courante (nom de code hors git). Lire les deux JSON : contexte interne, jamais affichés bruts. `update_available` vrai → lire et exécuter `commands/update.md`, section « Proposition », avant de continuer.
 2. `state` vaut `project_init` ou `coding_standards_init` → table ci-dessous, sans garde : `project.md` et `coding-standards.md` sont communs à toutes les branches et ne résolvent jamais `<BRANCH>`.
 3. `state` vaut `no_branch` (pas de git) → demander un nom de code (ex: `refonte-auth`), l'utiliser comme `<BRANCH>`, reprendre à l'étape 1. Sans réponse : STOP.
 4. Exécuter la « Garde de sécurité » ci-dessus. `<BRANCH>` changée → reprendre à l'étape 1.

@@ -63,6 +63,8 @@ Scripts are idempotent — re-running after an update overwrites cleanly without
 
 The release archives ("Source code" zip / tar.gz on the [releases page](https://github.com/jeanchristoph/claude_forge/releases)) carry only what the installers need: `.forge/`, `docs/` and the `.git*` files are left out.
 
+The installers write `~/.claude/skills/forge/install.json` (installed version, repository URL, last update check), read by the skill update below.
+
 The `/forge-clickup` extension additionally requires the ClickUp MCP connector to be authenticated (`/mcp` in Claude Code). No script can do this step for you: it is a browser OAuth flow.
 
 ---
@@ -92,7 +94,8 @@ forge/
 │   │   │   ├── closure.md             (task closure)
 │   │   │   ├── delegated-mode.md      (delegated mode rules)
 │   │   │   ├── delegation.md          (linked project, same-repo branch)
-│   │   │   └── engrave.md             (shipping)
+│   │   │   ├── engrave.md             (shipping)
+│   │   │   └── update.md              (skill update: proposal, manual check)
 │   │   ├── phases/
 │   │   │   ├── p0-project.md          (State 0 — Project Init)
 │   │   │   ├── p1-coding-standards.md (State 1 — Coding Standards Init)
@@ -102,7 +105,8 @@ forge/
 │   │   └── scripts/
 │   │       ├── engrave.sh             (shipping sequence: preview / run)
 │   │       ├── json.sh                (JSON rendering shared by the scripts)
-│   │       └── status.sh              (startup status: state, progress, resumable branches, as JSON)
+│   │       ├── status.sh              (startup status: state, progress, resumable branches, as JSON)
+│   │       └── update.sh              (skill update: check / run, as JSON)
 │   └── forge-clickup/        → extension: ClickUp task kickoff
 │       └── SKILL.md
 ├── hooks/
@@ -125,7 +129,9 @@ forge/
 │   └── README.md             (how to regenerate)
 ├── tests/
 │   ├── engrave.test.sh       → bash tests/engrave.test.sh, throwaway repositories only
-│   └── status.test.sh        → bash tests/status.test.sh, throwaway repositories only
+│   ├── install.test.sh       → bash tests/install.test.sh, throwaway home only
+│   ├── status.test.sh        → bash tests/status.test.sh, throwaway repositories only
+│   └── update.test.sh        → bash tests/update.test.sh, throwaway repositories only
 ├── .gitattributes
 └── .gitignore
 ```
@@ -353,6 +359,20 @@ A question about a technical concept — not a scope or decision question — sw
 ```
 
 Updates `project.md` — only what changed, after validation.
+
+---
+
+## Updating the skill
+
+```
+"mettre à jour la forge" / "update the forge"
+```
+
+At most once every 7 days, `/forge` asks the repository for its latest `vX.Y.Z` tag in the background, without waiting: startup costs a few milliseconds, offline stays silent. A newer version found this way is offered at the next `/forge`; on `Update now`, forge clones that tag in a temporary folder, runs the platform installer and asks you to relaunch `/forge`. `Later` skips that version: only a newer one is offered at startup.
+
+The phrase above checks right away, whatever the delay, offers a skipped version again, and also says when you are up to date or when the repository is unreachable.
+
+An install without `install.json` (older than this feature, or from an archive outside git) is checked at once and offered the latest version. Delegated runs never check.
 
 ---
 

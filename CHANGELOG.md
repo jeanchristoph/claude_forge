@@ -10,9 +10,19 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ## [Unreleased]
 
+### Added
+
+- Skill update: at most once every 7 days, `/forge` asks the repository for its latest `vX.Y.Z` tag in a detached background process, never delaying startup (`skills/forge/scripts/update.sh check`, a few milliseconds on the fast path, silent offline). A newer version is offered at the next `/forge`; on `Update now`, `update.sh run` clones the tag in a temporary folder, runs the platform installer, and forge asks to relaunch; on failure, the last five lines of the clone or installer output are shown. `Later` skips that version (`update.sh dismiss`): only a newer one is offered at startup. "update the forge" checks at once, whatever the delay, skipped version included. Installers write `~/.claude/skills/forge/install.json` (version, repository, last check, latest known tag); an install without it is checked at once and offered the latest version. Tested by `tests/update.test.sh`.
+- `tests/install.test.sh`: both installers run in a throwaway home — skills and hook copied, `settings.json` merged without duplicates on reinstall, `install.json` written from a tagged git copy and from a copy outside git. A missing `node` or `powershell.exe` skips the matching installer.
+
 ### Changed
 
+- Forge never offers to commit: work left to save is answered with the shipping command, in the user's language: "Tape `grave` pour graver." in French, "Type `engrave` to ship." in English.
 - First `project.md` generation no longer asks for validation: forge writes it after exploring, says so in one line and moves on. "clean the forge" still shows its changes before writing.
+
+### Fixed
+
+- Installers: `install.ps1` wrote `settings.json` with a UTF-8 byte order mark that `install.sh` could not parse, so running `install.sh` after it replaced every setting outside forge with an empty object. `install.ps1` now writes without BOM and `install.sh` strips one if present.
 
 ## [0.11.0] — 2026-11-06
 

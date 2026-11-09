@@ -76,13 +76,19 @@
 **Description:** `forge-clickup` écrit `.forge/branch/<CODE>/ticket.json` (`tracker`, `code`, `url`) quand la branche est créée ou reprise, s'il est absent. La clôture vise le `code` du marqueur. Sans marqueur et avec `.forge/clickup.json`, elle essaie `clickup_get_task` sur le nom de la branche pour les branches déjà ouvertes ; introuvable → silence. Jamais de création ni d'identifiant demandé. La reprise et la clôture affichent l'`url`.
 [x]
 
+### T13 — Écrire `project.md` sans confirmation à la première génération
+**Effort:** XS
+**Files:** `skills/forge/phases/p0-project.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Première génération (`project.md` absent) → écriture directe après l'exploration, sans présentation ni question, signalée en une ligne, puis État 1. Le mode mise à jour (« ranger la forge ») garde sa validation. Projet vide inchangé.
+[x]
+
 ## Risks
 - Le découpage de T1 peut casser un renvoi croisé sans que rien ne le signale : relire chaque renvoi par recherche dans tout le skill.
 - Seul `status.sh` a des tests automatiques. Les fichiers Markdown se vérifient à l'usage, après installation.
 - Une erreur ClickUp autre que « introuvable » ne doit pas créer de branche par erreur : erreur affichée, STOP.
 
 ## Deployment
-- [ ] Relancer `install-windows.bat` — after deploy · [T1, T2, T3, T4, T5, T6, T7, T11, T12]
+- [ ] Relancer `install-windows.bat` — after deploy · [T1, T2, T3, T4, T5, T6, T7, T11, T12, T13]
 
 ## Summary
 | Task | Effort | Status |
@@ -99,4 +105,5 @@
 | T10 — Branche automatique sur `master` | S | [x] |
 | T11 — Solder les tâches ouvertes à la clôture | S | [x] |
 | T12 — Marqueur de ticket par branche | S | [x] |
-| **Total** | **3 M, 8 S, 1 XS** | |
+| T13 — Écrire `project.md` sans confirmation à la première génération | XS | [x] |
+| **Total** | **3 M, 8 S, 2 XS** | |

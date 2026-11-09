@@ -162,7 +162,7 @@ Garde `.forge/` suivi en git — le bloc `.gitignore` ci-dessous s'en charge :
 **Condition :** `.forge/project.md` absent
 
 - Projet vide (hors dotfiles/dotfolders) → `project.md` placeholder créé, enchaîne.
-- Sinon → explore stack, structure, conventions, écrit `project.md` après validation.
+- Sinon → explore stack, structure, conventions, écrit `project.md` sans question, puis enchaîne ; « ranger la forge » l'ajuste ensuite.
 - `coding-standards.md` est écrit au même moment (uniquement s'il n'existe pas déjà) — voir ci-dessous.
 
 ### État 1 — Coding Standards Init

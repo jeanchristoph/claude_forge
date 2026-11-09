@@ -10,6 +10,10 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ## [Unreleased]
 
+### Changed
+
+- First `project.md` generation no longer asks for validation: forge writes it after exploring, says so in one line and moves on. "clean the forge" still shows its changes before writing.
+
 ## [0.11.0] — 2026-11-06
 
 ### Added

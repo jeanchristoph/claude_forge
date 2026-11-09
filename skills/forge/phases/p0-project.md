@@ -65,12 +65,10 @@ Si le dossier est vide (rien en dehors des éléments ignorés) :
 - External documentation: ...
 ```
 
-## Après génération ou mise à jour
-- Présenter le fichier à l'humain.
-- Demander : "Does this `project.md` look right? Anything to fix?"
-- Itérer si corrections demandées.
-- Écrire `.forge/project.md` avec le Write tool uniquement après validation explicite.
+## Après première génération — `project.md` absent
+- Écrire `.forge/project.md` avec le Write tool, sans présentation ni question.
   ⚠️ Ne jamais utiliser `mkdir` sur les chemins `.forge/` — Write tool crée les dossiers parents automatiquement.
+- Dire : "`project.md` written — say \"clean the forge\" to adjust it."
 - Continuer directement à l'État 1 : lire et exécuter `phases/p1-coding-standards.md`.
 
 ---

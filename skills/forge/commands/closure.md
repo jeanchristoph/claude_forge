@@ -41,6 +41,9 @@
    - **Ton :** court, fluide, professionnel, direct et naturel. Empathique, sans être trop chaleureux. Orienté vers la résolution du problème.
    - **Ne pas répéter le client :** ni redire ce qu'il vient d'écrire, ni reformuler toute sa demande quand ce n'est pas nécessaire.
    - **Pas de surcharge :** aucune explication technique inutile, aucune phrase trop longue, aucune tournure administrative lourde.
+   - **Correctif annoncé comme fait :** au passé composé, sujet « nous » (« nous avons apporté une correction
+     qui… »), décrit par ce que l'utilisateur verra dans son parcours — jamais par un blocage, une interdiction
+     ni un nom de page, de fichier ou de variable.
    - **Un paragraphe tient sur une seule ligne.** Jamais de retour à la ligne forcé à l'intérieur d'un paragraphe :
      le client de messagerie gère le rendu, un repli à la main coupe les phrases n'importe où, souvent juste avant
      un point. Les retours à la ligne ne séparent que les paragraphes et les éléments d'une liste.

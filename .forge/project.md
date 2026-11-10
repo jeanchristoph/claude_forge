@@ -31,7 +31,7 @@ forge/
 │   │       ├── engrave.sh            (séquence git de la livraison : preview / run, appelée par p5-resume.md)
 │   │       ├── json.sh               (rendu JSON sans jq, chargé par les scripts du skill)
 │   │       ├── status.sh             (état au lancement en JSON, lecture seule, appelé par SKILL.md ; peu de processus, Git Bash les paie cher)
-│   │       └── update.sh             (mise à jour du skill : check / run en JSON, appelé avec status.sh ; contrôle réseau détaché tous les 7 jours)
+│   │       └── update.sh             (mise à jour du skill : check / run en JSON, appelé avec status.sh ; contrôle réseau détaché toutes les 24 heures)
 │   └── forge-clickup/
 │       └── SKILL.md               (guichet ClickUp : ouvre la tâche, crée la branche, passe la main à forge)
 ├── hooks/
@@ -79,7 +79,7 @@ Fichiers générés dans **chaque projet cible** par le skill (pas dans ce dép�
 - `hooks/ps1/forge-precompact.ps1` / `hooks/bash/forge-precompact.sh` — hook `PreCompact`, injecte l'état du plan courant dans le contexte compacté
 - `skills/forge/phases/p5-resume.md` — reprise, règles de mise à jour, surveillance, et déclencheurs des commandes de `skills/forge/commands/` : Délégation, Livraison (`grave` / `engrave`, projets liés compris) et Clôture de tâche
 - `skills/forge/scripts/status.sh` — état de la branche en JSON, lu une fois par « Détection d'état » ; toute évolution passe par ce script et `tests/status.test.sh`
-- `skills/forge/scripts/update.sh` — mise à jour du skill : `check` (lecture de `~/.claude/skills/forge/install.json`, écrit par les installeurs ; interrogation détachée du dernier tag `vX.Y.Z` tous les 7 jours, `--force` au premier plan) `run` (clone du tag, installeur de la plateforme) et `dismiss` (refus d'une version, retenu dans `install.json`) ; toute évolution passe par ce script et `tests/update.test.sh`
+- `skills/forge/scripts/update.sh` — mise à jour du skill : `check` (lecture de `~/.claude/skills/forge/install.json`, écrit par les installeurs ; interrogation détachée du dernier tag `vX.Y.Z` toutes les 24 heures, `--force` au premier plan) `run` (clone du tag, installeur de la plateforme) et `dismiss` (refus d'une version, retenu dans `install.json`) ; toute évolution passe par ce script et `tests/update.test.sh`
 - `skills/forge/scripts/engrave.sh` — séquence git de la Livraison, `preview` puis `run`, tous deux en JSON mis en page par le skill (compte rendu : une ligne par opération git, statut `done` / `skipped` / `failed` / `not_run`) ; toute évolution de la séquence passe par ce script et `tests/engrave.test.sh`
 
 ## Detected conventions

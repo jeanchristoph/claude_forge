@@ -367,7 +367,7 @@ Met à jour `project.md` — uniquement ce qui a changé, après validation.
 "mettre à jour la forge" / "update the forge"
 ```
 
-Au plus une fois tous les 7 jours, `/forge` interroge le dépôt sur son dernier tag `vX.Y.Z` en arrière-plan, sans l'attendre : le démarrage coûte quelques millisecondes, hors réseau tout reste silencieux. Une version plus récente ainsi trouvée est proposée au `/forge` suivant ; sur `Mettre à jour`, forge clone ce tag dans un dossier temporaire, lance l'installeur de la plateforme et demande de relancer `/forge`. `Plus tard` écarte cette version : seule une version plus récente est proposée au démarrage.
+Au plus une fois toutes les 24 heures, `/forge` interroge le dépôt sur son dernier tag `vX.Y.Z` en arrière-plan, sans l'attendre : le démarrage coûte quelques millisecondes, hors réseau tout reste silencieux. Une version plus récente ainsi trouvée est proposée au `/forge` suivant ; sur `Mettre à jour`, forge clone ce tag dans un dossier temporaire, lance l'installeur de la plateforme et demande de relancer `/forge`. `Plus tard` écarte cette version : seule une version plus récente est proposée au démarrage.
 
 La phrase ci-dessus contrôle tout de suite, quel que soit le délai, repropose une version écartée, et signale aussi une version à jour ou un dépôt injoignable.
 

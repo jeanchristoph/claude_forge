@@ -1,7 +1,7 @@
 #!/bin/bash
 # Mise à jour du skill forge depuis son dépôt publié.
 #   check   → compare la version installée au dernier tag vX.Y.Z connu, JSON sur une ligne ;
-#             contrôle échu (7 jours, install.json absent ou illisible) → interrogation du dépôt en arrière-plan, sans attente ;
+#             contrôle échu (24 heures, install.json absent ou illisible) → interrogation du dépôt en arrière-plan, sans attente ;
 #             --force → interrogation au premier plan, quel que soit le délai, version refusée comprise
 #   run     → clone le dernier tag connu dans un dossier temporaire et lance l'installeur de la plateforme, JSON sur une ligne
 #   dismiss → retient le refus du dernier tag connu : plus proposé par check, sauf --force ou tag plus récent
@@ -17,7 +17,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/json.sh"
 
 readonly EXIT_USAGE=1
 readonly EXIT_FAILED=2
-readonly CHECK_INTERVAL_SECONDS=$((7 * 24 * 3600))
+readonly CHECK_INTERVAL_SECONDS=$((24 * 3600))
 readonly DEFAULT_REPOSITORY=${FORGE_UPDATE_REPOSITORY:-"https://github.com/jeanchristoph/claude_forge.git"}
 readonly INSTALL_FILE_NAME="install.json"
 readonly VERSION_PATTERN='^v([0-9]+)\.([0-9]+)\.([0-9]+)$'

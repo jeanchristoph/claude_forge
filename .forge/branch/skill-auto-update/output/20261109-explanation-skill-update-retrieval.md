@@ -25,7 +25,7 @@ Le script renvoie du JSON sur une ligne ; l'IA le lit comme contexte interne et 
 
 Fonctionnement :
 
-- **Délai de 7 jours** : tant que `last_check` a moins de 7 jours, `check` ne lit que `install.json` — aucune écriture, aucun réseau, aucun processus lancé (`check: "skipped"`).
+- **Délai de 24 heures** : tant que `last_check` a moins de 24 heures, `check` ne lit que `install.json` — aucune écriture, aucun réseau, aucun processus lancé (`check: "skipped"`).
 - **Contrôle échu** : un sous-processus détaché en arrière-plan exécute `git ls-remote --tags --refs` (`check: "started"`), sans faire attendre le lancement de `/forge`.
 - **URL** : une URL ssh `git@host:chemin` est convertie en `https://host/chemin` ; `GIT_TERMINAL_PROMPT=0` garantit qu'aucune saisie n'est attendue.
 - **Choix du tag** : seuls les tags `vX.Y.Z` comptent ; le plus haut gagne par comparaison numérique de chaque composante (`v0.9.10` > `v0.9.2`).
@@ -67,11 +67,11 @@ Déclenchée par le choix « Update now » :
 - Seuls les **tags publiés** `vX.Y.Z` comptent : pousser sur `master` ne déclenche rien.
 - `git` et un accès https à GitHub sont requis.
 - Hors réseau, le contrôle échoue en silence ; `check --force` renvoie `check: "failed"`.
-- Un contrôle automatique au plus tous les 7 jours ; le contrôle manuel (`--force`) ignore le délai.
+- Un contrôle automatique au plus toutes les 24 heures ; le contrôle manuel (`--force`) ignore le délai.
 
 ## 2026-11-09 — Le contrôle détaché : attendre sans bloquer
 
-Dans `run_check`, quand le délai de 7 jours est échu (et hors `--force`), une seule ligne lance la requête réseau :
+Dans `run_check`, quand le délai de 24 heures est échu (et hors `--force`), une seule ligne lance la requête réseau :
 
 ```bash
 ( refresh_latest_version ) </dev/null >/dev/null 2>&1 &
@@ -104,4 +104,4 @@ Conséquence directe : la nouvelle version est proposée au **/forge suivant**, 
 
 Vérification faite sous Git Bash : le processus détaché survit à la fin de l'appel de l'outil Bash et termine bien l'écriture de `install.json`.
 
-**Alternative non retenue** : attendre au premier plan avec un délai court (environ 2 s, une fois par semaine) pour proposer la version dès le lancement courant. Elle supprime le décalage d'un `/forge`, mais impose une attente visible à l'utilisateur et, hors réseau, le délai entier avant l'échec. Le choix actuel privilégie un démarrage toujours instantané.
+**Alternative non retenue** : attendre au premier plan avec un délai court (environ 2 s, une fois par jour) pour proposer la version dès le lancement courant. Elle supprime le décalage d'un `/forge`, mais impose une attente visible à l'utilisateur et, hors réseau, le délai entier avant l'échec. Le choix actuel privilégie un démarrage toujours instantané.

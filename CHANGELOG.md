@@ -10,6 +10,10 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ## [Unreleased]
 
+### Changed
+
+- Skill update: the background check for a newer `vX.Y.Z` tag now runs at most once every 24 hours instead of every 7 days.
+
 ## [0.12.0] — 2026-11-09
 
 ### Added

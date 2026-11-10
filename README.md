@@ -368,7 +368,7 @@ Updates `project.md` — only what changed, after validation.
 "mettre à jour la forge" / "update the forge"
 ```
 
-At most once every 7 days, `/forge` asks the repository for its latest `vX.Y.Z` tag in the background, without waiting: startup costs a few milliseconds, offline stays silent. A newer version found this way is offered at the next `/forge`; on `Update now`, forge clones that tag in a temporary folder, runs the platform installer and asks you to relaunch `/forge`. `Later` skips that version: only a newer one is offered at startup.
+At most once every 24 hours, `/forge` asks the repository for its latest `vX.Y.Z` tag in the background, without waiting: startup costs a few milliseconds, offline stays silent. A newer version found this way is offered at the next `/forge`; on `Update now`, forge clones that tag in a temporary folder, runs the platform installer and asks you to relaunch `/forge`. `Later` skips that version: only a newer one is offered at startup.
 
 The phrase above checks right away, whatever the delay, offers a skipped version again, and also says when you are up to date or when the repository is unreachable.
 

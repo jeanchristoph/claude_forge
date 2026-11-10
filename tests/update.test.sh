@@ -5,7 +5,8 @@
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 UPDATE_SCRIPT="$REPO_ROOT/skills/forge/scripts/update.sh"
-EIGHT_DAYS=$((8 * 24 * 3600))
+MORE_THAN_ONE_DAY=$((25 * 3600))
+LESS_THAN_ONE_DAY=$((23 * 3600))
 SYSTEM_TMPDIR=${TMPDIR:-/tmp}
 PASSED=0
 FAILED=0
@@ -111,19 +112,24 @@ test_skips_remote_query_and_writes_nothing_when_check_is_recent() {
   assert_equals "$before" "$after"
 }
 
+test_skips_remote_query_when_check_is_less_than_one_day_old() {
+  write_install_file '"v0.9.2"' "$(( $(now) - LESS_THAN_ONE_DAY ))" '"v0.9.2"'
+  assert_contains '"check":"skipped"' "$(update check)"
+}
+
 test_reports_known_newer_version_without_querying() {
   write_install_file '"v0.9.2"' "$(now)" '"v0.9.10"'
   assert_contains '"update_available":true,"check":"skipped"' "$(update check)"
 }
 
-test_starts_background_query_when_last_check_is_older_than_seven_days() {
-  write_install_file '"v0.9.2"' "$(( $(now) - EIGHT_DAYS ))" '"v0.9.2"'
+test_starts_background_query_when_last_check_is_older_than_one_day() {
+  write_install_file '"v0.9.2"' "$(( $(now) - MORE_THAN_ONE_DAY ))" '"v0.9.2"'
   assert_contains '"check":"started"' "$(update check)"
   wait_for_latest v0.9.10 || { echo "    install.json not refreshed"; exit 1; }
 }
 
 test_background_query_refreshes_last_check() {
-  local old_check=$(( $(now) - EIGHT_DAYS ))
+  local old_check=$(( $(now) - MORE_THAN_ONE_DAY ))
   write_install_file '"v0.9.2"' "$old_check" '"v0.9.2"'
   update check > /dev/null
   wait_for_latest v0.9.10 || exit 1
@@ -295,9 +301,10 @@ run_test() {
   teardown_sandbox
 }
 
-run_test test_skips_remote_query_and_writes_nothing_when_check_is_recent "n'interroge pas le dépôt et n'écrit rien quand le contrôle date de moins de 7 jours"
+run_test test_skips_remote_query_and_writes_nothing_when_check_is_recent "n'interroge pas le dépôt et n'écrit rien quand le contrôle date de moins de 24 heures"
 run_test test_reports_known_newer_version_without_querying "signale une version plus récente déjà connue sans interroger le dépôt"
-run_test test_starts_background_query_when_last_check_is_older_than_seven_days "lance l'interrogation en arrière-plan quand le contrôle date de plus de 7 jours"
+run_test test_skips_remote_query_when_check_is_less_than_one_day_old "n'interroge pas le dépôt quand le contrôle date de 23 heures"
+run_test test_starts_background_query_when_last_check_is_older_than_one_day "lance l'interrogation en arrière-plan quand le contrôle date de plus de 24 heures"
 run_test test_background_query_refreshes_last_check "l'interrogation en arrière-plan remet la date du contrôle à jour"
 run_test test_forced_check_queries_in_foreground_despite_recent_check "le contrôle forcé interroge au premier plan malgré un contrôle récent"
 run_test test_picks_highest_version_numerically_and_ignores_non_conforming_tags "retient le plus grand tag vX.Y.Z numériquement et ignore les tags non conformes"

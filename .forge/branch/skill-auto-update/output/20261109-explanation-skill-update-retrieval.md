@@ -68,3 +68,40 @@ Déclenchée par le choix « Update now » :
 - `git` et un accès https à GitHub sont requis.
 - Hors réseau, le contrôle échoue en silence ; `check --force` renvoie `check: "failed"`.
 - Un contrôle automatique au plus tous les 7 jours ; le contrôle manuel (`--force`) ignore le délai.
+
+## 2026-11-09 — Le contrôle détaché : attendre sans bloquer
+
+Dans `run_check`, quand le délai de 7 jours est échu (et hors `--force`), une seule ligne lance la requête réseau :
+
+```bash
+( refresh_latest_version ) </dev/null >/dev/null 2>&1 &
+```
+
+Chaque élément a un rôle précis :
+
+- **`( … )`** : un sous-shell, copie du script en cours. Il hérite des variables déjà lues (`REPOSITORY`, `NOW`, `LATEST_VERSION`…) sans relire `install.json`.
+- **`&`** : le sous-shell part en arrière-plan ; le script principal n'attend pas sa fin et passe à la ligne suivante (`check_status=$CHECK_STARTED`, puis `render_check`).
+- **`</dev/null >/dev/null 2>&1`** : entrée, sortie et erreurs sont coupées du terminal. Sans cela, l'outil Bash de Claude Code resterait en attente tant qu'un descripteur du processus reste ouvert, et `/forge` serait bloqué.
+
+Ce que fait le sous-processus, seul, après le retour du script :
+
+1. `fetch_latest_tag` exécute `git ls-remote --tags --refs` (0,5 à 1 s) ;
+2. il retient le plus haut tag `vX.Y.Z` (comparaison numérique) ;
+3. `refresh_latest_version` réécrit `install.json` (`latest`, `last_check`) puis se termine.
+
+Hors réseau, `git` échoue, `fetch_latest_tag` renvoie 1 et rien n'est écrit : `last_check` reste ancien, donc le contrôle est retenté au lancement suivant.
+
+```
+temps ->  0 ms        80 ms                    ~1 s
+script    |--lit install.json--|--JSON--> fin
+principal |   lance le sous-shell (&)
+                 \
+sous-proc.        |------- git ls-remote (0,5-1 s) ------|-écrit install.json-| fin
+                  (détaché : le terminal n'attend pas)
+```
+
+Conséquence directe : la nouvelle version est proposée au **/forge suivant**, pas à celui qui a déclenché la requête, puisque le JSON est rendu avant la réponse du réseau. Lors du test, il a fallu deux lancements pour voir la proposition apparaître.
+
+Vérification faite sous Git Bash : le processus détaché survit à la fin de l'appel de l'outil Bash et termine bien l'écriture de `install.json`.
+
+**Alternative non retenue** : attendre au premier plan avec un délai court (environ 2 s, une fois par semaine) pour proposer la version dès le lancement courant. Elle supprime le décalage d'un `/forge`, mais impose une attente visible à l'utilisateur et, hors réseau, le délai entier avant l'échec. Le choix actuel privilégie un démarrage toujours instantané.

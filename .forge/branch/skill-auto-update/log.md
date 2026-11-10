@@ -1,5 +1,6 @@
 # Log — skill-auto-update
 
+- [2026-11-10 18:08] Release v0.12.2 (CHANGELOG, tag, release GitHub Latest) — version corrective, au-dessus du tag de test v0.12.1 — demande utilisateur
 - [2026-11-10 16:52] Proposition de livraison explicite : commit et push de la branche, branches cibles fusionnées dans l'ordre, ex. `grave dev master` (SKILL.md, CHANGELOG) — demande utilisateur
 - [2026-11-10 00:00] Contrôle de mise à jour : délai ramené de 7 jours à 24 heures (update.sh, test 23 h ajouté, README, CHANGELOG, project.md, brief) — demande utilisateur
 - [2026-11-09 00:00] Proposition de livraison dans la langue de l'utilisateur : « Tape `grave` pour graver. » / "Type `engrave` to ship." — correction utilisateur

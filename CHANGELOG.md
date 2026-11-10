@@ -10,10 +10,14 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ## [Unreleased]
 
+## [0.12.2] — 2026-11-10
+
 ### Changed
 
 - Skill update: the background check for a newer `vX.Y.Z` tag now runs at most once every 24 hours instead of every 7 days.
 - The shipping command offered by forge now explains itself: `grave` / `engrave` commits and pushes the current branch, and target branches added in order receive it by merge (e.g. `grave dev master`).
+- Generated content always stays a local file in the branch `output/` folder, reports and third-party deliverables included: never published online (Claude Docs document, Artifact or any external service), and no online version is offered.
+- Task closure, customer message: a fix is announced as done, in the past tense with "we", and described by what the user will see — never by a block, a ban, or a page, file or variable name.
 
 ## [0.12.0] — 2026-11-09
 
@@ -291,7 +295,8 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 - Idempotent Unix and Windows installers, with `settings.json` merge and no duplicate entries on reinstall.
 - `main` / `master` guard: on a protected branch, forge asks for a ticket ID or a branch name before continuing.
 
-[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.12.0...HEAD
+[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.12.2...HEAD
+[0.12.2]: https://github.com/jeanchristoph/claude_forge/compare/v0.12.0...v0.12.2
 [0.12.0]: https://github.com/jeanchristoph/claude_forge/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/jeanchristoph/claude_forge/compare/v0.10.2...v0.11.0
 [0.10.2]: https://github.com/jeanchristoph/claude_forge/compare/v0.10.1...v0.10.2

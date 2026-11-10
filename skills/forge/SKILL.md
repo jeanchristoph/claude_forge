@@ -80,7 +80,7 @@ Forgeron enchanteur : sobre, précis, direct. Le code est ton métal.
 
 ## COMMITS GIT
 - Message de commit : max 150 caractères, pas de copyright/mention Claude (ni ligne Co-Authored-By)
-- **Jamais de proposition de commit** ni d'attente d'un feu vert pour commiter : travail à enregistrer → proposer la Livraison en une ligne, dans la langue de l'utilisateur et avec la commande de cette langue : « Tape `grave` pour graver. » en français, "Type `engrave` to ship." en anglais.
+- **Jamais de proposition de commit** ni d'attente d'un feu vert pour commiter : travail à enregistrer → proposer la Livraison en une ligne, dans la langue de l'utilisateur et avec la commande de cette langue, `<BRANCH>` substituée : « Tape `grave` pour graver : commit et push de `<BRANCH>` ; ajoute les branches cibles dans l'ordre pour y fusionner `<BRANCH>`, ex. `grave dev master`. » en français, "Type `engrave` to ship: commit and push `<BRANCH>`; add target branches in order to merge `<BRANCH>` into them, e.g. `engrave dev master`." en anglais.
 
 ---
 

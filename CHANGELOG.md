@@ -13,6 +13,7 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 ### Changed
 
 - Skill update: the background check for a newer `vX.Y.Z` tag now runs at most once every 24 hours instead of every 7 days.
+- The shipping command offered by forge now explains itself: `grave` / `engrave` commits and pushes the current branch, and target branches added in order receive it by merge (e.g. `grave dev master`).
 
 ## [0.12.0] — 2026-11-09
 

@@ -1,5 +1,8 @@
 # Log — skill-auto-update
 
+- [2026-11-16 00:00] BRANCH_INPUT : dumps et extraits SQL ajoutés aux fichiers apportés, anonymisation par table (SKILL.md, engrave.md, README EN/FR, CHANGELOG) — demande utilisateur
+- [2026-11-16 00:00] T13 : Livraison, question `Input` sur les fichiers nouveaux ou modifiés de BRANCH_INPUT (garder / anonymiser / hors git via .git/info/exclude) — demande utilisateur
+- [2026-11-16 00:00] T12 : dossier `.forge/branch/<BRANCH>/input/` (exports CSV/XLSX, données reçues en fichier), lu avant `.forge/input/` (SKILL.md, README EN/FR, CHANGELOG) — demande utilisateur
 - [2026-11-16 00:00] Release v0.12.3 (CHANGELOG, tag, release GitHub Latest) : .forge/input/, question au lieu d'un objectif, mode professeur sans écriture sur main/master — demande utilisateur
 - [2026-11-16 00:00] T11 : renvoi de p2-brief gardé, énumération retirée de la condition ; question en cours de branche couverte par la Surveillance de p5-resume — choix utilisateur
 - [2026-11-16 00:00] T11 étendue à toute branche (section « Question au lieu d'un objectif », renvois argument / garde / État 2) ; mode professeur sans écriture sur main/master — demande utilisateur

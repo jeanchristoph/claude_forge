@@ -147,6 +147,7 @@ Fichiers générés dans chaque projet :
     ├── brief.md         ← `## Objective` + `## Scope & rules`
     ├── log.md           ← Journal des décisions (vivant, 10 dernières entrées lues à la reprise)
     ├── plan.md
+    ├── input/           ← fichiers apportés pour la tâche de la branche (exports CSV/XLSX, dumps ou extraits SQL, données reçues en fichier), lus à la place d'un accès base
     ├── ticket.json      ← écrit par `/forge-clickup` : tracker, code, url ; lien affiché à la reprise et à la clôture
     └── output/          ← tout fichier généré, nommé `AAAAMMJJ-`
         ├── 20260910-explanation-*.md ← écrit en tâche de fond lors d'une explication de concept
@@ -477,6 +478,13 @@ seulement. Les
 questions sur les projets liés restent posées — elles fixent le périmètre, elles ne confirment rien. Un
 conflit de merge ou un push rejeté arrête la séquence et affiche l'erreur telle quelle ; rien n'est
 jamais forcé.
+
+**Fichiers apportés à la branche :** avant le commit, des fichiers nouveaux ou modifiés dans `.forge/branch/<BRANCH>/input/`
+déclenchent une question — les garder dans git, garder une copie anonymisée, ou les laisser hors de git. L'anonymisation
+liste les colonnes sensibles repérées pour validation, puis écrit `<nom>-anonymized.<ext>` à côté de chaque original,
+mêmes colonnes et même format, une même valeur toujours remplacée par le même pseudonyme. Les fichiers hors de git, et
+les originaux anonymisés, vont dans `.git/info/exclude` (propre à ton clone, `.gitignore` intact) ; un fichier déjà suivi
+sort de l'index mais reste dans les commits précédents. Un fichier exclu ou inchangé ne repose jamais la question.
 
 **INVARIANT :** git opère uniquement sur le dépôt courant — jamais sur un autre dépôt ouvert en parallèle. Unique
 exception : un projet lié, pour la création du worktree à la délégation et pour la livraison relayée ci-dessous.

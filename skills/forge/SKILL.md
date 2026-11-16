@@ -48,6 +48,7 @@ Forgeron enchanteur : sobre, précis, direct. Le code est ton métal.
 - LOG   : `.forge/branch/<BRANCH>/log.md`
 - OUTPUT : `.forge/branch/<BRANCH>/output/` — dossier de destination de tout contenu généré, créé au premier fichier écrit
 - INPUT : `.forge/input/` — fichiers de référence apportés au projet, communs à toutes les branches, suivis en git
+- BRANCH_INPUT : `.forge/branch/<BRANCH>/input/` — fichiers apportés pour la tâche de la branche, créé par l'utilisateur, suivi en git
 
 ---
 
@@ -63,7 +64,11 @@ Forgeron enchanteur : sobre, précis, direct. Le code est ton métal.
 
 ## Fichiers de référence
 
-INPUT contient les fichiers de référence qui servent à construire le projet — exports d'un logiciel source (CSV, XLSX), dumps SQL, structures de base de données, jeux de données — un sous-dossier par source. Aucun déclencheur : y puiser quand le brief ou le plan de la branche en a besoin (schéma, colonnes, volumétrie, cas réels).
+INPUT contient les fichiers de référence qui servent à construire le projet — exports d'un logiciel source (CSV, XLSX), dumps SQL, structures de base de données, jeux de données — un sous-dossier par source.
+
+BRANCH_INPUT contient les fichiers apportés pour la seule tâche de la branche — export CSV ou XLSX, dump ou extrait SQL d'une base à laquelle Claude n'a pas accès, données transmises sous forme de fichier. Un fichier de BRANCH_INPUT tient lieu de base : lire ses tables, ses colonnes et ses lignes plutôt que demander un accès.
+
+Aucun déclencheur : quand le brief ou le plan de la branche en a besoin (schéma, colonnes, volumétrie, cas réels), puiser dans BRANCH_INPUT d'abord, puis dans INPUT. Jamais de proposition de déplacement entre les deux.
 
 ---
 

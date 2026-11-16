@@ -70,6 +70,18 @@
 **Description:** Section SKILL.md « Question au lieu d'un objectif », sur toute branche : objectif reçu (argument, réponse à « What's the goal of this task? » dans la garde ou l'État 2) qui est une question sur le projet et n'appelle aucune action → réponse en lecture seule, aucune écriture, aucune branche, aucun brief, STOP. Renvois depuis « Avec argument » étape 1, la garde étape 2 et `p2-brief.md`, seuls à nommer les endroits. Surveillance de `p5-resume.md` : question en cours de branche → réponse en lecture seule, ni tâche, ni question `Plan`, ni ligne dans LOG. Mode professeur : aucun fichier écrit sur `main` / `master`. README EN/FR (fonctionnalités, mode professeur), CHANGELOG.
 [x] Section dédiée et trois renvois, mode professeur, README EN/FR et CHANGELOG
 
+### T12 — `.forge/branch/<BRANCH>/input/` : fichiers apportés à la branche
+**Effort:** XS
+**Files:** `skills/forge/SKILL.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Chemin BRANCH_INPUT `.forge/branch/<BRANCH>/input/` dans « Chemins » : fichiers apportés pour la tâche de la branche (exports CSV/XLSX d'une base inaccessible à Claude, données transmises sous forme de fichier), créé par l'utilisateur, suivi en git. Section « Fichiers de référence » : BRANCH_INPUT consulté d'abord, puis INPUT, quand le brief ou le plan en a besoin ; un fichier de BRANCH_INPUT tient lieu de base (colonnes et lignes lues plutôt qu'un accès demandé). Aucun déclencheur, aucune proposition de déplacement. README EN/FR (arborescence), CHANGELOG (Added, Unreleased).
+[x] Chemin BRANCH_INPUT, section « Fichiers de référence », README EN/FR, CHANGELOG
+
+### T13 — Livraison : sort des fichiers de `input/` de la branche
+**Effort:** S
+**Files:** `skills/forge/commands/engrave.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Étape 1 de la Livraison : `git status --porcelain` sur BRANCH_INPUT ; rien → silencieuse. Fichiers nouveaux ou modifiés → question `Input` : `Keep in git` / `Keep anonymized` / `Out of git`. Exclusion par `.git/info/exclude` (`git rm --cached` si déjà suivi, historique signalé). Anonymisation : colonnes sensibles affichées et validées (`Validate` / `Cancel`, Cancel arrête la livraison), `<nom>-anonymized.<ext>` écrit par script, pseudonymes cohérents, originaux exclus. Ligne LOG avant le `git add`, `engrave.sh` inchangé. Mode délégué `SCOPE: branch` → `FORGE_QUESTION`. README EN/FR, CHANGELOG.
+[x] Section « Fichiers apportés à la branche » dans engrave.md, étapes renumérotées ; README EN/FR, CHANGELOG
+
 ## Risks
 - `update.sh run` tourne depuis `~/.claude/skills/forge/scripts/`, que l'installeur supprime et recopie : sûr sous Unix (descripteur ouvert), `Remove-Item` peut refuser un fichier ouvert sous Windows. À vérifier en T2 ; parade : `run` se recopie dans le dossier temporaire et s'y relance avant l'installeur.
 - Processus détaché sous Git Bash : peut être tué à la fermeture du shell de l'outil Bash. À vérifier en T1 ; parade : `nohup` ou `start` côté Windows.
@@ -93,4 +105,6 @@ None
 | T9 — settings.json sans BOM entre installeurs | XS | [x] |
 | T10 — `.forge/input/` : référence sans déclencheur | XS | [x] |
 | T11 — Question au lieu d'un objectif : réponse sans écriture | XS | [x] |
-| **Total** | **2 M + 6 S + 3 XS (~1,5 j)** | |
+| T12 — `.forge/branch/<BRANCH>/input/` : fichiers apportés à la branche | XS | [x] |
+| T13 — Livraison : sort des fichiers de `input/` de la branche | S | [x] |
+| **Total** | **2 M + 7 S + 4 XS (~1,5 j)** | |

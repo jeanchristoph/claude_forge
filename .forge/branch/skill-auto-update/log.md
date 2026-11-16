@@ -1,5 +1,6 @@
 # Log — skill-auto-update
 
+- [2026-11-16 00:00] Release v0.12.3 (CHANGELOG, tag, release GitHub Latest) : .forge/input/, question au lieu d'un objectif, mode professeur sans écriture sur main/master — demande utilisateur
 - [2026-11-16 00:00] T11 : renvoi de p2-brief gardé, énumération retirée de la condition ; question en cours de branche couverte par la Surveillance de p5-resume — choix utilisateur
 - [2026-11-16 00:00] T11 étendue à toute branche (section « Question au lieu d'un objectif », renvois argument / garde / État 2) ; mode professeur sans écriture sur main/master — demande utilisateur
 - [2026-11-16 00:00] T11 simplifiée : question sur le projet sans action → réponse en lecture seule, sans écriture ; bascule question → objectif et précisions sur l'agent et le mode professeur écartées — choix utilisateur

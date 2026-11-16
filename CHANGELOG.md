@@ -10,6 +10,8 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ## [Unreleased]
 
+## [0.12.3] — 2026-11-16
+
 ### Added
 
 - `.forge/input/`: reference files used to build the project (source software exports, SQL dumps, database structures, datasets), one subfolder per source, shared by all branches; forge draws on it when a brief or plan needs it.
@@ -301,7 +303,8 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 - Idempotent Unix and Windows installers, with `settings.json` merge and no duplicate entries on reinstall.
 - `main` / `master` guard: on a protected branch, forge asks for a ticket ID or a branch name before continuing.
 
-[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.12.2...HEAD
+[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.12.3...HEAD
+[0.12.3]: https://github.com/jeanchristoph/claude_forge/compare/v0.12.2...v0.12.3
 [0.12.2]: https://github.com/jeanchristoph/claude_forge/compare/v0.12.0...v0.12.2
 [0.12.0]: https://github.com/jeanchristoph/claude_forge/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/jeanchristoph/claude_forge/compare/v0.10.2...v0.11.0

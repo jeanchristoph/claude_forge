@@ -80,7 +80,19 @@
 **Effort:** S
 **Files:** `skills/forge/commands/engrave.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
 **Description:** Étape 1 de la Livraison : `git status --porcelain` sur BRANCH_INPUT ; rien → silencieuse. Fichiers nouveaux ou modifiés → question `Input` : `Keep in git` / `Keep anonymized` / `Out of git`. Exclusion par `.git/info/exclude` (`git rm --cached` si déjà suivi, historique signalé). Anonymisation : colonnes sensibles affichées et validées (`Validate` / `Cancel`, Cancel arrête la livraison), `<nom>-anonymized.<ext>` écrit par script, pseudonymes cohérents, originaux exclus. Ligne LOG avant le `git add`, `engrave.sh` inchangé. Mode délégué `SCOPE: branch` → `FORGE_QUESTION`. README EN/FR, CHANGELOG.
-[x] Section « Fichiers apportés à la branche » dans engrave.md, étapes renumérotées ; README EN/FR, CHANGELOG
+[x] Section « Fichiers apportés à la branche » dans engrave.md, étapes renumérotées ; README EN/FR, CHANGELOG — retiré ensuite : input/ de branche exclu par .gitignore
+
+### T14 — Livraison : question `Input` étendue à `.forge/input/`
+**Effort:** XS
+**Files:** `skills/forge/commands/engrave.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Déclencheur sur `.forge/input/` et `.forge/branch/<BRANCH>/input/`, section renommée « Fichiers apportés » (renvoi de l'étape 1 compris). Une seule question `Input` listant les fichiers des deux dossiers avec leur chemin, choix appliqué à tous. `Out of git` précise qu'un fichier de `.forge/input/` hors de git manque aux autres branches et clones. README EN/FR, CHANGELOG.
+[x] Déclencheur sur les deux dossiers, section renommée, README EN/FR, CHANGELOG — retiré ensuite avec l'anonymisation
+
+### T15 — Script de contrôles asynchrone : `/.forge/branch/*/input/` dans le `.gitignore`
+**Effort:** S
+**Files:** `skills/forge/scripts/checks.sh`, `tests/checks.test.sh`, `skills/forge/scripts/status.sh`, `tests/status.test.sh`, `skills/forge/SKILL.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`, `.forge/project.md`
+**Description:** Nouveau `checks.sh [--root <dir>]` (futurs contrôles de démarrage) : rien hors git, sans `.forge/`, sur main / master ou HEAD détaché, ni si `git check-ignore` confirme déjà l'exclusion ; sinon ligne insérée avant `###< claude/forge ###` ou bloc ajouté (fichier créé), CRLF respecté ; JSON `gitignore` updated / unchanged / skipped pour les tests. « Détection d'état » étape 1 : lancé détaché hors mode délégué, dans le même appel Bash que status.sh, sans attente, sans affichage, sans LOG. Retrait du champ `branch_input_ignored` de status.sh (et ses tests) et de l'étape 5 de SKILL.md. Tests checks.test.sh. README EN/FR, CHANGELOG, project.md.
+[x] checks.sh, 12 tests verts (CRLF lu en bash, le grep de Git Bash ignorant les CR) ; status.sh restauré, 30 tests verts
 
 ## Risks
 - `update.sh run` tourne depuis `~/.claude/skills/forge/scripts/`, que l'installeur supprime et recopie : sûr sous Unix (descripteur ouvert), `Remove-Item` peut refuser un fichier ouvert sous Windows. À vérifier en T2 ; parade : `run` se recopie dans le dossier temporaire et s'y relance avant l'installeur.
@@ -107,4 +119,6 @@ None
 | T11 — Question au lieu d'un objectif : réponse sans écriture | XS | [x] |
 | T12 — `.forge/branch/<BRANCH>/input/` : fichiers apportés à la branche | XS | [x] |
 | T13 — Livraison : sort des fichiers de `input/` de la branche | S | [x] |
-| **Total** | **2 M + 7 S + 4 XS (~1,5 j)** | |
+| T14 — Livraison : question `Input` étendue à `.forge/input/` | XS | [x] |
+| T15 — Script de contrôles asynchrone : `/.forge/branch/*/input/` dans le `.gitignore` | S | [x] |
+| **Total** | **2 M + 8 S + 5 XS (~1,5 j)** | |

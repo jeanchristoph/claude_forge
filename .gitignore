@@ -32,3 +32,6 @@ node_modules/
 .env
 .env.*
 nul
+
+# forge : fichiers apportés aux branches, jamais versionnés
+/.forge/branch/*/input/

@@ -2,7 +2,7 @@
 
 ## Livraison — commit, push, merge
 
-**Autorisation :** la commande vaut autorisation pour cette séquence seulement — aucune confirmation avant `run`. Les questions `Input` de l'étape 1 et `Linked` / `Linked branches` de l'étape 3 restent posées : elles fixent le périmètre, elles ne confirment rien.
+**Autorisation :** la commande vaut autorisation pour cette séquence seulement — aucune confirmation avant `run`. Les questions `Linked` / `Linked branches` de l'étape 2 restent posées : elles fixent le périmètre, elles ne confirment rien.
 
 **INVARIANT :** git opère uniquement sur le dépôt courant — jamais sur un autre dépôt ouvert en parallèle. Unique exception : `<LINKED>`, pour la création du worktree par la « Délégation — projet lié » de `commands/delegation.md` et pour la livraison relayée ci-dessous — rien d'autre.
 
@@ -13,42 +13,20 @@
 Mode délégué `SCOPE: branch` → `--root` vaut ROOT (le worktree) ; compte rendu de livraison recopié entier dans le `content` du bloc qui termine le tour. `SCOPE: linked` → Livraison non applicable (section « Mode délégué » de `SKILL.md`).
 
 **Réaction — dans l'ordre :**
-1. Fichiers de la branche — BRANCH_INPUT (« Fichiers apportés à la branche » ci-dessous) : fixer le sort des fichiers nouveaux ou modifiés.
-2. Générer automatiquement le message de commit (règles COMMITS GIT : max 150 car., pas de mention Claude) — pas de confirmation sur le message lui-même.
-3. Livraison relayée — pour chaque projet lié (ci-dessous) : poser les deux questions, retenir la séquence du lié.
-4. Exécuter aussitôt le script en `run` pour le parent (« Script de livraison » ci-dessous), sans question ni affichage préalable.
-   - Sortie `0` → étape 5.
+1. Générer automatiquement le message de commit (règles COMMITS GIT : max 150 car., pas de mention Claude) — pas de confirmation sur le message lui-même.
+2. Livraison relayée — pour chaque projet lié (ci-dessous) : poser les deux questions, retenir la séquence du lié.
+3. Exécuter aussitôt le script en `run` pour le parent (« Script de livraison » ci-dessous), sans question ni affichage préalable.
+   - Sortie `0` → étape 4.
    - Sortie `1` → afficher l'erreur telle quelle, aucun projet lié livré. STOP — ne pas continuer.
    - Sortie `2` → rendre compte du parent selon le « Gabarit — compte rendu de livraison » ci-dessous, erreur git telle quelle sous le tableau, aucun projet lié livré. STOP — ne pas continuer.
-5. Pour chaque projet lié retenu, dans l'ordre du plan : exécuter le script en `run` avec ses arguments. Sortie `1` → retenir l'erreur ; sortie `2` → retenir le JSON et l'erreur. Passer au projet lié suivant ; le parent, déjà livré, n'est jamais repris.
-6. Rendre compte depuis le JSON de chaque `run`, parent puis chaque projet lié, selon le « Gabarit — compte rendu de livraison » ci-dessous.
+4. Pour chaque projet lié retenu, dans l'ordre du plan : exécuter le script en `run` avec ses arguments. Sortie `1` → retenir l'erreur ; sortie `2` → retenir le JSON et l'erreur. Passer au projet lié suivant ; le parent, déjà livré, n'est jamais repris.
+5. Rendre compte depuis le JSON de chaque `run`, parent puis chaque projet lié, selon le « Gabarit — compte rendu de livraison » ci-dessous.
 
 ⚠️ Aucune écriture dans LOG ni PLAN après la séquence — le compte rendu est du texte seul, le working tree reste tel que la livraison l'a laissé. Ce qui doit être journalisé l'est avant le `git add`.
 
-### Fichiers apportés à la branche
-
-**Déclencheur :** `git -C <ROOT> status --porcelain -- .forge/branch/<BRANCH>/input/` non vide. Vide → étape 1 silencieuse, jamais mentionnée : un fichier exclu, ou commité et inchangé, ne repose jamais la question.
-
-**Réaction — dans l'ordre :**
-1. Poser le choix avec `AskUserQuestion` — `header` : `Input`, question listant les fichiers nouveaux ou modifiés, trois options :
-   - `Keep in git` → "These files are committed as they are."
-   - `Keep anonymized` → "An anonymized copy is committed; the originals stay on this machine only."
-   - `Out of git` → "The files stay on this machine; nothing is committed."
-2. **Sur `Keep in git`** → étape 5.
-3. **Sur `Out of git`** → exclure chaque fichier (règle d'exclusion ci-dessous), puis étape 5.
-4. **Sur `Keep anonymized`** — dans l'ordre :
-   - Repérer, fichier par fichier, les colonnes sensibles — par table pour un dump ou un extrait SQL, valeurs des `INSERT` comprises : noms, e-mails, téléphones, adresses, identifiants de personne ou d'entreprise, IBAN, texte libre. Afficher la liste entière, puis poser le choix avec `AskUserQuestion` — `header` : `Anonymize`, options `Validate` / `Cancel`, motif « Validation d'un contenu » de `SKILL.md`.
-   - `Cancel` → livraison arrêtée, rien n'est commité. STOP — ne pas continuer.
-   - `Validate` → écrire par script, à côté de chaque original, `<nom>-anonymized.<ext>` : mêmes tables, mêmes colonnes, même format, même nombre de lignes ; seules les colonnes validées changent, la structure SQL reste intacte. Pseudonymes cohérents : une même valeur donne le même pseudonyme dans tous les fichiers, jointures préservées. Exclure chaque original (règle d'exclusion ci-dessous), puis étape 5.
-5. Écrire une entrée dans LOG : choix retenu, fichiers concernés, colonnes anonymisées. Reprendre la Livraison à son étape 2.
-
-**Règle d'exclusion :** ajouter le chemin du fichier, relatif à ROOT, à `.git/info/exclude` — exclusion propre au clone, non versionnée, `.gitignore` du projet intact. Fichier déjà suivi → `git rm --cached -- <fichier>` : gardé sur le disque, retiré du prochain commit ; le compte rendu signale en une ligne sous le tableau qu'il reste dans l'historique des commits précédents.
-
-⚠️ Mode délégué `SCOPE: branch` → les questions `Input` et `Anonymize` remontent en `FORGE_QUESTION`, la liste des fichiers ou des colonnes entière dans `content`.
-
 ### Livraison relayée — projets liés
 
-**Déclencheur :** PLAN parent porte au moins une note `delegated to <LINKED> @ <LINKED_BRANCH>` (« Délégation — projet lié » de `commands/delegation.md`). Aucune → étape 3 silencieuse, jamais mentionnée.
+**Déclencheur :** PLAN parent porte au moins une note `delegated to <LINKED> @ <LINKED_BRANCH>` (« Délégation — projet lié » de `commands/delegation.md`). Aucune → étape 2 silencieuse, jamais mentionnée.
 
 **Vocabulaire :** `<LINKED_GIT>` = dossier où la branche liée est extraite — le worktree qui porte `branch refs/heads/<LINKED_BRANCH>` dans `git -C <LINKED> worktree list --porcelain` ; aucun → `<LINKED>` lui-même (délégation ouverte avant les worktrees).
 
@@ -80,7 +58,7 @@ Mode délégué `SCOPE: branch` → `--root` vaut ROOT (le worktree) ; compte re
 
 ### Gabarit — compte rendu de livraison
 
-Gabarit figé de l'étape 6, rempli depuis le JSON de `run` — crochets à remplir, rien d'autre ne change. Un tableau par projet, cinq colonnes dans cet ordre, en-têtes générés dans la langue de l'utilisateur : numéro d'ordre, branche, opération, résultat, détail. Exemple : `grave dev staging master`, `staging` absente, conflit sur `master` ; un projet lié livré sur sa seule branche.
+Gabarit figé de l'étape 5, rempli depuis le JSON de `run` — crochets à remplir, rien d'autre ne change. Un tableau par projet, cinq colonnes dans cet ordre, en-têtes générés dans la langue de l'utilisateur : numéro d'ordre, branche, opération, résultat, détail. Exemple : `grave dev staging master`, `staging` absente, conflit sur `master` ; un projet lié livré sur sa seule branche.
 
 ```markdown
 | # | [Branche] | [Opération] | [Résultat] | [Détail] |

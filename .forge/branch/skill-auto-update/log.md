@@ -1,5 +1,19 @@
 # Log — skill-auto-update
 
+- [2026-11-16 00:00] SKILL.md, « Détection d'état » étape 1 découpée en une puce par script : `--branch` rattaché à status.sh seul — demande utilisateur
+- [2026-11-16 00:00] T15 réécrite : `scripts/checks.sh` lancé détaché au démarrage ajoute la ligne input/ au .gitignore ; champ `branch_input_ignored` de status.sh et étape 5 retirés — demande utilisateur
+- [2026-11-16 00:00] T15 : `status.sh` rend `branch_input_ignored`, « Détection d'état » ajoute `/.forge/branch/*/input/` au `.gitignore` s'il manque (SKILL.md, README EN/FR, CHANGELOG) — demande utilisateur
+- [2026-11-16 00:00] Anonymisation retirée (engrave.md restauré, README EN/FR, CHANGELOG) ; `/.forge/branch/*/input/` exclu par le bloc .gitignore, dossier de branche entier écarté — choix utilisateur
+- [2026-11-16 00:00] `.forge/input/` plus de 100 Ko : question `Large file` (Add to git / Keep out of git) avant la gravure — demande utilisateur
+- [2026-11-16 00:00] Plus de 100 Ko : jamais anonymisé ; exclu dans BRANCH_INPUT, gravé tel quel dans `.forge/input/` (sans limite de taille) — précision utilisateur
+- [2026-11-16 00:00] Limite de 100 Ko restreinte à BRANCH_INPUT, `.forge/input/` non concerné — précision utilisateur
+- [2026-11-16 00:00] Fichiers apportés de plus de 100 Ko : ni gravés ni anonymisés, exclus et signalés (engrave.md, README EN/FR, CHANGELOG) — demande utilisateur
+- [2026-11-16 00:00] Exclusion des originaux déplacée après `Validate` ; `Cancel` supprime les copies, sinon le grave suivant les aurait gravées sans confirmation
+- [2026-11-16 00:00] Anonymisation : extrait affiché puis confirmation `Anonymized` (Validate / Cancel, texte libre ajuste les colonnes) avant la gravure — demande utilisateur
+- [2026-11-16 00:00] Fichiers apportés anonymisés automatiquement à la gravure, question `Input` et option `Keep as is` retirées ; seules les copies `-anonymized.` sont gravées (engrave.md, README EN/FR, CHANGELOG) — demande utilisateur
+- [2026-11-16 00:00] engrave.md : option `Anonymize` et étape 3 explicitent les deux fichiers (original exclu de git, copie anonymisée commitée) — remarque utilisateur
+- [2026-11-16 00:00] Question `Input` : `Anonymize (recommended)` sans validation des colonnes, extrait de 5 lignes affiché ensuite ; `Keep as is` ; option « hors de git » retirée (engrave.md, README EN/FR, CHANGELOG) — demande utilisateur
+- [2026-11-16 00:00] T14 : question `Input` de la Livraison étendue à `.forge/input/` (engrave.md, README EN/FR, CHANGELOG) — demande utilisateur
 - [2026-11-16 00:00] BRANCH_INPUT : dumps et extraits SQL ajoutés aux fichiers apportés, anonymisation par table (SKILL.md, engrave.md, README EN/FR, CHANGELOG) — demande utilisateur
 - [2026-11-16 00:00] T13 : Livraison, question `Input` sur les fichiers nouveaux ou modifiés de BRANCH_INPUT (garder / anonymiser / hors git via .git/info/exclude) — demande utilisateur
 - [2026-11-16 00:00] T12 : dossier `.forge/branch/<BRANCH>/input/` (exports CSV/XLSX, données reçues en fichier), lu avant `.forge/input/` (SKILL.md, README EN/FR, CHANGELOG) — demande utilisateur

@@ -104,6 +104,7 @@ forge/
 │   │   │   ├── p4-plan.md             (State 4 — Plan)
 │   │   │   └── p5-resume.md           (State 5 — Active)
 │   │   └── scripts/
+│   │       ├── checks.sh              (startup checks, run detached: branch input/ line in .gitignore)
 │   │       ├── engrave.sh             (shipping sequence: preview / run)
 │   │       ├── json.sh                (JSON rendering shared by the scripts)
 │   │       ├── status.sh              (startup status: state, progress, resumable branches, as JSON)
@@ -131,6 +132,7 @@ forge/
 ├── tests/
 │   ├── engrave.test.sh       → bash tests/engrave.test.sh, throwaway repositories only
 │   ├── install.test.sh       → bash tests/install.test.sh, throwaway home only
+│   ├── checks.test.sh        → bash tests/checks.test.sh, throwaway repositories only
 │   ├── status.test.sh        → bash tests/status.test.sh, throwaway repositories only
 │   └── update.test.sh        → bash tests/update.test.sh, throwaway repositories only
 ├── .gitattributes
@@ -149,7 +151,7 @@ Files generated in each project:
     ├── brief.md         ← `## Objective` + `## Scope & rules`
     ├── log.md           ← Decisions log (living log, last 10 entries read on resume)
     ├── plan.md
-    ├── input/           ← files brought for this branch's task (CSV/XLSX exports, SQL dumps or extracts, data received as files), read instead of a database access
+    ├── input/           ← files brought for this branch's task (CSV/XLSX exports, SQL dumps or extracts, data received as files), read instead of a database access, not tracked in git
     ├── ticket.json      ← written by `/forge-clickup`: tracker, code, url; link shown on resume and at closure
     └── output/          ← every generated file, named `YYYYMMDD-`
         ├── 20260910-explanation-*.md ← written in the background when a technical concept is explained
@@ -157,11 +159,12 @@ Files generated in each project:
         └── 20260910-user-documentation-map.md ← client deliverable, named like every other file
 ```
 
-Keep `.forge/` tracked in git — the `.gitignore` block below does it:
+Keep `.forge/` tracked in git, except the branch `input/` folders — the `.gitignore` block below does it; forge adds the `input/` line on its own when it is missing, from a startup check run in the background:
 
 ```
 ###> claude/forge ###
 !/.forge/
+/.forge/branch/*/input/
 ###< claude/forge ###
 ```
 
@@ -477,13 +480,6 @@ branches (`grave`, `grave dev master`) — the sequence runs at once, with no re
 text in the message means it is not a shipping request. The command authorizes that sequence only. The linked-project questions are still
 asked — they set the scope, they confirm nothing. A merge conflict or a rejected push stops the sequence
 with the error as is; nothing is ever forced.
-
-**Branch input files:** before the commit, new or modified files in `.forge/branch/<BRANCH>/input/` trigger one
-question — keep them in git, keep an anonymized copy, or keep them out of git. Anonymizing lists the sensitive
-columns found for your approval, then writes `<name>-anonymized.<ext>` next to each original, same columns and
-format, the same value always mapped to the same pseudonym. Files kept out of git, and anonymized originals,
-go to `.git/info/exclude` (local to your clone, `.gitignore` untouched); an already tracked file is untracked but
-stays in earlier commits. An excluded or unchanged file never asks again.
 
 **INVARIANT:** git operates only on the current repo — never on another repo open in parallel. The one
 exception is a linked project: worktree creation when delegating, and the relayed shipping below.

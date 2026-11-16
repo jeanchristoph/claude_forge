@@ -12,8 +12,7 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ### Added
 
-- `.forge/branch/<BRANCH>/input/`: files brought for the branch's task (CSV/XLSX exports, SQL dumps or extracts from a database Claude cannot reach, data received as files), read instead of a database access; forge draws on it before the project-wide `.forge/input/`.
-- Engrave: new or modified files in the branch `input/` folder trigger one question before the commit — keep them in git, commit an anonymized copy (sensitive columns approved first, consistent pseudonyms), or keep them out of git through `.git/info/exclude`.
+- `.forge/branch/<BRANCH>/input/`: files brought for the branch's task (CSV/XLSX exports, SQL dumps or extracts from a database Claude cannot reach, data received as files), read instead of a database access, kept out of git by a `.gitignore` line that `scripts/checks.sh`, run detached at startup without waiting, adds when missing; forge draws on it before the project-wide `.forge/input/`.
 
 ## [0.12.3] — 2026-11-16
 

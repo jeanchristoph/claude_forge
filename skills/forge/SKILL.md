@@ -48,7 +48,7 @@ Forgeron enchanteur : sobre, précis, direct. Le code est ton métal.
 - LOG   : `.forge/branch/<BRANCH>/log.md`
 - OUTPUT : `.forge/branch/<BRANCH>/output/` — dossier de destination de tout contenu généré, créé au premier fichier écrit
 - INPUT : `.forge/input/` — fichiers de référence apportés au projet, communs à toutes les branches, suivis en git
-- BRANCH_INPUT : `.forge/branch/<BRANCH>/input/` — fichiers apportés pour la tâche de la branche, créé par l'utilisateur, suivi en git
+- BRANCH_INPUT : `.forge/branch/<BRANCH>/input/` — fichiers apportés pour la tâche de la branche, créé par l'utilisateur, exclu de git par le `.gitignore`, ligne ajoutée par `scripts/checks.sh` au démarrage
 
 ---
 
@@ -162,7 +162,12 @@ Si BRANCH est `main` ou `master`, dans l'ordre :
 ## Détection d'état
 
 **Étape préalable — dans l'ordre :**
-1. Exécuter, en un seul appel Bash, `bash <SKILL_DIR>/scripts/status.sh --root <ROOT>` puis, hors mode délégué, `bash <SKILL_DIR>/scripts/update.sh check` — ajouter `--branch <BRANCH>` à `status.sh` quand `<BRANCH>` n'est pas la branche git courante (nom de code hors git). Lire les deux JSON : contexte interne, jamais affichés bruts. `update_available` vrai → lire et exécuter `commands/update.md`, section « Proposition », avant de continuer.
+1. Exécuter, en un seul appel Bash :
+   - `bash <SKILL_DIR>/scripts/status.sh --root <ROOT>` — ajouter `--branch <BRANCH>` quand `<BRANCH>` n'est pas la branche git courante (nom de code hors git) ;
+   - hors mode délégué, `bash <SKILL_DIR>/scripts/update.sh check` ;
+   - hors mode délégué, `bash <SKILL_DIR>/scripts/checks.sh --root <ROOT> </dev/null >/dev/null 2>&1 &` — contrôles de démarrage détachés, jamais attendus ni lus, rien affiché, rien dans LOG.
+
+   Lire les JSON de `status.sh` et `update.sh` : contexte interne, jamais affichés bruts. `update_available` vrai → lire et exécuter `commands/update.md`, section « Proposition », avant de continuer.
 2. `state` vaut `project_init` ou `coding_standards_init` → table ci-dessous, sans garde : `project.md` et `coding-standards.md` sont communs à toutes les branches et ne résolvent jamais `<BRANCH>`.
 3. `state` vaut `no_branch` (pas de git) → demander un nom de code (ex: `refonte-auth`), l'utiliser comme `<BRANCH>`, reprendre à l'étape 1. Sans réponse : STOP.
 4. Exécuter la « Garde de sécurité » ci-dessus. `<BRANCH>` changée → reprendre à l'étape 1.

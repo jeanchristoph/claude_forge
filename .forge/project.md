@@ -28,6 +28,7 @@ forge/
 │   │   │   ├── p4-plan.md            (État 4 — Plan)
 │   │   │   └── p5-resume.md          (État 5 — Actif)
 │   │   └── scripts/
+│   │       ├── checks.sh             (contrôles de démarrage, lancés détachés par SKILL.md sans attente : ligne input/ de branche dans le .gitignore)
 │   │       ├── engrave.sh            (séquence git de la livraison : preview / run, appelée par p5-resume.md)
 │   │       ├── json.sh               (rendu JSON sans jq, chargé par les scripts du skill)
 │   │       ├── status.sh             (état au lancement en JSON, lecture seule, appelé par SKILL.md ; peu de processus, Git Bash les paie cher)
@@ -52,6 +53,7 @@ forge/
 ├── tests/
 │   ├── engrave.test.sh        (tests du script de livraison, dépôts jetables : bash tests/engrave.test.sh)
 │   ├── install.test.sh        (tests des deux installeurs, HOME jetable : bash tests/install.test.sh)
+│   ├── checks.test.sh         (tests des contrôles de démarrage, dépôts jetables : bash tests/checks.test.sh)
 │   ├── status.test.sh         (tests de l'état au lancement, dépôts jetables : bash tests/status.test.sh)
 │   └── update.test.sh         (tests de la mise à jour du skill, dépôts jetables : bash tests/update.test.sh)
 ├── README.md                  (documentation, anglais)
@@ -79,6 +81,7 @@ Fichiers générés dans **chaque projet cible** par le skill (pas dans ce dép�
 - `hooks/ps1/forge-precompact.ps1` / `hooks/bash/forge-precompact.sh` — hook `PreCompact`, injecte l'état du plan courant dans le contexte compacté
 - `skills/forge/phases/p5-resume.md` — reprise, règles de mise à jour, surveillance, et déclencheurs des commandes de `skills/forge/commands/` : Délégation, Livraison (`grave` / `engrave`, projets liés compris) et Clôture de tâche
 - `skills/forge/scripts/status.sh` — état de la branche en JSON, lu une fois par « Détection d'état » ; toute évolution passe par ce script et `tests/status.test.sh`
+- `skills/forge/scripts/checks.sh` — contrôles de démarrage lancés détachés, jamais attendus : ajoute `/.forge/branch/*/input/` au `.gitignore` hors main / master ; toute évolution passe par ce script et `tests/checks.test.sh`
 - `skills/forge/scripts/update.sh` — mise à jour du skill : `check` (lecture de `~/.claude/skills/forge/install.json`, écrit par les installeurs ; interrogation détachée du dernier tag `vX.Y.Z` toutes les 24 heures, `--force` au premier plan) `run` (clone du tag, installeur de la plateforme) et `dismiss` (refus d'une version, retenu dans `install.json`) ; toute évolution passe par ce script et `tests/update.test.sh`
 - `skills/forge/scripts/engrave.sh` — séquence git de la Livraison, `preview` puis `run`, tous deux en JSON mis en page par le skill (compte rendu : une ligne par opération git, statut `done` / `skipped` / `failed` / `not_run`) ; toute évolution de la séquence passe par ce script et `tests/engrave.test.sh`
 

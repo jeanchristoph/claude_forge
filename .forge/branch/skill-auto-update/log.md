@@ -1,5 +1,10 @@
 # Log — skill-auto-update
 
+- [2026-11-16 00:00] T11 : renvoi de p2-brief gardé, énumération retirée de la condition ; question en cours de branche couverte par la Surveillance de p5-resume — choix utilisateur
+- [2026-11-16 00:00] T11 étendue à toute branche (section « Question au lieu d'un objectif », renvois argument / garde / État 2) ; mode professeur sans écriture sur main/master — demande utilisateur
+- [2026-11-16 00:00] T11 simplifiée : question sur le projet sans action → réponse en lecture seule, sans écriture ; bascule question → objectif et précisions sur l'agent et le mode professeur écartées — choix utilisateur
+- [2026-11-16 00:00] T11 : une réponse qui débouche sur la modification d'un fichier fait de la question l'objectif, branche créée avant toute écriture — demande utilisateur
+- [2026-11-16 00:00] T11 : garde main/master, une question sur le projet donnée comme objectif reçoit une réponse en lecture seule, sans branche (SKILL.md, README EN/FR, CHANGELOG) — demande utilisateur
 - [2026-11-16 00:00] T10 : README EN/FR et titre de section SKILL.md alignés sur « fichiers de référence » — demande utilisateur
 - [2026-11-16 00:00] T10 : INPUT décrit comme « fichiers de référence » et non « données réelles », une structure n'étant pas une donnée (SKILL.md, CHANGELOG) — correction utilisateur
 - [2026-11-16 00:00] T10 : structures de base de données ajoutées au contenu de INPUT (SKILL.md, CHANGELOG) — demande utilisateur

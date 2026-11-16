@@ -18,7 +18,7 @@ En mode délégué (section « Mode délégué » de `SKILL.md`), les questions 
 
 1. Pré-remplir `## Objective` si l'intention est exprimée dans l'argument, le trigger ou la conversation.
 2. Si `## Objective` ne peut pas être pré-remplie :
-   - Poser la question : "What's the goal of this task?"
+   - Poser la question : "What's the goal of this task?" Réponse → « Question au lieu d'un objectif » de `SKILL.md`.
    - Reformuler en 2-3 phrases claires, puis poser le choix avec `AskUserQuestion` — `header` : `Objective`, options `Validate` / `Cancel` — motif « Validation d'un contenu » de `SKILL.md` : le changement demandé arrive en texte libre, reformuler, reposer la question.
    - Questions sur les points flous → attendre réponse ; relancer si flou persiste.
    - Écrire `## Objective` uniquement après validation explicite.

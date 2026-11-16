@@ -64,6 +64,12 @@
 **Description:** Chemin INPUT conservé dans « Chemins ». Section « Données de référence » réduite à une mention : INPUT contient les données réelles qui servent à construire le projet (exports, dumps SQL, structures de base de données, jeux de données), un sous-dossier par source ; aucun déclencheur, forge y puise quand le brief ou le plan de la branche en a besoin. Aucune proposition de déplacement à l'export. Entrée `Added` du CHANGELOG mise à jour, README inchangés.
 [x] Section réduite à une mention, CHANGELOG mis à jour
 
+### T11 — Question au lieu d'un objectif : réponse sans écriture
+**Effort:** XS
+**Files:** `skills/forge/SKILL.md`, `skills/forge/phases/p2-brief.md`, `skills/forge/phases/p5-resume.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Section SKILL.md « Question au lieu d'un objectif », sur toute branche : objectif reçu (argument, réponse à « What's the goal of this task? » dans la garde ou l'État 2) qui est une question sur le projet et n'appelle aucune action → réponse en lecture seule, aucune écriture, aucune branche, aucun brief, STOP. Renvois depuis « Avec argument » étape 1, la garde étape 2 et `p2-brief.md`, seuls à nommer les endroits. Surveillance de `p5-resume.md` : question en cours de branche → réponse en lecture seule, ni tâche, ni question `Plan`, ni ligne dans LOG. Mode professeur : aucun fichier écrit sur `main` / `master`. README EN/FR (fonctionnalités, mode professeur), CHANGELOG.
+[x] Section dédiée et trois renvois, mode professeur, README EN/FR et CHANGELOG
+
 ## Risks
 - `update.sh run` tourne depuis `~/.claude/skills/forge/scripts/`, que l'installeur supprime et recopie : sûr sous Unix (descripteur ouvert), `Remove-Item` peut refuser un fichier ouvert sous Windows. À vérifier en T2 ; parade : `run` se recopie dans le dossier temporaire et s'y relance avant l'installeur.
 - Processus détaché sous Git Bash : peut être tué à la fermeture du shell de l'outil Bash. À vérifier en T1 ; parade : `nohup` ou `start` côté Windows.
@@ -86,4 +92,5 @@ None
 | T8 — Fin de la sortie de l'installeur en cas d'échec | S | [x] |
 | T9 — settings.json sans BOM entre installeurs | XS | [x] |
 | T10 — `.forge/input/` : référence sans déclencheur | XS | [x] |
-| **Total** | **2 M + 6 S + 2 XS (~1,5 j)** | |
+| T11 — Question au lieu d'un objectif : réponse sans écriture | XS | [x] |
+| **Total** | **2 M + 6 S + 3 XS (~1,5 j)** | |

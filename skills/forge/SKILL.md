@@ -15,7 +15,7 @@ Forgeron enchanteur : sobre, précis, direct. Le code est ton métal.
 ## Branche de travail
 
 **Avec argument — `/forge <argument>`** : l'argument est un objectif, une branche ou un code de tâche ClickUp. Première condition remplie, dans cet ordre :
-1. Argument contenant une espace → objectif : le retenir pour pré-remplir `## Objective`, puis appliquer **Sans argument**.
+1. Argument contenant une espace → objectif : appliquer « Question au lieu d'un objectif » ci-dessous, puis le retenir pour pré-remplir `## Objective` et appliquer **Sans argument**.
 2. Vérifier : `!bash -c "git rev-parse --verify --quiet refs/heads/<argument> >/dev/null && echo exists || echo missing"`. `exists` → `!git checkout <argument>`, puis étape 5.
 3. `.forge/clickup.json` présent → `clickup_get_task` sur l'argument :
    - Tâche trouvée → invoquer `forge-clickup` via l'outil Skill avec l'argument. STOP — `forge-clickup` repasse la main à `forge`.
@@ -29,6 +29,14 @@ Forgeron enchanteur : sobre, précis, direct. Le code est ton métal.
 ⚠️ Objectif en argument sur une branche qui a déjà un brief → reprise normale, puis l'argument suit la « Surveillance des demandes complémentaires » de `phases/p5-resume.md`.
 
 **Sans argument** : BRANCH = champ `branch` du JSON de « Détection d'état ». La garde de sécurité ci-dessous s'applique.
+
+## Question au lieu d'un objectif
+
+**Condition :** objectif reçu qui est une question sur le projet et n'appelle aucune action, sur toute branche.
+
+**Réaction :** réponse en lecture seule — aucune écriture, aucune branche créée, aucun brief. STOP.
+
+---
 
 ## Chemins (substituer <BRANCH> par la valeur réelle)
 - ROOT : racine du projet — le dossier courant ; en mode délégué, le dossier transmis par le parent (worktree du projet lié ou de la branche). Tout chemin ci-dessous et toute commande git se résolvent sous ROOT.
@@ -102,6 +110,7 @@ INPUT contient les fichiers de référence qui servent à construire le projet �
 4. À la fin de l'agent, signaler l'écriture en une ligne, sans attendre de réponse :
    > "Explanation file written: `<AAAAMMJJ>-explanation-<sujet-slug>.md`."
 
+⚠️ BRANCH `main` ou `master` → étapes 2 et 4 ignorées : aucun fichier écrit, l'explication reste dans la réponse.
 ⚠️ Aucune confirmation demandée avant l'écriture.
 ⚠️ Signalement à la fin de l'agent uniquement, jamais à son lancement.
 
@@ -119,7 +128,7 @@ Si BRANCH est `main` ou `master`, dans l'ordre :
 1. `resumable` du JSON non vide → poser le choix avec `AskUserQuestion` — `header` : `Resume`, une option par branche (label `<branch>`, description = son nombre de tâches ouvertes), trois au maximum, puis `New task` → "Start something new."
    - Branche choisie → `!git checkout <branch>`, BRANCH = `<branch>`, informer en une ligne : "On branch `<branch>`.", retour à « Détection d'état ». La suite de la garde ne s'applique pas.
    - `New task` → étape 2.
-2. Objectif absent de l'argument → poser la question en texte libre : "What's the goal of this task?" Le retenir pour pré-remplir `## Objective`. Sans réponse : "Goal required. Operation cancelled." et STOP.
+2. Objectif absent de l'argument → poser la question en texte libre : "What's the goal of this task?" Réponse → « Question au lieu d'un objectif » ci-dessus, puis la retenir pour pré-remplir `## Objective`. Sans réponse : "Goal required. Operation cancelled." et STOP.
 3. Déduire de l'objectif `<slug>` : nom de branche court, kebab-case, minuscules, anglais. `refs/heads/<slug>` existe déjà → suffixer `-2`, `-3`…
 4. Exécuter `!git checkout -b <slug>`, BRANCH = `<slug>`, informer en une ligne : "On branch `<slug>`." Aucune question. Échec git → afficher l'erreur telle quelle, STOP.
 

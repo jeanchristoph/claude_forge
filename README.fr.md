@@ -36,6 +36,7 @@ Le résultat : moins de mauvaises surprises, des implémentations qui restent da
 - **Script SQL de déploiement généré** — toutes les étapes SQL de `## Deployment` sont regroupées, sans question, dans un seul `output/AAAAMMJJ-deployment-script.sql` par branche, réécrit sur place : une section `-- STEP` par étape, un script versionné référencé en commentaire, une requête autonome prête à exécuter avec sa requête de contrôle, les valeurs datées calculées en SQL, toute section `USE` en dernier.
 - **Détection hors périmètre** — une demande hors du plan courant devient une tâche du plan : forge la formule, tu valides la formulation, rien de plus.
 - **Branche, objectif ou code ClickUp en argument** — `/forge <nom-de-branche>` bascule sur cette branche, créée depuis la branche par défaut à jour (`master`, sinon `main`) si elle n'existe pas — jamais depuis la branche courante. Un objectif en mots évite la question d'objectif ; avec `.forge/clickup.json`, un code de tâche (`PRJ-1133` ou id brut) ouvre la tâche existante.
+- **Question au lieu d'un objectif** — sur toute branche, une question sur le projet qui n'appelle aucune action (« où l'utilisateur règle-t-il X ? »), donnée en argument ou en réponse à la question d'objectif, reçoit une réponse en lecture seule : aucune branche, aucun brief, rien d'écrit.
 - **Garde main/master** — sans branche en argument, sur les branches protégées, forge propose de reprendre une branche qui a des tâches ouvertes, demande l'objectif, puis crée une branche nommée d'après lui — après `project.md` et `coding-standards.md`, communs à toutes les branches. `/forge master` travaille directement sur `master`.
 - **Raccourci de livraison** — `"grave master"` / `"engrave master"` (ou avec `"dev"`) commit, push et merge directement : la commande vaut feu vert, aucune confirmation demandée.
 - **Survie à la compaction** — le hook `PreCompact` injecte l'état forge (branche, objectif, statut des tâches) dans le résumé de contexte compacté.
@@ -348,7 +349,7 @@ Une **action directe** ne devient jamais une tâche : un ordre précis — quoi,
 "c'est quoi X" / "explique-moi Y" / "je ne comprends pas Z"
 ```
 
-Une question de compréhension sur un concept technique — pas une question de décision ni de périmètre — fait passer forge en mode pédagogique : une explication claire, avec un exemple concret tiré du projet quand c'est utile. Un agent en tâche de fond la consigne dans `output/AAAAMMJJ-explanation-<sujet>.md`, en ajoutant une section datée si le sujet a déjà son fichier, pendant que la tâche en cours reprend aussitôt. Une ligne signale le fichier une fois écrit ; aucune confirmation n'est demandée.
+Une question de compréhension sur un concept technique — pas une question de décision ni de périmètre — fait passer forge en mode pédagogique : une explication claire, avec un exemple concret tiré du projet quand c'est utile. Un agent en tâche de fond la consigne dans `output/AAAAMMJJ-explanation-<sujet>.md`, en ajoutant une section datée si le sujet a déjà son fichier, pendant que la tâche en cours reprend aussitôt. Une ligne signale le fichier une fois écrit ; aucune confirmation n'est demandée. Sur `main` ou `master`, rien n'est écrit : l'explication reste dans la réponse.
 
 ---
 

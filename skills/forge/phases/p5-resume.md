@@ -132,6 +132,8 @@ Mode délégué → aucune proposition : `AskUserQuestion` est inaccessible et a
 
 **À chaque input utilisateur**, après l'exécution du skill (reprise ou nouveau projet), évaluer si la demande correspond à une tâche existante du plan ou non.
 
+⚠️ Question sur le projet qui n'appelle aucune action → réponse en lecture seule, ni tâche, ni question `Plan`, ni ligne dans LOG.
+
 ### Action directe — exécuter sans tâche ni question
 
 **Condition — l'une ou l'autre :**

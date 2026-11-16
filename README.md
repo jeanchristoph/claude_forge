@@ -38,6 +38,7 @@ The result: fewer surprises, implementations that stay within the defined scope,
 - **Generated SQL deployment script** — every SQL step of `## Deployment` is gathered, with no question asked, into a single `output/YYYYMMDD-deployment-script.sql` per branch, rewritten in place: one `-- STEP` section per step, a versioned script referenced in a comment, a standalone query ready to run with its check query, date-dependent values computed in SQL, any `USE` section last.
 - **Out-of-scope detection** — a request outside the current plan becomes a plan task: forge writes it up and you validate the wording, nothing more.
 - **Branch, goal or ClickUp code as argument** — `/forge <branch-name>` checks out that branch, creating it from the up-to-date default branch (`master`, else `main`) if it does not exist — never from the current branch. A goal in words skips the goal question; with `.forge/clickup.json`, a task code (`PRJ-1133` or raw id) opens the existing task.
+- **Question instead of a goal** — on any branch, a question about the project that calls for no action ("where does the user set X?"), given as argument or in answer to the goal question, gets a read-only answer: no branch, no brief, nothing written.
 - **main/master guard** — without a branch as argument, on protected branches, forge offers to resume a branch with open tasks, asks the goal, then creates a branch named after it — after `project.md` and `coding-standards.md`, which are shared by every branch. `/forge master` works directly on `master`.
 - **Shipping shortcut** — `"grave master"` / `"engrave master"` (or with `"dev"`) commit, push, and merge straight away: the command is the go-ahead, no confirmation asked.
 - **Compaction survival** — the `PreCompact` hook injects the forge state (branch, goal, task statuses) into the compacted context summary.
@@ -349,7 +350,7 @@ A **direct action** never becomes a task: a precise order — what, where — th
 "what is X" / "explain Y" / "I don't understand Z"
 ```
 
-A question about a technical concept — not a scope or decision question — switches forge to teaching: a clear explanation, with a concrete example taken from the project when it helps. A background agent writes it down in `output/YYYYMMDD-explanation-<topic>.md`, adding a dated section if the topic already has a file, while the current task resumes right away. One line reports the file once written; no confirmation is asked.
+A question about a technical concept — not a scope or decision question — switches forge to teaching: a clear explanation, with a concrete example taken from the project when it helps. A background agent writes it down in `output/YYYYMMDD-explanation-<topic>.md`, adding a dated section if the topic already has a file, while the current task resumes right away. One line reports the file once written; no confirmation is asked. On `main` or `master`, nothing is written: the explanation stays in the answer.
 
 ---
 

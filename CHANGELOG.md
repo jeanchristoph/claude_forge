@@ -13,6 +13,8 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 ### Added
 
 - `.forge/input/`: reference files used to build the project (source software exports, SQL dumps, database structures, datasets), one subfolder per source, shared by all branches; forge draws on it when a brief or plan needs it.
+- Question instead of a goal: on any branch, a question about the project that calls for no action, given as argument or in answer to the goal question, is answered read-only, with no branch, no brief and nothing written.
+- Teacher mode writes no explanation file on `main` or `master`: the explanation stays in the answer.
 
 ## [0.12.2] — 2026-11-10
 

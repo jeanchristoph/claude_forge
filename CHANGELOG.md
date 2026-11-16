@@ -10,6 +10,8 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ## [Unreleased]
 
+## [0.12.5] — 2026-11-16
+
 ### Added
 
 - The branch `input/` folder is created empty when the brief is written.
@@ -313,7 +315,8 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 - Idempotent Unix and Windows installers, with `settings.json` merge and no duplicate entries on reinstall.
 - `main` / `master` guard: on a protected branch, forge asks for a ticket ID or a branch name before continuing.
 
-[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.12.4...HEAD
+[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.12.5...HEAD
+[0.12.5]: https://github.com/jeanchristoph/claude_forge/compare/v0.12.4...v0.12.5
 [0.12.4]: https://github.com/jeanchristoph/claude_forge/compare/v0.12.3...v0.12.4
 [0.12.3]: https://github.com/jeanchristoph/claude_forge/compare/v0.12.2...v0.12.3
 [0.12.2]: https://github.com/jeanchristoph/claude_forge/compare/v0.12.0...v0.12.2

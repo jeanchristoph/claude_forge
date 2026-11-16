@@ -10,6 +10,10 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ## [Unreleased]
 
+### Added
+
+- The branch `input/` folder is created empty when the brief is written.
+
 ## [0.12.4] — 2026-11-16
 
 ### Added

@@ -22,7 +22,7 @@ En mode délégué (section « Mode délégué » de `SKILL.md`), les questions 
    - Reformuler en 2-3 phrases claires, puis poser le choix avec `AskUserQuestion` — `header` : `Objective`, options `Validate` / `Cancel` — motif « Validation d'un contenu » de `SKILL.md` : le changement demandé arrive en texte libre, reformuler, reposer la question.
    - Questions sur les points flous → attendre réponse ; relancer si flou persiste.
    - Écrire `## Objective` uniquement après validation explicite.
-3. Écrire `.forge/branch/<BRANCH>/brief.md` — `## Objective` remplie, `## Scope & rules` vide — et `.forge/branch/<BRANCH>/log.md` vide, s'il est absent.
+3. Écrire `.forge/branch/<BRANCH>/brief.md` — `## Objective` remplie, `## Scope & rules` vide — et `.forge/branch/<BRANCH>/log.md` vide, s'il est absent. Créer le dossier vide BRANCH_INPUT `.forge/branch/<BRANCH>/input/`, s'il est absent.
 
 ## Analyse
 

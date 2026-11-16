@@ -149,7 +149,7 @@ Fichiers générés dans chaque projet :
     ├── brief.md         ← `## Objective` + `## Scope & rules`
     ├── log.md           ← Journal des décisions (vivant, 10 dernières entrées lues à la reprise)
     ├── plan.md
-    ├── input/           ← fichiers apportés pour la tâche de la branche (exports CSV/XLSX, dumps ou extraits SQL, données reçues en fichier), lus à la place d'un accès base, non suivis en git
+    ├── input/           ← fichiers apportés pour la tâche de la branche (exports CSV/XLSX, dumps ou extraits SQL, données reçues en fichier), lus à la place d'un accès base, créé vide avec le brief, non suivi en git
     ├── ticket.json      ← écrit par `/forge-clickup` : tracker, code, url ; lien affiché à la reprise et à la clôture
     └── output/          ← tout fichier généré, nommé `AAAAMMJJ-`
         ├── 20260910-explanation-*.md ← écrit en tâche de fond lors d'une explication de concept

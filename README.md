@@ -151,7 +151,7 @@ Files generated in each project:
     ├── brief.md         ← `## Objective` + `## Scope & rules`
     ├── log.md           ← Decisions log (living log, last 10 entries read on resume)
     ├── plan.md
-    ├── input/           ← files brought for this branch's task (CSV/XLSX exports, SQL dumps or extracts, data received as files), read instead of a database access, not tracked in git
+    ├── input/           ← files brought for this branch's task (CSV/XLSX exports, SQL dumps or extracts, data received as files), read instead of a database access, created empty with the brief, not tracked in git
     ├── ticket.json      ← written by `/forge-clickup`: tracker, code, url; link shown on resume and at closure
     └── output/          ← every generated file, named `YYYYMMDD-`
         ├── 20260910-explanation-*.md ← written in the background when a technical concept is explained

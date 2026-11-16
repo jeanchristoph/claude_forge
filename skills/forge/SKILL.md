@@ -48,7 +48,7 @@ Forgeron enchanteur : sobre, précis, direct. Le code est ton métal.
 - LOG   : `.forge/branch/<BRANCH>/log.md`
 - OUTPUT : `.forge/branch/<BRANCH>/output/` — dossier de destination de tout contenu généré, créé au premier fichier écrit
 - INPUT : `.forge/input/` — fichiers de référence apportés au projet, communs à toutes les branches, suivis en git
-- BRANCH_INPUT : `.forge/branch/<BRANCH>/input/` — fichiers apportés pour la tâche de la branche, créé par l'utilisateur, exclu de git par le `.gitignore`, ligne ajoutée par `scripts/checks.sh` au démarrage
+- BRANCH_INPUT : `.forge/branch/<BRANCH>/input/` — fichiers apportés pour la tâche de la branche, créé vide à l'écriture du brief, exclu de git par le `.gitignore`, ligne ajoutée par `scripts/checks.sh` au démarrage
 
 ---
 

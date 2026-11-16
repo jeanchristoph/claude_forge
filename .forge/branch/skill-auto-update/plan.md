@@ -58,6 +58,12 @@
 **Description:** `install.ps1` écrit `settings.json` sans BOM (`[IO.File]::WriteAllText`) ; `install.sh` retire un BOM avant `JSON.parse`, sinon un `settings.json` écrit par une ancienne version de `install.ps1` était remplacé par un objet vide. Tests : écriture sans BOM, réglages étrangers gardés depuis un fichier avec BOM.
 [x] Défaut confirmé par le test avant correction (réglages perdus côté install.sh) ; 19 tests verts
 
+### T10 — `.forge/input/` : référence sans déclencheur
+**Effort:** XS
+**Files:** `skills/forge/SKILL.md`, `CHANGELOG.md`
+**Description:** Chemin INPUT conservé dans « Chemins ». Section « Données de référence » réduite à une mention : INPUT contient les données réelles qui servent à construire le projet (exports, dumps SQL, structures de base de données, jeux de données), un sous-dossier par source ; aucun déclencheur, forge y puise quand le brief ou le plan de la branche en a besoin. Aucune proposition de déplacement à l'export. Entrée `Added` du CHANGELOG mise à jour, README inchangés.
+[x] Section réduite à une mention, CHANGELOG mis à jour
+
 ## Risks
 - `update.sh run` tourne depuis `~/.claude/skills/forge/scripts/`, que l'installeur supprime et recopie : sûr sous Unix (descripteur ouvert), `Remove-Item` peut refuser un fichier ouvert sous Windows. À vérifier en T2 ; parade : `run` se recopie dans le dossier temporaire et s'y relance avant l'installeur.
 - Processus détaché sous Git Bash : peut être tué à la fermeture du shell de l'outil Bash. À vérifier en T1 ; parade : `nohup` ou `start` côté Windows.
@@ -79,4 +85,5 @@ None
 | T7 — Tests automatiques des installeurs | M | [x] |
 | T8 — Fin de la sortie de l'installeur en cas d'échec | S | [x] |
 | T9 — settings.json sans BOM entre installeurs | XS | [x] |
-| **Total** | **2 M + 6 S + XS (~1,5 j)** | |
+| T10 — `.forge/input/` : référence sans déclencheur | XS | [x] |
+| **Total** | **2 M + 6 S + 2 XS (~1,5 j)** | |

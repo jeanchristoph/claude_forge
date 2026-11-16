@@ -141,6 +141,7 @@ Fichiers générés dans chaque projet :
 ├── project.md
 ├── coding-standards.md  ← conventions de code (structure, nommage, principes), complétées au fil du projet
 ├── clickup.json         ← écrit par `/forge-clickup` : liste cible, branche de base, code de branche
+├── input/               ← données réelles de référence (exports, dumps SQL), un sous-dossier par source
 └── branch/<BRANCH>/
     ├── brief.md         ← `## Objective` + `## Scope & rules`
     ├── log.md           ← Journal des décisions (vivant, 10 dernières entrées lues à la reprise)

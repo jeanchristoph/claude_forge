@@ -39,6 +39,7 @@ Forgeron enchanteur : sobre, précis, direct. Le code est ton métal.
 - PLAN  : `.forge/branch/<BRANCH>/plan.md`
 - LOG   : `.forge/branch/<BRANCH>/log.md`
 - OUTPUT : `.forge/branch/<BRANCH>/output/` — dossier de destination de tout contenu généré, créé au premier fichier écrit
+- INPUT : `.forge/input/` — fichiers de référence apportés au projet, communs à toutes les branches, suivis en git
 
 ---
 
@@ -49,6 +50,12 @@ Forgeron enchanteur : sobre, précis, direct. Le code est ton métal.
 **Réaction :** écrire le fichier produit dans OUTPUT, nommé `AAAAMMJJ-` suivi d'un intitulé en kebab-case, minuscules, anglais — sans exception, livrable client compris : `20260910-db-migration.sql`, `20260910-user-documentation-map.md`.
 
 ⚠️ Jamais de publication en ligne : rapport, note ou livrable destiné à un tiers compris, le contenu généré reste un fichier local dans OUTPUT — jamais un document Claude Docs, un Artifact, ni aucun service externe, et aucune version en ligne proposée.
+
+---
+
+## Données de référence
+
+INPUT contient les fichiers de référence qui servent à construire le projet — exports d'un logiciel source (CSV, XLSX), dumps SQL, structures de base de données, jeux de données — un sous-dossier par source. Aucun déclencheur : y puiser quand le brief ou le plan de la branche en a besoin (schéma, colonnes, volumétrie, cas réels).
 
 ---
 

@@ -1,5 +1,10 @@
 # Log — skill-auto-update
 
+- [2026-11-16 00:00] T10 : INPUT décrit comme « fichiers de référence » et non « données réelles », une structure n'étant pas une donnée (SKILL.md, CHANGELOG) — correction utilisateur
+- [2026-11-16 00:00] T10 : structures de base de données ajoutées au contenu de INPUT (SKILL.md, CHANGELOG) — demande utilisateur
+- [2026-11-16 00:00] T10 : avertissement sur les données personnelles ou commerciales de INPUT retiré (SKILL.md, CHANGELOG) — demande utilisateur
+- [2026-11-16 00:00] T10 : `.forge/input/` réduit à une mention sans déclencheur (SKILL.md, CHANGELOG), forge y puise si le brief ou le plan en a besoin — demande utilisateur
+- [2026-11-16 00:00] Proposition de déplacer un export vers INPUT écartée : aucun déclencheur pour le moment — choix utilisateur
 - [2026-11-10 18:08] Release v0.12.2 (CHANGELOG, tag, release GitHub Latest) — version corrective, au-dessus du tag de test v0.12.1 — demande utilisateur
 - [2026-11-10 16:52] Proposition de livraison explicite : commit et push de la branche, branches cibles fusionnées dans l'ordre, ex. `grave dev master` (SKILL.md, CHANGELOG) — demande utilisateur
 - [2026-11-10 00:00] Contrôle de mise à jour : délai ramené de 7 jours à 24 heures (update.sh, test 23 h ajouté, README, CHANGELOG, project.md, brief) — demande utilisateur

@@ -10,6 +10,10 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ## [Unreleased]
 
+### Added
+
+- `.forge/input/`: reference files used to build the project (source software exports, SQL dumps, database structures, datasets), one subfolder per source, shared by all branches; forge draws on it when a brief or plan needs it.
+
 ## [0.12.2] — 2026-11-10
 
 ### Changed

@@ -1,5 +1,6 @@
 # Log — skill-auto-update
 
+- [2026-11-16 00:00] Version 0.12.4 préparée (CHANGELOG) : dossier input/ de branche, exclu de git par checks.sh lancé détaché au démarrage — demande utilisateur
 - [2026-11-16 00:00] SKILL.md, « Détection d'état » étape 1 découpée en une puce par script : `--branch` rattaché à status.sh seul — demande utilisateur
 - [2026-11-16 00:00] T15 réécrite : `scripts/checks.sh` lancé détaché au démarrage ajoute la ligne input/ au .gitignore ; champ `branch_input_ignored` de status.sh et étape 5 retirés — demande utilisateur
 - [2026-11-16 00:00] T15 : `status.sh` rend `branch_input_ignored`, « Détection d'état » ajoute `/.forge/branch/*/input/` au `.gitignore` s'il manque (SKILL.md, README EN/FR, CHANGELOG) — demande utilisateur

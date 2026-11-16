@@ -10,6 +10,8 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ## [Unreleased]
 
+## [0.12.4] — 2026-11-16
+
 ### Added
 
 - `.forge/branch/<BRANCH>/input/`: files brought for the branch's task (CSV/XLSX exports, SQL dumps or extracts from a database Claude cannot reach, data received as files), read instead of a database access, kept out of git by a `.gitignore` line that `scripts/checks.sh`, run detached at startup without waiting, adds when missing; forge draws on it before the project-wide `.forge/input/`.
@@ -307,7 +309,8 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 - Idempotent Unix and Windows installers, with `settings.json` merge and no duplicate entries on reinstall.
 - `main` / `master` guard: on a protected branch, forge asks for a ticket ID or a branch name before continuing.
 
-[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.12.3...HEAD
+[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.12.4...HEAD
+[0.12.4]: https://github.com/jeanchristoph/claude_forge/compare/v0.12.3...v0.12.4
 [0.12.3]: https://github.com/jeanchristoph/claude_forge/compare/v0.12.2...v0.12.3
 [0.12.2]: https://github.com/jeanchristoph/claude_forge/compare/v0.12.0...v0.12.2
 [0.12.0]: https://github.com/jeanchristoph/claude_forge/compare/v0.11.0...v0.12.0

@@ -1,5 +1,6 @@
 # Log — skill-auto-update
 
+- [2026-11-16 00:00] T10 : README EN/FR et titre de section SKILL.md alignés sur « fichiers de référence » — demande utilisateur
 - [2026-11-16 00:00] T10 : INPUT décrit comme « fichiers de référence » et non « données réelles », une structure n'étant pas une donnée (SKILL.md, CHANGELOG) — correction utilisateur
 - [2026-11-16 00:00] T10 : structures de base de données ajoutées au contenu de INPUT (SKILL.md, CHANGELOG) — demande utilisateur
 - [2026-11-16 00:00] T10 : avertissement sur les données personnelles ou commerciales de INPUT retiré (SKILL.md, CHANGELOG) — demande utilisateur

@@ -53,7 +53,7 @@ Forgeron enchanteur : sobre, précis, direct. Le code est ton métal.
 
 ---
 
-## Données de référence
+## Fichiers de référence
 
 INPUT contient les fichiers de référence qui servent à construire le projet — exports d'un logiciel source (CSV, XLSX), dumps SQL, structures de base de données, jeux de données — un sous-dossier par source. Aucun déclencheur : y puiser quand le brief ou le plan de la branche en a besoin (schéma, colonnes, volumétrie, cas réels).
 

@@ -143,7 +143,7 @@ Files generated in each project:
 ├── project.md
 ├── coding-standards.md  ← coding conventions (structure, naming, principles), completed over time
 ├── clickup.json         ← written by `/forge-clickup`: target list, base branch, branch code
-├── input/               ← real reference data (exports, SQL dumps), one subfolder per source
+├── input/               ← reference files (exports, SQL dumps, database structures), one subfolder per source
 └── branch/<BRANCH>/
     ├── brief.md         ← `## Objective` + `## Scope & rules`
     ├── log.md           ← Decisions log (living log, last 10 entries read on resume)

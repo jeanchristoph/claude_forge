@@ -336,6 +336,8 @@ After each user input, forge checks whether the request falls inside the current
 
 A **direct action** never becomes a task: a precise order — what, where — that fits in one command or one local edit and calls for no design decision (delete or rename a file, fix a wording, add a word, run a command) is carried out at once, the order itself being the confirmation, and logged in one line when the repository changes. The same goes for any request whose result is generated content — documentation, an export, a SQL script, a checking workbook, an analysis, a client deliverable — whatever its size: it is produced in `output/` and logged, never planned, because the plan only tracks the tasks that implement the brief's objective. When in doubt — direct action or extra request, deliverable or feature — forge treats the request as a direct action: one action too many costs nothing, one question too many costs a round-trip.
 
+A **check request** — run tests, verify a behaviour, reproduce a case — comes first. A quick check (one command or one read, no test to write, no multi-step scenario) is a direct action, with no question. Anything heavier, or when in doubt, forge writes up the check as a plan task and asks one question: add it to the plan and run it, run the check without a task (logged in one line), or cancel.
+
 **Detected when the request:**
 - Concerns a feature not in the plan
 - Introduces a new use case, module, or behaviour

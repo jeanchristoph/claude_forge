@@ -100,6 +100,12 @@
 **Description:** `p2-brief.md` étape 3 : créer `.forge/branch/<BRANCH>/input/` avec `brief.md` et `log.md`, s'il est absent (vide, local). `SKILL.md` « Chemins » : BRANCH_INPUT créé à l'écriture du brief. `checks.sh` inchangé. Brief écrit par le parent pour un projet lié hors périmètre. README EN/FR (arborescence), CHANGELOG (Added, Unreleased).
 [x] p2-brief.md étape 3, SKILL.md, README EN/FR, CHANGELOG
 
+### T17 — Demande de vérification : tâche proposée hors test rapide
+**Effort:** XS
+**Files:** `skills/forge/phases/p5-resume.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** `p5-resume.md`, Surveillance : sous-section « Demande de vérification », avant « Action directe » et prioritaire sur elle. Déclencheur : demande de vérifier ou tester (lancer des tests, contrôler un comportement, reproduire un cas). Test rapide (une commande ou une lecture, sans test à écrire ni scénario en plusieurs étapes) → action directe, sans question. Sinon, ou dans le doute → tâche formulée selon le gabarit `Plan`, une question `Test` : `Add to plan` / `Check without a task` (action directe + LOG) / `Cancel`. Mode délégué → `FORGE_QUESTION`. README EN/FR, CHANGELOG (Added, Unreleased).
+[x] Sous-section dans p5-resume.md, README EN/FR, CHANGELOG
+
 ## Risks
 - `update.sh run` tourne depuis `~/.claude/skills/forge/scripts/`, que l'installeur supprime et recopie : sûr sous Unix (descripteur ouvert), `Remove-Item` peut refuser un fichier ouvert sous Windows. À vérifier en T2 ; parade : `run` se recopie dans le dossier temporaire et s'y relance avant l'installeur.
 - Processus détaché sous Git Bash : peut être tué à la fermeture du shell de l'outil Bash. À vérifier en T1 ; parade : `nohup` ou `start` côté Windows.
@@ -128,4 +134,5 @@ None
 | T14 — Livraison : question `Input` étendue à `.forge/input/` | XS | [x] |
 | T15 — Script de contrôles asynchrone : `/.forge/branch/*/input/` dans le `.gitignore` | S | [x] |
 | T16 — Création du dossier `input/` à l'écriture du brief | XS | [x] |
-| **Total** | **2 M + 8 S + 6 XS (~1,5 j)** | |
+| T17 — Demande de vérification : tâche proposée hors test rapide | XS | [x] |
+| **Total** | **2 M + 8 S + 7 XS (~1,5 j)** | |

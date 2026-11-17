@@ -134,6 +134,22 @@ Mode délégué → aucune proposition : `AskUserQuestion` est inaccessible et a
 
 ⚠️ Question sur le projet qui n'appelle aucune action → réponse en lecture seule, ni tâche, ni question `Plan`, ni ligne dans LOG.
 
+### Demande de vérification — prioritaire sur l'action directe
+
+**Déclencheur :** l'utilisateur demande de vérifier ou de tester quelque chose — lancer des tests, contrôler un comportement, reproduire un cas.
+
+**Réaction :**
+- Test rapide — une commande ou une lecture, sans test à écrire ni scénario en plusieurs étapes → « Action directe » ci-dessous, sans question.
+- Sinon, dans l'ordre :
+  1. Formuler la tâche de vérification selon le « Gabarit — question `Plan` » ci-dessous.
+  2. Poser une seule question avec `AskUserQuestion` — `header` : `Test`, champ `question` = la tâche formulée, puis une ligne vide et la phrase de question, trois options :
+     - `Add to plan` → "Add T[n] to the plan, then run it." — même suite que `Validate` dans « Demande hors périmètre ».
+     - `Check without a task` → "Run the check now, nothing enters the plan." — « Action directe », une ligne dans LOG.
+     - `Cancel` → "Nothing is checked." — STOP.
+
+⚠️ Doute entre test rapide et vérification plus lourde → poser la question `Test`.
+⚠️ Mode délégué → `FORGE_QUESTION`, la tâche formulée entière dans `content`.
+
 ### Action directe — exécuter sans tâche ni question
 
 **Condition — l'une ou l'autre :**

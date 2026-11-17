@@ -10,6 +10,10 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ## [Unreleased]
 
+### Added
+
+- Check request: a quick check (one command or one read) runs at once; a heavier one is written up as a plan task, with one question — add to plan, check without a task, or cancel.
+
 ## [0.12.5] — 2026-11-16
 
 ### Added

@@ -1,5 +1,6 @@
 # Log — skill-auto-update
 
+- [2026-11-17 00:00] T17 : demande de vérification — test rapide en action directe, sinon question Test (Add to plan / Check without a task / Cancel) ; p5-resume.md, README EN/FR, CHANGELOG — choix utilisateur « pas de question si rapide »
 - [2026-11-16 00:00] Release v0.12.5 (CHANGELOG, tag, release GitHub Latest) : dossier input/ créé à l'écriture du brief ; v0.12.4 gardée intacte plutôt qu'écrasée — choix utilisateur
 - [2026-11-16 00:00] T16 : dossier input/ de branche créé vide à l'écriture du brief (p2-brief.md, SKILL.md, README EN/FR, CHANGELOG), checks.sh inchangé — demande utilisateur
 - [2026-11-16 00:00] Version 0.12.4 préparée (CHANGELOG) : dossier input/ de branche, exclu de git par checks.sh lancé détaché au démarrage — demande utilisateur

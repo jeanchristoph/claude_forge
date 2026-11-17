@@ -10,6 +10,8 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ## [Unreleased]
 
+## [0.12.6] — 2026-11-17
+
 ### Added
 
 - Check request: a quick check (one command or one read) runs at once; a heavier one is written up as a plan task, with one question — add to plan, check without a task, or cancel.
@@ -18,6 +20,10 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 ### Changed
 
 - The closure client reply follows the drafted-email rule: `YYYYMMDD-email-client-reply.txt` and `.html` replace `YYYYMMDD-client-reply.txt`; existing files are neither read nor renamed.
+
+### Fixed
+
+- `SKILL.md` frontmatter: the `description` value is quoted, its ` : ` made the YAML invalid for strict parsers (IDE).
 
 ## [0.12.5] — 2026-11-16
 
@@ -324,7 +330,8 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 - Idempotent Unix and Windows installers, with `settings.json` merge and no duplicate entries on reinstall.
 - `main` / `master` guard: on a protected branch, forge asks for a ticket ID or a branch name before continuing.
 
-[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.12.5...HEAD
+[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.12.6...HEAD
+[0.12.6]: https://github.com/jeanchristoph/claude_forge/compare/v0.12.5...v0.12.6
 [0.12.5]: https://github.com/jeanchristoph/claude_forge/compare/v0.12.4...v0.12.5
 [0.12.4]: https://github.com/jeanchristoph/claude_forge/compare/v0.12.3...v0.12.4
 [0.12.3]: https://github.com/jeanchristoph/claude_forge/compare/v0.12.2...v0.12.3

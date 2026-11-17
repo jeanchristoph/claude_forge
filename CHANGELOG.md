@@ -13,6 +13,11 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 ### Added
 
 - Check request: a quick check (one command or one read) runs at once; a heavier one is written up as a plan task, with one question — add to plan, check without a task, or cancel.
+- Drafted email: every email written for a third party is saved twice in `output/`, `YYYYMMDD-email-<topic>.txt` (plain text) and `.html` (inline styles, real tables, opened in the browser to paste into Outlook).
+
+### Changed
+
+- The closure client reply follows the drafted-email rule: `YYYYMMDD-email-client-reply.txt` and `.html` replace `YYYYMMDD-client-reply.txt`; existing files are neither read nor renamed.
 
 ## [0.12.5] — 2026-11-16
 

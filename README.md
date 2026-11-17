@@ -523,8 +523,10 @@ never yours if they differ, in the voice of a technical support team: short, flu
 and natural, empathetic without being overly warm, focused on solving the problem. It never repeats what
 the client just wrote nor restates their whole request when not needed, and it leaves out needless
 technical explanations, long sentences and heavy administrative wording. The draft is shown in the conversation and always saved as well, as an exact
-plain-text copy in `.forge/branch/<BRANCH>/output/YYYYMMDD-client-reply.txt`, ready to paste into a
-mail client or attach to the ticket the email came from — ClickUp, Jira or any other tracker.
+plain-text copy in `.forge/branch/<BRANCH>/output/YYYYMMDD-email-client-reply.txt`, plus an `.html` twin
+with real tables, opened in the browser to paste into Outlook — ready to send or attach to the ticket the
+email came from — ClickUp, Jira or any other tracker. Every other email drafted for a third party is saved
+the same way, as `YYYYMMDD-email-<topic>.txt` and `.html`.
 
 ---
 

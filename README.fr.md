@@ -527,8 +527,10 @@ professionnelle, directe et naturelle, empathique sans être trop chaleureuse, o
 du problème. Elle ne répète pas ce que le client vient d'écrire, ne reformule pas toute sa demande sans
 nécessité, et écarte les explications techniques inutiles, les phrases trop longues et les tournures
 administratives lourdes. Le brouillon est affiché dans la conversation et toujours conservé
-aussi, copie exacte en texte brut dans `.forge/branch/<BRANCH>/output/AAAAMMJJ-client-reply.txt`, prêt à
-coller dans un client de messagerie ou à joindre au ticket d'où vient le mail — ClickUp, Jira ou tout autre.
+aussi, copie exacte en texte brut dans `.forge/branch/<BRANCH>/output/AAAAMMJJ-email-client-reply.txt`,
+doublée d'un `.html` aux vrais tableaux, ouvert dans le navigateur pour être collé dans Outlook — prêt à
+envoyer ou à joindre au ticket d'où vient le mail — ClickUp, Jira ou tout autre. Tout autre mail rédigé pour
+un tiers est conservé de la même façon, sous `AAAAMMJJ-email-<sujet>.txt` et `.html`.
 
 ---
 

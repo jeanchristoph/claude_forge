@@ -1,6 +1,6 @@
 ---
 name: forge
-description: Orchestre le cycle de vie d'une branche de développement : brief validé, plan structuré, exécution suivie, délégation à des sous-agents étanches (projet lié ou branche), livraison git avec merges et release, clôture avec rapport.
+description: "Orchestre le cycle de vie d'une branche de développement : brief validé, plan structuré, exécution suivie, délégation à des sous-agents étanches (projet lié ou branche), livraison git avec merges et release, clôture avec rapport."
 disable-model-invocation: false
 ---
 

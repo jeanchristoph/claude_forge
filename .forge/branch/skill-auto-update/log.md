@@ -1,5 +1,6 @@
 # Log — skill-auto-update
 
+- [2026-11-17 00:00] SKILL.md : `description` du frontmatter entre guillemets doubles, « : » rendait le YAML invalide — signalé par l'IDE, accord utilisateur
 - [2026-11-17 00:00] T17 : demande de vérification — test rapide en action directe, sinon question Test (Add to plan / Check without a task / Cancel) ; p5-resume.md, README EN/FR, CHANGELOG — choix utilisateur « pas de question si rapide »
 - [2026-11-16 00:00] Release v0.12.5 (CHANGELOG, tag, release GitHub Latest) : dossier input/ créé à l'écriture du brief ; v0.12.4 gardée intacte plutôt qu'écrasée — choix utilisateur
 - [2026-11-16 00:00] T16 : dossier input/ de branche créé vide à l'écriture du brief (p2-brief.md, SKILL.md, README EN/FR, CHANGELOG), checks.sh inchangé — demande utilisateur

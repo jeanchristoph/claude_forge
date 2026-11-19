@@ -1,5 +1,6 @@
 # Log — skill-auto-update
 
+- [2026-11-17 18:46] Branche parasite d'un projet lié supprimée (worktree, locale, origin), créée par erreur lors d'une délégation — demande utilisateur
 - [2026-11-17 00:00] Version 0.12.6 préparée (CHANGELOG) : demande de vérification, mail rédigé en .txt/.html, frontmatter SKILL.md corrigé — demande utilisateur
 - [2026-11-17 00:00] SKILL.md : `description` du frontmatter entre guillemets doubles, « : » rendait le YAML invalide — signalé par l'IDE, accord utilisateur
 - [2026-11-17 00:00] T17 : demande de vérification — test rapide en action directe, sinon question Test (Add to plan / Check without a task / Cancel) ; p5-resume.md, README EN/FR, CHANGELOG — choix utilisateur « pas de question si rapide »

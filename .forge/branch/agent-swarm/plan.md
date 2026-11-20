@@ -115,6 +115,13 @@
 **Description:** Demande utilisateur : le chemin du parent ne doit jamais être écrit en clair. Brief et log liés → `<PARENT>` (nom du dossier) ; notes du plan parent → `<LINKED_REL>`, relatif à ROOT, résolu par la livraison relayée (ancienne note absolue toujours lue) ; colonne Worktree de `swarm.md` relative ; exemples génériques (`../my-api`, `~/projects/…`). Dossier de la délégation client anonymisé en `client-api/TASK-1`, brief client retiré. Historique git non réécrit.
 [x] Règles et exemples corrigés dans delegation.md, engrave.md, swarm.md, README EN/FR, CHANGELOG ; dossier anonymisé ; plus aucun nom client ni chemin de la machine dans les fichiers suivis.
 
+### T19 — Mesure partielle repérée et écartée du calibrage
+**Effort:** S
+**Estimated files:** 9
+**Files:** `skills/forge/scripts/time-hook.sh`, `skills/forge/scripts/time-aggregate.sh`, `skills/forge/scripts/time-calibrate.sh`, `tests/time-hook.test.sh`, `tests/time-aggregate.test.sh`, `tests/time-calibrate.test.sh`, `skills/forge/commands/engrave.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`, `.forge/branch/agent-swarm/metrics.json`
+**Description:** Demande utilisateur (metrics.json de la branche rempli à la main de null, mode incohérent). Le hook écrit `late_start` en tête d'un journal créé alors que plan.md existe ; l'agrégation rend `partial` (marqueur, ou premier commit de la branche antérieur au premier événement) ; le calibrage écarte les synthèses partielles ; metrics.json réécrit selon la règle.
+[x] Hook, agrégation, calibrage et leurs tests (25 · 36 · 15) ; engrave.md (champ `partial`, mention « partial measure ») ; README EN/FR, CHANGELOG ; metrics.json de la branche réécrit depuis le script.
+
 ## Risks
 - Hooks de frontmatter qui ne couvriraient pas les sous-agents → T4 bascule sur les installeurs (hook global, actif aussi hors forge : le script sort sans rien écrire hors projet forgé).
 - Commande d'installation par worktree (§8.1) : absente de `project.md` aujourd'hui → T10 la lit dans `## Tools & access`, sinon la demande une fois et la note dans `project.md`.
@@ -145,4 +152,5 @@ None
 | T16 — Absence exclue du temps humain | S | [x] |
 | T17 — Hook de mesure asynchrone | S | [x] |
 | T18 — Aucun chemin absolu dans les fichiers écrits | S | [x] |
-| **Total** | **8 S · 7 M · 3 L** | |
+| T19 — Mesure partielle écartée du calibrage | S | [x] |
+| **Total** | **9 S · 7 M · 3 L** | |

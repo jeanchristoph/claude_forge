@@ -6,7 +6,8 @@
 #   Ne garde aucun contenu (prompt, commande, réponse d'outil) : seuls des identifiants, durées et marqueurs
 #   Les événements d'un délégué arrivent avec le cwd du parent et un agent_id : ils tombent dans le journal du parent
 # Entrée : JSON du hook sur l'entrée standard
-# Écrit : <racine>/.forge/branch/<branche>/time-log.jsonl, une ligne par événement retenu
+# Écrit : <racine>/.forge/branch/<branche>/time-log.jsonl, une ligne par événement retenu ;
+#   journal créé alors que plan.md existe déjà → ligne {"event":"late_start"} en tête : mesure partielle
 
 exec 2>/dev/null
 
@@ -113,6 +114,13 @@ build_line() {
   [ "$TOOL" = "Bash" ] && is_check_command "${time_log%/.forge/*}/.forge/project.md" && LINE+=",\"check\":true"
 }
 
+# Journal absent alors que le plan existe : le hook arrive en cours de branche (installé tard, journal effacé).
+# Une branche suivie dès son départ crée son journal pendant la rédaction du brief, avant tout plan.
+is_late_start() {
+  local time_log=$1
+  [ ! -f "$time_log" ] && [ -f "${time_log%/*}/plan.md" ]
+}
+
 main() {
   local time_log
   INPUT=$(cat) || exit 0
@@ -125,6 +133,10 @@ main() {
   resolve_time_log "$REPLY"
   time_log=$REPLY
   [ -n "$time_log" ] || exit 0
+  if is_late_start "$time_log"; then
+    current_time_ms
+    printf '{"ts":%s,"event":"late_start"}\n' "$REPLY" >> "$time_log"
+  fi
   build_line "$time_log"
   printf '%s}\n' "$LINE" >> "$time_log"
 }

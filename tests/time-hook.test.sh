@@ -219,6 +219,19 @@ test_appends_one_line_per_event() {
   assert_equals "2" "$(logged | wc -l | tr -d ' ')"
 }
 
+test_marks_late_start_when_plan_exists_before_log() {
+  printf '# Plan\n' > "$WORK/.forge/branch/master/plan.md"
+  run_hook "$(event_json Stop)"
+  run_hook "$(event_json Stop)"
+  assert_equals "1" "$(logged | grep -c '"event":"late_start"')"
+  assert_contains '"event":"late_start"' "$(logged | head -1)"
+}
+
+test_marks_no_late_start_without_plan() {
+  run_hook "$(event_json Stop)"
+  assert_not_contains 'late_start' "$(logged)"
+}
+
 test_resolves_branch_containing_a_slash() {
   git -C "$WORK" checkout -q -b feature/x
   mkdir -p "$WORK/.forge/branch/feature/x"
@@ -264,6 +277,8 @@ run_test test_writes_nothing_on_detached_head "n'écrit rien en tête détachée
 run_test test_exits_zero_and_writes_nothing_on_invalid_input "sort en 0 sans rien écrire sur une entrée invalide"
 run_test test_writes_nothing_on_stdout "n'écrit rien sur la sortie standard"
 run_test test_appends_one_line_per_event "ajoute une ligne par événement"
+run_test test_marks_late_start_when_plan_exists_before_log "marque un départ tardif quand le plan existe avant le journal"
+run_test test_marks_no_late_start_without_plan "ne marque aucun départ tardif sans plan"
 run_test test_resolves_branch_containing_a_slash "résout une branche contenant un slash"
 
 echo "$PASSED passed, $FAILED failed"

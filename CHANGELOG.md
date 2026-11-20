@@ -25,6 +25,7 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 - `checks.sh` also adds `/.forge/branch/**/time-log.jsonl` to the `.gitignore` forge block.
 - Same-repository branch delegation records the delegate id and its tokens in the parent's `time-log.jsonl`.
 - No absolute path in any file forge writes: the linked brief and log name the parent project by its folder name, the parent plan notes `delegated to <path relative to the root> @ <branch>`, `swarm.md` lists worktrees relative to the root. Older notes with an absolute path are still read.
+- `metrics.json` gains `partial`: true when the time log misses the start of the branch (log created after the plan, or first branch commit older than the first event); `time-calibrate.sh` skips such branches.
 
 ## [0.12.6] — 2026-11-17
 

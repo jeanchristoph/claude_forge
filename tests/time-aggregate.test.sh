@@ -303,6 +303,47 @@ test_returns_null_volume_without_start_point() {
   assert_contains '"files":null,"lines_added":null,"lines_deleted":null' "$(aggregate)"
 }
 
+# ── Couverture ────────────────────────────────────────────────────────────────
+
+# Commit propre à la branche, daté en secondes depuis l'epoch.
+commit_at() {
+  printf '%s\n' "$1" > "$WORK/dated.txt"
+  git -C "$WORK" add dated.txt
+  GIT_COMMITTER_DATE="@$1 +0000" GIT_AUTHOR_DATE="@$1 +0000" git -C "$WORK" commit -q -m "dated"
+}
+
+test_marks_partial_when_log_opens_with_late_start() {
+  own_events '{"ts":0,"event":"late_start"}' \
+             '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":60000,"event":"Stop","session":"s"}'
+  assert_contains '"partial":true' "$(aggregate)"
+}
+
+test_marks_partial_when_branch_commit_precedes_log() {
+  commit_at 1000
+  own_events '{"ts":2000000,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":2060000,"event":"Stop","session":"s"}'
+  assert_contains '"partial":true' "$(aggregate)"
+}
+
+test_marks_full_measure_when_log_precedes_branch_commits() {
+  commit_at 5000
+  own_events '{"ts":2000000,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":2060000,"event":"Stop","session":"s"}'
+  assert_contains '"partial":false' "$(aggregate)"
+}
+
+test_marks_full_measure_without_branch_commit() {
+  own_events '{"ts":2000000,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":2060000,"event":"Stop","session":"s"}'
+  assert_contains '"partial":false' "$(aggregate)"
+}
+
+test_marks_no_partial_without_log() {
+  commit_at 1000
+  assert_contains '"partial":false' "$(aggregate)"
+}
+
 # ── Usage ─────────────────────────────────────────────────────────────────────
 
 test_rejects_missing_branch() {
@@ -369,6 +410,11 @@ run_test test_counts_deleted_lines "compte les lignes supprimées"
 run_test test_excludes_forge_folder_and_lock_files "écarte le dossier .forge et les fichiers de verrouillage"
 run_test test_measures_from_given_base "mesure depuis le point de départ donné"
 run_test test_returns_null_volume_without_start_point "rend un volume nul sans point de départ"
+run_test test_marks_partial_when_log_opens_with_late_start "marque partielle une mesure dont le journal s'ouvre sur un départ tardif"
+run_test test_marks_partial_when_branch_commit_precedes_log "marque partielle une mesure commencée après le premier commit de la branche"
+run_test test_marks_full_measure_when_log_precedes_branch_commits "marque complète une mesure commencée avant les commits de la branche"
+run_test test_marks_full_measure_without_branch_commit "marque complète une mesure sans commit propre à la branche"
+run_test test_marks_no_partial_without_log "ne marque rien de partiel sans journal"
 run_test test_rejects_missing_branch "refuse l'absence de branche"
 run_test test_rejects_unknown_argument "refuse un argument inconnu"
 run_test test_changes_nothing_in_repository "ne modifie rien dans le dépôt"

@@ -18,7 +18,8 @@ readonly RECENT_FOR_RELIABILITY=10
 readonly FILE_ERROR_TOLERANCE=0.2
 readonly RELIABLE_SHARE=0.7
 
-# Une ligne par synthèse : « date agent_minutes actual_files planned_files tokens », null gardé tel quel.
+# Une ligne par synthèse : « date agent_minutes actual_files planned_files tokens », null gardé tel quel ;
+# synthèse « partial » écartée : sa mesure ne couvre pas toute la branche.
 readonly METRICS_PROGRAM='
   function field(name,   pattern) {
     pattern = "\"" name "\":(\"[^\"]*\"|[0-9.]+|null)"
@@ -27,6 +28,7 @@ readonly METRICS_PROGRAM='
     gsub(/"/, "", value)
     return value
   }
+  /"partial":true/ { next }
   { printf "%s %s %s %s %s\n", field("date"), field("agent_minutes"), field("actual_files"), field("planned_files"), field("tokens") }'
 
 # Calcul sur les synthèses triées de la plus récente à la plus ancienne.

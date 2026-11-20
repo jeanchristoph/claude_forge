@@ -9,6 +9,8 @@
 # Usage : time-aggregate.sh --branch <name> [--root <dir>] [--parent-log <file>] [--base <ref>]
 #   --parent-log : journal de la branche parente, pour une branche fille travaillée par des délégués
 #   --base       : point de départ de la branche ; défaut : master, sinon main
+#   partial : mesure incomplète — journal ouvert par une ligne late_start, ou premier commit propre à la branche
+#   antérieur au premier événement du journal ; le calibrage écarte une telle branche
 # Sortie : 0 JSON écrit · 1 usage, sans JSON
 
 set -u
@@ -145,6 +147,20 @@ resolve_mode() {
   esac
 }
 
+# ── Couverture ────────────────────────────────────────────────────────────────
+
+# « true » si le journal de la branche ne couvre pas son début, « false » sinon — sans journal, rien à écarter.
+read_partial() {
+  local start=$1 own_log="$ROOT/.forge/branch/$BRANCH/$TIME_LOG_NAME" first_event first_commit
+  REPLY=false
+  [ -s "$own_log" ] || return
+  grep -q '"event":"late_start"' "$own_log" && { REPLY=true; return; }
+  [ -n "$start" ] || return
+  first_event=$(sort_by_time "$own_log" | awk -F '[:,]' '/^\{"ts":/ { print $2; exit }')
+  first_commit=$(git -C "$ROOT" log --reverse --format=%ct "$start..HEAD" 2>/dev/null | head -1)
+  [ -n "$first_event" ] && [ -n "$first_commit" ] && [ $((first_commit * 1000)) -lt "$first_event" ] && REPLY=true
+}
+
 # ── Volume ────────────────────────────────────────────────────────────────────
 
 resolve_start_point() {
@@ -182,22 +198,23 @@ read_volume() {
 
 render() {
   local parent=$1 delegated=$2 human=$3 questions=$4 question_time=$5 checks=$6 delegates=$7 tokens=$8
-  local files=$9 added=${10} deleted=${11} mode branch_json
+  local files=$9 added=${10} deleted=${11} partial=${12} mode branch_json
   resolve_mode "$parent" "$delegated"; mode=$REPLY
   json_escape "$BRANCH"; branch_json=$REPLY
   printf '{"branch":%s,"parent_minutes":%s,"delegated_minutes":%s,"human_minutes":%s,' "$branch_json" "$parent" "$delegated" "$human"
   printf '"questions":%s,"question_minutes":%s,"check_minutes":%s,"delegates":%s,"mode":%s,' "$questions" "$question_time" "$checks" "$delegates" "$mode"
-  printf '"tokens":%s,"files":%s,"lines_added":%s,"lines_deleted":%s}\n' "$tokens" "$files" "$added" "$deleted"
+  printf '"tokens":%s,"files":%s,"lines_added":%s,"lines_deleted":%s,"partial":%s}\n' "$tokens" "$files" "$added" "$deleted" "$partial"
 }
 
 main() {
-  local durations volume
+  local durations volume start partial
   parse_arguments "$@"
   read_durations; durations=$REPLY
-  resolve_start_point
-  read_volume "$REPLY"; volume=$REPLY
+  resolve_start_point; start=$REPLY
+  read_volume "$start"; volume=$REPLY
+  read_partial "$start"; partial=$REPLY
   # shellcheck disable=SC2086 — découpage voulu des champs numériques
-  render $durations $volume
+  render $durations $volume "$partial"
 }
 
 main "$@"

@@ -110,11 +110,13 @@ forge/
 │   │       ├── checks.sh              (startup checks, run detached: input/ and time-log.jsonl lines in .gitignore)
 │   │       ├── engrave.sh             (shipping sequence: preview / run)
 │   │       ├── json.sh                (JSON rendering shared by the scripts)
+│   │       ├── log-entry.sh           (log entry: timestamp read from the local clock, entry written at the top of log.md)
 │   │       ├── status.sh              (startup status: state, progress, resumable branches, as JSON)
 │   │       ├── swarm-status.sh        (swarm status: running, launchable, waiting branches, simulated merge, as JSON)
 │   │       ├── time-aggregate.sh      (one branch's measure: agent, human and check minutes, files and lines, as JSON)
 │   │       ├── time-calibrate.sh      (project ratios from metrics.json, estimate for a number of files, as JSON)
 │   │       ├── time-hook.sh           (time measurement hook: one line per event in the branch time-log.jsonl)
+│   │       ├── time-mark.sh           (task marks: start and done of a plan task in the time-log.jsonl)
 │   │       └── update.sh              (skill update: check / run, as JSON)
 │   └── forge-clickup/        → extension: ClickUp task kickoff
 │       └── SKILL.md
@@ -140,11 +142,13 @@ forge/
 │   ├── engrave.test.sh       → bash tests/engrave.test.sh, throwaway repositories only
 │   ├── install.test.sh       → bash tests/install.test.sh, throwaway home only
 │   ├── checks.test.sh        → bash tests/checks.test.sh, throwaway repositories only
+│   ├── log-entry.test.sh     → bash tests/log-entry.test.sh, throwaway folders only
 │   ├── status.test.sh        → bash tests/status.test.sh, throwaway repositories only
 │   ├── swarm-status.test.sh  → bash tests/swarm-status.test.sh, throwaway repositories only
 │   ├── time-aggregate.test.sh → bash tests/time-aggregate.test.sh, throwaway repositories only
 │   ├── time-calibrate.test.sh → bash tests/time-calibrate.test.sh, throwaway folders only
 │   ├── time-hook.test.sh     → bash tests/time-hook.test.sh, throwaway repositories only
+│   ├── time-mark.test.sh     → bash tests/time-mark.test.sh, throwaway folders only
 │   └── update.test.sh        → bash tests/update.test.sh, throwaway repositories only
 ├── .gitattributes
 └── .gitignore
@@ -322,6 +326,7 @@ Both installers also add `bash ~/.claude/skills/forge/scripts/time-hook.sh` (she
 - **Measure:** the hook adds one line per event to `.forge/branch/<branch>/time-log.jsonl` of the branch checked out in the session folder — timestamps, ids, durations, never a prompt, command or tool output. Outside a forged project it writes nothing. A delegate's events carry the parent's folder: the parent maps each delegate to its child branch.
 - **Summary:** at each engrave and at closure, `time-aggregate.sh` sums the log and git into `metrics.json`: agent minutes (main session + delegates), human minutes (an absence of more than 6 h before a prompt or an answer counts zero), a `partial` flag when the log misses the start of the branch (hook installed late: such a branch is left out of calibration), questions, check minutes, tokens of delegates, files and lines changed.
 - **Estimate:** each plan task states `**Estimated files:**`; `time-calibrate.sh` turns the total into agent minutes with a range (`≈ 120 files · ≈ 60 min (45-78)`), from the project's last measures or from `references/estimation.json` (0.5 min and 5k tokens per file). Marked *indicative* until five branches are measured and seven in ten land in their range. Effort letters stay as relative size, without any duration.
+- **Per task:** each task also states `**Estimated time:**`, frozen when the plan is written. `time-mark.sh` marks its start and its tick in the log; `time-aggregate.sh --task` measures the agent minutes between both marks (question waits removed, same absence rule) and the tick writes `**Actual time:**`, or `—` when there is no measure (no log, hook installed late, missing mark). Every delegate, same repository or linked project, writes its marks to the parent's log (`TIME_LOG:` line of its prompt), where its events already land, and reports each task's actual time in `FORGE_DONE`; a parent task delegated to a linked project gets the sum of its child tasks (`time-aggregate.sh --task T1,T2`, `—` as soon as one child is unmeasured); a swarm branch task takes `agent_minutes` from the branch `metrics.json`. The progress table shows Estimated and Actual side by side.
 - **Check commands:** the `**Check pattern:**` line of `project.md` (regular expression) marks the Bash commands counted as checks.
 
 ---
@@ -342,7 +347,7 @@ The brief is a living document. Changes of scope go through **Out-of-scope detec
 - Standing rule set by the user
 - User remark durably narrowing the scope
 
-**One-off decision** (settled and closed at a point in time) → written silently into `log.md` (`- [YYYY-MM-DD HH:MM] [1 line]`, local time):
+**One-off decision** (settled and closed at a point in time) → written silently into `log.md` (`- [YYYY-MM-DD HH:MM] [1 line]`, written by `log-entry.sh` from the local clock — the model never writes a date or time):
 - Minor implementation choice made without discussion
 - User's choice when Claude presented several options (e.g. "Option B chosen — reason")
 

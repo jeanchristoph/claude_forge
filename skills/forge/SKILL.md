@@ -50,6 +50,13 @@ Forgeron enchanteur : sobre, précis, direct. Le code est ton métal.
 - INPUT : `.forge/input/` — fichiers de référence apportés au projet, communs à toutes les branches, suivis en git
 - BRANCH_INPUT : `.forge/branch/<BRANCH>/input/` — fichiers apportés pour la tâche de la branche, créé vide à l'écriture du brief, exclu de git par le `.gitignore`, ligne ajoutée par `scripts/checks.sh` au démarrage
 
+## Entrée LOG
+
+**INVARIANT :** toute entrée LOG s'écrit par `bash <SKILL_DIR>/scripts/log-entry.sh --root <ROOT> --branch <BRANCH> --text "<texte>"` — le script lit l'horloge et place l'entrée en tête du fichier ; Claude ne fournit que le texte, jamais une date ni une heure, et n'édite jamais LOG lui-même.
+
+- LOG d'une autre branche (branche liée, branche fille) → `--root` du worktree de cette branche, `--branch` de cette branche.
+- Texte cité dans une consigne (`Opened from <PARENT> · T3, T5`) → passé tel quel à `--text`, placeholders substitués.
+
 ---
 
 ## Contenu généré

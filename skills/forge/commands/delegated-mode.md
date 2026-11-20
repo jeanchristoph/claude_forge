@@ -7,6 +7,8 @@
 - Langue de l'utilisateur = valeur de la ligne `LANGUAGE:` du prompt — le prompt lui-même n'en est pas un indice.
 - Point bloquant (confirmation, choix fermé, question ouverte) → terminer le tour par un bloc `FORGE_QUESTION` (format ci-dessous), puis attendre. La réponse arrive dans un message `FORGE_ANSWER: <réponse>` — la traiter comme la réponse de l'utilisateur.
 - **Contenu entier dans la question :** démarrage d'une tâche ou validation d'un contenu présenté (description de la tâche, plan, objectif du brief, entrée `## Scope & rules`, rapport, tableau récapitulatif) → le champ `content:` du bloc recopie ce contenu **intégralement** — jamais un résumé, jamais un intitulé seul : le parent ne peut pas trancher sans le voir. Rien à trancher → `content: none`.
+- Ligne `TIME_LOG:` présente dans le prompt → « Mesure d'une tâche » de `phases/p5-resume.md` passe `--time-log <TIME_LOG>` à `time-mark.sh` et `--parent-log <TIME_LOG>` à `time-aggregate.sh` : le hook range les événements du délégué dans le journal de la session parente, jamais dans ROOT. Ligne absente → appels inchangés.
+- Chaque ligne `done` de `FORGE_DONE` porte le réel de la tâche, tiré de son `**Actual time:**` : ` · actual ≈ <min> min`, ou ` · actual —`.
 - Clôture de tâche non applicable : la séquence se termine par `FORGE_DONE` (format ci-dessous). Toutes les tâches du plan traitées (`[x]` ou `[!]`) → terminer le tour par ce bloc. STOP — ne pas continuer.
 
 **`SCOPE: linked` — projet lié :**
@@ -27,7 +29,7 @@
 - Jamais de fusion de la branche parente dans la branche : le parent seul fusionne.
 - Fichiers temporaires dans le dossier de la ligne `SCRATCHPAD:` seulement, jamais à la racine du dossier temporaire.
 - Application, serveur ou service local lancé → port de la ligne `PORT:`, adresse `127.0.0.1` ; `PORT: none` → rien n'est lancé. Nouvelle dépendance installée dans ROOT seulement, manifeste et fichier de verrouillage gardés dans la branche.
-- Avant chaque tâche : entrée LOG `- [AAAA-MM-JJ HH:MM] task <n> started`.
+- Avant chaque tâche : entrée LOG `task <n> started`.
 - `RESUME:` autre que `none` → appliquer la consigne de reprise avant toute autre action ; plan validé avec enchaînement → aucune question `Mode`.
 - Tâche du plan qui remplit la « Règle de branche » de `phases/p4-plan.md` en cours de réalisation → `FORGE_QUESTION` `header` `Promotion` : "T<n> deserves its own branch: move it out of this plan and add it to the parent plan?", options `Promote` / `Keep it here` ; sur `Promote`, la tâche est retirée du plan, sa description recopiée entière dans `content`.
 - Toute `FORGE_QUESTION` de choix apporte le contexte de décision : ce que fait l'existant, ce que chaque option change pour l'utilisateur final, ce qu'il faudrait refaire si le choix s'avère mauvais.
@@ -51,7 +53,7 @@ Question ouverte → `options: none`.
 ```
 FORGE_DONE
 done:
-- T1 ← parent T3 — [note]
+- T1 ← parent T3 — [note] · actual ≈ [minutes] min
 blocked:
 - T2 ← parent T5 — [raison]
 out_of_mandate:
@@ -60,4 +62,4 @@ files:
 - `chemin/relatif/sous/ROOT`
 ```
 
-Liste vide → `none`. `SCOPE: branch` → `- T1 — [note]`, sans `← parent`.
+Liste vide → `none`. `SCOPE: branch` → `- T1 — [note] · actual ≈ [minutes] min`, sans `← parent`.

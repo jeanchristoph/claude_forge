@@ -10,7 +10,7 @@ Si BRIEF contient `## Origin` (`SCOPE: linked` — mandat) → les étapes ci-de
 - Source unique du plan : `### Delegated tasks` du brief. `## Objective` et `## Scope & rules` cadrent, ils ne génèrent aucune tâche.
 - En-tête supplémentaire, sous `**Date:**` : `**Origin:** <parent> · <BRANCH> · T3, T5` — valeurs reprises de `## Origin`.
 - Titre de tâche : `### T1 — [Titre] ← parent T3`. Une tâche parente peut donner plusieurs tâches enfant ; chaque tâche enfant pointe une seule tâche parente.
-- Aucune tâche hors mandat. Besoin hors périmètre découvert à la rédaction → entrée LOG (`- [AAAA-MM-JJ HH:MM] Out of mandate: [besoin]`), jamais une tâche ; remonté dans `FORGE_DONE`.
+- Aucune tâche hors mandat. Besoin hors périmètre découvert à la rédaction → entrée LOG `Out of mandate: [besoin]`, jamais une tâche ; remonté dans `FORGE_DONE`.
 
 `SCOPE: branch` → aucune règle de mandat : plan rédigé depuis le brief comme pour toute branche.
 
@@ -29,8 +29,10 @@ Si BRIEF contient `## Origin` (`SCOPE: linked` — mandat) → les étapes ci-de
    Puis poser le choix avec `AskUserQuestion` — `header` : `Approach`, une option par approche (label `Option X — Name`, description = son compromis), quatre au maximum. Attendre le choix avant de continuer.
 6. Générer le plan (format ci-dessous), puis l'estimer :
    - chaque tâche porte `**Estimated files:**`, nombre de fichiers qu'elle crée ou modifie, tests compris — jamais un motif ;
+   - chaque tâche porte `**Estimated time:** ≈ <minutes> min (<low>-<high>)`, tiré de `estimate` de `bash <SKILL_DIR>/scripts/time-calibrate.sh --root <ROOT> --files <Estimated files de la tâche>` ;
    - exécuter `bash <SKILL_DIR>/scripts/time-calibrate.sh --root <ROOT> --files <somme des fichiers estimés>` ; seuils et ratios redéfinis dans `coding-standards.md` → ils priment sur la sortie du script ;
    - écrire l'en-tête `**Estimate:**` depuis `estimate` : `≈ <files> files · ≈ <minutes> min (<low>-<high>)`, suivi de ` · indicative` quand `indicative` est vrai.
+   ⚠️ `**Estimated time:**` est figé à l'écriture du plan, jamais recalculé : c'est la prévision comparée au réel (`**Actual time:**`, section « Mesure d'une tâche » de `phases/p5-resume.md`). Tâche ajoutée en cours de branche → son estimation au ratio du moment, figée à son tour.
    Au moins deux tâches remplissent la « Règle de branche » ci-dessous → appliquer « Plan de branches » avant de présenter.
    Présenter le plan.
 7. Poser le choix avec `AskUserQuestion` — `header` : `Plan`, motif « Validation d'un contenu » de `SKILL.md` : le changement demandé arrive en texte libre, itérer, reposer la question. Trois options, dans cet ordre :
@@ -64,6 +66,7 @@ Si BRIEF contient `## Origin` (`SCOPE: linked` — mandat) → les étapes ci-de
 ### T1 — [Titre court et précis]
 **Effort:** XS/S/M/L/XL
 **Estimated files:** [nombre]
+**Estimated time:** ≈ [minutes] min ([bas]-[haut])
 **Files:** `chemin/vers/fichier`
 **Description:** [Ce qui doit être fait, comment, avec quels patterns]
 [ ]
@@ -125,6 +128,7 @@ Si BRIEF contient `## Origin` (`SCOPE: linked` — mandat) → les étapes ci-de
 ### T2 — Branch `<BRANCH>-<slug>` — [Titre]
 **Effort:** L
 **Estimated files:** [nombre]
+**Estimated time:** ≈ [minutes] min ([bas]-[haut])
 **Depends on:** T1, `<BRANCH>-<autre-slug>`
 **Brief:** [objectif de la branche en une phrase]
 **Description:** [périmètre, règles reprises du brief, décisions attendues]

@@ -1,0 +1,12 @@
+- [2026-11-20 13:53] T7 terminée : swarm-status.sh rend now (horloge locale) ; Since et dates des choix de swarm.md tirés de now ; 15 tests verts.
+- [2026-11-20 13:52] T7 ajoutée (demande complémentaire validée) : heure du tableau d'état de l'essaim fournie par swarm-status.sh.
+- [2026-11-20 13:47] T6 terminée : règle « Entrée LOG » dans SKILL.md ; texte sur plusieurs lignes refusé (une entrée = une ligne) ; titre « # » gardé au-dessus ; dates de l'état d'essaim (swarm.md) hors périmètre, toujours écrites par le modèle.
+- [2026-11-20 13:47] T6 ajoutée (demande complémentaire validée) : entrées de LOG horodatées par log-entry.sh.
+- [2026-11-20 13:38] Choix utilisateur : somme des tâches enfant d'une tâche parente déléguée faite par le script (time-aggregate.sh --task T1,T2), implémentation de T5 gardée.
+- [2026-11-20 13:30] T5 terminée ; p5-resume.md et project.md touchés en plus des fichiers prévus (exclusion des tâches déléguées, convention du mode délégué).
+- [2026-11-20 13:26] T5 ajoutée (demande complémentaire validée) : une seule mesure pour tout délégué rattaché à une tâche du plan parent ; somme des enfants calculée par time-aggregate.sh --task T1,T2 pour être testable.
+- [2026-11-20 13:19] T3 et T4 terminés ; suites de tests vertes (update.test.sh interrompu : lent, non touché).
+- [2026-11-20 13:15] T2 : tour ou délégué sans Stop à la marque task_done compté jusqu'à elle, seul le plus récent (session interrompue écartée).
+- [2026-11-20 13:15] Plan validé (Validate and chain) ; T1 et T2 terminés.
+- [2026-11-20 12:54] Approche C retenue : marques d'un délégué dans le journal du parent ; écart noté dans ## Scope & rules du brief.
+- [2026-11-20 12:48] Opened from Pharmascope (saas-rebuild) : branche task-time créée depuis agent-swarm, forge délégué en worktree.

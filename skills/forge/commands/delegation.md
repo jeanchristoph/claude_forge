@@ -1,5 +1,18 @@
 # Délégation
 
+## Mesure d'un délégué
+
+**Déclencheur :** lancement d'un sous-agent forge délégué — projet lié, branche du même dépôt, branche fille d'essaim (`commands/swarm.md`) — puis chacun de ses retours. Projet courant ou projet externe : même mesure.
+
+**Réaction :**
+- `<DELEGATED_BRANCH>` = branche du délégué : `<LINKED_BRANCH>` pour un projet lié, `<X>` sinon. `<TIME_LOG>` = `.forge/branch/<BRANCH>/time-log.jsonl` sous ROOT, journal de la branche parente.
+- Prompt : ligne `TIME_LOG: <chemin absolu de <TIME_LOG>>` juste sous `SCOPE:` — le délégué y écrit ses marques de tâche (`commands/delegated-mode.md`). Chemin absolu dans le prompt seulement, jamais dans un fichier écrit.
+- Lancement : ajouter à `<TIME_LOG>` `{"event":"delegate","agent_id":"<identifiant>","branch":"<DELEGATED_BRANCH>"}` — identifiant tiré du retour de l'outil `Agent`.
+- Chaque retour : ajouter à `<TIME_LOG>` `{"event":"delegate_usage","agent_id":"<identifiant>","tokens":<subagent_tokens de la notification>}`.
+- Synthèse et mesure par tâche de `<DELEGATED_BRANCH>` → `time-aggregate.sh --root <worktree du délégué> --branch <DELEGATED_BRANCH> --parent-log <chemin absolu de <TIME_LOG>>`, le journal parent pouvant vivre dans un autre dépôt.
+
+⚠️ `<TIME_LOG>` absent (hook de mesure non installé) → aucune ligne ajoutée, ligne `TIME_LOG:` gardée dans le prompt : les marques du délégué n'écrivent alors rien.
+
 ## Délégation — projet lié
 
 **Vocabulaire :** projet *parent* = ROOT de la session · projet *lié* = `<LINKED>`, chemin absolu du dossier visé · *mandat* = les tâches parentes déléguées · *branche liée* = `<LINKED_BRANCH>` = `<PARENT>/<BRANCH>`, `<PARENT>` étant le nom du dossier ROOT (`forge/linked-project`, `forge/CU-123`) — jamais le nom nu de `<BRANCH>` : le préfixe dit d'où vient la délégation, la partie droite reste identique pour la correspondance. · `<LINKED_WORKTREE>` = chemin absolu du worktree de `<LINKED_BRANCH>`, rangé à côté de `<LINKED>` : `<LINKED>.worktrees/<LINKED_BRANCH>`, chaque `/` de la branche gardé comme sous-dossier (`../my-api.worktrees/forge/CU-123` depuis ROOT). · `<LINKED_REL>` = chemin de `<LINKED>` relatif à ROOT (`../my-api`).
@@ -25,9 +38,9 @@
 8. **Sur `Open the linked project`** → dans l'ordre :
    - Exécuter l'action de worktree retenue à l'étape 4 (`reuse` → rien). Échec → afficher l'erreur telle quelle, STOP.
    - Écrire `<LINKED_WORKTREE>/.forge/branch/<LINKED_BRANCH>/brief.md` — format du mandat ci-dessous. Fichier déjà présent → le remplacer : le mandat parent fait foi.
-   - Écrire `<LINKED_WORKTREE>/.forge/branch/<LINKED_BRANCH>/log.md` s'il est absent, puis insérer en tête : `- [AAAA-MM-JJ HH:MM] Opened from <PARENT> · T3, T5`.
-   - PLAN parent : sous chaque tâche du mandat, note `delegated to <LINKED_REL> @ <LINKED_BRANCH>` — statut inchangé. LOG parent : `- [AAAA-MM-JJ HH:MM] Delegated T3, T5 to <LINKED_REL> @ <LINKED_BRANCH>`.
-   - Lancer le sous-agent (prompt ci-dessous), puis entrer dans la boucle de relais.
+   - Entrée LOG de la branche liée, `--root <LINKED_WORKTREE> --branch <LINKED_BRANCH>` (`log.md` créé s'il est absent) : `Opened from <PARENT> · T3, T5`.
+   - PLAN parent : sous chaque tâche du mandat, note `delegated to <LINKED_REL> @ <LINKED_BRANCH>` — statut inchangé. Entrée LOG parent : `Delegated T3, T5 to <LINKED_REL> @ <LINKED_BRANCH>`.
+   - Lancer le sous-agent (prompt ci-dessous), « Mesure d'un délégué » ci-dessus appliquée, puis entrer dans la boucle de relais.
 
 ### Boucle de relais
 
@@ -41,12 +54,12 @@
 ### Retour — application de `FORGE_DONE`
 
 Pour chaque tâche parente du mandat, dans l'ordre du plan :
-- Toutes ses tâches enfant dans `done` → cocher `[x]`, note `delegated to <LINKED_REL> @ <LINKED_BRANCH> · done`.
+- Toutes ses tâches enfant dans `done` → cocher `[x]`, note `delegated to <LINKED_REL> @ <LINKED_BRANCH> · done` ; `**Actual time:**` tiré de `time-aggregate.sh --root <LINKED_WORKTREE> --branch <LINKED_BRANCH> --parent-log <chemin absolu de <TIME_LOG>> --task <tâches enfant, séparées par des virgules>` (somme ; un enfant non mesuré → `measured` faux), écrit comme à la coche (« Mesure d'une tâche » de `phases/p5-resume.md`, étape 3).
 - Au moins une dans `blocked` → marquer `[!] blocked — <raison de la première> · delegated to <LINKED_REL> @ <LINKED_BRANCH>`.
 - Absente de `done` et de `blocked` → marquer `[!] blocked — not addressed by the delegated run · delegated to <LINKED_REL> @ <LINKED_BRANCH>`.
 
 ⚠️ La note conserve toujours `delegated to <LINKED_REL> @ <LINKED_BRANCH>` : la livraison relayée s'appuie dessus pour retrouver le projet lié et sa branche.
-- Une entrée LOG parent par tâche : `- [AAAA-MM-JJ HH:MM] T3 delegated to <LINKED_REL> — done` / `— blocked: <raison>`.
+- Une entrée LOG parent par tâche : `T3 delegated to <LINKED_REL> — done` / `— blocked: <raison>`.
 
 `out_of_mandate` non vide → présenter chaque besoin à l'utilisateur, puis appliquer la « Surveillance des demandes complémentaires » de `phases/p5-resume.md` à chacun. Rendre compte : tâches vertes, tâches bloquées avec leur raison, fichiers touchés dans `<LINKED_WORKTREE>`, puis rappeler : "`git -C <LINKED> worktree remove <LINKED_WORKTREE>` once the linked branch is engraved." Le worktree reste en place.
 
@@ -88,6 +101,7 @@ ROOT: <LINKED_WORKTREE>
 BRANCH: <LINKED_BRANCH>
 LANGUAGE: <langue de l'utilisateur>
 SCOPE: linked
+TIME_LOG: <chemin absolu de <TIME_LOG>>
 Invoke the `forge` skill with argument `<LINKED_BRANCH>`. Resolve every path and every git command under ROOT.
 Delegated mode applies (section « Mode délégué » of the skill): never call AskUserQuestion.
 Write every file content and every report in LANGUAGE; structure labels stay in English.
@@ -126,8 +140,7 @@ Actions et détail associé — aucune autre :
 6. **Sur `Cancel`** → n'exécuter aucune action. STOP — ne pas continuer.
 7. **Sur `Open the branch`** → dans l'ordre :
    - Action `create` → exécuter `git worktree add`. Échec → afficher l'erreur telle quelle, STOP.
-   - Lancer le sous-agent (prompt ci-dessous), puis entrer dans la « Boucle de relais » de la délégation vers un projet lié — identique.
-   - Mesure : au lancement, ajouter à `.forge/branch/<BRANCH>/time-log.jsonl` `{"event":"delegate","agent_id":"<identifiant>","branch":"<X>"}` (identifiant tiré du retour de l'outil `Agent`) ; à chaque retour, `{"event":"delegate_usage","agent_id":"<identifiant>","tokens":<subagent_tokens>}`. La synthèse de `<X>` les lit par `--parent-log`.
+   - Lancer le sous-agent (prompt ci-dessous), « Mesure d'un délégué » appliquée, puis entrer dans la « Boucle de relais » de la délégation vers un projet lié — identique.
 
 ### Retour — `FORGE_DONE` en `SCOPE: branch`
 
@@ -143,6 +156,7 @@ ROOT: <WORKTREE>
 BRANCH: <X>
 LANGUAGE: <langue de l'utilisateur>
 SCOPE: branch
+TIME_LOG: <chemin absolu de <TIME_LOG>>
 Invoke the `forge` skill with argument `<X>`. Resolve every path and every git command under ROOT.
 Delegated mode applies (section « Mode délégué » of the skill): never call AskUserQuestion.
 Write every file content and every report in LANGUAGE; structure labels stay in English.

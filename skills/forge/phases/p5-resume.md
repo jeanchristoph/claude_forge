@@ -33,20 +33,22 @@
 
 ## Format du tableau d'avancement
 
-| Tâche | Effort | Fichiers | Statut |
-|---|---|---|---|
-| T1 — ... | S | 3 | [x] |
-| T2 — ... | M | 8 | [ ] |
-| T3 — ... | L | 15 | [!] blocked — brief reason |
+| Tâche | Effort | Fichiers | Estimé | Réel | Statut |
+|---|---|---|---|---|---|
+| T1 — ... | S | 3 | ≈ 2 min | ≈ 3 min | [x] |
+| T2 — ... | M | 8 | ≈ 4 min | — | [ ] |
+| T3 — ... | L | 15 | ≈ 8 min | — | [!] blocked — brief reason |
 
-Sous le tableau, une ligne de reste à faire quand au moins une tâche ouverte porte `**Estimated files:**` : `bash <SKILL_DIR>/scripts/time-calibrate.sh --root <ROOT> --files <somme des tâches ouvertes>`, puis `Remaining ≈ <files> files · ≈ <minutes> min (<low>-<high>)`, suivi de ` · indicative` quand `indicative` est vrai. Plan sans ce champ → colonne et ligne omises.
+- Estimé : minutes de `**Estimated time:**`, sans la fourchette. Réel : valeur de `**Actual time:**`, `—` si absente.
+- Sous le tableau, une ligne de reste à faire quand au moins une tâche ouverte porte `**Estimated files:**` : `bash <SKILL_DIR>/scripts/time-calibrate.sh --root <ROOT> --files <somme des tâches ouvertes>`, puis `Remaining ≈ <files> files · ≈ <minutes> min (<low>-<high>)`, suivi de ` · indicative` quand `indicative` est vrai.
+- Plan sans `**Estimated files:**` → colonne Fichiers et ligne de reste omises. Plan sans `**Estimated time:**` → colonnes Estimé et Réel omises.
 
 ---
 
 ## Règles de mise à jour du plan
 
 **Silencieuse (automatique)** — après tâche terminée ou événement notable :
-- Cocher `[x]`, ajouter note max 1 ligne, marquer `[!]` si bloqué.
+- Cocher `[x]`, ajouter note max 1 ligne, marquer `[!]` si bloqué. Coche → section « Mesure d'une tâche » ci-dessous.
 - Script diffusé à part du déploiement git (section « Contenu généré » du SKILL) → ajouter l'étape dans `## Deployment` : quoi, moment d'exécution, numéros des tâches d'origine, chemin de la copie dans OUTPUT. `None` remplacé par la première étape. Étape qui exécute du SQL → section « Script de déploiement SQL » ci-dessous.
 
 **Substantielle (confirmation obligatoire)** — décrire la modification, puis poser le choix avec `AskUserQuestion` — `header` : `Plan`, options `Apply` / `Leave as is` — avant d'appliquer :
@@ -62,13 +64,27 @@ Sous le tableau, une ligne de reste à faire quand au moins une tâche ouverte p
 
 ---
 
+## Mesure d'une tâche
+
+**Déclencheur :** démarrage d'une tâche du plan, ou sa coche `[x]` — dans tous les modes, enchaîné, tâche choisie ou délégué. Tâche-branche d'un essaim → aucune marque : son réel vient de « Fusion d'une branche fille » (`commands/swarm.md`). Tâche déléguée à un projet lié → aucune marque : son réel vient du retour du délégué (« Retour — application de `FORGE_DONE` », `commands/delegation.md`).
+
+**Réaction — dans l'ordre :**
+1. Démarrage → `bash <SKILL_DIR>/scripts/time-mark.sh --root <ROOT> --branch <BRANCH> --task T<n> --event start`, avant toute autre action de la tâche.
+2. Coche → `bash <SKILL_DIR>/scripts/time-mark.sh --root <ROOT> --branch <BRANCH> --task T<n> --event done`, puis `bash <SKILL_DIR>/scripts/time-aggregate.sh --root <ROOT> --branch <BRANCH> --task T<n>`, en un seul appel Bash.
+3. Écrire sous `**Estimated time:**` de la tâche, à défaut sous `**Estimated files:**` : `measured` vrai → `**Actual time:** ≈ <agent_minutes> min` ; `measured` faux → `**Actual time:** —`.
+
+⚠️ Jamais de durée estimée à la main à la place d'une mesure absente : `—` seul.
+⚠️ Les deux scripts n'écrivent rien sans journal de mesure (hook non installé) : jamais d'erreur à signaler, `**Actual time:** —`.
+
+---
+
 ## Script de déploiement SQL
 
 **Déclencheur :** `## Deployment` gagne ou modifie une étape qui exécute du SQL — migration, script de reconstruction, requête d'exploitation.
 
 **Réaction — dans l'ordre :**
 1. Écrire ou réécrire sur place `.forge/branch/<BRANCH>/output/AAAAMMJJ-deployment-script.sql`, sans question — un seul fichier par branche, daté de sa création, jamais renommé.
-2. Écrire une entrée dans LOG : `- [AAAA-MM-JJ HH:MM] Deployment script updated: [étapes ajoutées ou modifiées]`.
+2. Entrée LOG : `Deployment script updated: [étapes ajoutées ou modifiées]`.
 
 **Format :**
 - En-tête en commentaire : branche, date, tableau des étapes — numéro, base visée, moment (`before` / `after deploy`), forme (`comment` / `query`), tâches d'origine.
@@ -92,11 +108,11 @@ Le brief est vivant. Les changements de scope sont gérés par la **Surveillance
 - Règle immuable posée par l'utilisateur
 - Remarque utilisateur précisant durablement le périmètre ou le hors périmètre
 
-**Décision ponctuelle** (choix acté et clos à un instant donné) → écrire silencieusement dans LOG (format : `- [AAAA-MM-JJ HH:MM] [1 ligne]`, heure locale) :
+**Décision ponctuelle** (choix acté et clos à un instant donné) → écrire silencieusement une entrée LOG d'une ligne (« Entrée LOG » de `SKILL.md`) :
 - Choix d'implémentation mineur acté sans discussion
 - **Choix utilisateur quand Claude a proposé plusieurs options** (ex: "Option B retenue — raison")
 
-⚠️ Entrée insérée en tête de `log.md`, juste sous le titre — jamais en fin de fichier : `status.sh` suppose les entrées les plus récentes en haut. `log.md` absent → le créer.
+⚠️ `status.sh` suppose les entrées les plus récentes en haut : jamais d'entrée écrite hors de `log-entry.sh`.
 
 ---
 

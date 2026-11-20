@@ -366,6 +366,211 @@ test_changes_nothing_in_repository() {
   assert_equals "$before" "$(git -C "$WORK" status --porcelain)"
 }
 
+# ── Tâche ─────────────────────────────────────────────────────────────────────
+
+test_task_measures_turn_part_inside_window() {
+  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":30000,"event":"task_start","task":"T2"}' \
+             '{"ts":90000,"event":"task_done","task":"T2"}' \
+             '{"ts":120000,"event":"Stop","session":"s"}'
+  assert_equals '{"branch":"feature","task":"T2","agent_minutes":1.0,"human_minutes":0.0,"questions":0,"measured":true,"reason":null}' \
+    "$(aggregate --task T2)"
+}
+
+test_task_counts_open_turn_up_to_done_mark() {
+  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":0,"event":"task_start","task":"T1"}' \
+             '{"ts":120000,"event":"task_done","task":"T1"}'
+  assert_contains '"agent_minutes":2.0' "$(aggregate --task T1)"
+}
+
+test_task_ignores_older_turn_left_without_stop() {
+  own_events '{"ts":0,"event":"UserPromptSubmit","session":"old","origin":"human"}' \
+             '{"ts":60000,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":60000,"event":"task_start","task":"T1"}' \
+             '{"ts":120000,"event":"task_done","task":"T1"}'
+  assert_contains '"agent_minutes":1.0' "$(aggregate --task T1)"
+}
+
+test_task_removes_question_inside_window_and_counts_it_as_human() {
+  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":10000,"event":"task_start","task":"T1"}' \
+             '{"ts":20000,"event":"PreToolUse","session":"s","tool":"AskUserQuestion"}' \
+             '{"ts":80000,"event":"PostToolUse","session":"s","tool":"AskUserQuestion"}' \
+             '{"ts":100000,"event":"task_done","task":"T1"}' \
+             '{"ts":110000,"event":"Stop","session":"s"}'
+  local output
+  output=$(aggregate --task T1)
+  assert_contains '"agent_minutes":0.5' "$output"
+  assert_contains '"human_minutes":1.0' "$output"
+  assert_contains '"questions":1' "$output"
+}
+
+test_task_ignores_turns_and_questions_outside_window() {
+  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":10000,"event":"PreToolUse","session":"s","tool":"AskUserQuestion"}' \
+             '{"ts":70000,"event":"PostToolUse","session":"s","tool":"AskUserQuestion"}' \
+             '{"ts":80000,"event":"task_start","task":"T1"}' \
+             '{"ts":140000,"event":"task_done","task":"T1"}' \
+             '{"ts":200000,"event":"Stop","session":"s"}'
+  local output
+  output=$(aggregate --task T1)
+  assert_contains '"agent_minutes":1.0' "$output"
+  assert_contains '"human_minutes":0.0' "$output"
+  assert_contains '"questions":0' "$output"
+}
+
+test_task_counts_gap_before_human_prompt_inside_window() {
+  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":0,"event":"task_start","task":"T1"}' \
+             '{"ts":60000,"event":"Stop","session":"s"}' \
+             '{"ts":180000,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":240000,"event":"task_done","task":"T1"}'
+  local output
+  output=$(aggregate --task T1)
+  assert_contains '"agent_minutes":2.0' "$output"
+  assert_contains '"human_minutes":2.0' "$output"
+}
+
+test_task_does_not_count_absence_over_six_hours_as_human_time() {
+  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":0,"event":"task_start","task":"T1"}' \
+             '{"ts":60000,"event":"Stop","session":"s"}' \
+             '{"ts":21660001,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":21720001,"event":"task_done","task":"T1"}'
+  local output
+  output=$(aggregate --task T1)
+  assert_contains '"agent_minutes":2.0' "$output"
+  assert_contains '"human_minutes":0.0' "$output"
+}
+
+test_task_keeps_last_start_mark() {
+  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":0,"event":"task_start","task":"T1"}' \
+             '{"ts":60000,"event":"task_start","task":"T1"}' \
+             '{"ts":120000,"event":"task_done","task":"T1"}' \
+             '{"ts":130000,"event":"Stop","session":"s"}'
+  assert_contains '"agent_minutes":1.0' "$(aggregate --task T1)"
+}
+
+test_task_ignores_marks_of_other_tasks() {
+  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":0,"event":"task_start","task":"T1"}' \
+             '{"ts":60000,"event":"task_done","task":"T1"}' \
+             '{"ts":60000,"event":"task_start","task":"T10"}' \
+             '{"ts":180000,"event":"task_done","task":"T10"}' \
+             '{"ts":200000,"event":"Stop","session":"s"}'
+  assert_contains '"agent_minutes":1.0' "$(aggregate --task T1)"
+  assert_contains '"agent_minutes":2.0' "$(aggregate --task T10)"
+}
+
+test_task_unmeasured_without_start_mark() {
+  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":60000,"event":"task_done","task":"T1"}'
+  assert_equals '{"branch":"feature","task":"T1","agent_minutes":null,"human_minutes":null,"questions":null,"measured":false,"reason":"missing_start"}' \
+    "$(aggregate --task T1)"
+}
+
+test_task_unmeasured_without_done_mark() {
+  own_events '{"ts":0,"event":"task_start","task":"T1"}'
+  assert_contains '"measured":false,"reason":"missing_done"' "$(aggregate --task T1)"
+}
+
+test_task_unmeasured_with_late_start() {
+  own_events '{"ts":0,"event":"late_start"}' \
+             '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":0,"event":"task_start","task":"T1"}' \
+             '{"ts":60000,"event":"task_done","task":"T1"}'
+  assert_contains '"measured":false,"reason":"late_start"' "$(aggregate --task T1)"
+}
+
+test_task_unmeasured_without_log() {
+  assert_contains '"measured":false,"reason":"no_log"' "$(aggregate --task T1)"
+}
+
+test_task_measures_delegate_from_parent_log() {
+  parent_events '{"event":"delegate","agent_id":"a1","branch":"feature"}' \
+                '{"ts":0,"event":"SubagentStart","agent_id":"a1"}' \
+                '{"ts":10000,"event":"task_start","task":"T1","branch":"feature"}' \
+                '{"ts":10000,"event":"task_start","task":"T1","branch":"other"}' \
+                '{"ts":70000,"event":"task_done","task":"T1","branch":"feature"}' \
+                '{"ts":90000,"event":"SubagentStop","agent_id":"a1"}' \
+                '{"ts":0,"event":"UserPromptSubmit","session":"p","origin":"human"}' \
+                '{"ts":200000,"event":"Stop","session":"p"}'
+  local output
+  output=$(aggregate --task T1 --parent-log "$PARENT_LOG")
+  assert_contains '"agent_minutes":1.0' "$output"
+  assert_contains '"measured":true' "$output"
+}
+
+test_task_counts_delegate_still_running_up_to_done_mark() {
+  parent_events '{"event":"delegate","agent_id":"a1","branch":"feature"}' \
+                '{"ts":0,"event":"SubagentStart","agent_id":"a1"}' \
+                '{"ts":0,"event":"task_start","task":"T1","branch":"feature"}' \
+                '{"ts":90000,"event":"task_done","task":"T1","branch":"feature"}'
+  assert_contains '"agent_minutes":1.5' "$(aggregate --task T1 --parent-log "$PARENT_LOG")"
+}
+
+test_task_ignores_main_session_marks_for_delegate() {
+  own_events '{"ts":0,"event":"task_start","task":"T1"}' \
+             '{"ts":60000,"event":"task_done","task":"T1"}'
+  parent_events '{"event":"delegate","agent_id":"a1","branch":"feature"}'
+  assert_contains '"reason":"missing_start"' "$(aggregate --task T1 --parent-log "$PARENT_LOG")"
+}
+
+test_task_rejects_malformed_task() {
+  bash "$AGGREGATE_SCRIPT" --root "$WORK" --branch feature --task 3 2>/dev/null
+  assert_equals "1" "$?"
+}
+
+test_task_marks_keep_full_branch_measure_unchanged() {
+  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":10000,"event":"task_start","task":"T1"}' \
+             '{"ts":50000,"event":"task_done","task":"T1"}' \
+             '{"ts":60000,"event":"Stop","session":"s"}'
+  local output
+  output=$(aggregate)
+  assert_contains '"parent_minutes":1.0' "$output"
+  assert_contains '"partial":false' "$output"
+}
+
+linked_events() {
+  parent_events '{"event":"delegate","agent_id":"l1","branch":"parent/main-branch"}' \
+                '{"ts":0,"event":"SubagentStart","agent_id":"l1"}' \
+                '{"ts":0,"event":"task_start","task":"T1","branch":"parent/main-branch"}' \
+                '{"ts":60000,"event":"task_done","task":"T1","branch":"parent/main-branch"}' \
+                '{"ts":60000,"event":"task_start","task":"T2","branch":"parent/main-branch"}' \
+                '{"ts":150000,"event":"task_done","task":"T2","branch":"parent/main-branch"}' \
+                '{"ts":150000,"event":"task_start","task":"T3","branch":"parent/main-branch"}' \
+                '{"ts":200000,"event":"SubagentStop","agent_id":"l1"}'
+}
+
+aggregate_linked() {
+  bash "$AGGREGATE_SCRIPT" --root "$WORK" --branch parent/main-branch --parent-log "$PARENT_LOG" "$@"
+}
+
+test_task_measures_linked_project_delegate_from_parent_log() {
+  linked_events
+  assert_equals '{"branch":"parent/main-branch","task":"T2","agent_minutes":1.5,"human_minutes":0.0,"questions":0,"measured":true,"reason":null}' \
+    "$(aggregate_linked --task T2)"
+}
+
+test_task_sums_child_tasks_of_a_parent_task() {
+  linked_events
+  assert_contains '"task":"T1,T2","agent_minutes":2.5' "$(aggregate_linked --task T1,T2)"
+}
+
+test_task_sum_unmeasured_when_one_child_is_unmeasured() {
+  linked_events
+  assert_contains '"agent_minutes":null,"human_minutes":null,"questions":null,"measured":false,"reason":"missing_done"' \
+    "$(aggregate_linked --task T1,T3)"
+}
+
+test_task_rejects_malformed_task_list() {
+  bash "$AGGREGATE_SCRIPT" --root "$WORK" --branch feature --task T1, 2>/dev/null
+  assert_equals "1" "$?"
+}
+
 run_test() {
   local result
   setup_sandbox
@@ -418,6 +623,28 @@ run_test test_marks_no_partial_without_log "ne marque rien de partiel sans journ
 run_test test_rejects_missing_branch "refuse l'absence de branche"
 run_test test_rejects_unknown_argument "refuse un argument inconnu"
 run_test test_changes_nothing_in_repository "ne modifie rien dans le dépôt"
+run_test test_task_measures_turn_part_inside_window "tâche : mesure la part d'un tour comprise dans la fenêtre"
+run_test test_task_counts_open_turn_up_to_done_mark "tâche : compte un tour encore ouvert jusqu'à la marque de fin"
+run_test test_task_ignores_older_turn_left_without_stop "tâche : écarte un tour plus ancien resté sans Stop"
+run_test test_task_removes_question_inside_window_and_counts_it_as_human "tâche : retire une question de la fenêtre et la compte en temps humain"
+run_test test_task_ignores_turns_and_questions_outside_window "tâche : écarte tours et questions hors de la fenêtre"
+run_test test_task_counts_gap_before_human_prompt_inside_window "tâche : compte en temps humain l'écart avant un prompt dans la fenêtre"
+run_test test_task_does_not_count_absence_over_six_hours_as_human_time "tâche : ne compte pas en temps humain une absence de plus de 6 h"
+run_test test_task_keeps_last_start_mark "tâche : retient la dernière marque de début"
+run_test test_task_ignores_marks_of_other_tasks "tâche : écarte les marques des autres tâches"
+run_test test_task_unmeasured_without_start_mark "tâche : non mesurée sans marque de début"
+run_test test_task_unmeasured_without_done_mark "tâche : non mesurée sans marque de fin"
+run_test test_task_unmeasured_with_late_start "tâche : non mesurée sur un journal à départ tardif"
+run_test test_task_unmeasured_without_log "tâche : non mesurée sans journal"
+run_test test_task_measures_delegate_from_parent_log "tâche : mesure un délégué depuis le journal du parent"
+run_test test_task_counts_delegate_still_running_up_to_done_mark "tâche : compte un délégué encore en cours jusqu'à la marque de fin"
+run_test test_task_ignores_main_session_marks_for_delegate "tâche : écarte les marques sans branche pour un délégué"
+run_test test_task_rejects_malformed_task "tâche : refuse un identifiant de tâche mal formé"
+run_test test_task_marks_keep_full_branch_measure_unchanged "tâche : les marques laissent la mesure de la branche inchangée"
+run_test test_task_measures_linked_project_delegate_from_parent_log "tâche : mesure un délégué de projet lié depuis le journal du parent"
+run_test test_task_sums_child_tasks_of_a_parent_task "tâche : additionne les tâches enfant d'une tâche parente"
+run_test test_task_sum_unmeasured_when_one_child_is_unmeasured "tâche : somme non mesurée dès qu'une tâche enfant ne l'est pas"
+run_test test_task_rejects_malformed_task_list "tâche : refuse une liste de tâches mal formée"
 
 echo "$PASSED passed, $FAILED failed"
 [ $FAILED -eq 0 ]

@@ -24,8 +24,8 @@
    - commande d'installation exécutée dans `<WORKTREE>`, fichier de verrouillage respecté, aucune mise à jour de version ;
    - port de la branche = port de base + rang de la branche dans l'essaim (1 à N), sur `127.0.0.1` seulement.
 6. Afficher le tableau de lancement : une ligne par action, colonnes numéro, branche, action, détail, en-têtes dans la langue de l'utilisateur. Actions — aucune autre : `branch`, `worktree`, `merge <PARENT>`, `brief`, `install`, `agent`.
-7. Lancer tous les délégués dans le même tour, en tâche de fond (« Prompt du délégué »). Pour chacun, ajouter à TIME_LOG `{"event":"delegate","agent_id":"<identifiant>","branch":"<X>"}` — identifiant tiré du retour de l'outil `Agent`.
-8. Réécrire SWARM (« Fichier d'état — `swarm.md` »), entrée LOG : `- [AAAA-MM-JJ HH:MM] Swarm launched: <X>, <Y> ; waiting: <W> (<V>)`.
+7. Lancer tous les délégués dans le même tour, en tâche de fond (« Prompt du délégué »). Pour chacun, « Mesure d'un délégué » de `commands/delegation.md`.
+8. Réécrire SWARM (« Fichier d'état — `swarm.md` »), entrée LOG : `Swarm launched: <X>, <Y> ; waiting: <W> (<V>)`.
 9. Entrer dans la « Boucle de relais de l'essaim », et exécuter en parallèle le « Plan mixte — travail du parent ».
 
 ⚠️ `<WORKTREE>` porte sa propre installation : jamais de lien vers les dépendances du dépôt principal.
@@ -40,6 +40,7 @@ ROOT: <WORKTREE>
 BRANCH: <X>
 LANGUAGE: <langue de l'utilisateur>
 SCOPE: branch
+TIME_LOG: <chemin absolu de TIME_LOG>
 SWARM: <PARENT>
 SCRATCHPAD: <scratchpad>/<X>/
 PORT: <port de la branche, ou none>
@@ -55,7 +56,7 @@ End every turn with a FORGE_QUESTION or a FORGE_DONE block.
 ## Boucle de relais de l'essaim
 
 Boucle de relais de `commands/delegation.md`, avec ces règles en plus :
-- **Mesure :** chaque retour d'un délégué → ajouter à TIME_LOG `{"event":"delegate_usage","agent_id":"<identifiant>","tokens":<subagent_tokens de la notification>}`.
+- **Mesure :** chaque retour d'un délégué → « Mesure d'un délégué » de `commands/delegation.md`.
 - **Préfixe :** chaque question et chaque contenu affiché commencent par `[<X>]`.
 - **Contexte de décision :** `FORGE_QUESTION` sans ce que fait l'existant, ce que chaque option change pour l'utilisateur final et ce qu'il faudrait refaire si le choix s'avère mauvais → renvoyée au délégué, `FORGE_ANSWER: add the decision context (current behaviour, effect of each option for the end user, cost of a wrong choice) and ask again.`, jamais posée.
 - **Questions groupées :** plusieurs `FORGE_QUESTION` en attente → afficher le `content` entier de chacune, dans l'ordre d'arrivée, chaque bloc titré `[<X>]`, puis une seule `AskUserQuestion` qui porte jusqu'à quatre questions, une par branche. Question arrivée pendant qu'une fenêtre est ouverte → attend la suivante. Chaque réponse renvoyée à son seul délégué.
@@ -93,7 +94,7 @@ Boucle de relais de `commands/delegation.md`, avec ces règles en plus :
 
 **Réaction — dans l'ordre :**
 1. Tâche du parent avec des modifications non commitées → la terminer et la commiter d'abord : jamais de fusion par-dessus.
-2. Entrée en tête du LOG de `<X>` : `- [AAAA-MM-JJ HH:MM] Done, merged into <PARENT>`. « Synthèse de mesure — `metrics.json` » de `commands/engrave.md` sous `--root <WORKTREE>`, avec `--parent-log` et `--base <PARENT>`. Puis `git -C <WORKTREE> add -A`, commit (message ≤ 150 caractères, sans mention de Claude).
+2. Entrée LOG de `<X>`, `--root <WORKTREE> --branch <X>` : `Done, merged into <PARENT>`. « Synthèse de mesure — `metrics.json` » de `commands/engrave.md` sous `--root <WORKTREE>`, avec `--parent-log` et `--base <PARENT>`. Puis `git -C <WORKTREE> add -A`, commit (message ≤ 150 caractères, sans mention de Claude).
 3. `<PARENT>` ancêtre de `<X>` → `git merge --ff-only <X>` dans le dépôt principal.
 4. Sinon → `git -C <WORKTREE> merge --no-ff --no-commit <PARENT>`, puis résoudre :
    - conflit d'ajout (deux blocs ajoutés au même endroit : listes, menus, codes d'erreur, enregistrements, exports) → garder les deux côtés ;
@@ -102,7 +103,7 @@ Boucle de relais de `commands/delegation.md`, avec ces règles en plus :
    - conflit logique (même traitement modifié des deux côtés : gestionnaire d'événement, aiguillage d'une commande) → combiner les deux comportements, ordre des effets justifié ; doute → `git -C <WORKTREE> merge --abort`, question à l'utilisateur avec les deux versions ;
    - fichier généré → prendre un côté, le régénérer par la commande du projet ;
    - plus aucun marqueur de conflit (recherche acceptant `\r?\n`), vérification complète verte → commit de fusion `Merge <PARENT> into <X>: <fichiers combinés>`, puis étape 3.
-5. PLAN : tâche `<X>` cochée `[x]`, note d'une ligne — hashes, `estimated ≈ <fichiers> files · <min> min · actual <fichiers> files · <min> min` tiré de `metrics.json`. Vérification impossible dans le worktree → ajoutée à la tâche finale de vérification d'ensemble. LOG parent.
+5. PLAN : tâche `<X>` cochée `[x]`, note d'une ligne — hashes, `estimated ≈ <fichiers> files · <min> min · actual <fichiers> files · <min> min` tiré de `metrics.json` ; `**Actual time:** ≈ <agent_minutes> min` écrit sous son `**Estimated time:**`, `agent_minutes` à `null` → `**Actual time:** —`. Vérification impossible dans le worktree → ajoutée à la tâche finale de vérification d'ensemble. LOG parent.
 6. Compte rendu : tableau des opérations au format du « Gabarit — compte rendu de livraison » de `commands/engrave.md`, conflits résolus, vérification, tâches débloquées.
 7. « Retrait d'un worktree de branche fille ». Réécrire SWARM.
 
@@ -128,16 +129,18 @@ Réécrit par le parent à chaque événement — lancement, question, réponse,
 
 | Branch | State | Worktree | Since | Last event |
 |---|---|---|---|---|
-| <X> | running · T7/19 | ../<dossier-du-dépôt>.worktrees/<X> | AAAA-MM-JJ HH:MM | plan validated (chain) |
-| <Y> | waiting for merge | ../<dossier-du-dépôt>.worktrees/<Y> | AAAA-MM-JJ HH:MM | FORGE_DONE |
+| <X> | running · T7/19 | ../<dossier-du-dépôt>.worktrees/<X> | [now] | plan validated (chain) |
+| <Y> | waiting for merge | ../<dossier-du-dépôt>.worktrees/<Y> | [now] | FORGE_DONE |
 | <Z> | waits for <X> | — | — | — |
 
 ## Choices sent to delegates
-- <X> : [choix] (AAAA-MM-JJ)
+- <X> : [choix] ([date de now])
 
 ## Coordination notes
 - <X> and <Y> change module M: separate files.
 ```
+
+**INVARIANT :** colonne `Since` et date d'un choix → valeur `now` du JSON de `swarm-status.sh`, exécuté dans le tour avant la réécriture de SWARM — jamais une heure écrite par Claude, même principe que « Entrée LOG » de `SKILL.md`. `Since` change quand l'état de la branche change, gardé sinon.
 
 `swarm.md` permet de repartir d'une session neuve quand aucun délégué ne tourne : le skill ne le propose ni ne le déclenche jamais.
 
@@ -150,7 +153,7 @@ Réécrit par le parent à chaque événement — lancement, question, réponse,
 **Réaction — dans l'ordre :**
 1. Pour chaque branche `running` de SWARM : plan écrit ou non, validé ou non, tâches cochées, tête de son LOG (dernière ligne « task <n> started »), `git -C <WORKTREE> status --porcelain`.
 2. Lancer un nouveau délégué par branche, ligne `RESUME:` = « a previous delegated run was stopped; plan <validated with chaining | validated | not written>. Run `git status` first, check every uncommitted or partial file (complete, project checks green), finish or redo it, then continue. » suivie des choix et notes de coordination de SWARM. Nouvelle ligne `delegate` dans TIME_LOG.
-3. LOG parent : `- [AAAA-MM-JJ HH:MM] Delegates relaunched after interruption: <X>, <Y>`.
+3. Entrée LOG parent : `Delegates relaunched after interruption: <X>, <Y>`.
 
 ---
 

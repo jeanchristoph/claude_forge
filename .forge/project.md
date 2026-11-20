@@ -32,11 +32,13 @@ forge/
 │   │       ├── checks.sh             (contrôles de démarrage, lancés détachés par SKILL.md sans attente : ligne input/ de branche dans le .gitignore)
 │   │       ├── engrave.sh            (séquence git de la livraison : preview / run, appelée par p5-resume.md)
 │   │       ├── json.sh               (rendu JSON sans jq, chargé par les scripts du skill)
+│   │       ├── log-entry.sh          (seule écriture d'une entrée LOG : horloge locale, entrée en tête de log.md, fins de ligne gardées ; règle « Entrée LOG » de SKILL.md)
 │   │       ├── status.sh             (état au lancement en JSON, lecture seule, appelé par SKILL.md ; peu de processus, Git Bash les paie cher)
 │   │       ├── swarm-status.sh       (état de l'essaim en JSON : en cours, lançables, en attente, fusion simulée, tâches du parent)
 │   │       ├── time-aggregate.sh     (mesure d'une branche en JSON : journal du hook + git, lu par la synthèse metrics.json)
 │   │       ├── time-calibrate.sh     (ratios du projet et estimation d'un nombre de fichiers, en JSON ; références dans references/estimation.json)
 │   │       ├── time-hook.sh          (hook de mesure déclaré par les installeurs : une ligne par événement dans time-log.jsonl)
+│   │       ├── time-mark.sh          (marques task_start / task_done d'une tâche du plan dans time-log.jsonl, lues par time-aggregate.sh --task)
 │   │       └── update.sh             (mise à jour du skill : check / run en JSON, appelé avec status.sh ; contrôle réseau détaché toutes les 24 heures)
 │   └── forge-clickup/
 │       └── SKILL.md               (guichet ClickUp : ouvre la tâche, crée la branche, passe la main à forge)
@@ -59,11 +61,13 @@ forge/
 │   ├── engrave.test.sh        (tests du script de livraison, dépôts jetables : bash tests/engrave.test.sh)
 │   ├── install.test.sh        (tests des deux installeurs, HOME jetable : bash tests/install.test.sh)
 │   ├── checks.test.sh         (tests des contrôles de démarrage, dépôts jetables : bash tests/checks.test.sh)
+│   ├── log-entry.test.sh      (tests des entrées de LOG, dossiers jetables : bash tests/log-entry.test.sh)
 │   ├── status.test.sh         (tests de l'état au lancement, dépôts jetables : bash tests/status.test.sh)
 │   ├── swarm-status.test.sh   (tests de l'état de l'essaim, dépôts jetables : bash tests/swarm-status.test.sh)
 │   ├── time-aggregate.test.sh (tests de l'agrégation de la mesure, dépôts jetables : bash tests/time-aggregate.test.sh)
 │   ├── time-calibrate.test.sh (tests de la calibration, dossiers jetables : bash tests/time-calibrate.test.sh)
 │   ├── time-hook.test.sh      (tests du hook de mesure, dépôts jetables : bash tests/time-hook.test.sh)
+│   ├── time-mark.test.sh      (tests des marques de tâche, dossiers jetables : bash tests/time-mark.test.sh)
 │   └── update.test.sh         (tests de la mise à jour du skill, dépôts jetables : bash tests/update.test.sh)
 ├── README.md                  (documentation, anglais)
 └── README.fr.md               (même documentation, français)
@@ -100,7 +104,7 @@ Fichiers générés dans **chaque projet cible** par le skill (pas dans ce dép�
 ## Detected conventions
 - Nommage : phases numérotées `pN-<nom>.md`, sections `##`/`###` avec mots-clés stricts (« Condition », « Réaction », « STOP »)
 - Architecture : machine à états explicite (États 0, 1, 2, 4, 5 — l'État 3 a disparu, numéros conservés) — chaque phase se termine par un renvoi à la détection d'état ou un `STOP` ; jamais de saut direct entre phases. Commande rare → fichier de `commands/` chargé à la demande, déclencheur gardé dans `p5-resume.md`
-- Projet lié / mode délégué : un sous-agent étanche exécute le skill dans un autre dépôt forgé — prompt `FORGE_DELEGATED` (ROOT, BRANCH, LANGUAGE), marqueur `## Origin` dans le brief, questions relayées par `FORGE_QUESTION` / `FORGE_ANSWER`, rapport final `FORGE_DONE` ; le parent n'écrit là-bas que brief et log, et livre en `git -C`
+- Projet lié / mode délégué : un sous-agent étanche exécute le skill dans un autre dépôt forgé — prompt `FORGE_DELEGATED` (ROOT, BRANCH, LANGUAGE), marqueur `## Origin` dans le brief, questions relayées par `FORGE_QUESTION` / `FORGE_ANSWER`, rapport final `FORGE_DONE` ; tout délégué (projet lié, même dépôt, essaim) : ligne `TIME_LOG:` (journal de mesure du parent, où le délégué écrit ses marques de tâche), règle unique « Mesure d'un délégué » de `commands/delegation.md` ; le parent n'écrit là-bas que brief et log, et livre en `git -C`
 - Questions à choix : toujours dans la langue de l'utilisateur, libellés anglais du skill = références internes ; validation d'un contenu = `Validate` / `Cancel` + texte libre expliqué, jamais d'option « à retravailler »
 - Gestion d'erreurs : scripts PowerShell en `$ErrorActionPreference = "Stop"` ; hooks silencieux (`exit 0`) si branche/plan absents
 - Idempotence : les installeurs retirent systématiquement les anciennes entrées (règles `permissions.allow`, hooks `PreCompact`) avant d'ajouter les nouvelles — jamais de doublon en settings.json

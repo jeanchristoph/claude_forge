@@ -6,6 +6,7 @@
 #   Tâche-branche : titre « ### Tn — Branch <x> » ; dépendances : ligne « **Depends on:** <x>, T3 » ou « none »,
 #   une dépendance désignant une branche ou un numéro de tâche
 #   N : ligne « **N:** <n> » de swarm.md, 3 à défaut
+#   now : heure locale « AAAA-MM-JJ HH:MM », seule source de la colonne Since et des dates de swarm.md
 # Usage : swarm-status.sh [--root <dir>] [--branch <parent>]
 # Sortie : 0 JSON écrit · 1 usage, sans JSON
 
@@ -208,12 +209,13 @@ classify_tasks() {
 }
 
 render() {
-  local slots=$((SWARM_SIZE - RUNNING_COUNT))
+  local slots=$((SWARM_SIZE - RUNNING_COUNT)) now
   [ "$slots" -lt 0 ] && slots=0
+  printf -v now '%(%Y-%m-%d %H:%M)T' -1
   json_escape "$PARENT"
   printf '{"parent":%s,"n":%s,"slots":%s,"open_branches":%s,' "$REPLY" "$SWARM_SIZE" "$slots" "$OPEN_BRANCH_COUNT"
-  printf '"running":[%s],"launchable":[%s],"waiting":[%s],"ordinary":[%s]}\n' \
-    "$RUNNING_JSON" "$LAUNCHABLE_JSON" "$WAITING_JSON" "$ORDINARY_JSON"
+  printf '"running":[%s],"launchable":[%s],"waiting":[%s],"ordinary":[%s],"now":"%s"}\n' \
+    "$RUNNING_JSON" "$LAUNCHABLE_JSON" "$WAITING_JSON" "$ORDINARY_JSON" "$now"
 }
 
 main() {

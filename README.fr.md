@@ -108,11 +108,13 @@ forge/
 │   │       ├── checks.sh              (contrôles de démarrage, lancés détachés : lignes input/ et time-log.jsonl dans le .gitignore)
 │   │       ├── engrave.sh             (séquence de livraison : preview / run)
 │   │       ├── json.sh                (rendu JSON partagé par les scripts)
+│   │       ├── log-entry.sh           (entrée de LOG : horodatage lu sur l'horloge locale, entrée écrite en tête de log.md)
 │   │       ├── status.sh              (état au lancement : état, avancement, branches à reprendre, en JSON)
 │   │       ├── swarm-status.sh        (état de l'essaim : branches en cours, lançables, en attente, fusion simulée, en JSON)
 │   │       ├── time-aggregate.sh      (mesure d'une branche : minutes d'agent, humaines, de vérification, fichiers et lignes, en JSON)
 │   │       ├── time-calibrate.sh      (ratios du projet tirés des metrics.json, estimation d'un nombre de fichiers, en JSON)
 │   │       ├── time-hook.sh           (hook de mesure : une ligne par événement dans le time-log.jsonl de la branche)
+│   │       ├── time-mark.sh           (marques de tâche : début et coche d'une tâche du plan dans le time-log.jsonl)
 │   │       └── update.sh              (mise à jour du skill : check / run, en JSON)
 │   └── forge-clickup/        → extension : ouverture de tâche ClickUp
 │       └── SKILL.md
@@ -138,11 +140,13 @@ forge/
 │   ├── engrave.test.sh       → bash tests/engrave.test.sh, dépôts jetables uniquement
 │   ├── install.test.sh       → bash tests/install.test.sh, HOME jetable uniquement
 │   ├── checks.test.sh        → bash tests/checks.test.sh, dépôts jetables uniquement
+│   ├── log-entry.test.sh     → bash tests/log-entry.test.sh, dossiers jetables uniquement
 │   ├── status.test.sh        → bash tests/status.test.sh, dépôts jetables uniquement
 │   ├── swarm-status.test.sh  → bash tests/swarm-status.test.sh, dépôts jetables uniquement
 │   ├── time-aggregate.test.sh → bash tests/time-aggregate.test.sh, dépôts jetables uniquement
 │   ├── time-calibrate.test.sh → bash tests/time-calibrate.test.sh, dossiers jetables uniquement
 │   ├── time-hook.test.sh     → bash tests/time-hook.test.sh, dépôts jetables uniquement
+│   ├── time-mark.test.sh     → bash tests/time-mark.test.sh, dossiers jetables uniquement
 │   └── update.test.sh        → bash tests/update.test.sh, dépôts jetables uniquement
 ├── .gitattributes
 └── .gitignore
@@ -321,6 +325,7 @@ Les deux installeurs ajoutent aussi `bash ~/.claude/skills/forge/scripts/time-ho
 - **Mesure :** le hook ajoute une ligne par événement au `.forge/branch/<branche>/time-log.jsonl` de la branche extraite dans le dossier de la session — horodatages, identifiants, durées, jamais un prompt, une commande ni une sortie d'outil. Hors projet forgé, il n'écrit rien. Les événements d'un délégué portent le dossier du parent : le parent associe chaque délégué à sa branche fille.
 - **Synthèse :** à chaque grave et à la clôture, `time-aggregate.sh` totalise le journal et git dans `metrics.json` : minutes d'agent (session principale + délégués), minutes humaines (une absence de plus de 6 h avant un prompt ou une réponse compte zéro), un drapeau `partial` quand le journal manque le début de la branche (hook installé en cours de route : la branche est écartée du calibrage), questions, minutes de vérification, tokens des délégués, fichiers et lignes modifiés.
 - **Estimation :** chaque tâche du plan porte `**Estimated files:**` ; `time-calibrate.sh` convertit le total en minutes d'agent avec une fourchette (`≈ 120 files · ≈ 60 min (45-78)`), à partir des dernières mesures du projet ou de `references/estimation.json` (0,5 min et 5 k tokens par fichier). Marquée *indicative* tant que cinq branches ne sont pas mesurées et que sept sur dix ne tombent pas dans leur fourchette. Les lettres d'effort restent une taille relative, sans durée.
+- **Par tâche :** chaque tâche porte aussi `**Estimated time:**`, figé à l'écriture du plan. `time-mark.sh` marque son démarrage et sa coche dans le journal ; `time-aggregate.sh --task` mesure les minutes d'agent entre les deux marques (attentes de question retirées, même règle d'absence) et la coche écrit `**Actual time:**`, ou `—` sans mesure (pas de journal, hook installé en cours de route, marque manquante). Tout délégué, même dépôt ou projet lié, écrit ses marques dans le journal du parent (ligne `TIME_LOG:` de son prompt), où arrivent déjà ses événements, et rend le réel de chaque tâche dans `FORGE_DONE` ; une tâche parente déléguée à un projet lié reçoit la somme de ses tâches enfant (`time-aggregate.sh --task T1,T2`, `—` dès qu'un enfant n'est pas mesuré) ; une tâche-branche d'essaim reprend `agent_minutes` du `metrics.json` de la branche. Le tableau d'avancement affiche Estimé et Réel côte à côte.
 - **Commandes de vérification :** la ligne `**Check pattern:**` de `project.md` (expression régulière) désigne les commandes Bash comptées comme vérifications.
 
 ---
@@ -341,7 +346,7 @@ Le brief est un document vivant. Les changements de scope passent par la **Déte
 - Règle immuable posée par l'utilisateur
 - Remarque utilisateur précisant durablement le périmètre ou le hors périmètre
 
-**Décision ponctuelle** (choix acté et clos à un instant donné) → écrite silencieusement dans `log.md` (format : `- [AAAA-MM-JJ HH:MM] [1 ligne]`, heure locale) :
+**Décision ponctuelle** (choix acté et clos à un instant donné) → écrite silencieusement dans `log.md` (format : `- [AAAA-MM-JJ HH:MM] [1 ligne]`, écrit par `log-entry.sh` depuis l'horloge locale — le modèle n'écrit jamais une date ni une heure) :
 - Choix d'implémentation mineur acté sans discussion
 - Choix utilisateur quand Claude a proposé plusieurs options (ex : "Option B retenue — raison")
 

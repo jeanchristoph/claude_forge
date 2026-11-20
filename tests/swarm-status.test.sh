@@ -99,6 +99,18 @@ assert_not_contains() {
   case $2 in *"$1"*) printf '    unexpected: %s\n    in:\n%s\n' "$1" "$2"; exit 1 ;; esac
 }
 
+# ── Horloge ───────────────────────────────────────────────────────────────────
+
+test_reports_local_time_now() {
+  local before after output pattern='"now":"([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2})"\}$'
+  before=$(date '+%Y-%m-%d %H:%M')
+  output=$(swarm_status)
+  after=$(date '+%Y-%m-%d %H:%M')
+  [[ $output =~ $pattern ]] || { echo "    now missing: $output"; exit 1; }
+  [ "${BASH_REMATCH[1]}" = "$before" ] || [ "${BASH_REMATCH[1]}" = "$after" ] \
+    || { echo "    clock mismatch: ${BASH_REMATCH[1]} ($before / $after)"; exit 1; }
+}
+
 # ── Sélection ─────────────────────────────────────────────────────────────────
 
 test_launches_branch_whose_dependencies_are_done() {
@@ -225,6 +237,7 @@ run_test() {
 }
 
 echo "swarm-status.sh"
+run_test test_reports_local_time_now "rend l'heure locale dans now"
 run_test test_launches_branch_whose_dependencies_are_done "rend lançable une branche dont les dépendances sont faites"
 run_test test_lists_branch_waiting_for_open_dependency "met en attente une branche dont une dépendance est ouverte"
 run_test test_unblocks_branch_once_dependency_is_done "débloque une branche dès que sa dépendance est cochée"

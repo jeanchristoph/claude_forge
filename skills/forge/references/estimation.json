@@ -8,6 +8,6 @@
   "delegate_tokens": 50000,
   "branch_criteria_required": 4,
   "branch_minutes": 15,
-  "branch_tokens": 150000,
+  "branch_tokens": 300000,
   "branch_layers": 3
 }

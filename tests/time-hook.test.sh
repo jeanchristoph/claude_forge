@@ -132,6 +132,18 @@ test_does_not_mark_other_command_as_check() {
   assert_not_contains '"check"' "$(logged)"
 }
 
+test_marks_check_command_chained_after_cd() {
+  printf '# Project\n**Check pattern:** `bash tests/`\n' > "$WORK/.forge/project.md"
+  run_hook "$(event_json PostToolUse ',"tool_name":"Bash","tool_input":{"command":"cd \"D:/projet\" && bash tests/status.test.sh | tail -1"},"duration_ms":3000')"
+  assert_contains '"check":true' "$(logged)"
+}
+
+test_marks_check_command_run_in_loop() {
+  printf '# Project\n**Check pattern:** `bash tests/`\n' > "$WORK/.forge/project.md"
+  run_hook "$(event_json PostToolUse ',"tool_name":"Bash","tool_input":{"command":"for t in tests/*.test.sh; do bash tests/$t; done"},"duration_ms":3000')"
+  assert_contains '"check":true' "$(logged)"
+}
+
 test_marks_no_check_without_project_pattern() {
   printf '# Project\n' > "$WORK/.forge/project.md"
   run_hook "$(event_json PostToolUse ',"tool_name":"Bash","tool_input":{"command":"bash tests/a.test.sh"},"duration_ms":30')"
@@ -264,6 +276,8 @@ run_test test_logs_delegate_tool_event_in_parent_log "range l'outil d'un délég
 run_test test_logs_question_open_and_close "journalise l'ouverture et la réponse d'une question"
 run_test test_marks_check_command_matching_project_pattern "marque check une commande conforme au motif du projet"
 run_test test_does_not_mark_other_command_as_check "ne marque pas check une autre commande"
+run_test test_marks_check_command_chained_after_cd "marque check une vérification enchaînée après un cd"
+run_test test_marks_check_command_run_in_loop "marque check une vérification lancée dans une boucle"
 run_test test_marks_no_check_without_project_pattern "ne marque rien sans motif de vérification dans project.md"
 run_test test_reads_check_pattern_from_crlf_project "lit le motif d'un project.md en fins de ligne CRLF"
 run_test test_keeps_no_prompt_command_or_response_content "ne garde ni prompt, ni commande, ni réponse d'outil"

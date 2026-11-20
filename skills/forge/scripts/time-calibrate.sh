@@ -18,7 +18,7 @@ readonly RECENT_FOR_RELIABILITY=10
 readonly FILE_ERROR_TOLERANCE=0.2
 readonly RELIABLE_SHARE=0.7
 
-# Une ligne par synthèse : « date agent_minutes actual_files planned_files tokens », null gardé tel quel ;
+# Une ligne par synthèse : « date agent_minutes actual_files planned_files tokens mode », null gardé tel quel ;
 # synthèse « partial » écartée : sa mesure ne couvre pas toute la branche.
 readonly METRICS_PROGRAM='
   function field(name,   pattern) {
@@ -29,7 +29,7 @@ readonly METRICS_PROGRAM='
     return value
   }
   /"partial":true/ { next }
-  { printf "%s %s %s %s %s\n", field("date"), field("agent_minutes"), field("actual_files"), field("planned_files"), field("tokens") }'
+  { printf "%s %s %s %s %s %s\n", field("date"), field("agent_minutes"), field("actual_files"), field("planned_files"), field("tokens"), field("mode") }'
 
 # Calcul sur les synthèses triées de la plus récente à la plus ancienne.
 readonly CALIBRATION_PROGRAM='
@@ -38,7 +38,8 @@ readonly CALIBRATION_PROGRAM='
     return count % 2 ? values[(count + 1) / 2] : (values[count / 2] + values[count / 2 + 1]) / 2
   }
   $2 != "null" && $3 > 0 && minute_count < recent_ratios { minute_ratios[++minute_count] = $2 / $3 }
-  $5 != "null" && $3 > 0 && token_count < recent_ratios { token_ratios[++token_count] = $5 / $3 }
+  # BUSINESS_RULE: tokens des seuls délégués — sur une branche mixte, les fichiers du parent dilueraient le ratio
+  $5 != "null" && $6 == "delegated" && $3 > 0 && token_count < recent_ratios { token_ratios[++token_count] = $5 / $3 }
   $4 != "null" && $4 > 0 && $3 != "null" && error_count < recent_ratios { file_errors[++error_count] = $3 / $4 }
   $2 != "null" && $4 != "null" && $4 > 0 && checked < recent_reliability { checked++; planned[checked] = $4; actual[checked] = $2 }
   $2 != "null" { measured++ }

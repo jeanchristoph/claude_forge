@@ -115,4 +115,4 @@ Fichiers générés dans **chaque projet cible** par le skill (pas dans ce dép�
 ## Tools & access
 - MCPs disponibles : claude-in-chrome, datagrip, phpstorm, webstorm (non utilisés par ce dépôt en l'état)
 - Documentation externe : aucune référence externe identifiée dans le dépôt
-**Check pattern:** `^bash tests/`
+**Check pattern:** `bash tests/`

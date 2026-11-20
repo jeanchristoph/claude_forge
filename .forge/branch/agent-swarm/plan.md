@@ -122,6 +122,28 @@
 **Description:** Demande utilisateur (metrics.json de la branche rempli à la main de null, mode incohérent). Le hook écrit `late_start` en tête d'un journal créé alors que plan.md existe ; l'agrégation rend `partial` (marqueur, ou premier commit de la branche antérieur au premier événement) ; le calibrage écarte les synthèses partielles ; metrics.json réécrit selon la règle.
 [x] Hook, agrégation, calibrage et leurs tests (25 · 36 · 15) ; engrave.md (champ `partial`, mention « partial measure ») ; README EN/FR, CHANGELOG ; metrics.json de la branche réécrit depuis le script.
 
+### T20 — Motif de vérification sans ancrage
+**Effort:** XS
+**Estimated files:** 4
+**Files:** `skills/forge/phases/p0-project.md`, `.forge/project.md`, `tests/time-hook.test.sh`, `CHANGELOG.md`
+**Description:** Demande utilisateur : `check_minutes` à 0 alors que les tests ont tourné. Le motif `^bash tests/` ne reconnaissait pas une commande enchaînée après `cd … &&` ni lancée dans une boucle. Motif reconnu n'importe où dans la commande ; hook inchangé.
+[x] p0-project.md (règle et exemple sans `^`), project.md (`bash tests/`), 2 tests du hook (27 verts), CHANGELOG. Temps de vérification de cette branche non récupérable : le journal ne garde pas les commandes.
+
+### T21 — Ratio de tokens tiré des seules branches déléguées
+**Effort:** XS
+**Estimated files:** 3
+**Files:** `skills/forge/scripts/time-calibrate.sh`, `tests/time-calibrate.test.sh`, `CHANGELOG.md`
+**Description:** Demande utilisateur. `tokens_per_file` divise les tokens des seuls délégués par tous les fichiers de la branche : sur une branche mixte (parent + délégués), les fichiers du parent diluent le ratio, trop bas, et la règle de branche (150 000 tokens) se déclenche trop tard. Le calibrage ne retient pour ce ratio que les synthèses `mode: delegated` ; minutes par fichier et erreur sur les fichiers inchangées. Tests : branche mixte écartée du ratio de tokens, branche déléguée retenue.
+[x] Champ `mode` lu par le calibrage, ratio de tokens limité à `mode: delegated` ; 2 tests (17 verts) ; CHANGELOG.
+
+### T22 — Seuil de branche à 300 000 tokens
+**Effort:** XS
+**Estimated files:** 5
+**Files:** `skills/forge/references/estimation.json`, `tests/time-calibrate.test.sh`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Demande utilisateur : 150 000 tokens trop bas. Fenêtre de contexte d'un million ; délégués réels de la proposition entre 278 k et 632 k par exécution. `branch_tokens` porté à 300 000, à réajuster après quelques branches mesurées (sens exact de `subagent_tokens` non vérifié).
+[x] estimation.json, test du calibrage, README EN/FR, CHANGELOG.
+
+
 ## Risks
 - Hooks de frontmatter qui ne couvriraient pas les sous-agents → T4 bascule sur les installeurs (hook global, actif aussi hors forge : le script sort sans rien écrire hors projet forgé).
 - Commande d'installation par worktree (§8.1) : absente de `project.md` aujourd'hui → T10 la lit dans `## Tools & access`, sinon la demande une fois et la note dans `project.md`.
@@ -153,4 +175,7 @@ None
 | T17 — Hook de mesure asynchrone | S | [x] |
 | T18 — Aucun chemin absolu dans les fichiers écrits | S | [x] |
 | T19 — Mesure partielle écartée du calibrage | S | [x] |
-| **Total** | **9 S · 7 M · 3 L** | |
+| T20 — Motif de vérification sans ancrage | XS | [x] |
+| T21 — Ratio de tokens des seules branches déléguées | XS | [x] |
+| T22 — Seuil de branche à 300 000 tokens | XS | [x] |
+| **Total** | **3 XS · 9 S · 7 M · 3 L** | |

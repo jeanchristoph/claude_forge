@@ -33,7 +33,7 @@ Si le dossier est vide (rien en dehors des éléments ignorés) :
 
 ### Vérifications
 - Scripts de contrôle du projet : `scripts` de `package.json` / `composer.json`, cibles d'un `Makefile`, configuration de tests (`phpunit.xml`, `vitest.config.*`, `pytest.ini`), suites `tests/*`
-- En tirer `**Check pattern:**` : expression régulière étendue qui reconnaît le début de chaque commande de vérification (types, lint, architecture, tests), lue par le hook de mesure pour compter le temps de vérification. Aucune commande trouvée → ligne omise.
+- En tirer `**Check pattern:**` : expression régulière étendue qui reconnaît chaque commande de vérification (types, lint, architecture, tests) n'importe où dans la ligne de commande — jamais ancrée par `^` : une vérification arrive souvent après un `cd … &&` ou dans une boucle —, lue par le hook de mesure pour compter le temps de vérification. Aucune commande trouvée → ligne omise.
 
 ## Format de sortie
 
@@ -67,7 +67,7 @@ Si le dossier est vide (rien en dehors des éléments ignorés) :
 ## Tools & access
 - Available MCPs: ...
 - External documentation: ...
-**Check pattern:** `^(npm run (lint|test|typecheck)|bash tests/)`
+**Check pattern:** `(npm run (lint|test|typecheck)|bash tests/)`
 ```
 
 ⚠️ `**Check pattern:**` : une seule ligne, motif entre accents graves, jamais d'accent grave dans le motif.

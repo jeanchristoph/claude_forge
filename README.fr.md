@@ -490,7 +490,7 @@ plan avec ≥ 2 tâches-branches → « Valider et lancer l'essaim » → N bran
 ```
 
 Quand au moins deux tâches d'un plan méritent leur propre branche — quatre critères sur cinq : nouveau module ou
-API publique, décisions à trancher, livrée et testée seule, ≥ 15 min d'agent, ≥ 3 couches ; ou plus de 150 k
+API publique, décisions à trancher, livrée et testée seule, ≥ 15 min d'agent, ≥ 3 couches ; ou plus de 300 k
 tokens —, le plan devient un **plan de branches** : chacune devient `### Tn — Branch <parente>-<slug>` avec une
 ligne `**Depends on:**`, une tâche socle des points d'extension passe en tête et une vérification d'ensemble en dernier.
 

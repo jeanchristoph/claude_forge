@@ -12,7 +12,7 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ### Added
 
-- Swarm of child branches (`commands/swarm.md`): a plan whose tasks meet the branch rule (four of five criteria, or more than 150k tokens) becomes a plan of branches with `**Depends on:**`; "Validate and launch the swarm" runs up to N = 3 delegated forges in parallel, each in its own worktree with its own dependency install and port; questions relayed with a branch prefix and grouped, one end-of-branch question, merges into the parent branch only (fast-forward or reverse merge), `swarm.md` state file, resume after interruption, parent works on ordinary tasks meanwhile, optional ClickUp sub-tasks.
+- Swarm of child branches (`commands/swarm.md`): a plan whose tasks meet the branch rule (four of five criteria, or more than 300k tokens) becomes a plan of branches with `**Depends on:**`; "Validate and launch the swarm" runs up to N = 3 delegated forges in parallel, each in its own worktree with its own dependency install and port; questions relayed with a branch prefix and grouped, one end-of-branch question, merges into the parent branch only (fast-forward or reverse merge), `swarm.md` state file, resume after interruption, parent works on ordinary tasks meanwhile, optional ClickUp sub-tasks.
 - `scripts/swarm-status.sh`: running, launchable and waiting child branches, simulated merge of the parent, ordinary tasks the parent can take, as JSON.
 - Time measurement hook `scripts/time-hook.sh`, added by both installers to `settings.json` (six events, asynchronous: Claude Code never waits for it; the aggregate sorts the log by time): one line per event in the branch's local `time-log.jsonl`, never any prompt, command or tool output.
 - `scripts/time-aggregate.sh` and `metrics.json`: at each engrave and at closure, the branch measure (agent, human and check minutes, questions, delegates' tokens, files and lines; an absence of more than 6 h counts no human time) is written to `.forge/branch/<BRANCH>/metrics.json`, tracked in git.
@@ -26,6 +26,8 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 - Same-repository branch delegation records the delegate id and its tokens in the parent's `time-log.jsonl`.
 - No absolute path in any file forge writes: the linked brief and log name the parent project by its folder name, the parent plan notes `delegated to <path relative to the root> @ <branch>`, `swarm.md` lists worktrees relative to the root. Older notes with an absolute path are still read.
 - `metrics.json` gains `partial`: true when the time log misses the start of the branch (log created after the plan, or first branch commit older than the first event); `time-calibrate.sh` skips such branches.
+- `time-calibrate.sh` takes tokens per file from fully delegated branches only (`mode: delegated`): on a mixed branch, the parent's files diluted the ratio.
+- `**Check pattern:**` matches a check command anywhere in the command line, never anchored with `^`: checks chained after `cd … &&` or run in a loop are counted.
 
 ## [0.12.6] — 2026-11-17
 

@@ -490,7 +490,7 @@ plan with ≥ 2 branch tasks → "Validate and launch the swarm" → N child bra
 ```
 
 When at least two tasks of a plan deserve their own branch — four of five criteria: new module or public API,
-decisions to settle, delivered and tested on its own, ≥ 15 min of agent time, ≥ 3 layers; or more than 150k
+decisions to settle, delivered and tested on its own, ≥ 15 min of agent time, ≥ 3 layers; or more than 300k
 tokens — the plan becomes a **plan of branches**: each such task is `### Tn — Branch <parent>-<slug>`
 with a `**Depends on:**` line, a shared-extension-points task comes first and an overall check task last.
 

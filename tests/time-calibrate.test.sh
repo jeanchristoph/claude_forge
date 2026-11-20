@@ -61,7 +61,7 @@ test_returns_reference_thresholds_and_fixed_costs() {
   output=$(calibrate)
   assert_contains '"range_low":0.75,"range_high":1.3' "$output"
   assert_contains '"delegate_minutes":8,"merge_minutes":5,"delegate_tokens":50000' "$output"
-  assert_contains '"branch_criteria_required":4,"branch_minutes":15,"branch_tokens":150000,"branch_layers":3}' "$output"
+  assert_contains '"branch_criteria_required":4,"branch_minutes":15,"branch_tokens":300000,"branch_layers":3}' "$output"
 }
 
 test_estimates_files_with_range_and_tokens() {
@@ -104,6 +104,20 @@ test_ignores_partially_measured_branch() {
   output=$(calibrate)
   assert_contains '"minutes_per_file":0.30' "$output"
   assert_contains '"measured_branches":1' "$output"
+}
+
+test_ignores_mixed_branch_for_tokens_per_file() {
+  write_metrics a 2026-11-01 30 30 30 100000
+  sed -i 's/"mode":"delegated"/"mode":"mixed"/' "$WORK/.forge/branch/a/metrics.json"
+  local output
+  output=$(calibrate)
+  assert_contains '"tokens_per_file":5000' "$output"
+  assert_contains '"minutes_per_file":1.00' "$output"
+}
+
+test_takes_tokens_per_file_from_delegated_branch() {
+  write_metrics a 2026-11-01 30 10 10 100000
+  assert_contains '"tokens_per_file":10000' "$(calibrate)"
 }
 
 test_reads_branch_folder_containing_a_slash() {
@@ -188,6 +202,8 @@ run_test test_takes_median_of_measured_branches "prend la médiane des branches 
 run_test test_keeps_only_five_most_recent_branches "ne garde que les cinq branches les plus récentes"
 run_test test_ignores_branch_without_measured_minutes "écarte une branche sans minutes mesurées"
 run_test test_ignores_partially_measured_branch "écarte une branche mesurée en partie"
+run_test test_ignores_mixed_branch_for_tokens_per_file "écarte une branche mixte du ratio de tokens par fichier"
+run_test test_takes_tokens_per_file_from_delegated_branch "tire le ratio de tokens d'une branche entièrement déléguée"
 run_test test_reads_branch_folder_containing_a_slash "lit la synthèse d'une branche contenant un slash"
 run_test test_applies_file_error_beyond_tolerance "applique l'erreur de prévision des fichiers au-delà de 20 %"
 run_test test_ignores_file_error_within_tolerance "n'applique pas l'erreur de prévision sous 20 %"

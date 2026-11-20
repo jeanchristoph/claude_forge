@@ -1,3 +1,7 @@
+- [2026-11-20 11:10] T22 ajoutée et terminée à la demande : seuil de branche porté de 150 000 à 300 000 tokens (fenêtre d'un million).
+- [2026-11-20 10:55] T21 terminée : ratio de tokens par fichier tiré des seules branches `mode: delegated` (17 tests verts).
+- [2026-11-20 10:45] T21 ajoutée au plan à la demande : ratio de tokens par fichier tiré des seules branches entièrement déléguées.
+- [2026-11-20 10:05] T20 ajoutée et terminée à la demande : motif de vérification sans ancrage `^` (p0, project.md) ; check_minutes de cette branche non récupérable.
 - [2026-11-20 09:40] T19 ajoutée et terminée à la demande : mesure partielle repérée (late_start, premier commit), écartée du calibrage ; metrics.json réécrit depuis le script.
 - [2026-11-20 09:00] T16 : seuil d'absence porté à 6 h à la demande.
 - [2026-11-20 08:10] T18 ajoutée et terminée à la demande : plus de chemin absolu écrit par forge (nom du parent, chemins relatifs à ROOT) ; dossier de la délégation client anonymisé en client-api/TASK-1 ; historique git non réécrit.

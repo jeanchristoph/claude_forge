@@ -1,0 +1,18 @@
+- [2026-11-20 08:10] T18 ajoutée et terminée à la demande : plus de chemin absolu écrit par forge (nom du parent, chemins relatifs à ROOT) ; dossier de la délégation client anonymisé en client-api/TASK-1 ; historique git non réécrit.
+- [2026-11-20 07:40] T17 ajoutée et terminée à la demande : hook déclaré `async` par les installeurs ; journal trié par heure à l'agrégation, ce qui corrige aussi un délégué associé à sa branche après son SubagentStart.
+- [2026-11-20 07:15] T16 : seuil d'absence ramené de 3 h à 1 h à la demande.
+- [2026-11-20 07:05] T16 ajoutée et terminée à la demande : une absence de plus de 3 h (avant un prompt ou une réponse) ne compte plus en temps humain ; 29 tests verts.
+- [2026-11-20 06:45] T15 terminée : 208 tests verts (9 suites) ; essaim rejoué en git sur dépôt jetable. Plan terminé.
+- [2026-11-20 06:20] T14 terminée : README.md, README.fr.md, CHANGELOG [Unreleased], project.md (arborescence, `**Check pattern:** ^bash tests/`).
+- [2026-11-20 05:50] T10 à T13 terminées : `commands/swarm.md` (lancement, relais, fin, fusion, retrait, état, reprise, plan mixte, ClickUp), règles `SWARM:` du mode délégué, déclencheurs et étape 8 « Plan de branches » de p5-resume.md, mesure des délégations unitaires dans delegation.md.
+- [2026-11-20 05:10] T9 terminée : plan de branches dans p4-plan.md. Brief des branches filles écrit dans leur worktree au lancement (un brief non commité dans la parente ne les atteindrait pas).
+- [2026-11-20 04:45] T8 terminée : `swarm-status.sh` (14 tests).
+- [2026-11-20 04:15] T7 terminée : estimation en fichiers dans p4-plan (champ par tâche, en-tête `**Estimate:**`, colonne Files) et p5-resume (reste à faire) ; demande utilisateur « estimation du nombre de fichiers à la conception » couverte.
+- [2026-11-20 03:55] T6 terminée : `references/estimation.json`, `time-calibrate.sh --files <n>` (14 tests) ; ratios reportés dans `**Estimation ratios:**` de project.md à chaque synthèse.
+- [2026-11-20 03:30] T5 terminée : synthèse `metrics.json` (engrave.md, closure.md) ; `time-aggregate.sh` additionne les lignes `delegate_usage` (tokens des délégués, écrites par le parent à chaque retour).
+- [2026-11-20 03:05] T4 terminée : hook déclaré par install.sh / install.ps1, règle `time-log.jsonl` dans checks.sh, ligne `**Check pattern:**` et contrôle du hook dans p0-project.md.
+- [2026-11-20 02:30] T2 et T3 terminées : `time-hook.sh` (23 tests) et `time-aggregate.sh` (24 tests). Ligne `**Check pattern:**` de `project.md` à générer par p0 (T4).
+- [2026-11-20 01:50] T1 terminée. Plan modifié (accord) : hook global déclaré par les installeurs, champ `origin` sur `UserPromptSubmit`, correspondance `agent_id` → branche fille écrite par le parent (T2, T3, T4, T10).
+- [2026-11-20 01:40] Contenu généré : `output/20261120-hook-behavior-check.md` (T1 : hooks de frontmatter inopérants pour les délégués et perdus à la reprise ; cwd des délégués = dossier du parent).
+- [2026-11-20 01:05] Plan validé (enchaîner). Mesure : option B — événements bruts dans `time-log.jsonl` local exclu de git ; synthèse unique `metrics.json` versionnée, réécrite à chaque grave et à la clôture (`time-log` réservé au journal brut ; `metrics.json` retenu pour la synthèse, qui porte plus que du temps).
+- [2026-11-20 00:45] Brief validé. Exécution : les 3 développements (hook, estimation, essaim) en tâches sur agent-swarm, dans l'ordre hook → estimation → essaim, sans délégation.

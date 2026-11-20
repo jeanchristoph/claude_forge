@@ -94,6 +94,29 @@ $s.hooks.PreCompact = $s.hooks.PreCompact + [PSCustomObject]@{
     hooks = @([PSCustomObject]@{ type = "command"; command = $cmd; shell = "powershell" })
 }
 
+# Hook de mesure du temps : script bash du skill, lancé par Git Bash comme les autres scripts de forge.
+# Retire toute entrée time-hook existante, puis l'ajoute à chaque événement écouté.
+# Asynchrone : Claude Code ne l'attend pas ; l'heure est prise à son démarrage, l'agrégation trie le journal.
+$timeHook = [PSCustomObject]@{ type = "command"; command = "bash ~/.claude/skills/forge/scripts/time-hook.sh"; shell = "bash"; async = $true }
+$timeEvents = [ordered]@{
+    UserPromptSubmit = $null; Stop = $null; SubagentStart = $null; SubagentStop = $null
+    PreToolUse = "AskUserQuestion"; PostToolUse = "AskUserQuestion|Bash"
+}
+foreach ($timeEvent in $timeEvents.Keys) {
+    if (-not ($s.hooks.PSObject.Properties.Name -contains $timeEvent)) {
+        $s.hooks | Add-Member -NotePropertyName $timeEvent -NotePropertyValue @()
+    }
+    $groups = @($s.hooks.$timeEvent | Where-Object {
+        -not (@($_.hooks) | Where-Object { $_.command -like "*time-hook.sh*" })
+    })
+    $group = if ($timeEvents[$timeEvent]) {
+        [PSCustomObject]@{ matcher = $timeEvents[$timeEvent]; hooks = @($timeHook) }
+    } else {
+        [PSCustomObject]@{ hooks = @($timeHook) }
+    }
+    $s.hooks.$timeEvent = $groups + $group
+}
+
 # Sans BOM : install.sh et les autres lecteurs JSON le refusent.
 [IO.File]::WriteAllText($sp, ($s | ConvertTo-Json -Depth 10), (New-Object Text.UTF8Encoding $false))
 Write-Host "Done."

@@ -4,7 +4,9 @@
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CHECKS_SCRIPT="$REPO_ROOT/skills/forge/scripts/checks.sh"
-RULE="/.forge/branch/*/input/"
+INPUT_RULE="/.forge/branch/*/input/"
+TIME_LOG_RULE="/.forge/branch/**/time-log.jsonl"
+RULES="$INPUT_RULE"$'\n'"$TIME_LOG_RULE"
 PASSED=0
 FAILED=0
 
@@ -43,30 +45,41 @@ assert_equals() {
 
 test_creates_gitignore_with_forge_block() {
   assert_equals '{"gitignore":"updated"}' "$(checks)"
-  assert_equals $'###> claude/forge ###\n'"$RULE"$'\n###< claude/forge ###' "$(gitignore)"
+  assert_equals $'###> claude/forge ###\n'"$RULES"$'\n###< claude/forge ###' "$(gitignore)"
 }
 
 test_inserts_rule_before_end_of_existing_block() {
   printf 'node_modules/\n###> claude/forge ###\n!/.forge/\n###< claude/forge ###\n*.log\n' > "$WORK/.gitignore"
   checks > /dev/null
-  assert_equals $'node_modules/\n###> claude/forge ###\n!/.forge/\n'"$RULE"$'\n###< claude/forge ###\n*.log' "$(gitignore)"
+  assert_equals $'node_modules/\n###> claude/forge ###\n!/.forge/\n'"$RULES"$'\n###< claude/forge ###\n*.log' "$(gitignore)"
 }
 
 test_appends_block_after_content_without_final_newline() {
   printf 'node_modules/' > "$WORK/.gitignore"
   checks > /dev/null
-  assert_equals $'node_modules/\n###> claude/forge ###\n'"$RULE"$'\n###< claude/forge ###' "$(gitignore)"
+  assert_equals $'node_modules/\n###> claude/forge ###\n'"$RULES"$'\n###< claude/forge ###' "$(gitignore)"
 }
 
 test_keeps_crlf_line_endings() {
   printf 'node_modules/\r\n' > "$WORK/.gitignore"
   checks > /dev/null
-  assert_equals $'node_modules/\r\n###> claude/forge ###\r\n'"$RULE"$'\r\n###< claude/forge ###\r\nx' "$(cat "$WORK/.gitignore"; printf x)"
+  assert_equals $'node_modules/\r\n###> claude/forge ###\r\n'"$INPUT_RULE"$'\r\n'"$TIME_LOG_RULE"$'\r\n###< claude/forge ###\r\nx' "$(cat "$WORK/.gitignore"; printf x)"
 }
 
 test_makes_branch_input_ignored_by_git() {
   checks > /dev/null
   git -C "$WORK" check-ignore -q .forge/branch/feature/input/export.csv || { echo "    input/ not ignored"; exit 1; }
+}
+
+test_makes_time_log_ignored_by_git_for_branch_with_slash() {
+  checks > /dev/null
+  git -C "$WORK" check-ignore -q .forge/branch/feature/x/time-log.jsonl || { echo "    time-log.jsonl not ignored"; exit 1; }
+}
+
+test_adds_only_time_log_rule_when_input_rule_exists() {
+  printf '###> claude/forge ###\n%s\n###< claude/forge ###\n' "$INPUT_RULE" > "$WORK/.gitignore"
+  assert_equals '{"gitignore":"updated"}' "$(checks)"
+  assert_equals $'###> claude/forge ###\n'"$RULES"$'\n###< claude/forge ###' "$(gitignore)"
 }
 
 test_changes_nothing_on_second_run() {
@@ -107,7 +120,7 @@ test_detached_launch_returns_at_once_and_writes_later() {
   local waited=0
   ( bash "$CHECKS_SCRIPT" --root "$WORK" </dev/null >/dev/null 2>&1 & )
   while [ ! -s "$WORK/.gitignore" ] && [ "$waited" -lt 50 ]; do sleep 0.1; waited=$((waited + 1)); done
-  assert_equals $'###> claude/forge ###\n'"$RULE"$'\n###< claude/forge ###' "$(gitignore)"
+  assert_equals $'###> claude/forge ###\n'"$RULES"$'\n###< claude/forge ###' "$(gitignore)"
 }
 
 # ── Arguments ─────────────────────────────────────────────────────────────────
@@ -134,6 +147,8 @@ run_test test_inserts_rule_before_end_of_existing_block "insère la règle avant
 run_test test_appends_block_after_content_without_final_newline "ajoute le bloc après un contenu sans saut de ligne final"
 run_test test_keeps_crlf_line_endings "garde les fins de ligne CRLF"
 run_test test_makes_branch_input_ignored_by_git "rend le dossier input/ de la branche ignoré par git"
+run_test test_makes_time_log_ignored_by_git_for_branch_with_slash "rend le journal du hook ignoré par git, branche à slash comprise"
+run_test test_adds_only_time_log_rule_when_input_rule_exists "n'ajoute que la règle du journal quand celle d'input/ existe"
 run_test test_changes_nothing_on_second_run "ne change rien au second passage"
 run_test test_skips_on_master "n'écrit rien sur master"
 run_test test_skips_on_main "n'écrit rien sur main"

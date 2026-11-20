@@ -16,7 +16,8 @@
    Mode délégué `SCOPE: linked` (BRIEF contient `## Origin`) → aucune question : terminer par `FORGE_DONE` (section « Mode délégué » de `SKILL.md`). STOP.
    Mode délégué `SCOPE: branch` → la même question en `FORGE_QUESTION`, `options: none`, `content: none`.
 
-8. **Au moins une tâche ouverte** → poser le choix du mode d'exécution avec `AskUserQuestion` — jamais une question en texte libre.
+8. **Plan de branches** (au moins une tâche `### Tn — Branch <x>` ouverte) → aucune question `Mode` : exécuter `bash <SKILL_DIR>/scripts/swarm-status.sh --root <ROOT> --branch <BRANCH>`, afficher l'essaim — en cours (avec `done/total`), lançables, en attente (dépendance nommée), tâches du parent —, puis appliquer « Relance de l'essaim » ou « Reprise de l'essaim » (`commands/swarm.md`). STOP — ne pas continuer vers l'étape 9.
+9. **Au moins une tâche ouverte** → poser le choix du mode d'exécution avec `AskUserQuestion` — jamais une question en texte libre.
    - Plan validé dans ce tour par `Validate and chain` (étape 7 de `p4-plan.md`) → aucune question : enchaîner toutes les tâches ouvertes dans l'ordre, sans arrêt ni feu vert entre elles. Mode délégué compris.
    - Une seule tâche ouverte → `header` : `Task`, options `Start T<n>` / `Cancel`, le titre de la tâche nommé dans la question. `Cancel` → STOP. Mode délégué `SCOPE: linked` → puce dédiée ci-dessous.
    - Plusieurs tâches ouvertes → `header` : `Mode` · deux options, dans cet ordre :
@@ -32,11 +33,13 @@
 
 ## Format du tableau d'avancement
 
-| Tâche | Effort | Statut |
-|---|---|---|
-| T1 — ... | S | [x] |
-| T2 — ... | M | [ ] |
-| T3 — ... | L | [!] blocked — brief reason |
+| Tâche | Effort | Fichiers | Statut |
+|---|---|---|---|
+| T1 — ... | S | 3 | [x] |
+| T2 — ... | M | 8 | [ ] |
+| T3 — ... | L | 15 | [!] blocked — brief reason |
+
+Sous le tableau, une ligne de reste à faire quand au moins une tâche ouverte porte `**Estimated files:**` : `bash <SKILL_DIR>/scripts/time-calibrate.sh --root <ROOT> --files <somme des tâches ouvertes>`, puis `Remaining ≈ <files> files · ≈ <minutes> min (<low>-<high>)`, suivi de ` · indicative` quand `indicative` est vrai. Plan sans ce champ → colonne et ligne omises.
 
 ---
 
@@ -169,7 +172,7 @@ Mode délégué → aucune proposition : `AskUserQuestion` est inaccessible et a
 
 Une demande complémentaire est toujours une tâche du plan — jamais de choix « au plan / hors plan ».
 
-1. **Formuler** la tâche telle qu'elle entre au plan — titre, effort, fichiers, description — précédée de :
+1. **Formuler** la tâche telle qu'elle entre au plan — titre, effort, fichiers estimés, fichiers, description — précédée de :
    > "This request isn't in the current plan."
    Si la demande change durablement le périmètre → ajouter à la même présentation l'entrée proposée pour `## Scope & rules` du brief.
 
@@ -188,7 +191,7 @@ Gabarit figé du champ `question` de l'étape 2 — crochets à remplir, rien d'
 ```
 header:   Plan
 question: T[n] — [Titre]
-          Effort : [S|M|L|XL]
+          Effort : [S|M|L|XL] · [n] fichiers estimés
           Description :
           - [idée 1]
           - [idée 2]
@@ -218,6 +221,18 @@ option 2: [Annuler] — [Rien n'entre au plan.]
 ## Commandes — chargées à la demande
 
 Lire et exécuter intégralement le fichier de la première commande dont le déclencheur s'applique. Déclencheur absent → aucune lecture.
+
+### Essaim → `commands/swarm.md`, section du même nom que le déclencheur
+
+**Déclencheur :**
+- demande de lancer, relancer ou reprendre des branches filles du plan (« lance l'essaim », « lance les branches », « relance T3 ») → « Délégation — essaim de branches filles » ;
+- `FORGE_QUESTION` ou `FORGE_DONE` d'un délégué lancé par l'essaim → « Boucle de relais de l'essaim » ;
+- SWARM porte des branches `running` sans délégué actif dans la session → « Reprise de l'essaim » ;
+- « Relance de l'essaim » ci-dessous.
+
+### Relance de l'essaim → `commands/swarm.md`, « Délégation — essaim de branches filles »
+
+**Déclencheur :** une tâche-branche vient d'être cochée par « Fusion d'une branche fille », ou moins de N délégués sont en cours alors que `swarm-status.sh` rend des branches lançables. Aucune lançable → aucune question.
 
 ### Délégation — projet lié → `commands/delegation.md`, section du même nom
 

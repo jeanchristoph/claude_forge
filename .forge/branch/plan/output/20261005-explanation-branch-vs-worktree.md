@@ -48,11 +48,11 @@ premier. C'est précisément ce qui protège votre travail.
 
 | Dossier                                       | Qui travaille | Branche        |
 |-----------------------------------------------|---------------|----------------|
-| `D:/www/topdon_api`                           | vous          | `dev`          |
-| `D:/www/topdon_api.worktrees/forge/CU-123`    | l'agent       | `forge/CU-123` |
+| `~/projects/my-api`                           | vous          | `dev`          |
+| `~/projects/my-api.worktrees/forge/CU-123`    | l'agent       | `forge/CU-123` |
 
 Vous continuez sur `dev` sans être dérangé ; l'agent travaille en parallèle dans son propre
-dossier. Le nom du dossier n'a **aucun effet** pour git : `topdon_api.worktrees` est un simple
+dossier. Le nom du dossier n'a **aucun effet** pour git : `my-api.worktrees` est un simple
 choix de rangement. Les `/` du nom de branche (`forge/CU-123`) deviennent naturellement des
 sous-dossiers.
 

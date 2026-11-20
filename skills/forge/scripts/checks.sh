@@ -1,7 +1,8 @@
 #!/bin/bash
 # Contrôles de démarrage du skill, lancés détachés par la « Détection d'état » de SKILL.md, sans attente du résultat.
-#   gitignore → ajoute /.forge/branch/*/input/ au .gitignore du projet quand git ne l'ignore pas encore :
-#               ligne insérée dans le bloc claude/forge, ou bloc ajouté en fin de fichier (créé s'il est absent)
+#   gitignore → ajoute au .gitignore du projet chaque règle forge que git n'applique pas encore —
+#               /.forge/branch/*/input/ (fichiers apportés) et /.forge/branch/**/time-log.jsonl (journal du hook de mesure) :
+#               lignes insérées dans le bloc claude/forge, ou bloc ajouté en fin de fichier (créé s'il est absent)
 #   Rien hors dépôt git, sans dossier .forge/, sur main / master ou HEAD détaché
 #   Rend compte en JSON sur une ligne — lu par les tests, ignoré au démarrage
 # Usage : checks.sh [--root <dir>]
@@ -10,8 +11,9 @@
 set -u
 
 readonly EXIT_USAGE=1
-readonly BRANCH_INPUT_RULE="/.forge/branch/*/input/"
-readonly BRANCH_INPUT_PROBE=".forge/branch/probe/input/probe"
+# Règle et chemin témoin de même rang : le témoin ignoré par git, la règle n'est pas réécrite.
+readonly IGNORE_RULES=("/.forge/branch/*/input/" "/.forge/branch/**/time-log.jsonl")
+readonly IGNORE_PROBES=(".forge/branch/probe/input/probe" ".forge/branch/probe/time-log.jsonl")
 readonly BLOCK_START="###> claude/forge ###"
 readonly BLOCK_END="###< claude/forge ###"
 readonly RESULT_UPDATED="updated"
@@ -21,6 +23,7 @@ readonly CARRIAGE_RETURN=$'\r'
 
 ROOT="."
 GITIGNORE_RESULT=""
+MISSING_RULES=()
 
 # ── Arguments et gardes ───────────────────────────────────────────────────────
 
@@ -50,8 +53,20 @@ is_forge_working_branch() {
   esac
 }
 
-is_branch_input_ignored() {
-  git -C "$ROOT" check-ignore -q -- "$BRANCH_INPUT_PROBE" 2>/dev/null
+# Règles dont le chemin témoin n'est pas encore ignoré par git, dans MISSING_RULES.
+collect_missing_rules() {
+  local index
+  MISSING_RULES=()
+  for index in "${!IGNORE_RULES[@]}"; do
+    git -C "$ROOT" check-ignore -q -- "${IGNORE_PROBES[$index]}" 2>/dev/null || MISSING_RULES+=("${IGNORE_RULES[$index]}")
+  done
+}
+
+# Règles manquantes, une par ligne, dans REPLY.
+missing_rule_lines() {
+  local eol=$1 rule
+  REPLY=""
+  for rule in "${MISSING_RULES[@]}"; do REPLY+="$rule$eol"; done
 }
 
 # ── .gitignore ────────────────────────────────────────────────────────────────
@@ -71,9 +86,11 @@ has_block_end() {
 }
 
 insert_rule_in_block() {
-  local file=$1 eol=$2 line content=""
+  local file=$1 eol=$2 line content="" rules
+  missing_rule_lines "$eol"
+  rules=$REPLY
   while IFS= read -r line || [ -n "$line" ]; do
-    [ "${line%"$CARRIAGE_RETURN"}" = "$BLOCK_END" ] && content+="$BRANCH_INPUT_RULE$eol"
+    [ "${line%"$CARRIAGE_RETURN"}" = "$BLOCK_END" ] && content+="$rules"
     content+="${line%"$CARRIAGE_RETURN"}$eol"
   done < "$file"
   printf '%s' "$content" > "$file"
@@ -81,14 +98,16 @@ insert_rule_in_block() {
 
 append_block() {
   local file=$1 eol=$2
+  missing_rule_lines "$eol"
   [ -s "$file" ] && [ -n "$(tail -c 1 "$file")" ] && printf '%s' "$eol" >> "$file"
-  printf '%s%s%s%s%s%s' "$BLOCK_START" "$eol" "$BRANCH_INPUT_RULE" "$eol" "$BLOCK_END" "$eol" >> "$file"
+  printf '%s%s%s%s%s' "$BLOCK_START" "$eol" "$REPLY" "$BLOCK_END" "$eol" >> "$file"
 }
 
 check_gitignore() {
   local file="$ROOT/.gitignore" eol
   if ! is_forge_working_branch; then GITIGNORE_RESULT=$RESULT_SKIPPED; return; fi
-  if is_branch_input_ignored; then GITIGNORE_RESULT=$RESULT_UNCHANGED; return; fi
+  collect_missing_rules
+  if [ ${#MISSING_RULES[@]} -eq 0 ]; then GITIGNORE_RESULT=$RESULT_UNCHANGED; return; fi
   line_ending_of "$file"
   eol=$REPLY
   if has_block_end "$file"; then insert_rule_in_block "$file" "$eol"; else append_block "$file" "$eol"; fi

@@ -13,6 +13,7 @@
 Mode délégué `SCOPE: branch` → `--root` vaut ROOT (le worktree) ; compte rendu de livraison recopié entier dans le `content` du bloc qui termine le tour. `SCOPE: linked` → Livraison non applicable (section « Mode délégué » de `SKILL.md`).
 
 **Réaction — dans l'ordre :**
+0. Écrire la « Synthèse de mesure — `metrics.json` » ci-dessous : elle part avec le commit.
 1. Générer automatiquement le message de commit (règles COMMITS GIT : max 150 car., pas de mention Claude) — pas de confirmation sur le message lui-même.
 2. Livraison relayée — pour chaque projet lié (ci-dessous) : poser les deux questions, retenir la séquence du lié.
 3. Exécuter aussitôt le script en `run` pour le parent (« Script de livraison » ci-dessous), sans question ni affichage préalable.
@@ -24,11 +25,26 @@ Mode délégué `SCOPE: branch` → `--root` vaut ROOT (le worktree) ; compte re
 
 ⚠️ Aucune écriture dans LOG ni PLAN après la séquence — le compte rendu est du texte seul, le working tree reste tel que la livraison l'a laissé. Ce qui doit être journalisé l'est avant le `git add`.
 
+### Synthèse de mesure — `metrics.json`
+
+**Déclencheur :** étape 0 de la Livraison, étape 1 de la Clôture sur `Solved` (`commands/closure.md`), fusion d'une branche fille d'essaim (`commands/swarm.md`).
+
+**Réaction — dans l'ordre :**
+1. Exécuter `bash <SKILL_DIR>/scripts/time-aggregate.sh --root <ROOT> --branch <BRANCH>`. Branche fille d'un essaim → ajouter `--parent-log <dépôt principal>/.forge/branch/<PARENT>/time-log.jsonl --base <PARENT>`.
+2. `planned_files` = somme des `**Estimated files:**` des tâches de PLAN ; aucun champ → `null`.
+3. Écrire `.forge/branch/<BRANCH>/metrics.json` — un seul objet JSON sur une ligne, fichier réécrit à chaque passage, valeurs cumulées depuis le début de la branche, l'historique restant dans git. Champs dans cet ordre, libellés figés :
+   `event` (`engrave` / `closure`), `date` (`AAAA-MM-JJ`), `branch`, `mode`, `model` (identifiant du modèle de la session), `planned_files`, `actual_files` (`files`), `lines_added`, `lines_deleted`, `agent_minutes` (`parent_minutes` + `delegated_minutes`, `null` si les deux le sont), `human_minutes`, `questions`, `check_minutes`, `tokens`.
+4. Exécuter `bash <SKILL_DIR>/scripts/time-calibrate.sh --root <ROOT>`. `source` à `project` et ratios différents de la ligne `**Estimation ratios:**` de `.forge/project.md` → réécrire cette ligne, sous `## Tools & access` : `**Estimation ratios:** <minutes_per_file> min/file · <tokens_per_file> tokens/file · <measured_branches> measured branches`, puis une entrée LOG avec l'ancienne valeur.
+5. Compte rendu de la Livraison : une ligne sous le tableau, estimé et réel côte à côte — `Estimated ≈ <planned_files> files · ≈ <min> min (<bas>-<haut>) · actual <actual_files> files · <agent_minutes> min` ; estimé tiré de l'en-tête `**Estimate:**` de PLAN (étape 6 de `phases/p4-plan.md`), valeur absente → `—`.
+
+⚠️ `time-log.jsonl` (événements bruts) reste local, ignoré par git ; seul `metrics.json` est versionné.
+⚠️ Aucune heure, aucune durée estimée à la main : sans journal, les durées restent `null`.
+
 ### Livraison relayée — projets liés
 
-**Déclencheur :** PLAN parent porte au moins une note `delegated to <LINKED> @ <LINKED_BRANCH>` (« Délégation — projet lié » de `commands/delegation.md`). Aucune → étape 2 silencieuse, jamais mentionnée.
+**Déclencheur :** PLAN parent porte au moins une note `delegated to <LINKED_REL> @ <LINKED_BRANCH>` (« Délégation — projet lié » de `commands/delegation.md`). Aucune → étape 2 silencieuse, jamais mentionnée.
 
-**Vocabulaire :** `<LINKED_GIT>` = dossier où la branche liée est extraite — le worktree qui porte `branch refs/heads/<LINKED_BRANCH>` dans `git -C <LINKED> worktree list --porcelain` ; aucun → `<LINKED>` lui-même (délégation ouverte avant les worktrees).
+**Vocabulaire :** `<LINKED>` = `<LINKED_REL>` de la note, résolu depuis ROOT ; une ancienne note à chemin absolu reste lue telle quelle · `<LINKED_GIT>` = dossier où la branche liée est extraite — le worktree qui porte `branch refs/heads/<LINKED_BRANCH>` dans `git -C <LINKED> worktree list --porcelain` ; aucun → `<LINKED>` lui-même (délégation ouverte avant les worktrees).
 
 **Pour chaque `<LINKED>` distinct, dans l'ordre du plan :**
 - `git -C <LINKED_GIT> status --porcelain` vide → ignorer sans question. Une ligne au rendu final : "`<LINKED>`: nothing to engrave."
@@ -38,7 +54,7 @@ Mode délégué `SCOPE: branch` → `--root` vaut ROOT (le worktree) ; compte re
   - `Same branches as the parent` → "[branches citées du parent, dans l'ordre]" — omise si le parent n'en cite aucune.
   - `<LINKED_BRANCH> only` → "Commit and push `<LINKED_BRANCH>`, no merge."
   - `Other branches` → "I'll ask you which ones." — puis demander en texte libre, dans l'ordre voulu.
-- Message de commit du lié : généré depuis les tâches du mandat cochées `[x]` avec sa note `delegated to <LINKED>` — jamais depuis le code de `<LINKED>`, que le parent ne lit pas. Langue : celle des commits de `<LINKED>` (`git -C <LINKED> log -5 --format=%s`).
+- Message de commit du lié : généré depuis les tâches du mandat cochées `[x]` avec sa note `delegated to <LINKED_REL>` — jamais depuis le code de `<LINKED>`, que le parent ne lit pas. Langue : celle des commits de `<LINKED>` (`git -C <LINKED> log -5 --format=%s`).
 - Script du lié : `--root <LINKED_GIT>`, `--branch <LINKED_BRANCH>`, son message, ses branches retenues.
 
 ⚠️ Le sous-agent délégué n'est jamais sollicité pour livrer : la livraison relayée est du git pur, exécuté par le parent.
@@ -77,7 +93,7 @@ Gabarit figé de l'étape 5, rempli depuis le JSON de `run` — crochets à remp
 
 [erreur git telle quelle]
 
-`D:/www/topdon_api`
+`../my-api`
 
 | # | [Branche] | [Opération] | [Résultat] | [Détail] |
 |---|---|---|---|---|

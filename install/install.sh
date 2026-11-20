@@ -79,6 +79,20 @@ s.hooks.PreCompact = s.hooks.PreCompact.filter(g =>
 const cmd = 'bash ~/.claude/hooks/forge/forge-precompact.sh';
 s.hooks.PreCompact.push({ hooks: [{ type: 'command', command: cmd, shell: 'bash' }] });
 
+// Hook de mesure du temps : retire toute entrée time-hook existante, puis l'ajoute à chaque événement écouté.
+// Asynchrone : Claude Code ne l'attend pas ; l'heure est prise à son démarrage, l'agrégation trie le journal.
+const timeHook = { type: 'command', command: 'bash ~/.claude/skills/forge/scripts/time-hook.sh', shell: 'bash', async: true };
+const timeEvents = {
+  UserPromptSubmit: null, Stop: null, SubagentStart: null, SubagentStop: null,
+  PreToolUse: 'AskUserQuestion', PostToolUse: 'AskUserQuestion|Bash'
+};
+for (const [event, matcher] of Object.entries(timeEvents)) {
+  s.hooks[event] = (s.hooks[event] || []).filter(g =>
+    !g.hooks || !g.hooks.some(h => h.command && h.command.includes('time-hook.sh'))
+  );
+  s.hooks[event].push(matcher ? { matcher, hooks: [timeHook] } : { hooks: [timeHook] });
+}
+
 fs.writeFileSync(sp, JSON.stringify(s, null, 2));
 console.log('Settings OK.');
 " "${SKILL_NAMES[@]}"

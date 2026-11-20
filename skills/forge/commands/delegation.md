@@ -2,7 +2,9 @@
 
 ## Délégation — projet lié
 
-**Vocabulaire :** projet *parent* = ROOT de la session · projet *lié* = `<LINKED>`, chemin absolu du dossier visé · *mandat* = les tâches parentes déléguées · *branche liée* = `<LINKED_BRANCH>` = `<PARENT>/<BRANCH>`, `<PARENT>` étant le nom du dossier ROOT (`forge/linked-project`, `forge/CU-123`) — jamais le nom nu de `<BRANCH>` : le préfixe dit d'où vient la délégation, la partie droite reste identique pour la correspondance. · `<LINKED_WORKTREE>` = chemin absolu du worktree de `<LINKED_BRANCH>`, rangé à côté de `<LINKED>` : `<LINKED>.worktrees/<LINKED_BRANCH>`, chaque `/` de la branche gardé comme sous-dossier (`D:/www/topdon_api.worktrees/forge/CU-123`).
+**Vocabulaire :** projet *parent* = ROOT de la session · projet *lié* = `<LINKED>`, chemin absolu du dossier visé · *mandat* = les tâches parentes déléguées · *branche liée* = `<LINKED_BRANCH>` = `<PARENT>/<BRANCH>`, `<PARENT>` étant le nom du dossier ROOT (`forge/linked-project`, `forge/CU-123`) — jamais le nom nu de `<BRANCH>` : le préfixe dit d'où vient la délégation, la partie droite reste identique pour la correspondance. · `<LINKED_WORKTREE>` = chemin absolu du worktree de `<LINKED_BRANCH>`, rangé à côté de `<LINKED>` : `<LINKED>.worktrees/<LINKED_BRANCH>`, chaque `/` de la branche gardé comme sous-dossier (`../my-api.worktrees/forge/CU-123` depuis ROOT). · `<LINKED_REL>` = chemin de `<LINKED>` relatif à ROOT (`../my-api`).
+
+**INVARIANT :** jamais de chemin absolu dans un fichier écrit — brief, log, plan : le parent s'y nomme `<PARENT>`, le projet lié `<LINKED_REL>`. Un chemin absolu ne vit que dans les commandes et le prompt du sous-agent.
 
 **INVARIANT :** le working tree de `<LINKED>` n'est jamais touché — ni checkout, ni écriture : le projet lié se travaille dans `<LINKED_WORKTREE>`, l'utilisateur garde `<LINKED>` pour lui. Le parent n'écrit dans `<LINKED_WORKTREE>` que `.forge/branch/<LINKED_BRANCH>/brief.md` et `.forge/branch/<LINKED_BRANCH>/log.md` — jamais de code, jamais de plan. Le parent ne lit jamais le code du projet lié.
 
@@ -23,8 +25,8 @@
 8. **Sur `Open the linked project`** → dans l'ordre :
    - Exécuter l'action de worktree retenue à l'étape 4 (`reuse` → rien). Échec → afficher l'erreur telle quelle, STOP.
    - Écrire `<LINKED_WORKTREE>/.forge/branch/<LINKED_BRANCH>/brief.md` — format du mandat ci-dessous. Fichier déjà présent → le remplacer : le mandat parent fait foi.
-   - Écrire `<LINKED_WORKTREE>/.forge/branch/<LINKED_BRANCH>/log.md` s'il est absent, puis insérer en tête : `- [AAAA-MM-JJ HH:MM] Opened from <ROOT> · T3, T5`.
-   - PLAN parent : sous chaque tâche du mandat, note `delegated to <LINKED> @ <LINKED_BRANCH>` — statut inchangé. LOG parent : `- [AAAA-MM-JJ HH:MM] Delegated T3, T5 to <LINKED> @ <LINKED_BRANCH>`.
+   - Écrire `<LINKED_WORKTREE>/.forge/branch/<LINKED_BRANCH>/log.md` s'il est absent, puis insérer en tête : `- [AAAA-MM-JJ HH:MM] Opened from <PARENT> · T3, T5`.
+   - PLAN parent : sous chaque tâche du mandat, note `delegated to <LINKED_REL> @ <LINKED_BRANCH>` — statut inchangé. LOG parent : `- [AAAA-MM-JJ HH:MM] Delegated T3, T5 to <LINKED_REL> @ <LINKED_BRANCH>`.
    - Lancer le sous-agent (prompt ci-dessous), puis entrer dans la boucle de relais.
 
 ### Boucle de relais
@@ -39,12 +41,12 @@
 ### Retour — application de `FORGE_DONE`
 
 Pour chaque tâche parente du mandat, dans l'ordre du plan :
-- Toutes ses tâches enfant dans `done` → cocher `[x]`, note `delegated to <LINKED> @ <LINKED_BRANCH> · done`.
-- Au moins une dans `blocked` → marquer `[!] blocked — <raison de la première> · delegated to <LINKED> @ <LINKED_BRANCH>`.
-- Absente de `done` et de `blocked` → marquer `[!] blocked — not addressed by the delegated run · delegated to <LINKED> @ <LINKED_BRANCH>`.
+- Toutes ses tâches enfant dans `done` → cocher `[x]`, note `delegated to <LINKED_REL> @ <LINKED_BRANCH> · done`.
+- Au moins une dans `blocked` → marquer `[!] blocked — <raison de la première> · delegated to <LINKED_REL> @ <LINKED_BRANCH>`.
+- Absente de `done` et de `blocked` → marquer `[!] blocked — not addressed by the delegated run · delegated to <LINKED_REL> @ <LINKED_BRANCH>`.
 
-⚠️ La note conserve toujours `delegated to <LINKED> @ <LINKED_BRANCH>` : la livraison relayée s'appuie dessus pour retrouver le projet lié et sa branche.
-- Une entrée LOG parent par tâche : `- [AAAA-MM-JJ HH:MM] T3 delegated to <LINKED> — done` / `— blocked: <raison>`.
+⚠️ La note conserve toujours `delegated to <LINKED_REL> @ <LINKED_BRANCH>` : la livraison relayée s'appuie dessus pour retrouver le projet lié et sa branche.
+- Une entrée LOG parent par tâche : `- [AAAA-MM-JJ HH:MM] T3 delegated to <LINKED_REL> — done` / `— blocked: <raison>`.
 
 `out_of_mandate` non vide → présenter chaque besoin à l'utilisateur, puis appliquer la « Surveillance des demandes complémentaires » de `phases/p5-resume.md` à chacun. Rendre compte : tâches vertes, tâches bloquées avec leur raison, fichiers touchés dans `<LINKED_WORKTREE>`, puis rappeler : "`git -C <LINKED> worktree remove <LINKED_WORKTREE>` once the linked branch is engraved." Le worktree reste en place.
 
@@ -58,7 +60,7 @@ Brief parent recopié à l'identique, précédé de `## Origin`. Libellés en an
 
 ```markdown
 ## Origin
-**Parent:** <ROOT>
+**Parent:** <PARENT>
 **Branch:** <BRANCH>
 **Tasks:** T3, T5
 
@@ -109,7 +111,7 @@ Actions et détail associé — aucune autre :
 
 ## Délégation — branche du même dépôt
 
-**Vocabulaire :** `<X>` = branche visée · `<WORKTREE>` = chemin absolu du worktree de `<X>`, rangé à côté du dépôt : `<dossier-du-dépôt>.worktrees/<X>`, chaque `/` de la branche gardé comme sous-dossier (`D:/www/forge.worktrees/feature/x`).
+**Vocabulaire :** `<X>` = branche visée · `<WORKTREE>` = chemin absolu du worktree de `<X>`, rangé à côté du dépôt : `<dossier-du-dépôt>.worktrees/<X>`, chaque `/` de la branche gardé comme sous-dossier (`../forge.worktrees/feature/x` depuis ROOT).
 
 **INVARIANT :** aucun mandat — le parent n'écrit rien dans `<WORKTREE>`, ni brief, ni log, ni plan ; il ne lit jamais son code. Le sous-agent y exécute le skill comme sur toute branche.
 
@@ -125,6 +127,7 @@ Actions et détail associé — aucune autre :
 7. **Sur `Open the branch`** → dans l'ordre :
    - Action `create` → exécuter `git worktree add`. Échec → afficher l'erreur telle quelle, STOP.
    - Lancer le sous-agent (prompt ci-dessous), puis entrer dans la « Boucle de relais » de la délégation vers un projet lié — identique.
+   - Mesure : au lancement, ajouter à `.forge/branch/<BRANCH>/time-log.jsonl` `{"event":"delegate","agent_id":"<identifiant>","branch":"<X>"}` (identifiant tiré du retour de l'outil `Agent`) ; à chaque retour, `{"event":"delegate_usage","agent_id":"<identifiant>","tokens":<subagent_tokens>}`. La synthèse de `<X>` les lit par `--parent-log`.
 
 ### Retour — `FORGE_DONE` en `SCOPE: branch`
 

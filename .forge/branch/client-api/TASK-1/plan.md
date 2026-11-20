@@ -1,7 +1,7 @@
-# Plan — topdon_api/PRJ-1432
+# Plan — client-api/TASK-1
 **Objective:** Faire générer et tenir à jour par le skill forge, sans question, un script SQL de déploiement unique par branche (`output/AAAAMMJJ-deployment-script.sql`), construit à partir des étapes SQL de la section `## Deployment` du plan.
 **Date:** 2026-09-24
-**Origin:** D:\www\topdon\topdon_api · topdon_api/PRJ-1432 · T13
+**Origin:** client-api · client-api/TASK-1 · T13
 
 ## Tasks
 

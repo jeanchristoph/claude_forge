@@ -95,7 +95,8 @@ forge/
 │   │   │   ├── closure.md             (task closure)
 │   │   │   ├── delegated-mode.md      (delegated mode rules)
 │   │   │   ├── delegation.md          (linked project, same-repo branch)
-│   │   │   ├── engrave.md             (shipping)
+│   │   │   ├── engrave.md             (shipping, metrics.json summary)
+│   │   │   ├── swarm.md               (swarm of child branches: launch, relay, merge, resume)
 │   │   │   └── update.md              (skill update: proposal, manual check)
 │   │   ├── phases/
 │   │   │   ├── p0-project.md          (State 0 — Project Init)
@@ -103,11 +104,17 @@ forge/
 │   │   │   ├── p2-brief.md            (State 2 — Brief)
 │   │   │   ├── p4-plan.md             (State 4 — Plan)
 │   │   │   └── p5-resume.md           (State 5 — Active)
+│   │   ├── references/
+│   │   │   └── estimation.json        (reference ratios and branch-rule thresholds, used until a project has its own measures)
 │   │   └── scripts/
-│   │       ├── checks.sh              (startup checks, run detached: branch input/ line in .gitignore)
+│   │       ├── checks.sh              (startup checks, run detached: input/ and time-log.jsonl lines in .gitignore)
 │   │       ├── engrave.sh             (shipping sequence: preview / run)
 │   │       ├── json.sh                (JSON rendering shared by the scripts)
 │   │       ├── status.sh              (startup status: state, progress, resumable branches, as JSON)
+│   │       ├── swarm-status.sh        (swarm status: running, launchable, waiting branches, simulated merge, as JSON)
+│   │       ├── time-aggregate.sh      (one branch's measure: agent, human and check minutes, files and lines, as JSON)
+│   │       ├── time-calibrate.sh      (project ratios from metrics.json, estimate for a number of files, as JSON)
+│   │       ├── time-hook.sh           (time measurement hook: one line per event in the branch time-log.jsonl)
 │   │       └── update.sh              (skill update: check / run, as JSON)
 │   └── forge-clickup/        → extension: ClickUp task kickoff
 │       └── SKILL.md
@@ -134,6 +141,10 @@ forge/
 │   ├── install.test.sh       → bash tests/install.test.sh, throwaway home only
 │   ├── checks.test.sh        → bash tests/checks.test.sh, throwaway repositories only
 │   ├── status.test.sh        → bash tests/status.test.sh, throwaway repositories only
+│   ├── swarm-status.test.sh  → bash tests/swarm-status.test.sh, throwaway repositories only
+│   ├── time-aggregate.test.sh → bash tests/time-aggregate.test.sh, throwaway repositories only
+│   ├── time-calibrate.test.sh → bash tests/time-calibrate.test.sh, throwaway folders only
+│   ├── time-hook.test.sh     → bash tests/time-hook.test.sh, throwaway repositories only
 │   └── update.test.sh        → bash tests/update.test.sh, throwaway repositories only
 ├── .gitattributes
 └── .gitignore
@@ -151,6 +162,9 @@ Files generated in each project:
     ├── brief.md         ← `## Objective` + `## Scope & rules`
     ├── log.md           ← Decisions log (living log, last 10 entries read on resume)
     ├── plan.md
+    ├── metrics.json     ← branch measure, rewritten at each engrave and at closure: planned/actual files, lines, agent and human minutes, tokens
+    ├── time-log.jsonl   ← raw events of the time measurement hook, local, not tracked in git
+    ├── swarm.md         ← swarm state of a parent branch: N, child branches, choices sent, coordination notes
     ├── input/           ← files brought for this branch's task (CSV/XLSX exports, SQL dumps or extracts, data received as files), read instead of a database access, created empty with the brief, not tracked in git
     ├── ticket.json      ← written by `/forge-clickup`: tracker, code, url; link shown on resume and at closure
     └── output/          ← every generated file, named `YYYYMMDD-`
@@ -159,12 +173,13 @@ Files generated in each project:
         └── 20260910-user-documentation-map.md ← client deliverable, named like every other file
 ```
 
-Keep `.forge/` tracked in git, except the branch `input/` folders — the `.gitignore` block below does it; forge adds the `input/` line on its own when it is missing, from a startup check run in the background:
+Keep `.forge/` tracked in git, except the branch `input/` folders and the hook's `time-log.jsonl` — the `.gitignore` block below does it; forge adds each missing line on its own, from a startup check run in the background:
 
 ```
 ###> claude/forge ###
 !/.forge/
 /.forge/branch/*/input/
+/.forge/branch/**/time-log.jsonl
 ###< claude/forge ###
 ```
 
@@ -300,6 +315,17 @@ Each installer removes all existing forge entries before adding its own — no d
 
 ---
 
+## Time measurement and estimate
+
+Both installers also add `bash ~/.claude/skills/forge/scripts/time-hook.sh` (shell `bash`, Git Bash on Windows, `async`: Claude Code never waits for it) to six events: `UserPromptSubmit`, `Stop`, `SubagentStart`, `SubagentStop`, `PreToolUse` on `AskUserQuestion`, `PostToolUse` on `AskUserQuestion|Bash`. Hooks declared in a skill's frontmatter are not used: they miss subagents and are lost when a session is resumed.
+
+- **Measure:** the hook adds one line per event to `.forge/branch/<branch>/time-log.jsonl` of the branch checked out in the session folder — timestamps, ids, durations, never a prompt, command or tool output. Outside a forged project it writes nothing. A delegate's events carry the parent's folder: the parent maps each delegate to its child branch.
+- **Summary:** at each engrave and at closure, `time-aggregate.sh` sums the log and git into `metrics.json`: agent minutes (main session + delegates), human minutes (an absence of more than 1 h before a prompt or an answer counts zero), questions, check minutes, tokens of delegates, files and lines changed.
+- **Estimate:** each plan task states `**Estimated files:**`; `time-calibrate.sh` turns the total into agent minutes with a range (`≈ 120 files · ≈ 60 min (45-78)`), from the project's last measures or from `references/estimation.json` (0.5 min and 5k tokens per file). Marked *indicative* until five branches are measured and seven in ten land in their range. Effort letters stay as relative size, without any duration.
+- **Check commands:** the `**Check pattern:**` line of `project.md` (regular expression) marks the Bash commands counted as checks.
+
+---
+
 ## Plan updates
 
 **Silent** (automatic): check `[x]`, short note, `[!]` if blocked.  
@@ -401,13 +427,13 @@ linked repository in a git worktree — the parent folder name as prefix, the pa
 `forge/CU-123` — created from its up-to-date `master`/`main` when missing. In the linked repository the branch
 says where it comes from at a glance, groups under `git branch --list 'forge/*'`, and never collides with the
 linked project's own branches, ticket IDs included; the bare parent name is never used. It then writes the
-linked brief — the parent brief copied verbatim, preceded by an `## Origin` block naming the parent path, the
+linked brief — the parent brief copied verbatim, preceded by an `## Origin` block naming the parent project (its folder name, never a path), the
 parent branch and the **mandate**: the delegated tasks copied in full — and opens the linked `log.md`. The
-parent's own plan is annotated (`delegated to <path> @ <parent>/<BRANCH>`) and its log records the hand-over. A recap table lists these
+parent's own plan is annotated (`delegated to <path relative to the parent root> @ <parent>/<BRANCH>`, e.g. `../my-api`) and its log records the hand-over. A recap table lists these
 actions; nothing runs before you confirm once.
 
 The worktree sits next to the linked repository, in `<linked-folder>.worktrees/<parent>/<BRANCH>` — the branch
-becomes the path, e.g. `topdon_api.worktrees/forge/CU-123` — and is reused when it already exists. The linked repository's own folder is never touched — no checkout,
+becomes the path, e.g. `my-api.worktrees/forge/CU-123` — and is reused when it already exists. The linked repository's own folder is never touched — no checkout,
 no write — so you can keep working in it by hand while the subagent runs. A worktree only holds versioned
 files: no installed dependencies, no `.env`, no local config — a delegated task that needs them comes back
 blocked, and the linked `.forge/` must be committed. Once the linked branch is engraved, forge reminds you of
@@ -454,6 +480,31 @@ and chain when validating the plan.
 The run ends with a one-line `FORGE_DONE`: nothing is written into the parent plan or log, since nothing
 was delegated. The worktree is left in place — forge reminds you of `git worktree remove <path>` for once
 the branch is engraved.
+
+---
+
+## Swarm of child branches
+
+```
+plan with ≥ 2 branch tasks → "Validate and launch the swarm" → N child branches run in parallel
+```
+
+When at least two tasks of a plan deserve their own branch — four of five criteria: new module or public API,
+decisions to settle, delivered and tested on its own, ≥ 15 min of agent time, ≥ 3 layers; or more than 150k
+tokens — the plan becomes a **plan of branches**: each such task is `### Tn — Branch <parent>-<slug>`
+with a `**Depends on:**` line, a shared-extension-points task comes first and an overall check task last.
+
+- **Launch:** `swarm-status.sh` lists running, launchable and waiting branches and simulates the merge of the
+  parent. Up to N (3 by default, changed only on request) launchable branches get a worktree, the parent merged in,
+  a brief, their own dependency install and port, and a delegated forge each — all in the same turn.
+- **Relay:** questions are prefixed with their branch, grouped in one dialog when several wait, sent back to the
+  delegate when they lack decision context; coordination notes warn when two branches touch the same module.
+- **End of a branch:** one question — merge and launch the next branch, merge, check before merging (the app runs
+  from the worktree) or do nothing. The parent alone merges into the parent branch: fast-forward, or reverse merge
+  with conflict rules, full check, then fast-forward; never a push, never a merge into the default branch.
+- **Parent at work:** while delegates run, the parent takes the ordinary tasks it can take, relays first.
+- **State:** `swarm.md` keeps N, branches, choices sent and coordination notes; delegates stopped by accident are
+  relaunched from it with a `RESUME:` line.
 
 ---
 
@@ -536,11 +587,13 @@ the same way, as `YYYYMMDD-email-<topic>.txt` and `.html`.
 # Plan — <BRANCH>
 **Goal:** ...
 **Date:** ...
+**Estimate:** ≈ 3 files · ≈ 2 min (1-2)
 
 ## Tasks
 
 ### T1 — Title
 **Effort:** S
+**Estimated files:** 3
 **Files:** `src/...`
 **Description:** ...
 [ ]
@@ -551,14 +604,15 @@ the same way, as `YYYYMMDD-email-<topic>.txt` and `.html`.
 -->
 
 ## Summary
-| Task | Effort | Status |
-|---|---|---|
-| T1 | S | [ ] |
-| **Total** | **2h** | |
+| Task | Effort | Files | Status |
+|---|---|---|---|
+| T1 | S | 3 | [ ] |
+| **Total** | **1 S** | **3** | |
 ```
 
 **Statuses:** `[ ]` to do · `[x]` done · `[!]` blocked · `[-]` dropped  
-**Effort:** XS <30min · S 30min-2h · M 2-4h · L 4-8h · XL >1d → split
+**Effort:** XS · S · M · L · XL — relative size, no duration attached; XL → split into sub-tasks, or into a branch  
+**Estimate:** order of magnitude of agent time, never a commitment; the user's answer time is never counted
 
 ---
 

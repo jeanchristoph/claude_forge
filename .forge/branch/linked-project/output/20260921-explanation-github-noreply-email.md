@@ -42,7 +42,7 @@ git config user.email   # vérification
 Pour appliquer cette adresse à tous les dépôts personnels d'un même dossier sans toucher aux dépôts professionnels, utiliser une inclusion conditionnelle dans `~/.gitconfig` :
 
 ```ini
-[includeIf "gitdir:D:/www/perso/"]
+[includeIf "gitdir:~/projects/perso/"]
     path = ~/.gitconfig-perso
 ```
 

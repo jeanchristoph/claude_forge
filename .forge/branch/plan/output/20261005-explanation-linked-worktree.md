@@ -4,15 +4,15 @@
 
 Quand forge délègue du travail à un projet lié, il ne travaille plus dans le dossier du dépôt lié lui-même : il crée un **worktree git** à côté, nommé `<dossier-lié>-<parent>-<branche>`, et le réutilise s'il existe déjà.
 
-Exemple : dépôt lié `D:/www/topdon_api`, branche liée `forge/CU-123` → worktree `D:/www/topdon_api-forge-CU-123`.
+Exemple : dépôt lié `~/projects/my-api`, branche liée `forge/CU-123` → worktree `~/projects/my-api-forge-CU-123`.
 
 ## 1. Pourquoi `/` devient `-`
 
-Le nom de branche `forge/CU-123` contient un `/`, et dans un chemin le `/` est un séparateur de dossiers. En le gardant tel quel, `topdon_api-forge/CU-123` ne désignerait pas un dossier mais deux :
+Le nom de branche `forge/CU-123` contient un `/`, et dans un chemin le `/` est un séparateur de dossiers. En le gardant tel quel, `my-api-forge/CU-123` ne désignerait pas un dossier mais deux :
 
-- un dossier `topdon_api-forge`, avec un sous-dossier `CU-123` ;
+- un dossier `my-api-forge`, avec un sous-dossier `CU-123` ;
 - une arborescence imbriquée, ambiguë à la lecture (où s'arrête le nom du dépôt, où commence la branche ?) ;
-- des collisions : toutes les délégations issues de `forge` s'empileraient sous le même `topdon_api-forge/`.
+- des collisions : toutes les délégations issues de `forge` s'empileraient sous le même `my-api-forge/`.
 
 En remplaçant `/` par `-`, chaque branche liée obtient **un seul dossier, à plat, voisin du dépôt lié**, dont le nom se lit d'un coup d'œil.
 

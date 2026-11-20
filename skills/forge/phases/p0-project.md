@@ -31,6 +31,10 @@ Si le dossier est vide (rien en dehors des éléments ignorés) :
 - `.eslintrc.*` / `.prettierrc.*` / `biome.json` / `pyproject.toml` / `.editorconfig`
 - Lire **3 à 5 fichiers représentatifs** du code source pour détecter nommage et patterns
 
+### Vérifications
+- Scripts de contrôle du projet : `scripts` de `package.json` / `composer.json`, cibles d'un `Makefile`, configuration de tests (`phpunit.xml`, `vitest.config.*`, `pytest.ini`), suites `tests/*`
+- En tirer `**Check pattern:**` : expression régulière étendue qui reconnaît le début de chaque commande de vérification (types, lint, architecture, tests), lue par le hook de mesure pour compter le temps de vérification. Aucune commande trouvée → ligne omise.
+
 ## Format de sortie
 
 ⚠️ Titres de sections et libellés de champs écrits tels quels ci-dessous, en anglais, quelle que soit la langue de l'utilisateur — seul le contenu suit sa langue.
@@ -63,13 +67,24 @@ Si le dossier est vide (rien en dehors des éléments ignorés) :
 ## Tools & access
 - Available MCPs: ...
 - External documentation: ...
+**Check pattern:** `^(npm run (lint|test|typecheck)|bash tests/)`
 ```
+
+⚠️ `**Check pattern:**` : une seule ligne, motif entre accents graves, jamais d'accent grave dans le motif.
 
 ## Après première génération — `project.md` absent
 - Écrire `.forge/project.md` avec le Write tool, sans présentation ni question.
   ⚠️ Ne jamais utiliser `mkdir` sur les chemins `.forge/` — Write tool crée les dossiers parents automatiquement.
 - Dire : "`project.md` written — say \"clean the forge\" to adjust it."
+- Exécuter « Contrôle — hook de mesure » ci-dessous.
 - Continuer directement à l'État 1 : lire et exécuter `phases/p1-coding-standards.md`.
+
+## Contrôle — hook de mesure
+
+Chercher `time-hook.sh` dans `~/.claude/settings.json` avec le Grep tool. Absent → afficher une ligne, sans question ni écriture :
+> "Time measurement is off: run the forge installer (`install-windows.bat` or `install-unix.sh`) to enable it."
+
+⚠️ Jamais d'écriture dans les réglages de Claude Code : seul l'installeur, lancé par l'utilisateur, les modifie.
 
 ---
 

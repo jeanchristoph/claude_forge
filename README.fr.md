@@ -93,7 +93,8 @@ forge/
 │   │   │   ├── closure.md             (clôture de tâche)
 │   │   │   ├── delegated-mode.md      (règles du mode délégué)
 │   │   │   ├── delegation.md          (projet lié, branche du même dépôt)
-│   │   │   ├── engrave.md             (livraison)
+│   │   │   ├── engrave.md             (livraison, synthèse metrics.json)
+│   │   │   ├── swarm.md               (essaim de branches filles : lancement, relais, fusion, reprise)
 │   │   │   └── update.md              (mise à jour du skill : proposition, contrôle manuel)
 │   │   ├── phases/
 │   │   │   ├── p0-project.md          (État 0 — Project Init)
@@ -101,11 +102,17 @@ forge/
 │   │   │   ├── p2-brief.md            (État 2 — Brief)
 │   │   │   ├── p4-plan.md             (État 4 — Plan)
 │   │   │   └── p5-resume.md           (État 5 — Actif)
+│   │   ├── references/
+│   │   │   └── estimation.json        (ratios de référence et seuils de la règle de branche, tant que le projet n'a pas ses mesures)
 │   │   └── scripts/
-│   │       ├── checks.sh              (contrôles de démarrage, lancés détachés : ligne input/ de branche dans le .gitignore)
+│   │       ├── checks.sh              (contrôles de démarrage, lancés détachés : lignes input/ et time-log.jsonl dans le .gitignore)
 │   │       ├── engrave.sh             (séquence de livraison : preview / run)
 │   │       ├── json.sh                (rendu JSON partagé par les scripts)
 │   │       ├── status.sh              (état au lancement : état, avancement, branches à reprendre, en JSON)
+│   │       ├── swarm-status.sh        (état de l'essaim : branches en cours, lançables, en attente, fusion simulée, en JSON)
+│   │       ├── time-aggregate.sh      (mesure d'une branche : minutes d'agent, humaines, de vérification, fichiers et lignes, en JSON)
+│   │       ├── time-calibrate.sh      (ratios du projet tirés des metrics.json, estimation d'un nombre de fichiers, en JSON)
+│   │       ├── time-hook.sh           (hook de mesure : une ligne par événement dans le time-log.jsonl de la branche)
 │   │       └── update.sh              (mise à jour du skill : check / run, en JSON)
 │   └── forge-clickup/        → extension : ouverture de tâche ClickUp
 │       └── SKILL.md
@@ -132,6 +139,10 @@ forge/
 │   ├── install.test.sh       → bash tests/install.test.sh, HOME jetable uniquement
 │   ├── checks.test.sh        → bash tests/checks.test.sh, dépôts jetables uniquement
 │   ├── status.test.sh        → bash tests/status.test.sh, dépôts jetables uniquement
+│   ├── swarm-status.test.sh  → bash tests/swarm-status.test.sh, dépôts jetables uniquement
+│   ├── time-aggregate.test.sh → bash tests/time-aggregate.test.sh, dépôts jetables uniquement
+│   ├── time-calibrate.test.sh → bash tests/time-calibrate.test.sh, dossiers jetables uniquement
+│   ├── time-hook.test.sh     → bash tests/time-hook.test.sh, dépôts jetables uniquement
 │   └── update.test.sh        → bash tests/update.test.sh, dépôts jetables uniquement
 ├── .gitattributes
 └── .gitignore
@@ -149,6 +160,9 @@ Fichiers générés dans chaque projet :
     ├── brief.md         ← `## Objective` + `## Scope & rules`
     ├── log.md           ← Journal des décisions (vivant, 10 dernières entrées lues à la reprise)
     ├── plan.md
+    ├── metrics.json     ← mesure de la branche, réécrite à chaque grave et à la clôture : fichiers prévus et réels, lignes, minutes d'agent et humaines, tokens
+    ├── time-log.jsonl   ← événements bruts du hook de mesure, locaux, non suivis en git
+    ├── swarm.md         ← état de l'essaim d'une branche parente : N, branches filles, choix transmis, notes de coordination
     ├── input/           ← fichiers apportés pour la tâche de la branche (exports CSV/XLSX, dumps ou extraits SQL, données reçues en fichier), lus à la place d'un accès base, créé vide avec le brief, non suivi en git
     ├── ticket.json      ← écrit par `/forge-clickup` : tracker, code, url ; lien affiché à la reprise et à la clôture
     └── output/          ← tout fichier généré, nommé `AAAAMMJJ-`
@@ -157,12 +171,13 @@ Fichiers générés dans chaque projet :
         └── 20260910-user-documentation-map.md ← livrable client, nommé comme tous les autres
 ```
 
-Garde `.forge/` suivi en git, sauf les dossiers `input/` des branches — le bloc `.gitignore` ci-dessous s'en charge ; forge ajoute lui-même la ligne `input/` quand elle manque, par un contrôle de démarrage lancé en arrière-plan :
+Garde `.forge/` suivi en git, sauf les dossiers `input/` des branches et le `time-log.jsonl` du hook — le bloc `.gitignore` ci-dessous s'en charge ; forge ajoute lui-même chaque ligne manquante, par un contrôle de démarrage lancé en arrière-plan :
 
 ```
 ###> claude/forge ###
 !/.forge/
 /.forge/branch/*/input/
+/.forge/branch/**/time-log.jsonl
 ###< claude/forge ###
 ```
 
@@ -299,6 +314,17 @@ Chaque installeur retire toutes les entrées forge existantes avant d'ajouter la
 
 ---
 
+## Mesure du temps et estimation
+
+Les deux installeurs ajoutent aussi `bash ~/.claude/skills/forge/scripts/time-hook.sh` (shell `bash`, Git Bash sous Windows, `async` : Claude Code ne l'attend jamais) à six événements : `UserPromptSubmit`, `Stop`, `SubagentStart`, `SubagentStop`, `PreToolUse` sur `AskUserQuestion`, `PostToolUse` sur `AskUserQuestion|Bash`. Les hooks déclarés dans le frontmatter d'un skill ne sont pas utilisés : ils ne voient pas les sous-agents et disparaissent à la reprise d'une session.
+
+- **Mesure :** le hook ajoute une ligne par événement au `.forge/branch/<branche>/time-log.jsonl` de la branche extraite dans le dossier de la session — horodatages, identifiants, durées, jamais un prompt, une commande ni une sortie d'outil. Hors projet forgé, il n'écrit rien. Les événements d'un délégué portent le dossier du parent : le parent associe chaque délégué à sa branche fille.
+- **Synthèse :** à chaque grave et à la clôture, `time-aggregate.sh` totalise le journal et git dans `metrics.json` : minutes d'agent (session principale + délégués), minutes humaines (une absence de plus de 1 h avant un prompt ou une réponse compte zéro), questions, minutes de vérification, tokens des délégués, fichiers et lignes modifiés.
+- **Estimation :** chaque tâche du plan porte `**Estimated files:**` ; `time-calibrate.sh` convertit le total en minutes d'agent avec une fourchette (`≈ 120 files · ≈ 60 min (45-78)`), à partir des dernières mesures du projet ou de `references/estimation.json` (0,5 min et 5 k tokens par fichier). Marquée *indicative* tant que cinq branches ne sont pas mesurées et que sept sur dix ne tombent pas dans leur fourchette. Les lettres d'effort restent une taille relative, sans durée.
+- **Commandes de vérification :** la ligne `**Check pattern:**` de `project.md` (expression régulière) désigne les commandes Bash comptées comme vérifications.
+
+---
+
 ## Mise à jour du plan
 
 **Silencieuse** (automatique) : cocher `[x]`, note courte, `[!]` si bloqué.  
@@ -401,13 +427,13 @@ lié dans un worktree git — le nom du dossier parent en préfixe, la branche p
 d'un coup d'œil d'où elle vient, se regroupe sous `git branch --list 'forge/*'` et n'entre jamais en collision
 avec les branches propres du projet lié, identifiants de ticket compris ; le nom nu de la branche parente
 n'est jamais utilisé. Il écrit ensuite le brief lié — le brief parent recopié à l'identique, précédé d'un
-bloc `## Origin` portant le chemin du parent, la branche parente et le **mandat** : les tâches déléguées
+bloc `## Origin` portant le nom du projet parent (nom de son dossier, jamais un chemin), la branche parente et le **mandat** : les tâches déléguées
 recopiées intégralement — et ouvre le `log.md` lié. Le plan du parent est annoté
-(`delegated to <chemin> @ <parent>/<BRANCH>`) et son log enregistre le passage de relais. Un tableau récapitulatif
+(`delegated to <chemin relatif à la racine du parent> @ <parent>/<BRANCH>`, ex. `../my-api`) et son log enregistre le passage de relais. Un tableau récapitulatif
 liste ces actions ; rien ne s'exécute avant une confirmation unique.
 
 Le worktree est rangé à côté du dépôt lié, dans `<dossier-lié>.worktrees/<parent>/<BRANCH>` — la branche devient
-le chemin, par exemple `topdon_api.worktrees/forge/CU-123` — et réutilisé s'il existe déjà. Le dossier propre du dépôt lié n'est jamais touché — ni checkout, ni écriture : tu
+le chemin, par exemple `my-api.worktrees/forge/CU-123` — et réutilisé s'il existe déjà. Le dossier propre du dépôt lié n'est jamais touché — ni checkout, ni écriture : tu
 peux continuer à y travailler à la main pendant que le sous-agent tourne. Un worktree ne porte que les fichiers
 versionnés : ni dépendances installées, ni `.env`, ni configuration locale — une tâche déléguée qui en a besoin
 revient bloquée, et le `.forge/` du lié doit être commité. Une fois la branche liée gravée, forge rappelle
@@ -454,6 +480,35 @@ choisis valider et enchaîner à la validation du plan.
 L'exécution se termine par un `FORGE_DONE` d'une ligne : rien n'est écrit dans le plan ni le log du
 parent, puisque rien n'a été délégué. Le worktree reste en place — forge te rappelle
 `git worktree remove <chemin>` pour quand la branche sera gravée.
+
+---
+
+## Essaim de branches filles
+
+```
+plan avec ≥ 2 tâches-branches → « Valider et lancer l'essaim » → N branches filles en parallèle
+```
+
+Quand au moins deux tâches d'un plan méritent leur propre branche — quatre critères sur cinq : nouveau module ou
+API publique, décisions à trancher, livrée et testée seule, ≥ 15 min d'agent, ≥ 3 couches ; ou plus de 150 k
+tokens —, le plan devient un **plan de branches** : chacune devient `### Tn — Branch <parente>-<slug>` avec une
+ligne `**Depends on:**`, une tâche socle des points d'extension passe en tête et une vérification d'ensemble en dernier.
+
+- **Lancement :** `swarm-status.sh` liste les branches en cours, lançables et en attente, et simule la fusion de la
+  parente. Jusqu'à N branches lançables (3 par défaut, modifié seulement sur demande) reçoivent un worktree, la
+  parente fusionnée, un brief, leur propre installation des dépendances et leur port, et un forge délégué chacune,
+  toutes dans le même tour.
+- **Relais :** questions préfixées par leur branche, groupées dans une même fenêtre quand plusieurs attendent,
+  renvoyées au délégué quand le contexte de décision manque ; notes de coordination quand deux branches touchent le
+  même module.
+- **Fin d'une branche :** une question — fusionner et lancer la suivante, fusionner, vérifier avant de fusionner
+  (l'application tourne depuis le worktree) ou ne rien faire. Le parent seul fusionne dans la branche parente :
+  avance rapide, ou fusion inverse avec règles de conflit, vérification complète puis avance rapide ; jamais de
+  push, jamais de fusion vers la branche par défaut.
+- **Parent au travail :** pendant que les délégués travaillent, le parent prend les tâches ordinaires prenables,
+  relais en priorité.
+- **État :** `swarm.md` garde N, les branches, les choix transmis et les notes de coordination ; des délégués
+  arrêtés par accident sont relancés depuis lui avec une ligne `RESUME:`.
 
 ---
 
@@ -540,11 +595,13 @@ un tiers est conservé de la même façon, sous `AAAAMMJJ-email-<sujet>.txt` et 
 # Plan — <BRANCH>
 **Objectif :** ...
 **Date :** ...
+**Estimation :** ≈ 3 fichiers · ≈ 2 min (1-2)
 
 ## Tâches
 
 ### T1 — Titre
 **Effort :** S
+**Fichiers estimés :** 3
 **Fichiers :** `src/...`
 **Description :** ...
 [ ]
@@ -555,14 +612,15 @@ un tiers est conservé de la même façon, sous `AAAAMMJJ-email-<sujet>.txt` et 
 -->
 
 ## Récapitulatif
-| Tâche | Effort | Statut |
-|---|---|---|
-| T1 | S | [ ] |
-| **Total** | **2h** | |
+| Tâche | Effort | Fichiers | Statut |
+|---|---|---|---|
+| T1 | S | 3 | [ ] |
+| **Total** | **1 S** | **3** | |
 ```
 
 **Statuts :** `[ ]` à faire · `[x]` terminé · `[!]` bloqué · `[-]` abandonné  
-**Effort :** XS <30min · S 30min-2h · M 2-4h · L 4h-1j · XL >1j → découper
+**Effort :** XS · S · M · L · XL — taille relative, sans durée attachée ; XL → découper en sous-tâches, ou en branche  
+**Estimation :** ordre de grandeur du temps d'agent, jamais un délai engageant ; le temps de réponse de l'utilisateur n'y est jamais compté
 
 ---
 

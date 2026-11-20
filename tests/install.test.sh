@@ -135,6 +135,39 @@ test_second_install_adds_nothing_twice() {
   assert_equals 1 "$(count_occurrences 'forge-precompact' "$file")"
 }
 
+# Groupe de hooks d'un événement, compacté : `"matcher":"…"` éventuel puis la commande, sans espaces.
+event_hooks() {
+  node -e '
+    const s = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
+    console.log(JSON.stringify((s.hooks || {})[process.argv[2]] || []));' "$CLAUDE_DIR/settings.json" "$1"
+}
+
+test_adds_time_hook_to_every_measured_event() {
+  run_installer || exit 1
+  local event
+  for event in UserPromptSubmit Stop SubagentStart SubagentStop PreToolUse PostToolUse; do
+    assert_contains 'bash ~/.claude/skills/forge/scripts/time-hook.sh' "$(event_hooks "$event")"
+    assert_contains '"async":true' "$(event_hooks "$event")"
+  done
+  assert_contains '"matcher":"AskUserQuestion","hooks"' "$(event_hooks PreToolUse)"
+  assert_contains '"matcher":"AskUserQuestion|Bash","hooks"' "$(event_hooks PostToolUse)"
+}
+
+test_second_install_adds_time_hook_once() {
+  run_installer && run_installer || exit 1
+  assert_equals 6 "$(count_occurrences 'time-hook.sh' "$CLAUDE_DIR/settings.json")"
+}
+
+test_keeps_foreign_hook_of_measured_event() {
+  mkdir -p "$CLAUDE_DIR"
+  printf '{"hooks":{"Stop":[{"hooks":[{"type":"command","command":"notify-done"}]}]}}\n' > "$CLAUDE_DIR/settings.json"
+  run_installer || exit 1
+  local stop_hooks
+  stop_hooks=$(event_hooks Stop)
+  assert_contains 'notify-done' "$stop_hooks"
+  assert_contains 'time-hook.sh' "$stop_hooks"
+}
+
 # ── install.json ──────────────────────────────────────────────────────────────
 
 test_records_tag_and_origin_from_git_copy() {
@@ -225,6 +258,9 @@ run_common_tests() {
   run_test test_adds_forge_rule_and_precompact_hook "ajoute la règle .forge et le hook PreCompact à settings.json"
   run_test test_keeps_unrelated_settings "garde les réglages et règles étrangers à forge"
   run_test test_second_install_adds_nothing_twice "une seconde installation n'ajoute ni règle ni hook en double"
+  run_test test_adds_time_hook_to_every_measured_event "ajoute le hook de mesure, asynchrone, à chaque événement écouté, avec ses filtres"
+  run_test test_second_install_adds_time_hook_once "une seconde installation n'ajoute pas le hook de mesure en double"
+  run_test test_keeps_foreign_hook_of_measured_event "garde un hook étranger d'un événement écouté"
   run_test test_records_tag_and_origin_from_git_copy "enregistre le tag et le dépôt d'origine d'une copie git"
   run_test test_records_null_version_outside_git "enregistre une version et un dépôt nuls hors dépôt git"
   run_test test_install_record_is_read_by_update_check "update.sh check lit l'install.json produit"

@@ -19,7 +19,8 @@ forge/
 │   │   │   ├── closure.md            (Clôture de tâche)
 │   │   │   ├── delegated-mode.md     (règles du sous-agent délégué, condition dans SKILL.md)
 │   │   │   ├── delegation.md         (Délégation — projet lié, branche du même dépôt)
-│   │   │   ├── engrave.md            (Livraison)
+│   │   │   ├── engrave.md            (Livraison, synthèse metrics.json)
+│   │   │   ├── swarm.md              (Essaim de branches filles : lancement, relais, fin, fusion, retrait, état, reprise, plan mixte)
 │   │   │   └── update.md             (Mise à jour du skill : proposition au démarrage, contrôle manuel)
 │   │   ├── phases/
 │   │   │   ├── p0-project.md         (État 0 — Project Init)
@@ -32,6 +33,10 @@ forge/
 │   │       ├── engrave.sh            (séquence git de la livraison : preview / run, appelée par p5-resume.md)
 │   │       ├── json.sh               (rendu JSON sans jq, chargé par les scripts du skill)
 │   │       ├── status.sh             (état au lancement en JSON, lecture seule, appelé par SKILL.md ; peu de processus, Git Bash les paie cher)
+│   │       ├── swarm-status.sh       (état de l'essaim en JSON : en cours, lançables, en attente, fusion simulée, tâches du parent)
+│   │       ├── time-aggregate.sh     (mesure d'une branche en JSON : journal du hook + git, lu par la synthèse metrics.json)
+│   │       ├── time-calibrate.sh     (ratios du projet et estimation d'un nombre de fichiers, en JSON ; références dans references/estimation.json)
+│   │       ├── time-hook.sh          (hook de mesure déclaré par les installeurs : une ligne par événement dans time-log.jsonl)
 │   │       └── update.sh             (mise à jour du skill : check / run en JSON, appelé avec status.sh ; contrôle réseau détaché toutes les 24 heures)
 │   └── forge-clickup/
 │       └── SKILL.md               (guichet ClickUp : ouvre la tâche, crée la branche, passe la main à forge)
@@ -55,6 +60,10 @@ forge/
 │   ├── install.test.sh        (tests des deux installeurs, HOME jetable : bash tests/install.test.sh)
 │   ├── checks.test.sh         (tests des contrôles de démarrage, dépôts jetables : bash tests/checks.test.sh)
 │   ├── status.test.sh         (tests de l'état au lancement, dépôts jetables : bash tests/status.test.sh)
+│   ├── swarm-status.test.sh   (tests de l'état de l'essaim, dépôts jetables : bash tests/swarm-status.test.sh)
+│   ├── time-aggregate.test.sh (tests de l'agrégation de la mesure, dépôts jetables : bash tests/time-aggregate.test.sh)
+│   ├── time-calibrate.test.sh (tests de la calibration, dossiers jetables : bash tests/time-calibrate.test.sh)
+│   ├── time-hook.test.sh      (tests du hook de mesure, dépôts jetables : bash tests/time-hook.test.sh)
 │   └── update.test.sh         (tests de la mise à jour du skill, dépôts jetables : bash tests/update.test.sh)
 ├── README.md                  (documentation, anglais)
 └── README.fr.md               (même documentation, français)
@@ -70,6 +79,9 @@ Fichiers générés dans **chaque projet cible** par le skill (pas dans ce dép�
     ├── brief.md          (## Origin en tête quand la branche est un projet lié : parent, branche, mandat)
     ├── log.md
     ├── plan.md
+    ├── metrics.json      (synthèse de mesure, réécrite à chaque grave et à la clôture, versionnée)
+    ├── time-log.jsonl    (événements bruts du hook de mesure, locaux, ignorés par git)
+    ├── swarm.md          (état de l'essaim d'une branche parente)
     ├── ticket.json       (écrit par forge-clickup : tracker, code, url ; lu par la clôture, lien affiché à la reprise)
     └── output/           (tout contenu généré : AAAAMMJJ-<intitulé>.*, dont AAAAMMJJ-explanation-<sujet>.md)
 ```
@@ -81,7 +93,7 @@ Fichiers générés dans **chaque projet cible** par le skill (pas dans ce dép�
 - `hooks/ps1/forge-precompact.ps1` / `hooks/bash/forge-precompact.sh` — hook `PreCompact`, injecte l'état du plan courant dans le contexte compacté
 - `skills/forge/phases/p5-resume.md` — reprise, règles de mise à jour, surveillance, et déclencheurs des commandes de `skills/forge/commands/` : Délégation, Livraison (`grave` / `engrave`, projets liés compris) et Clôture de tâche
 - `skills/forge/scripts/status.sh` — état de la branche en JSON, lu une fois par « Détection d'état » ; toute évolution passe par ce script et `tests/status.test.sh`
-- `skills/forge/scripts/checks.sh` — contrôles de démarrage lancés détachés, jamais attendus : ajoute `/.forge/branch/*/input/` au `.gitignore` hors main / master ; toute évolution passe par ce script et `tests/checks.test.sh`
+- `skills/forge/scripts/checks.sh` — contrôles de démarrage lancés détachés, jamais attendus : ajoute `/.forge/branch/*/input/` et `/.forge/branch/**/time-log.jsonl` au `.gitignore` hors main / master ; toute évolution passe par ce script et `tests/checks.test.sh`
 - `skills/forge/scripts/update.sh` — mise à jour du skill : `check` (lecture de `~/.claude/skills/forge/install.json`, écrit par les installeurs ; interrogation détachée du dernier tag `vX.Y.Z` toutes les 24 heures, `--force` au premier plan) `run` (clone du tag, installeur de la plateforme) et `dismiss` (refus d'une version, retenu dans `install.json`) ; toute évolution passe par ce script et `tests/update.test.sh`
 - `skills/forge/scripts/engrave.sh` — séquence git de la Livraison, `preview` puis `run`, tous deux en JSON mis en page par le skill (compte rendu : une ligne par opération git, statut `done` / `skipped` / `failed` / `not_run`) ; toute évolution de la séquence passe par ce script et `tests/engrave.test.sh`
 
@@ -103,3 +115,4 @@ Fichiers générés dans **chaque projet cible** par le skill (pas dans ce dép�
 ## Tools & access
 - MCPs disponibles : claude-in-chrome, datagrip, phpstorm, webstorm (non utilisés par ce dépôt en l'état)
 - Documentation externe : aucune référence externe identifiée dans le dépôt
+**Check pattern:** `^bash tests/`

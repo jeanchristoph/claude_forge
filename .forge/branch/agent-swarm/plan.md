@@ -98,8 +98,8 @@
 **Effort:** S
 **Estimated files:** 5
 **Files:** `skills/forge/scripts/time-aggregate.sh`, `tests/time-aggregate.test.sh`, `README.md`, `README.fr.md`, `CHANGELOG.md`
-**Description:** Demande utilisateur : un écart de plus de 1 h avant un prompt, ou une question restée plus de 1 h sans réponse, ne compte pas en temps humain (zéro, pas de plafond) ; la question reste comptée et retirée du tour.
-[x] Constante `HUMAN_ABSENCE_MS` (1 h, d'abord 3 h) passée à awk, fonction `human_share` ; 3 tests (absence, 1 h tout juste, question délaissée) ; 29 tests verts ; README, README.fr, CHANGELOG.
+**Description:** Demande utilisateur : un écart de plus de 6 h avant un prompt, ou une question restée plus de 6 h sans réponse, ne compte pas en temps humain (zéro, pas de plafond) ; la question reste comptée et retirée du tour.
+[x] Constante `HUMAN_ABSENCE_MS` (6 h, après 3 h et 1 h) passée à awk, fonction `human_share` ; 3 tests (absence, 6 h tout juste, question délaissée) ; 29 tests verts ; README, README.fr, CHANGELOG.
 
 ### T17 — Hook de mesure asynchrone
 **Effort:** S

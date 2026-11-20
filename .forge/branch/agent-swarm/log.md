@@ -1,3 +1,4 @@
+- [2026-11-20 09:00] T16 : seuil d'absence porté à 6 h à la demande.
 - [2026-11-20 08:10] T18 ajoutée et terminée à la demande : plus de chemin absolu écrit par forge (nom du parent, chemins relatifs à ROOT) ; dossier de la délégation client anonymisé en client-api/TASK-1 ; historique git non réécrit.
 - [2026-11-20 07:40] T17 ajoutée et terminée à la demande : hook déclaré `async` par les installeurs ; journal trié par heure à l'agrégation, ce qui corrige aussi un délégué associé à sa branche après son SubagentStart.
 - [2026-11-20 07:15] T16 : seuil d'absence ramené de 3 h à 1 h à la demande.

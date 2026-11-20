@@ -35,3 +35,6 @@ nul
 
 # forge : fichiers apportés aux branches, jamais versionnés
 /.forge/branch/*/input/
+###> claude/forge ###
+/.forge/branch/**/time-log.jsonl
+###< claude/forge ###

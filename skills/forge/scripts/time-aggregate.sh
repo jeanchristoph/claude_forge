@@ -17,8 +17,8 @@ source "$(dirname "${BASH_SOURCE[0]}")/json.sh"
 
 readonly EXIT_USAGE=1
 readonly TIME_LOG_NAME="time-log.jsonl"
-# BUSINESS_RULE: au-delà de 1 h, un écart avant un prompt ou une attente de réponse est une absence, pas du temps humain
-readonly HUMAN_ABSENCE_MS=3600000
+# BUSINESS_RULE: au-delà de 6 h, un écart avant un prompt ou une attente de réponse est une absence, pas du temps humain
+readonly HUMAN_ABSENCE_MS=21600000
 readonly EXCLUDED_PATHS=(
   ':(exclude).forge'
   ':(exclude,glob)**/package-lock.json' ':(exclude,glob)**/yarn.lock' ':(exclude,glob)**/pnpm-lock.yaml'

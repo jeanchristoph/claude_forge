@@ -104,21 +104,21 @@ test_does_not_count_wait_for_delegate_as_human_time() {
   assert_contains '"human_minutes":0.0' "$output"
 }
 
-test_does_not_count_absence_over_one_hour_as_human_time() {
-  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}'              '{"ts":60000,"event":"Stop","session":"s"}'              '{"ts":3660001,"event":"UserPromptSubmit","session":"s","origin":"human"}'              '{"ts":3720001,"event":"Stop","session":"s"}'
+test_does_not_count_absence_over_six_hours_as_human_time() {
+  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}'              '{"ts":60000,"event":"Stop","session":"s"}'              '{"ts":21660001,"event":"UserPromptSubmit","session":"s","origin":"human"}'              '{"ts":21720001,"event":"Stop","session":"s"}'
   local output
   output=$(aggregate)
   assert_contains '"parent_minutes":2.0' "$output"
   assert_contains '"human_minutes":0.0' "$output"
 }
 
-test_counts_gap_of_exactly_one_hour_as_human_time() {
-  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}'              '{"ts":60000,"event":"Stop","session":"s"}'              '{"ts":3660000,"event":"UserPromptSubmit","session":"s","origin":"human"}'              '{"ts":3720000,"event":"Stop","session":"s"}'
-  assert_contains '"human_minutes":60.0' "$(aggregate)"
+test_counts_gap_of_exactly_six_hours_as_human_time() {
+  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}'              '{"ts":60000,"event":"Stop","session":"s"}'              '{"ts":21660000,"event":"UserPromptSubmit","session":"s","origin":"human"}'              '{"ts":21720000,"event":"Stop","session":"s"}'
+  assert_contains '"human_minutes":360.0' "$(aggregate)"
 }
 
-test_does_not_count_question_left_over_one_hour_as_human_time() {
-  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}'              '{"ts":10000,"event":"PreToolUse","session":"s","tool":"AskUserQuestion"}'              '{"ts":3610001,"event":"PostToolUse","session":"s","tool":"AskUserQuestion"}'              '{"ts":3670001,"event":"Stop","session":"s"}'
+test_does_not_count_question_left_over_six_hours_as_human_time() {
+  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}'              '{"ts":10000,"event":"PreToolUse","session":"s","tool":"AskUserQuestion"}'              '{"ts":21610001,"event":"PostToolUse","session":"s","tool":"AskUserQuestion"}'              '{"ts":21670001,"event":"Stop","session":"s"}'
   local output
   output=$(aggregate)
   assert_contains '"parent_minutes":1.2' "$output"
@@ -345,9 +345,9 @@ run_test test_measures_one_turn_of_main_session "mesure un tour de la session pr
 run_test test_removes_question_wait_from_turn_and_counts_it_as_human "retire l'attente d'une question du tour et la compte en temps humain"
 run_test test_counts_gap_before_human_prompt_as_human_time "compte en temps humain l'écart avant un prompt de l'utilisateur"
 run_test test_does_not_count_wait_for_delegate_as_human_time "ne compte pas en temps humain l'attente d'un délégué"
-run_test test_does_not_count_absence_over_one_hour_as_human_time "ne compte pas en temps humain une absence de plus de 1 h avant un prompt"
-run_test test_counts_gap_of_exactly_one_hour_as_human_time "compte en temps humain un écart d'1 h tout juste"
-run_test test_does_not_count_question_left_over_one_hour_as_human_time "ne compte pas en temps humain une question restée plus de 1 h sans réponse"
+run_test test_does_not_count_absence_over_six_hours_as_human_time "ne compte pas en temps humain une absence de plus de 6 h avant un prompt"
+run_test test_counts_gap_of_exactly_six_hours_as_human_time "compte en temps humain un écart de 6 h tout juste"
+run_test test_does_not_count_question_left_over_six_hours_as_human_time "ne compte pas en temps humain une question restée plus de 6 h sans réponse"
 run_test test_ignores_turn_without_stop "ignore un tour sans Stop"
 run_test test_keeps_interleaved_sessions_apart "sépare deux sessions entrelacées"
 run_test test_sums_check_durations_of_main_session "additionne les vérifications de la session principale"

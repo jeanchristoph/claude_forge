@@ -1,5 +1,5 @@
-#[x]Plan[x]—[x]agent-swarm
-**Objective:**[x]Doter forge d'un essaim de délégués en parallèle, appuyé sur une mesure automatique du temps par branche et sur une estimation en nombre de fichiers.
+# Plan — agent-swarm
+**Objective:** Doter forge d'un essaim de délégués en parallèle, appuyé sur une mesure automatique du temps par branche et sur une estimation en nombre de fichiers.
 **Date:** 2026-11-20
 
 ## Tasks
@@ -143,6 +143,123 @@
 **Description:** Demande utilisateur : 150 000 tokens trop bas. Fenêtre de contexte d'un million ; délégués réels de la proposition entre 278 k et 632 k par exécution. `branch_tokens` porté à 300 000, à réajuster après quelques branches mesurées (sens exact de `subagent_tokens` non vérifié).
 [x] estimation.json, test du calibrage, README EN/FR, CHANGELOG.
 
+### T23 — En-tête du plan réparé et règle de coche
+**Effort:** XS
+**Estimated files:** 2
+**Estimated time:** ≈ 1 min (1-1)
+**Actual time:** ≈ 0.2 min
+**Files:** `.forge/branch/agent-swarm/plan.md`, `skills/forge/phases/p5-resume.md`
+**Description:** Audit 2026-11-21. Lignes 1-2 du plan rétablies (`# Plan — agent-swarm`, `**Objective:** …`), corrompues depuis `517c749` par un remplacement regex de `[ ]`. « Règles de mise à jour du plan » : coche par l'outil Edit sur la ligne de statut exacte, jamais par sed ni regex.
+[x] En-tête rétabli, aucune autre ligne corrompue ; règle de coche par Edit ajoutée sous « Silencieuse » de p5-resume.md.
+
+### T24 — Calibrage robuste et estimations arrondies
+**Effort:** XS
+**Estimated files:** 3
+**Estimated time:** ≈ 2 min (1-2)
+**Actual time:** ≈ 0.7 min
+**Files:** `skills/forge/scripts/time-calibrate.sh`, `tests/time-calibrate.test.sh`, `CHANGELOG.md`
+**Description:** Audit B1. Garde `$3 != "null"` sur les ratios minutes/fichier et tokens/fichier (division par zéro, JSON tronqué en code 0). Estimation au minimum 1 min, fourchette comprise. Aucune correction d'erreur sur les fichiers sous 3 branches mesurées. Tests : `actual_files: null`, 1 fichier, 1 et 2 branches sans correction.
+[x] Garde null, `whole_minutes` (≥ 1), `FILE_ERROR_MIN_BRANCHES=3` ; 3 tests ajoutés, 1 adapté (20 verts) ; CHANGELOG.
+
+### T25 — Hook et marqueurs sûrs sous bash < 5, heure prise en premier
+**Effort:** S
+**Estimated files:** 8
+**Estimated time:** ≈ 4 min (3-5)
+**Actual time:** ≈ 2.5 min
+**Files:** `skills/forge/scripts/time-hook.sh`, `skills/forge/scripts/time-mark.sh`, `skills/forge/scripts/log-entry.sh`, `tests/time-hook.test.sh`, `tests/time-mark.test.sh`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Audit I2. Sans `EPOCHREALTIME`, hook et `time-mark.sh` sortent en 0 sans rien écrire ; `log-entry.sh` signale clairement l'exigence bash ≥ 4.2. Heure prise en premier dans le hook, avant analyse du JSON et git. Exigence de version documentée. Test : bash sans `EPOCHREALTIME`.
+[x] `current_time_ms` rend 1 sans horloge ; heure du hook prise avant `cat` (`EVENT_TIME`) ; `log-entry.sh` sort en 2 sous bash 4.2 ; 2 tests (28 · 9 verts). Constat corrigé : sous bash 5.2, l'ancien hook sortait déjà en 0 sans écrire (erreur d'expansion qui abandonne `main`) — l'« exit 1 » de l'audit ne vaut qu'en exécution en ligne ; le test garde le contrat. README EN/FR, CHANGELOG.
+
+### T26 — Estimation des tâches ajoutées, fichiers comptés depuis `**Files:**`
+**Effort:** M
+**Estimated files:** 7
+**Estimated time:** ≈ 4 min (3-5)
+**Files:** `skills/forge/phases/p4-plan.md`, `skills/forge/phases/p5-resume.md`, `skills/forge/scripts/time-calibrate.sh`, `tests/time-calibrate.test.sh`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Audit I4 et S3. Champ `**Estimated files:**` supprimé : nombre de chemins de `**Files:**`, nombre explicite `(≈ n)` en fin de `**Files:**` seulement pour un motif ou des fichiers inconnus. `time-calibrate.sh --files 3,5,8` : toutes les estimations d'un plan en un appel. Tâche ajoutée par la « Surveillance des demandes complémentaires » → `**Estimated time:**` écrit, affiché dans le gabarit `Plan`. Ligne `Remaining` et règle de branche sur le même compte ; anciens plans avec `**Estimated files:**` toujours lus.
+**Actual time:** ≈ 1.5 min
+[x] `--files 3,5,8` → `estimate` (somme) + `estimates` (3 tests, 23 verts) ; p4 : estimation en un appel, « Fichiers d'une tâche » défini une fois, champ retiré des formats (tâche-branche : `**Files:** … (≈ n)`) ; p5 : colonne Fichiers, Remaining, temps estimé des tâches ajoutées et gabarit `Plan` ; engrave `planned_files` ; README EN/FR, CHANGELOG.
+
+### T27 — Tour interrompu par un nouveau prompt compté
+**Effort:** S
+**Estimated files:** 3
+**Estimated time:** ≈ 2 min (1-2)
+**Files:** `skills/forge/scripts/time-aggregate.sh`, `tests/time-aggregate.test.sh`, `CHANGELOG.md`
+**Description:** Audit I1 (temps d'agent sous-mesuré d'environ ×2). Un `UserPromptSubmit` sur un tour ouvert ferme ce tour au dernier événement observé au lieu de l'effacer, pour la branche et pour `--task`. `test_ignores_turn_without_stop` remplacé par trois tests : prompt en file, interruption, `task-notification` en plein tour.
+**Actual time:** ≈ 2.6 min
+[x] `last_activity` par session, tour ouvert fermé au prompt suivant (branche et `--task`) ; `test_ignores_turn_without_stop` gardé pour le tour ouvert en fin de journal, 4 tests ajoutés (échouent sur l'ancien code ; 62 verts). Journal réel : parent 18,1 min (7,5 avant). CHANGELOG.
+
+### T28 — Agrégation rapide
+**Effort:** S
+**Estimated files:** 3
+**Estimated time:** ≈ 2 min (1-2)
+**Files:** `skills/forge/scripts/time-aggregate.sh`, `tests/time-aggregate.test.sh`, `CHANGELOG.md`
+**Description:** Audit I3. `field()` réécrit par `index()`/`substr()`, sans regex recompilée ; `--task` filtre d'abord la fenêtre de la tâche. Résultats identiques sur la suite ; mesure avant/après sur un journal de 50 000 lignes notée ici (20 s aujourd'hui).
+**Actual time:** ≈ 2.1 min
+[x] `field()` par `index()`/`substr()` : 50 002 lignes → 19,6 s à 1,0 s (branche), 23,5 s à 0,8 s (`--task`), sorties identiques ; filtre de fenêtre inutile, écarté (il couperait les tours ouverts avant la fenêtre). 62 verts, CHANGELOG.
+
+### T29 — Lignes de délégué écrites par script, micro-étapes marquées
+**Effort:** S
+**Estimated files:** 5
+**Estimated time:** ≈ 2 min (2-3)
+**Files:** `skills/forge/scripts/time-mark.sh`, `tests/time-mark.test.sh`, `skills/forge/commands/delegation.md`, `skills/forge/commands/swarm.md`, `CHANGELOG.md`
+**Description:** Audit I5. `time-mark.sh --event delegate|delegate_usage`, seul chemin d'écriture de ces lignes : sans `ts` pour `delegate`, UTF-8, JSON contrôlé ; plus d'ajout à la main par le modèle. `--task` accepte `T2.1`.
+**Actual time:** ≈ 1.7 min
+[x] time-mark.sh réécrit (`has_required_arguments`, `build_delegate_line`), 4 tests (13 verts) ; `time-aggregate.sh --task` accepte aussi `T2.1` (62 verts) ; delegation.md « Mesure d'un délégué » par script + invariant ; swarm.md inchangé (renvoie à delegation.md) ; CHANGELOG.
+
+### T30 — Essaim : écriture du plan, questions, aucun lancement sans accord
+**Effort:** M
+**Estimated files:** 6
+**Estimated time:** ≈ 3 min (2-4)
+**Files:** `skills/forge/phases/p4-plan.md`, `skills/forge/phases/p5-resume.md`, `skills/forge/commands/swarm.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Audit B2, B3, B5. Plan écrit aussi sur `Validate and launch the swarm`. Question `Next` à 4 options au plus : une seule `Merge and launch <Y>`, les autres lançables citées dans sa description. Seul `Validate and launch the swarm` lance sans question ; à la reprise, question `Swarm` (`Launch <X>, <Y>` / `Work on parent tasks` / `Later`). Impasses levées : aucune branche lançable ni en cours → tâches ordinaires par le mode habituel ; contradiction plan mixte entre `swarm.md` et étape 8 de p5 tranchée. Renvoi « Relance de l'essaim » corrigé, `N` défini là où il sert.
+**Actual time:** ≈ 0.8 min
+[x] p4 étape 8 ; p5 étape 8 en quatre cas (reprise, question `Swarm`, tâches ordinaires, attente), « Relance de l'essaim » devenue une question `Swarm` définie dans p5 avec N ; swarm.md : déclencheurs = choix de l'utilisateur, `Next` à quatre options, plan mixte par l'étape 9 ; README EN/FR, CHANGELOG.
+
+### T31 — Essaim : un seul délégué par branche, reprise sur question, ports conservés
+**Effort:** M
+**Estimated files:** 6
+**Estimated time:** ≈ 3 min (2-4)
+**Files:** `skills/forge/commands/swarm.md`, `skills/forge/commands/delegated-mode.md`, `skills/forge/phases/p5-resume.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Audit B4, I9, I13. Colonnes `Agent` (`agent_id`) et `Port` dans `swarm.md`. Reprise seulement après une question `Resume` listant les branches ; plus de déclenchement d'office ni de phrase contraire. Branche `waiting for merge` → question `Next` reposée à la reprise. Port = plus petit libre parmi base + 1 à base + N, conservé dans `RESUME`. `Check before merging` proposé seulement si `**Dev port:**` existe.
+**Actual time:** ≈ 0.8 min
+[x] swarm.md : colonnes `Agent` et `Port`, port libre le plus petit gardé à la relance, reprise = `Next` reposée puis question `Resume` (`Relaunch` / `Still running` / `Later`), phrase contraire retirée ; p5 : déclencheur « délégué non lancé dans cette conversation » ; delegated-mode.md inchangé (PORT déjà transmis) ; README EN/FR, CHANGELOG.
+
+### T32 — `swarm-status.sh` : dépendances invalides, branches bloquées, worktrees périmés
+**Effort:** M
+**Estimated files:** 4
+**Estimated time:** ≈ 2 min (2-3)
+**Files:** `skills/forge/scripts/swarm-status.sh`, `tests/swarm-status.test.sh`, `skills/forge/commands/swarm.md`, `CHANGELOG.md`
+**Description:** Audit I6, I7 et mineurs du script. Champs `invalid` (cycle, tâche inconnue, dépendance `[!]`/`[-]`, texte libre dans `Depends on`), `blocked` (tâches-branches `[!]`), `stale` (worktree `prunable`, `git worktree prune` proposé). Statut lu sur la ligne de statut, pas sur une note `[x]` ; nom de branche invalide refusé ; parente absente = erreur, pas conflit. Option `--assume-done <X>` pour la suite d'une fusion. Un test par cas.
+**Actual time:** ≈ 3.7 min
+[x] Champs `invalid` / `blocked` / `stale`, `--assume-done`, statut sur la première ligne, `check-ref-format`, parente sans branche git → usage, `conflict: null` hors code 1 ; 9 tests (24 verts) ; swarm.md (affichage des nouveaux champs, `--assume-done` dans « Fin d'une branche fille ») ; CHANGELOG. Conflits entre filles toujours non simulés (hors description).
+
+### T33 — Essaim : commits annoncés, règles ciblées, limites documentées
+**Effort:** M
+**Estimated files:** 6
+**Estimated time:** ≈ 3 min (2-4)
+**Files:** `skills/forge/commands/swarm.md`, `skills/forge/commands/delegated-mode.md`, `skills/forge/phases/p4-plan.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Audit I10 à I14. Option `Merge` : annonce le commit de la tâche du parent et du worktree, `git status` affiché avant `add -A`. « Contexte de décision » hors questions `Plan`, `Mode`, `Task`, `Brief`, `Promotion`. Pas de plan de branches en mode délégué. Procédure de `Turn into a task`. Limites documentées : relais entre deux tours seulement, permissions du dossier `.worktrees` (`/add-dir`), fichiers ignorés et base de données non isolés, `core.longpaths` sous Windows. `git -C "<WORKTREE>"` guillemeté.
+**Actual time:** ≈ 0.8 min
+[x] swarm.md : commits annoncés dans `Next`, `status --porcelain` avant `add -A`, contexte de décision limité aux questions de choix (aussi delegated-mode.md), procédure `Turn into a task`, relais entre deux tours (une tâche ordinaire par tour), chemins de worktree guillemetés ; p4 : pas de plan de branches en mode délégué ; puce « Limits » README EN/FR ; CHANGELOG. Guillemets de delegation.md laissés à T34.
+
+### T34 — Cohérence des instructions et de la documentation
+**Effort:** M
+**Estimated files:** 12
+**Estimated time:** ≈ 6 min (4-8)
+**Files:** `skills/forge/SKILL.md`, `skills/forge/commands/delegation.md`, `skills/forge/commands/delegated-mode.md`, `skills/forge/commands/engrave.md`, `skills/forge/commands/closure.md`, `skills/forge/commands/swarm.md`, `skills/forge/phases/p0-project.md`, `skills/forge/phases/p4-plan.md`, `skills/forge/phases/p5-resume.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Audit, mineurs des instructions. `<PARENT_FOLDER>` / `<PARENT_BRANCH>` au lieu de `<PARENT>` à double sens. `**Estimation ratios:**` retiré (écrit, jamais lu). `metrics.json` de clôture non écrasé par le `grave` suivant, ou règle écrite. Surcharge des seuils par `coding-standards.md` retirée (sans format). Branches filles créées à un seul endroit (`swarm.md`). Invariants répétés (chemin absolu, heure, fusion par le parent) énoncés une fois. `SKILL.md` cite l'essaim dans le mode délégué. Exception d'écriture hors ROOT (`TIME_LOG`, `SCRATCHPAD`) écrite. Mode mise à jour de p0 : `**Check pattern:**` généré pour un projet existant. README : exemples de plan à jour, libellés figés en anglais dans `README.fr.md` ; CHANGELOG : `**Dev port:**` corrigé.
+**Actual time:** ≈ 1.3 min
+[x] `<PARENT_FOLDER>` / `<PARENT_BRANCH>` ; `**Estimation ratios:**` retiré (engrave étape 4) ; règle de la synthèse de clôture écrite ; surcharge par coding-standards retirée ; création des filles au lancement seulement ; invariants renvoyés à leur source ; SKILL.md cite l'essaim ; exception TIME_LOG / SCRATCHPAD ; p0 mise à jour : `**Check pattern:**` et contrôle du hook ; guillemets dans delegation.md ; exemples de plan README (libellés anglais, `Objective`) ; CHANGELOG. 17 renvois « section de fichier » vérifiés.
+
+### T35 — Vérification d'ensemble
+**Effort:** XS
+**Estimated files:** 1
+**Estimated time:** ≈ 1 min (0-1)
+**Files:** `.forge/branch/agent-swarm/plan.md`
+**Description:** Toutes les suites de `tests/` vertes. Journal réel de la branche réagrégé : minutes d'agent avant et après T27 notées. Estimation sur un dépôt sans `master` ni `main`. Reprise rejouée sur un plan de branches jetable : question `Swarm` posée, aucun lancement automatique.
+**Actual time:** ≈ 4.8 min
+[x] 11 suites vertes (297 tests). Journal réel : parent 9,5 min avec l'ancien script, 18,1 avec le nouveau. Dépôt `develop` sans master ni main : `files: null`, calibrage en JSON valide (code 0). Reprise de l'essaim vérifiée à la lecture seulement (étape 8 de p5, déclencheurs de swarm.md) : rejouer des instructions demande une vraie session.
+
 
 ## Risks
 - Hooks de frontmatter qui ne couvriraient pas les sous-agents → T4 bascule sur les installeurs (hook global, actif aussi hors forge : le script sort sans rien écrire hors projet forgé).
@@ -178,4 +295,17 @@ None
 | T20 — Motif de vérification sans ancrage | XS | [x] |
 | T21 — Ratio de tokens des seules branches déléguées | XS | [x] |
 | T22 — Seuil de branche à 300 000 tokens | XS | [x] |
-| **Total** | **3 XS · 9 S · 7 M · 3 L** | |
+| T23 — En-tête du plan et règle de coche | XS | [x] |
+| T24 — Calibrage robuste et estimations arrondies | XS | [x] |
+| T25 — Hook et marqueurs sûrs sous bash < 5 | S | [x] |
+| T26 — Estimation des tâches ajoutées, fichiers depuis Files | M | [x] |
+| T27 — Tour interrompu par un nouveau prompt compté | S | [x] |
+| T28 — Agrégation rapide | S | [x] |
+| T29 — Lignes de délégué écrites par script | S | [x] |
+| T30 — Essaim : plan, questions, aucun lancement sans accord | M | [x] |
+| T31 — Essaim : un délégué par branche, reprise, ports | M | [x] |
+| T32 — `swarm-status.sh` : dépendances, bloquées, périmés | M | [x] |
+| T33 — Essaim : commits annoncés, règles, limites | M | [x] |
+| T34 — Cohérence des instructions et de la documentation | M | [x] |
+| T35 — Vérification d'ensemble | XS | [x] |
+| **Total** | **6 XS · 13 S · 13 M · 3 L** | |

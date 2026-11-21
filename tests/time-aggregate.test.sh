@@ -134,6 +134,23 @@ test_ignores_turn_without_stop() {
   assert_contains '"parent_minutes":1.0' "$(aggregate)"
 }
 
+# Message tapé pendant le travail : le prompt arrive avant le Stop du tour en cours, qui n'en reçoit jamais.
+test_closes_turn_interrupted_by_queued_prompt_at_last_activity() {
+  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}'              '{"ts":10000,"event":"PreToolUse","session":"s","tool":"Bash"}'              '{"ts":60000,"event":"PostToolUse","session":"s","tool":"Bash","duration_ms":50000}'              '{"ts":90000,"event":"UserPromptSubmit","session":"s","origin":"human"}'              '{"ts":150000,"event":"Stop","session":"s"}'
+  assert_contains '"parent_minutes":2.0' "$(aggregate)"
+}
+
+# Échap : Claude Code n'envoie pas de Stop, le tour suivant s'ouvre après une pause humaine non mesurable.
+test_closes_turn_interrupted_by_escape_without_counting_the_pause() {
+  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}'              '{"ts":30000,"event":"PostToolUse","session":"s","tool":"Bash","duration_ms":30000}'              '{"ts":600000,"event":"UserPromptSubmit","session":"s","origin":"human"}'              '{"ts":660000,"event":"Stop","session":"s"}'
+  assert_contains '"parent_minutes":1.5' "$(aggregate)"
+}
+
+test_closes_turn_interrupted_by_task_notification() {
+  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}'              '{"ts":120000,"event":"PostToolUse","session":"s","tool":"Bash","duration_ms":1000}'              '{"ts":120000,"event":"UserPromptSubmit","session":"s","origin":"agent"}'              '{"ts":180000,"event":"Stop","session":"s"}'
+  assert_contains '"parent_minutes":3.0' "$(aggregate)"
+}
+
 test_keeps_interleaved_sessions_apart() {
   own_events '{"ts":0,"event":"UserPromptSubmit","session":"a","origin":"human"}' \
              '{"ts":30000,"event":"UserPromptSubmit","session":"b","origin":"human"}' \
@@ -392,6 +409,11 @@ test_task_ignores_older_turn_left_without_stop() {
   assert_contains '"agent_minutes":1.0' "$(aggregate --task T1)"
 }
 
+test_task_closes_turn_interrupted_by_prompt_at_last_activity() {
+  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}'              '{"ts":0,"event":"task_start","task":"T1"}'              '{"ts":60000,"event":"PostToolUse","session":"s","tool":"Bash","duration_ms":1000}'              '{"ts":300000,"event":"UserPromptSubmit","session":"s","origin":"human"}'              '{"ts":330000,"event":"task_done","task":"T1"}'              '{"ts":360000,"event":"Stop","session":"s"}'
+  assert_contains '"agent_minutes":1.5' "$(aggregate --task T1)"
+}
+
 test_task_removes_question_inside_window_and_counts_it_as_human() {
   own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
              '{"ts":10000,"event":"task_start","task":"T1"}' \
@@ -594,7 +616,10 @@ run_test test_does_not_count_wait_for_delegate_as_human_time "ne compte pas en t
 run_test test_does_not_count_absence_over_six_hours_as_human_time "ne compte pas en temps humain une absence de plus de 6 h avant un prompt"
 run_test test_counts_gap_of_exactly_six_hours_as_human_time "compte en temps humain un écart de 6 h tout juste"
 run_test test_does_not_count_question_left_over_six_hours_as_human_time "ne compte pas en temps humain une question restée plus de 6 h sans réponse"
-run_test test_ignores_turn_without_stop "ignore un tour sans Stop"
+run_test test_ignores_turn_without_stop "ignore un tour resté ouvert en fin de journal"
+run_test test_closes_turn_interrupted_by_queued_prompt_at_last_activity "ferme au dernier événement un tour interrompu par un prompt en file"
+run_test test_closes_turn_interrupted_by_escape_without_counting_the_pause "ferme un tour interrompu par Échap sans compter la pause"
+run_test test_closes_turn_interrupted_by_task_notification "ferme un tour interrompu par une notification de tâche de fond"
 run_test test_keeps_interleaved_sessions_apart "sépare deux sessions entrelacées"
 run_test test_sums_check_durations_of_main_session "additionne les vérifications de la session principale"
 run_test test_ignores_delegate_events_of_own_log "écarte des durées de la branche les événements de ses délégués"
@@ -626,6 +651,7 @@ run_test test_changes_nothing_in_repository "ne modifie rien dans le dépôt"
 run_test test_task_measures_turn_part_inside_window "tâche : mesure la part d'un tour comprise dans la fenêtre"
 run_test test_task_counts_open_turn_up_to_done_mark "tâche : compte un tour encore ouvert jusqu'à la marque de fin"
 run_test test_task_ignores_older_turn_left_without_stop "tâche : écarte un tour plus ancien resté sans Stop"
+run_test test_task_closes_turn_interrupted_by_prompt_at_last_activity "tâche : ferme au dernier événement un tour interrompu par un prompt"
 run_test test_task_removes_question_inside_window_and_counts_it_as_human "tâche : retire une question de la fenêtre et la compte en temps humain"
 run_test test_task_ignores_turns_and_questions_outside_window "tâche : écarte tours et questions hors de la fenêtre"
 run_test test_task_counts_gap_before_human_prompt_inside_window "tâche : compte en temps humain l'écart avant un prompt dans la fenêtre"

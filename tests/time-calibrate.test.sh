@@ -64,6 +64,21 @@ test_returns_reference_thresholds_and_fixed_costs() {
   assert_contains '"branch_criteria_required":4,"branch_minutes":15,"branch_tokens":300000,"branch_layers":3}' "$output"
 }
 
+test_estimates_at_least_one_minute() {
+  assert_contains '"estimate":{"files":1,"minutes":1,"low":1,"high":1,"tokens":5000}' "$(calibrate --files 1)"
+}
+
+test_estimates_each_task_of_a_list_and_their_sum() {
+  local output
+  output=$(calibrate --files 3,5,8)
+  assert_contains '"estimate":{"files":16,"minutes":8,"low":6,"high":10,"tokens":80000}' "$output"
+  assert_contains '"estimates":[{"files":3,"minutes":2,"low":1,"high":2,"tokens":15000},{"files":5,"minutes":2,"low":2,"high":3,"tokens":25000},{"files":8,"minutes":4,"low":3,"high":5,"tokens":40000}]' "$output"
+}
+
+test_gives_no_list_for_a_single_value() {
+  case $(calibrate --files 4) in *'"estimates"'*) echo "    unexpected estimates list"; exit 1 ;; esac
+}
+
 test_estimates_files_with_range_and_tokens() {
   assert_contains '"estimate":{"files":120,"minutes":60,"low":45,"high":78,"tokens":600000}' "$(calibrate --files 120)"
 }
@@ -120,6 +135,16 @@ test_takes_tokens_per_file_from_delegated_branch() {
   assert_contains '"tokens_per_file":10000' "$(calibrate)"
 }
 
+test_ignores_branch_without_actual_files() {
+  write_metrics a 2026-11-01 50 null 80 200000
+  write_metrics b 2026-11-02 30 100 100 null
+  local output
+  output=$(calibrate --files 10 2>&1)
+  assert_equals "0" "$?"
+  assert_contains '{"minutes_per_file":0.30,"tokens_per_file":5000' "$output"
+  assert_contains '"estimate":{"files":10,"minutes":3' "$output"
+}
+
 test_reads_branch_folder_containing_a_slash() {
   write_metrics feature/x 2026-11-01 20 100 100 null
   assert_contains '"minutes_per_file":0.20' "$(calibrate)"
@@ -130,10 +155,20 @@ test_reads_branch_folder_containing_a_slash() {
 test_applies_file_error_beyond_tolerance() {
   write_metrics a 2026-11-01 50 100 80 null
   write_metrics b 2026-11-02 50 100 80 null
+  write_metrics c 2026-11-03 50 100 80 null
   local output
   output=$(calibrate --files 80)
   assert_contains '"file_error":1.25,"apply_file_error":true' "$output"
   assert_contains '"estimate":{"files":80,"minutes":50' "$output"
+}
+
+test_ignores_file_error_below_three_branches() {
+  write_metrics a 2026-11-01 50 100 80 null
+  write_metrics b 2026-11-02 50 100 80 null
+  local output
+  output=$(calibrate --files 80)
+  assert_contains '"file_error":1.25,"apply_file_error":false' "$output"
+  assert_contains '"estimate":{"files":80,"minutes":40' "$output"
 }
 
 test_ignores_file_error_within_tolerance() {
@@ -174,6 +209,13 @@ test_rejects_non_numeric_files() {
   assert_equals "" "$output"
 }
 
+test_rejects_malformed_files_list() {
+  local output
+  output=$(calibrate --files 3,,5 2>/dev/null)
+  assert_equals "1" "$?"
+  assert_equals "" "$output"
+}
+
 test_rejects_unknown_argument() {
   calibrate --nope 2>/dev/null
   assert_equals "1" "$?"
@@ -197,6 +239,9 @@ run_test() {
 echo "time-calibrate.sh"
 run_test test_uses_reference_values_without_measure "prend les valeurs de référence sans mesure du projet"
 run_test test_returns_reference_thresholds_and_fixed_costs "rend les seuils de la règle de branche et les coûts fixes"
+run_test test_estimates_at_least_one_minute "estime au moins une minute, bornes comprises"
+run_test test_estimates_each_task_of_a_list_and_their_sum "estime chaque tâche d'une liste et leur somme en un appel"
+run_test test_gives_no_list_for_a_single_value "ne rend pas de liste pour une seule valeur"
 run_test test_estimates_files_with_range_and_tokens "estime un nombre de fichiers avec fourchette et tokens"
 run_test test_takes_median_of_measured_branches "prend la médiane des branches mesurées"
 run_test test_keeps_only_five_most_recent_branches "ne garde que les cinq branches les plus récentes"
@@ -204,13 +249,16 @@ run_test test_ignores_branch_without_measured_minutes "écarte une branche sans 
 run_test test_ignores_partially_measured_branch "écarte une branche mesurée en partie"
 run_test test_ignores_mixed_branch_for_tokens_per_file "écarte une branche mixte du ratio de tokens par fichier"
 run_test test_takes_tokens_per_file_from_delegated_branch "tire le ratio de tokens d'une branche entièrement déléguée"
+run_test test_ignores_branch_without_actual_files "écarte une branche sans fichiers réels, sans division par zéro"
 run_test test_reads_branch_folder_containing_a_slash "lit la synthèse d'une branche contenant un slash"
 run_test test_applies_file_error_beyond_tolerance "applique l'erreur de prévision des fichiers au-delà de 20 %"
+run_test test_ignores_file_error_below_three_branches "n'applique pas l'erreur de prévision sous trois branches"
 run_test test_ignores_file_error_within_tolerance "n'applique pas l'erreur de prévision sous 20 %"
 run_test test_is_reliable_with_five_branches_in_range "est fiable avec cinq branches dans leur fourchette"
 run_test test_is_indicative_below_five_measures "est indicative sous cinq mesures"
 run_test test_is_indicative_when_too_few_branches_in_range "est indicative quand trop peu de branches tombent dans leur fourchette"
 run_test test_rejects_non_numeric_files "refuse un nombre de fichiers non entier"
+run_test test_rejects_malformed_files_list "refuse une liste de fichiers mal formée"
 run_test test_rejects_unknown_argument "refuse un argument inconnu"
 
 echo "$PASSED passed, $FAILED failed"

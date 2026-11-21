@@ -16,7 +16,13 @@
    Mode délégué `SCOPE: linked` (BRIEF contient `## Origin`) → aucune question : terminer par `FORGE_DONE` (section « Mode délégué » de `SKILL.md`). STOP.
    Mode délégué `SCOPE: branch` → la même question en `FORGE_QUESTION`, `options: none`, `content: none`.
 
-8. **Plan de branches** (au moins une tâche `### Tn — Branch <x>` ouverte) → aucune question `Mode` : exécuter `bash <SKILL_DIR>/scripts/swarm-status.sh --root <ROOT> --branch <BRANCH>`, afficher l'essaim — en cours (avec `done/total`), lançables, en attente (dépendance nommée), tâches du parent —, puis appliquer « Relance de l'essaim » ou « Reprise de l'essaim » (`commands/swarm.md`). STOP — ne pas continuer vers l'étape 9.
+8. **Plan de branches** (au moins une tâche `### Tn — Branch <x>` ouverte) → aucune question `Mode` : exécuter `bash <SKILL_DIR>/scripts/swarm-status.sh --root <ROOT> --branch <BRANCH>`, afficher l'essaim — en cours (avec `done/total`), lançables, en attente (dépendance nommée), tâches du parent —, puis la première ligne qui s'applique :
+   - SWARM porte des branches `running` ou `waiting for merge` dont le délégué n'a pas été lancé dans cette conversation → « Reprise de l'essaim » (`commands/swarm.md`), qui pose la question `Resume`.
+   - Branches lançables sans conflit → « Relance de l'essaim » ci-dessous.
+   - Tâches ordinaires prenables (`ordinary` de `swarm-status.sh`, `waiting_for` vide) → étape 9, limitée à ces tâches.
+   - Sinon → une ligne : "Waiting for delegates or dependencies: `<X>` (`<dépendance>`)." STOP.
+
+   Aucun lancement sans réponse : une reprise de session n'est jamais un accord pour lancer des délégués.
 9. **Au moins une tâche ouverte** → poser le choix du mode d'exécution avec `AskUserQuestion` — jamais une question en texte libre.
    - Plan validé dans ce tour par `Validate and chain` (étape 7 de `p4-plan.md`) → aucune question : enchaîner toutes les tâches ouvertes dans l'ordre, sans arrêt ni feu vert entre elles. Mode délégué compris.
    - Une seule tâche ouverte → `header` : `Task`, options `Start T<n>` / `Cancel`, le titre de la tâche nommé dans la question. `Cancel` → STOP. Mode délégué `SCOPE: linked` → puce dédiée ci-dessous.
@@ -40,8 +46,9 @@
 | T3 — ... | L | 15 | ≈ 8 min | — | [!] blocked — brief reason |
 
 - Estimé : minutes de `**Estimated time:**`, sans la fourchette. Réel : valeur de `**Actual time:**`, `—` si absente.
-- Sous le tableau, une ligne de reste à faire quand au moins une tâche ouverte porte `**Estimated files:**` : `bash <SKILL_DIR>/scripts/time-calibrate.sh --root <ROOT> --files <somme des tâches ouvertes>`, puis `Remaining ≈ <files> files · ≈ <minutes> min (<low>-<high>)`, suivi de ` · indicative` quand `indicative` est vrai.
-- Plan sans `**Estimated files:**` → colonne Fichiers et ligne de reste omises. Plan sans `**Estimated time:**` → colonnes Estimé et Réel omises.
+- Fichiers : fichiers de la tâche (« Fichiers d'une tâche », `phases/p4-plan.md`).
+- Sous le tableau, une ligne de reste à faire quand au moins une tâche ouverte porte `**Estimated time:**` : `bash <SKILL_DIR>/scripts/time-calibrate.sh --root <ROOT> --files <somme des fichiers des tâches ouvertes>`, puis `Remaining ≈ <files> files · ≈ <minutes> min (<low>-<high>)`, suivi de ` · indicative` quand `indicative` est vrai.
+- Plan sans `**Estimated time:**` → colonnes Fichiers, Estimé et Réel et ligne de reste omises. Tâche sans `**Estimated time:**` dans un plan qui en porte → `—` dans ces colonnes.
 
 ---
 
@@ -49,6 +56,7 @@
 
 **Silencieuse (automatique)** — après tâche terminée ou événement notable :
 - Cocher `[x]`, ajouter note max 1 ligne, marquer `[!]` si bloqué. Coche → section « Mesure d'une tâche » ci-dessous.
+  ⚠️ Coche par l'outil Edit sur la ligne de statut exacte de la tâche — jamais par `sed` ni par une expression régulière : `[ ]` y désigne un espace, et le remplacement corrompt le reste du fichier.
 - Script diffusé à part du déploiement git (section « Contenu généré » du SKILL) → ajouter l'étape dans `## Deployment` : quoi, moment d'exécution, numéros des tâches d'origine, chemin de la copie dans OUTPUT. `None` remplacé par la première étape. Étape qui exécute du SQL → section « Script de déploiement SQL » ci-dessous.
 
 **Substantielle (confirmation obligatoire)** — décrire la modification, puis poser le choix avec `AskUserQuestion` — `header` : `Plan`, options `Apply` / `Leave as is` — avant d'appliquer :
@@ -71,7 +79,7 @@
 **Réaction — dans l'ordre :**
 1. Démarrage → `bash <SKILL_DIR>/scripts/time-mark.sh --root <ROOT> --branch <BRANCH> --task T<n> --event start`, avant toute autre action de la tâche.
 2. Coche → `bash <SKILL_DIR>/scripts/time-mark.sh --root <ROOT> --branch <BRANCH> --task T<n> --event done`, puis `bash <SKILL_DIR>/scripts/time-aggregate.sh --root <ROOT> --branch <BRANCH> --task T<n>`, en un seul appel Bash.
-3. Écrire sous `**Estimated time:**` de la tâche, à défaut sous `**Estimated files:**` : `measured` vrai → `**Actual time:** ≈ <agent_minutes> min` ; `measured` faux → `**Actual time:** —`.
+3. Écrire sous `**Estimated time:**` de la tâche, à défaut sous `**Effort:**` : `measured` vrai → `**Actual time:** ≈ <agent_minutes> min` ; `measured` faux → `**Actual time:** —`.
 
 ⚠️ Jamais de durée estimée à la main à la place d'une mesure absente : `—` seul.
 ⚠️ Les deux scripts n'écrivent rien sans journal de mesure (hook non installé) : jamais d'erreur à signaler, `**Actual time:** —`.
@@ -188,8 +196,9 @@ Mode délégué → aucune proposition : `AskUserQuestion` est inaccessible et a
 
 Une demande complémentaire est toujours une tâche du plan — jamais de choix « au plan / hors plan ».
 
-1. **Formuler** la tâche telle qu'elle entre au plan — titre, effort, fichiers estimés, fichiers, description — précédée de :
+1. **Formuler** la tâche telle qu'elle entre au plan — titre, effort, temps estimé, fichiers, description — précédée de :
    > "This request isn't in the current plan."
+   Temps estimé : `bash <SKILL_DIR>/scripts/time-calibrate.sh --root <ROOT> --files <fichiers de la tâche>`, `estimate` au ratio du moment, écrit `**Estimated time:**` et figé à la validation.
    Si la demande change durablement le périmètre → ajouter à la même présentation l'entrée proposée pour `## Scope & rules` du brief.
 
 2. **Poser une seule question** avec `AskUserQuestion` — `header` : `Plan`, options `Validate` / `Cancel` — motif « Validation d'un contenu » de `SKILL.md` : le changement demandé arrive en texte libre, reformuler, reposer la question. Champ `question` = la tâche formulée, recopiée en dur selon le « Gabarit — question `Plan` » ci-dessous, puis une ligne vide et la phrase de question. Aucun champ `preview`. Mode délégué → `FORGE_QUESTION`, la tâche formulée entière dans `content`.
@@ -207,7 +216,7 @@ Gabarit figé du champ `question` de l'étape 2 — crochets à remplir, rien d'
 ```
 header:   Plan
 question: T[n] — [Titre]
-          Effort : [S|M|L|XL] · [n] fichiers estimés
+          Effort : [S|M|L|XL] · [n] fichiers · ≈ [minutes] min ([bas]-[haut])
           Description :
           - [idée 1]
           - [idée 2]
@@ -243,12 +252,17 @@ Lire et exécuter intégralement le fichier de la première commande dont le dé
 **Déclencheur :**
 - demande de lancer, relancer ou reprendre des branches filles du plan (« lance l'essaim », « lance les branches », « relance T3 ») → « Délégation — essaim de branches filles » ;
 - `FORGE_QUESTION` ou `FORGE_DONE` d'un délégué lancé par l'essaim → « Boucle de relais de l'essaim » ;
-- SWARM porte des branches `running` sans délégué actif dans la session → « Reprise de l'essaim » ;
-- « Relance de l'essaim » ci-dessous.
+- étape 8 de « Actions », branches `running` ou `waiting for merge` dont le délégué n'a pas été lancé dans cette conversation → « Reprise de l'essaim » ;
+- réponse `Launch` à la question « Relance de l'essaim » ci-dessous → « Délégation — essaim de branches filles ».
 
-### Relance de l'essaim → `commands/swarm.md`, « Délégation — essaim de branches filles »
+### Relance de l'essaim
 
-**Déclencheur :** une tâche-branche vient d'être cochée par « Fusion d'une branche fille », ou moins de N délégués sont en cours alors que `swarm-status.sh` rend des branches lançables. Aucune lançable → aucune question.
+**Déclencheur :** étape 8 de « Actions », branches lançables sans conflit dans le JSON de `swarm-status.sh` (`slots` = places libres, N délégués au plus, `**N:**` de `swarm.md`).
+
+**Réaction :** poser le choix avec `AskUserQuestion` — `header` : `Swarm` :
+- `Launch <X>, <Y>` → "Launch these branches in parallel." — les `slots` premières lançables, dans l'ordre du plan ; « Délégation — essaim de branches filles » de `commands/swarm.md`.
+- `Work on parent tasks` → "Leave the swarm as is and take the parent's own tasks." — seulement si des tâches ordinaires sont prenables ; étape 9, limitée à ces tâches.
+- `Later` → "Launch nothing now." — STOP.
 
 ### Délégation — projet lié → `commands/delegation.md`, section du même nom
 

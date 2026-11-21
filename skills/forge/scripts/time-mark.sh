@@ -1,25 +1,34 @@
 #!/bin/bash
-# Marque de tâche : ajoute une ligne horodatée au journal de mesure au démarrage ou à la coche d'une tâche du plan.
-#   Appelé par le skill, jamais par un hook ; lu par time-aggregate.sh --task
-#   N'écrit rien sur la sortie standard, ne bloque jamais : sortie 0 dans tous les cas
+# Marque du journal de mesure : seul chemin d'écriture des lignes que le skill ajoute au journal du hook.
+#   start / done        : démarrage ou coche d'une tâche du plan, horodatés ; lus par time-aggregate.sh --task
+#   delegate            : association d'un délégué à sa branche, sans horodatage — triée en tête du journal,
+#                         elle précède ainsi le SubagentStart écrit avant que le skill connaisse l'identifiant
+#   delegate_usage      : tokens rapportés au retour d'un délégué, sans horodatage
+#   Appelé par le skill, jamais par un hook ; n'écrit rien sur la sortie standard, sortie 0 dans tous les cas
 #   Journal absent (hook de mesure non installé) → rien n'est écrit, jamais de journal créé
 #   Délégué : --time-log désigne le journal de la branche parente, où le hook range déjà ses événements ;
-#   la ligne porte alors la branche du délégué, qui la relie à sa mesure
-# Usage : time-mark.sh --branch <name> --task T<n> --event start|done [--root <dir>] [--time-log <file>]
+#   la marque de tâche porte alors la branche du délégué, qui la relie à sa mesure
+# Usage : time-mark.sh --branch <name> --task T<n>[.<n>] --event start|done [--root <dir>] [--time-log <file>]
+#         time-mark.sh --time-log <file> --event delegate --agent-id <id> --branch <name>
+#         time-mark.sh --time-log <file> --event delegate_usage --agent-id <id> --tokens <n>
 # Écrit : {"ts":<ms>,"event":"task_start"|"task_done","task":"T<n>"[,"branch":"<name>"]}
+#         {"event":"delegate","agent_id":"<id>","branch":"<name>"} · {"event":"delegate_usage","agent_id":"<id>","tokens":<n>}
 
 exec 2>/dev/null
 
 source "$(dirname "${BASH_SOURCE[0]}")/json.sh" || exit 0
 
 readonly TIME_LOG_NAME="time-log.jsonl"
-readonly TASK_PATTERN='^T[0-9]+$'
+readonly TASK_PATTERN='^T[0-9]+(\.[0-9]+)?$'
+readonly TOKENS_PATTERN='^[0-9]+$'
 
 ROOT="."
 BRANCH=""
 TASK=""
 EVENT=""
 TIME_LOG=""
+AGENT_ID=""
+TOKENS=""
 
 # Arguments lus sans échec bruyant : une valeur manquante ou un argument inconnu rend 1, le script sort sans écrire.
 parse_arguments() {
@@ -31,25 +40,34 @@ parse_arguments() {
       --task)     TASK=$2 ;;
       --event)    EVENT=$2 ;;
       --time-log) TIME_LOG=$2 ;;
+      --agent-id) AGENT_ID=$2 ;;
+      --tokens)   TOKENS=$2 ;;
       *)          return 1 ;;
     esac
     shift 2
   done
-  [ -n "$BRANCH" ] && [[ $TASK =~ $TASK_PATTERN ]] || return 1
+  has_required_arguments
+}
+
+has_required_arguments() {
   case $EVENT in
-    start|done) return 0 ;;
-    *)          return 1 ;;
+    start|done)     [ -n "$BRANCH" ] && [[ $TASK =~ $TASK_PATTERN ]] ;;
+    delegate)       [ -n "$TIME_LOG" ] && [ -n "$AGENT_ID" ] && [ -n "$BRANCH" ] ;;
+    delegate_usage) [ -n "$TIME_LOG" ] && [ -n "$AGENT_ID" ] && [[ $TOKENS =~ $TOKENS_PATTERN ]] ;;
+    *)              return 1 ;;
   esac
 }
 
 # Millisecondes depuis l'epoch, sans sous-processus ; le séparateur décimal suit la locale.
+# Rend 1 sans EPOCHREALTIME (bash < 5) : aucune heure fiable, rien ne s'écrit.
 current_time_ms() {
   local microseconds=${EPOCHREALTIME/[.,]/}
+  [ ${#microseconds} -gt 3 ] || return 1
   REPLY=${microseconds:0:${#microseconds}-3}
 }
 
-build_line() {
-  current_time_ms
+build_task_line() {
+  current_time_ms || return 1
   LINE="{\"ts\":$REPLY,\"event\":\"task_$EVENT\",\"task\":\"$TASK\""
   if [ -n "$TIME_LOG" ]; then
     json_escape "$BRANCH"
@@ -58,12 +76,30 @@ build_line() {
   LINE+="}"
 }
 
+build_delegate_line() {
+  local agent_json
+  json_escape "$AGENT_ID"; agent_json=$REPLY
+  if [ "$EVENT" = "delegate" ]; then
+    json_escape "$BRANCH"
+    LINE="{\"event\":\"delegate\",\"agent_id\":$agent_json,\"branch\":$REPLY}"
+  else
+    LINE="{\"event\":\"delegate_usage\",\"agent_id\":$agent_json,\"tokens\":$((10#$TOKENS))}"
+  fi
+}
+
+build_line() {
+  case $EVENT in
+    start|done) build_task_line ;;
+    *)          build_delegate_line ;;
+  esac
+}
+
 main() {
   local target
   parse_arguments "$@" || exit 0
   target=${TIME_LOG:-"$ROOT/.forge/branch/$BRANCH/$TIME_LOG_NAME"}
   [ -f "$target" ] || exit 0
-  build_line
+  build_line || exit 0
   printf '%s\n' "$LINE" >> "$target"
 }
 

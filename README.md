@@ -62,6 +62,8 @@ Both launchers sit at the repository root and delegate to `install/install.ps1` 
 
 Scripts are idempotent — re-running after an update overwrites cleanly without duplicates.
 
+The skill scripts need bash 5 (Git Bash on Windows, a recent bash from Homebrew on macOS, whose `/bin/bash` is 3.2). With an older bash, the time measurement hook and task marks write nothing and `log-entry.sh` stops with an error: no time is ever recorded wrong.
+
 The release archives ("Source code" zip / tar.gz on the [releases page](https://github.com/jeanchristoph/claude_forge/releases)) carry only what the installers need: `.forge/`, `docs/` and the `.git*` files are left out.
 
 The installers write `~/.claude/skills/forge/install.json` (installed version, repository URL, last update check), read by the skill update below.
@@ -325,7 +327,7 @@ Both installers also add `bash ~/.claude/skills/forge/scripts/time-hook.sh` (she
 
 - **Measure:** the hook adds one line per event to `.forge/branch/<branch>/time-log.jsonl` of the branch checked out in the session folder — timestamps, ids, durations, never a prompt, command or tool output. Outside a forged project it writes nothing. A delegate's events carry the parent's folder: the parent maps each delegate to its child branch.
 - **Summary:** at each engrave and at closure, `time-aggregate.sh` sums the log and git into `metrics.json`: agent minutes (main session + delegates), human minutes (an absence of more than 6 h before a prompt or an answer counts zero), a `partial` flag when the log misses the start of the branch (hook installed late: such a branch is left out of calibration), questions, check minutes, tokens of delegates, files and lines changed.
-- **Estimate:** each plan task states `**Estimated files:**`; `time-calibrate.sh` turns the total into agent minutes with a range (`≈ 120 files · ≈ 60 min (45-78)`), from the project's last measures or from `references/estimation.json` (0.5 min and 5k tokens per file). Marked *indicative* until five branches are measured and seven in ten land in their range. Effort letters stay as relative size, without any duration.
+- **Estimate:** each plan task counts the paths listed in its `**Files:**` (an explicit `(≈ n)` at the end of the line for a glob or files still unknown); one `time-calibrate.sh --files 3,5,8` call turns every task and the total into agent minutes with a range (`≈ 120 files · ≈ 60 min (45-78)`), from the project's last measures or from `references/estimation.json` (0.5 min and 5k tokens per file). Marked *indicative* until five branches are measured and seven in ten land in their range. Effort letters stay as relative size, without any duration.
 - **Per task:** each task also states `**Estimated time:**`, frozen when the plan is written. `time-mark.sh` marks its start and its tick in the log; `time-aggregate.sh --task` measures the agent minutes between both marks (question waits removed, same absence rule) and the tick writes `**Actual time:**`, or `—` when there is no measure (no log, hook installed late, missing mark). Every delegate, same repository or linked project, writes its marks to the parent's log (`TIME_LOG:` line of its prompt), where its events already land, and reports each task's actual time in `FORGE_DONE`; a parent task delegated to a linked project gets the sum of its child tasks (`time-aggregate.sh --task T1,T2`, `—` as soon as one child is unmeasured); a swarm branch task takes `agent_minutes` from the branch `metrics.json`. The progress table shows Estimated and Actual side by side.
 - **Check commands:** the `**Check pattern:**` line of `project.md` (regular expression) marks the Bash commands counted as checks.
 
@@ -501,15 +503,24 @@ with a `**Depends on:**` line, a shared-extension-points task comes first and an
 
 - **Launch:** `swarm-status.sh` lists running, launchable and waiting branches and simulates the merge of the
   parent. Up to N (3 by default, changed only on request) launchable branches get a worktree, the parent merged in,
-  a brief, their own dependency install and port, and a delegated forge each — all in the same turn.
+  a brief, their own dependency install and port, and a delegated forge each — all in the same turn. On resume,
+  launchable branches are offered in a `Swarm` question (launch, work on parent tasks, later): reopening a session
+  never launches delegates by itself.
 - **Relay:** questions are prefixed with their branch, grouped in one dialog when several wait, sent back to the
   delegate when they lack decision context; coordination notes warn when two branches touch the same module.
 - **End of a branch:** one question — merge and launch the next branch, merge, check before merging (the app runs
-  from the worktree) or do nothing. The parent alone merges into the parent branch: fast-forward, or reverse merge
+  from the worktree) or do nothing; a merge option commits the branch work, and the parent's task in progress first. The parent alone merges into the parent branch: fast-forward, or reverse merge
   with conflict rules, full check, then fast-forward; never a push, never a merge into the default branch.
 - **Parent at work:** while delegates run, the parent takes the ordinary tasks it can take, relays first.
-- **State:** `swarm.md` keeps N, branches, choices sent and coordination notes; delegates stopped by accident are
-  relaunched from it with a `RESUME:` line.
+- **Limits:** a delegate's question reaches the parent only between two turns, so while delegates run the parent
+  takes one ordinary task per turn. Worktrees live next to the repository, outside the session folder: allow that
+  folder (`/add-dir ../<repository>.worktrees` or `additionalDirectories`) or background delegates stop on permission
+  prompts. Ignored files (`.env`, local configuration) are not copied into a worktree and the development database
+  stays shared between delegates: keep database checks for the final overall check. On Windows, deep
+  `node_modules` trees may need `git config core.longpaths true`.
+- **State:** `swarm.md` keeps N, branches with their delegate id and port, choices sent and coordination notes;
+  on resume, a `Resume` question relaunches stopped delegates with a `RESUME:` line and the same port — never
+  without an answer, since a delegate still running elsewhere would share its worktree with the new one.
 
 ---
 
@@ -590,7 +601,7 @@ the same way, as `YYYYMMDD-email-<topic>.txt` and `.html`.
 
 ```markdown
 # Plan — <BRANCH>
-**Goal:** ...
+**Objective:** ...
 **Date:** ...
 **Estimate:** ≈ 3 files · ≈ 2 min (1-2)
 
@@ -598,8 +609,8 @@ the same way, as `YYYYMMDD-email-<topic>.txt` and `.html`.
 
 ### T1 — Title
 **Effort:** S
-**Estimated files:** 3
-**Files:** `src/...`
+**Estimated time:** ≈ 2 min (1-2)
+**Files:** `src/a.ts`, `src/b.ts`, `tests/a.test.ts`
 **Description:** ...
 [ ]
 

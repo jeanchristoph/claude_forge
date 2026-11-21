@@ -19,6 +19,7 @@ readonly CHECK_PATTERN_LABEL='**Check pattern:**'
 readonly AGENT_PROMPT_PATTERN='"prompt":"<(agent-message|task-notification)'
 
 INPUT=""
+EVENT_TIME=""
 
 # Valeur texte d'un champ de premier niveau dans REPLY, vide si absent. Une clé précédée d'une barre oblique
 # inverse appartient à une chaîne échappée (commande, réponse d'outil), jamais au JSON du hook.
@@ -35,8 +36,10 @@ read_number_field() {
 }
 
 # Millisecondes depuis l'epoch, sans sous-processus ; le séparateur décimal suit la locale.
+# Rend 1 sans EPOCHREALTIME (bash < 5) : aucune heure fiable, rien ne s'écrit.
 current_time_ms() {
   local microseconds=${EPOCHREALTIME/[.,]/}
+  [ ${#microseconds} -gt 3 ] || return 1
   REPLY=${microseconds:0:${#microseconds}-3}
 }
 
@@ -95,11 +98,10 @@ is_measured_event() {
   esac
 }
 
-# Ligne JSON de l'événement dans LINE, sans accolade fermante.
+# Ligne JSON de l'événement dans LINE, sans accolade fermante ; l'heure est celle du démarrage du hook.
 build_line() {
   local time_log=$1
-  current_time_ms
-  LINE="{\"ts\":$REPLY"
+  LINE="{\"ts\":$EVENT_TIME"
   append_field event "$EVENT"
   read_string_field session_id
   [ -n "$REPLY" ] && append_field session "$REPLY"
@@ -123,6 +125,9 @@ is_late_start() {
 
 main() {
   local time_log
+  # Heure prise avant toute lecture : l'analyse d'une grosse sortie d'outil et git la décaleraient
+  current_time_ms || exit 0
+  EVENT_TIME=$REPLY
   INPUT=$(cat) || exit 0
   read_string_field hook_event_name; EVENT=$REPLY
   read_string_field agent_id; AGENT_ID=$REPLY
@@ -134,8 +139,7 @@ main() {
   time_log=$REPLY
   [ -n "$time_log" ] || exit 0
   if is_late_start "$time_log"; then
-    current_time_ms
-    printf '{"ts":%s,"event":"late_start"}\n' "$REPLY" >> "$time_log"
+    printf '{"ts":%s,"event":"late_start"}\n' "$EVENT_TIME" >> "$time_log"
   fi
   build_line "$time_log"
   printf '%s}\n' "$LINE" >> "$time_log"

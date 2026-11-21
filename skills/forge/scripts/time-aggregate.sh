@@ -33,13 +33,20 @@ readonly EXCLUDED_PATHS=(
 )
 
 # Fonctions communes aux programmes awk de la branche et de la tâche.
+# field() cherche la clé par index() : un motif construit par concaténation serait recompilé à chaque appel
+# (≈ 0,4 ms par ligne sur un journal de 50 000 lignes).
 readonly AWK_HELPERS='
-  function field(name,   pattern, value) {
-    pattern = "\"" name "\":(\"[^\"]*\"|[0-9]+|true)"
-    if (!match($0, pattern)) return ""
-    value = substr($0, RSTART + length(name) + 3, RLENGTH - length(name) - 3)
-    gsub(/"/, "", value)
-    return value
+  function field(name,   key, start, rest, stop) {
+    key = "\"" name "\":"
+    start = index($0, key)
+    if (!start) return ""
+    rest = substr($0, start + length(key))
+    if (substr(rest, 1, 1) == "\"") {
+      rest = substr(rest, 2)
+      stop = index(rest, "\"")
+      return stop ? substr(rest, 1, stop - 1) : ""
+    }
+    return match(rest, /^([0-9]+|true)/) ? substr(rest, 1, RLENGTH) : ""
   }
   function minutes(ms) { return sprintf("%.1f", ms / 60000) }
   function is_absence(ms) { return ms > absence_ms }
@@ -50,6 +57,8 @@ readonly AWK_HELPERS='
 #   temps humain = Stop → prompt « origin: human » suivant, plus la durée des questions ;
 #   un écart ou une attente de plus de absence_ms est une absence : zéro minute humaine, question toujours comptée.
 #   Un prompt « origin: agent » (retour de délégué) ouvre un tour sans compter d'attente humaine.
+#   Un prompt qui arrive sur un tour encore ouvert (message tapé pendant le travail, Échap sans Stop, retour de
+#   délégué en plein tour) ferme ce tour à son dernier événement observé avant d'ouvrir le suivant.
 readonly DURATIONS_PROGRAM="$AWK_HELPERS"'
   FNR == 1 { file_index++; reading_parent = (has_parent_log && file_index == 1) }
   reading_parent && field("event") == "delegate" && field("branch") == branch { delegate[field("agent_id")] = 1; next }
@@ -68,6 +77,7 @@ readonly DURATIONS_PROGRAM="$AWK_HELPERS"'
     seen = 1; event = field("event"); session = field("session"); ts = field("ts") + 0
     if (event == "UserPromptSubmit") {
       if (field("origin") == "human" && (session in last_stop)) human += human_share(ts - last_stop[session])
+      if (session in turn_start) parent += last_activity[session] - turn_start[session] - turn_questions[session]
       delete last_stop[session]; turn_start[session] = ts; turn_questions[session] = 0
     } else if (event == "Stop") {
       if (session in turn_start) parent += ts - turn_start[session] - turn_questions[session]
@@ -80,6 +90,7 @@ readonly DURATIONS_PROGRAM="$AWK_HELPERS"'
     } else if (event == "PostToolUse" && field("check") == "true") {
       checks += field("duration_ms")
     }
+    last_activity[session] = ts
   }
   END {
     if (!seen) { print "null null null 0 null null 0 null"; exit }
@@ -103,7 +114,7 @@ readonly TASK_WINDOW_PROGRAM="$AWK_HELPERS"'
 # Durées d'une tâche, mêmes règles que DURATIONS_PROGRAM, chaque intervalle borné à la fenêtre [window_start, window_end].
 #   Un tour ou une exécution de délégué encore ouvert à la fin du journal compte jusqu'à window_end : la marque task_done
 #   s'écrit en cours de tour, avant son Stop. Seul le plus récent compte : un tour plus ancien sans Stop est une session
-#   interrompue, jamais la tâche en cours.
+#   interrompue, jamais la tâche en cours. Prompt sur un tour ouvert : même fermeture que DURATIONS_PROGRAM.
 #   Sortie : « agent humain questions ».
 readonly TASK_DURATIONS_PROGRAM="$AWK_HELPERS"'
   function inside(from, to) {
@@ -125,6 +136,7 @@ readonly TASK_DURATIONS_PROGRAM="$AWK_HELPERS"'
     event = field("event"); session = field("session"); ts = field("ts") + 0
     if (event == "UserPromptSubmit") {
       if (field("origin") == "human" && (session in last_stop) && !is_absence(ts - last_stop[session])) human += inside(last_stop[session], ts)
+      if (session in turn_start) parent += inside(turn_start[session], last_activity[session]) - turn_questions[session]
       delete last_stop[session]; turn_start[session] = ts; turn_questions[session] = 0
     } else if (event == "Stop") {
       if (session in turn_start) parent += inside(turn_start[session], ts) - turn_questions[session]
@@ -137,6 +149,7 @@ readonly TASK_DURATIONS_PROGRAM="$AWK_HELPERS"'
       if (!is_absence(ts - question_start[session])) human += wait
       delete question_start[session]
     }
+    last_activity[session] = ts
   }
   function latest_open(starts,   key, latest) {
     latest = ""
@@ -181,7 +194,7 @@ parse_arguments() {
     esac
   done
   [ -n "$BRANCH" ] || fail_usage "--branch is required"
-  [ -z "$TASK" ] || [[ $TASK =~ ^T[0-9]+(,T[0-9]+)*$ ]] || fail_usage "--task needs T<n>[,T<n>…]"
+  [ -z "$TASK" ] || [[ $TASK =~ ^T[0-9]+(\.[0-9]+)?(,T[0-9]+(\.[0-9]+)?)*$ ]] || fail_usage "--task needs T<n>[,T<n>…]"
   [ -d "$ROOT" ] || fail_usage "not a directory: $ROOT"
 }
 

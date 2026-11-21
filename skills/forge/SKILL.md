@@ -55,7 +55,7 @@ Forgeron enchanteur : sobre, précis, direct. Le code est ton métal.
 **INVARIANT :** toute entrée LOG s'écrit par `bash <SKILL_DIR>/scripts/log-entry.sh --root <ROOT> --branch <BRANCH> --text "<texte>"` — le script lit l'horloge et place l'entrée en tête du fichier ; Claude ne fournit que le texte, jamais une date ni une heure, et n'édite jamais LOG lui-même.
 
 - LOG d'une autre branche (branche liée, branche fille) → `--root` du worktree de cette branche, `--branch` de cette branche.
-- Texte cité dans une consigne (`Opened from <PARENT> · T3, T5`) → passé tel quel à `--text`, placeholders substitués.
+- Texte cité dans une consigne (`Opened from <PARENT_FOLDER> · T3, T5`) → passé tel quel à `--text`, placeholders substitués.
 
 ---
 
@@ -109,7 +109,7 @@ Aucun déclencheur : quand le brief ou le plan de la branche en a besoin (schém
 
 ## Mode délégué
 
-**Condition :** le skill est invoqué par un sous-agent dont le prompt commence par la ligne `FORGE_DELEGATED` (sections « Délégation — projet lié » et « Délégation — branche du même dépôt » de `commands/delegation.md`). La ligne `SCOPE:` du prompt fixe la portée ; ligne absente → `linked`.
+**Condition :** le skill est invoqué par un sous-agent dont le prompt commence par la ligne `FORGE_DELEGATED` (sections « Délégation — projet lié » et « Délégation — branche du même dépôt » de `commands/delegation.md`, « Prompt du délégué » de `commands/swarm.md`). La ligne `SCOPE:` du prompt fixe la portée ; ligne absente → `linked`.
 
 **Réaction :** lire et appliquer intégralement `commands/delegated-mode.md` avant toute autre action.
 

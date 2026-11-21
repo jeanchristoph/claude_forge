@@ -207,6 +207,146 @@ test_reads_plan_with_crlf_line_endings() {
   assert_contains '"waiting_for":["parent-purchasing"]' "$(swarm_status)"
 }
 
+# ── Plans impossibles ─────────────────────────────────────────────────────────
+
+test_reports_dependency_cycle_as_invalid() {
+  write_plan '# Plan — parent
+
+## Tasks
+
+### T1 — Branch `parent-a` — a
+**Depends on:** parent-b
+[ ]
+
+### T2 — Branch `parent-b` — b
+**Depends on:** T1
+[ ]
+'
+  local output
+  output=$(swarm_status)
+  assert_contains '{"task":"T1","branch":"parent-a","dependency":"T1","reason":"cycle"}' "$output"
+  assert_contains '{"task":"T2","branch":"parent-b","dependency":"T2","reason":"cycle"}' "$output"
+  assert_contains '"waiting":[]' "$output"
+}
+
+test_reports_unknown_or_free_text_dependency_as_invalid() {
+  write_plan '# Plan — parent
+
+## Tasks
+
+### T1 — Branch `parent-a` — a
+**Depends on:** T9
+[ ]
+
+### T2 — Branch `parent-b` — b
+**Depends on:** T1 (because shared data)
+[ ]
+'
+  local output
+  output=$(swarm_status)
+  assert_contains '{"task":"T1","branch":"parent-a","dependency":"T9","reason":"unknown"}' "$output"
+  assert_contains '{"task":"T2","branch":"parent-b","dependency":"T1(becauseshareddata)","reason":"unknown"}' "$output"
+  assert_contains '"launchable":[]' "$output"
+}
+
+test_reports_blocked_or_dropped_dependency_as_invalid() {
+  write_plan '# Plan — parent
+
+## Tasks
+
+### T1 — Socle
+[!] accès refusé
+
+### T2 — Branch `parent-a` — a
+**Depends on:** T1
+[ ]
+
+### T3 — Abandonnée
+[-]
+
+### T4 — Documentation
+**Depends on:** T3
+[ ]
+'
+  local output
+  output=$(swarm_status)
+  assert_contains '{"task":"T2","branch":"parent-a","dependency":"T1","reason":"blocked"}' "$output"
+  assert_contains '{"task":"T4","branch":null,"dependency":"T3","reason":"dropped"}' "$output"
+  assert_contains '"ordinary":[]' "$output"
+}
+
+test_lists_blocked_branch_task() {
+  write_plan '# Plan — parent
+
+## Tasks
+
+### T1 — Branch `parent-a` — a
+**Depends on:** none
+[!] en attente du client
+'
+  assert_contains '"blocked":[{"task":"T1","branch":"parent-a"}]' "$(swarm_status)"
+}
+
+test_rejects_branch_name_refused_by_git() {
+  write_plan '# Plan — parent
+
+## Tasks
+
+### T1 — Branch feat/x: achats
+**Depends on:** none
+[ ]
+'
+  assert_contains '"invalid":[{"task":"T1","branch":"feat/x:","dependency":"feat/x:","reason":"branch_name"}]' "$(swarm_status)"
+}
+
+test_reads_status_on_status_line_not_on_a_note() {
+  write_plan '# Plan — parent
+
+## Tasks
+
+### T1 — Socle
+**Depends on:** none
+[ ]
+[x] note recopiée d une autre tâche
+
+### T2 — Branch `parent-a` — a
+**Depends on:** T1
+[ ]
+'
+  assert_contains '"waiting":[{"task":"T2","branch":"parent-a","waiting_for":["T1"]}]' "$(swarm_status)"
+}
+
+# ── Worktrees et suite d une fusion ───────────────────────────────────────────
+
+test_reports_worktree_removed_by_hand_as_stale() {
+  create_child parent-purchasing
+  git -C "$WORK" worktree add -q "$SANDBOX/wt" parent-purchasing
+  rm -rf "$SANDBOX/wt"
+  local output
+  output=$(swarm_status)
+  assert_contains '"stale":[{"task":"T2","branch":"parent-purchasing","worktree":' "$output"
+  assert_contains '"running":[]' "$output"
+  assert_contains '"slots":3' "$output"
+}
+
+test_computes_next_launch_with_assumed_done_branch() {
+  create_child parent-purchasing
+  git -C "$WORK" worktree add -q "$SANDBOX/wt" parent-purchasing
+  local output
+  output=$(swarm_status --assume-done parent-purchasing)
+  assert_contains '"launchable":[{"task":"T3","branch":"parent-sales"' "$output"
+  assert_contains '"running":[]' "$output"
+}
+
+test_rejects_parent_without_git_branch() {
+  mkdir -p "$WORK/.forge/branch/ghost"
+  printf '# Plan\n' > "$WORK/.forge/branch/ghost/plan.md"
+  local output
+  output=$(swarm_status --branch ghost 2>/dev/null)
+  assert_equals "1" "$?"
+  assert_equals "" "$output"
+}
+
 # ── Usage ─────────────────────────────────────────────────────────────────────
 
 test_rejects_branch_without_plan() {
@@ -250,6 +390,15 @@ run_test test_simulates_merge_without_touching_repository "simule la fusion sans
 run_test test_lists_open_ordinary_tasks_for_the_parent "liste les tâches ordinaires ouvertes du parent"
 run_test test_reads_plan_without_branch_task "lit un plan sans tâche-branche"
 run_test test_reads_plan_with_crlf_line_endings "lit un plan en fins de ligne CRLF"
+run_test test_reports_dependency_cycle_as_invalid "signale un cycle de dépendances comme invalide"
+run_test test_reports_unknown_or_free_text_dependency_as_invalid "signale une dépendance inconnue ou en texte libre comme invalide"
+run_test test_reports_blocked_or_dropped_dependency_as_invalid "signale une dépendance bloquée ou abandonnée comme invalide"
+run_test test_lists_blocked_branch_task "liste une tâche-branche bloquée"
+run_test test_rejects_branch_name_refused_by_git "rejette un nom de branche refusé par git"
+run_test test_reads_status_on_status_line_not_on_a_note "lit le statut sur sa ligne, jamais sur une note"
+run_test test_reports_worktree_removed_by_hand_as_stale "signale périmé un worktree supprimé à la main"
+run_test test_computes_next_launch_with_assumed_done_branch "calcule la suite d une fusion avec une branche comptée faite"
+run_test test_rejects_parent_without_git_branch "refuse une parente sans branche git"
 run_test test_rejects_branch_without_plan "refuse une branche sans plan"
 run_test test_rejects_unknown_argument "refuse un argument inconnu"
 

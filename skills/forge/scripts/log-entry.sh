@@ -6,10 +6,12 @@
 #   Texte écrit tel quel, sans interprétation ; une entrée tient sur une ligne
 # Usage : log-entry.sh --branch <name> --text <texte> [--root <dir>]
 # Sortie : 0 entrée écrite, rien sur la sortie standard · 1 usage, rien d'écrit, erreur sur la sortie d'erreur
+#   · 2 bash antérieur à 4.2, rien d'écrit
 
 set -u
 
 readonly EXIT_USAGE=1
+readonly EXIT_ENVIRONMENT=2
 readonly LOG_NAME="log.md"
 
 ROOT="."
@@ -58,8 +60,16 @@ read_line_ending() {
   [[ $first == *$'\r' ]] && REPLY=$'\r\n'
 }
 
+# printf %(…)T lit l'horloge sans sous-processus, à partir de bash 4.2.
+require_bash_with_clock() {
+  (( BASH_VERSINFO[0] > 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 2) )) && return
+  echo "log-entry: bash 4.2 or later required (found $BASH_VERSION)" >&2
+  exit $EXIT_ENVIRONMENT
+}
+
 main() {
   local branch_dir log_file entry header_lines ending stamp temporary
+  require_bash_with_clock
   parse_arguments "$@"
   branch_dir="$ROOT/.forge/branch/$BRANCH"
   log_file="$branch_dir/$LOG_NAME"

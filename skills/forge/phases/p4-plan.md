@@ -27,13 +27,12 @@ Si BRIEF contient `## Origin` (`SCOPE: linked` — mandat) → les étapes ci-de
    **Option B — [Name]** : [1-2 sentences] | + ... | - ...
    ```
    Puis poser le choix avec `AskUserQuestion` — `header` : `Approach`, une option par approche (label `Option X — Name`, description = son compromis), quatre au maximum. Attendre le choix avant de continuer.
-6. Générer le plan (format ci-dessous), puis l'estimer :
-   - chaque tâche porte `**Estimated files:**`, nombre de fichiers qu'elle crée ou modifie, tests compris — jamais un motif ;
-   - chaque tâche porte `**Estimated time:** ≈ <minutes> min (<low>-<high>)`, tiré de `estimate` de `bash <SKILL_DIR>/scripts/time-calibrate.sh --root <ROOT> --files <Estimated files de la tâche>` ;
-   - exécuter `bash <SKILL_DIR>/scripts/time-calibrate.sh --root <ROOT> --files <somme des fichiers estimés>` ; seuils et ratios redéfinis dans `coding-standards.md` → ils priment sur la sortie du script ;
+6. Générer le plan (format ci-dessous), puis l'estimer en un seul appel :
+   - exécuter `bash <SKILL_DIR>/scripts/time-calibrate.sh --root <ROOT> --files <n1>,<n2>,…` — une valeur par tâche, dans l'ordre du plan : ses fichiers (« Fichiers d'une tâche » ci-dessous) ;
+   - chaque tâche porte `**Estimated time:** ≈ <minutes> min (<low>-<high>)`, tiré de son rang dans `estimates` — `estimate` pour un plan d'une seule tâche ;
    - écrire l'en-tête `**Estimate:**` depuis `estimate` : `≈ <files> files · ≈ <minutes> min (<low>-<high>)`, suivi de ` · indicative` quand `indicative` est vrai.
    ⚠️ `**Estimated time:**` est figé à l'écriture du plan, jamais recalculé : c'est la prévision comparée au réel (`**Actual time:**`, section « Mesure d'une tâche » de `phases/p5-resume.md`). Tâche ajoutée en cours de branche → son estimation au ratio du moment, figée à son tour.
-   Au moins deux tâches remplissent la « Règle de branche » ci-dessous → appliquer « Plan de branches » avant de présenter.
+   Au moins deux tâches remplissent la « Règle de branche » ci-dessous → appliquer « Plan de branches » avant de présenter. Mode délégué → jamais de plan de branches : un sous-agent ne lance pas d'autres sous-agents ; la tâche qui le mériterait passe par la question `Promotion` (`commands/delegated-mode.md`).
    Présenter le plan.
 7. Poser le choix avec `AskUserQuestion` — `header` : `Plan`, motif « Validation d'un contenu » de `SKILL.md` : le changement demandé arrive en texte libre, itérer, reposer la question. Trois options, dans cet ordre :
    - `Validate and chain` → "Validate the plan and work through every open task in order, without any further question."
@@ -42,10 +41,10 @@ Si BRIEF contient `## Origin` (`SCOPE: linked` — mandat) → les étapes ci-de
 
    Plan d'une seule tâche d'effort XS → sans l'option `Validate` : le feu vert unique vaut pour le plan et la tâche.
    Plan de branches → quatrième option, en tête : `Validate and launch the swarm` → "Validate the plan, create the child branches and launch the first ones in parallel."
-8. Écrire `.forge/branch/<BRANCH>/plan.md` après validation — `Validate and chain` ou `Validate`.
+8. Écrire `.forge/branch/<BRANCH>/plan.md` après validation — `Validate and launch the swarm`, `Validate and chain` ou `Validate`.
 9. Si `project.md` contient uniquement `<!-- pending -->` → le compléter (stack, périmètre, conventions du plan).
 10. Continuer directement à l'État 5 : lire et exécuter `phases/p5-resume.md`.
-    - Sur `Validate and launch the swarm` → créer chaque branche fille depuis BRANCH, dans l'ordre du plan (`git branch <x> <BRANCH>` ; branche existante → gardée telle quelle), puis lire et exécuter `commands/swarm.md`, section « Délégation — essaim de branches filles ». Le brief de chaque branche fille s'écrit dans son worktree, au lancement.
+    - Sur `Validate and launch the swarm` → lire et exécuter `commands/swarm.md`, section « Délégation — essaim de branches filles » : branche fille, worktree et brief sont créés au lancement de chacune.
     - Sur `Validate and chain` → p5 en mode enchaîné : aucune question `Mode`, aucun feu vert entre les tâches (étape 9 de `p5-resume.md`).
     - Sur `Validate` → p5 pose la question `Mode`.
 
@@ -65,9 +64,8 @@ Si BRIEF contient `## Origin` (`SCOPE: linked` — mandat) → les étapes ci-de
 
 ### T1 — [Titre court et précis]
 **Effort:** XS/S/M/L/XL
-**Estimated files:** [nombre]
 **Estimated time:** ≈ [minutes] min ([bas]-[haut])
-**Files:** `chemin/vers/fichier`
+**Files:** `chemin/vers/fichier`, `chemin/vers/test`
 **Description:** [Ce qui doit être fait, comment, avec quels patterns]
 [ ]
 
@@ -90,6 +88,7 @@ Si BRIEF contient `## Origin` (`SCOPE: linked` — mandat) → les étapes ci-de
 | **Total** | **[répartition des lettres]** | **[somme]** | |
 ```
 
+**Fichiers d'une tâche :** nombre de chemins listés dans `**Files:**`, tests compris. Ligne avec un motif (`src/**/*.ts`) ou des fichiers encore inconnus → nombre écrit en fin de ligne, `(≈ n)`, qui prime. Ancien plan qui porte `**Estimated files:**` → ce champ prime.
 **Effort :** XS · S · M · L · XL — taille relative des tâches, sans durée attachée ; XL → découper en sous-tâches, ou en branche si la tâche remplit la « Règle de branche ».
 **Estimate :** ordre de grandeur de durée d'agent, jamais un délai engageant ; le temps de réponse de l'utilisateur n'y est jamais compté.
 
@@ -97,14 +96,14 @@ Si BRIEF contient `## Origin` (`SCOPE: linked` — mandat) → les étapes ci-de
 
 ## Règle de branche
 
-**Condition :** une tâche est une branche dès qu'au moins `branch_criteria_required` critères ci-dessous sont vrais, vérifiés à l'écriture du plan — seuils de `time-calibrate.sh`, redéfinis par `coding-standards.md` s'il le fait :
+**Condition :** une tâche est une branche dès qu'au moins `branch_criteria_required` critères ci-dessous sont vrais, vérifiés à l'écriture du plan — seuils de `time-calibrate.sh` :
 - elle crée un module (bounded context) ou étend l'API publique d'un module existant ;
 - elle exige des décisions à faire trancher : choix à soumettre, écarts à une référence, règles métier à confirmer — une branche a un brief, une tâche n'en a pas ;
 - elle se livre et se teste seule : persistance, interface d'accès et écrans d'une même fonctionnalité ;
-- sa durée estimée (`**Estimated files:**` × `minutes_per_file`) atteint `branch_minutes` ;
+- sa durée estimée (fichiers de la tâche × `minutes_per_file`) atteint `branch_minutes` ;
 - elle traverse au moins `branch_layers` couches (domaine, application, infrastructure, adaptateur, migrations).
 
-**Critère prioritaire :** tokens estimés (`**Estimated files:**` × `tokens_per_file`) au-delà de `branch_tokens` → branche, quel que soit le nombre de critères remplis.
+**Critère prioritaire :** tokens estimés (fichiers de la tâche × `tokens_per_file`) au-delà de `branch_tokens` → branche, quel que soit le nombre de critères remplis.
 
 ⚠️ La lettre d'effort ne sert jamais de frontière : elle dépend de l'échelle de celui qui écrit le plan.
 
@@ -127,8 +126,8 @@ Si BRIEF contient `## Origin` (`SCOPE: linked` — mandat) → les étapes ci-de
 ```markdown
 ### T2 — Branch `<BRANCH>-<slug>` — [Titre]
 **Effort:** L
-**Estimated files:** [nombre]
 **Estimated time:** ≈ [minutes] min ([bas]-[haut])
+**Files:** `[dossier ou module touché]` (≈ [nombre])
 **Depends on:** T1, `<BRANCH>-<autre-slug>`
 **Brief:** [objectif de la branche en une phrase]
 **Description:** [périmètre, règles reprises du brief, décisions attendues]

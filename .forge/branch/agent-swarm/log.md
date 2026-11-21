@@ -1,3 +1,8 @@
+- [2026-11-22 00:28] T23 à T35 terminées : corrections de l'audit (calibrage, hook bash < 5, tour interrompu, agrégation 20× plus rapide, lignes de délégué par script, essaim sans lancement ni relance sans accord, swarm-status invalid/blocked/stale, cohérence) ; 11 suites vertes (297 tests).
+- [2026-11-22 00:03] Colonnes Effort et Fichiers remises dans le tableau d'avancement à la demande (p5-resume.md, CHANGELOG revenus à l'état gravé).
+- [2026-11-22 00:03] T23 à T35 ajoutées au plan à la demande : corrections issues de l'audit du 2026-11-21 (≈ 66 fichiers, ≈ 33 min indicatif).
+- [2026-11-21 23:59] Tableau d'avancement réduit à Tâche | Estimé | Réel | Statut à la demande : Effort et Fichiers retirés de l'affichage, conservés dans le plan (p5-resume.md, CHANGELOG).
+- [2026-11-21 23:24] Audit des fonctionnalités de la branche (performance, fluidité, pertinence, fonctionnel) : output/20261121-feature-audit.md — 5 bloquants, 15 importants.
 - [2026-11-20 11:10] T22 ajoutée et terminée à la demande : seuil de branche porté de 150 000 à 300 000 tokens (fenêtre d'un million).
 - [2026-11-20 10:55] T21 terminée : ratio de tokens par fichier tiré des seules branches `mode: delegated` (17 tests verts).
 - [2026-11-20 10:45] T21 ajoutée au plan à la demande : ratio de tokens par fichier tiré des seules branches entièrement déléguées.

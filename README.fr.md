@@ -60,6 +60,8 @@ Les deux lanceurs sont à la racine du dépôt et délèguent à `install/instal
 
 Les scripts sont idempotents — relancer après une mise à jour écrase proprement sans doublon.
 
+Les scripts du skill demandent bash 5 (Git Bash sous Windows, un bash récent via Homebrew sous macOS, dont `/bin/bash` est en 3.2). Avec un bash plus ancien, le hook de mesure du temps et les marques de tâche n'écrivent rien et `log-entry.sh` s'arrête sur une erreur : aucune durée n'est jamais enregistrée fausse.
+
 Les archives de release (« Source code » zip / tar.gz sur la [page des releases](https://github.com/jeanchristoph/claude_forge/releases)) ne contiennent que ce dont les installeurs ont besoin : `.forge/`, `docs/` et les fichiers `.git*` en sont exclus.
 
 Les installeurs écrivent `~/.claude/skills/forge/install.json` (version installée, URL du dépôt, dernier contrôle de mise à jour), lu par la mise à jour du skill ci-dessous.
@@ -324,7 +326,7 @@ Les deux installeurs ajoutent aussi `bash ~/.claude/skills/forge/scripts/time-ho
 
 - **Mesure :** le hook ajoute une ligne par événement au `.forge/branch/<branche>/time-log.jsonl` de la branche extraite dans le dossier de la session — horodatages, identifiants, durées, jamais un prompt, une commande ni une sortie d'outil. Hors projet forgé, il n'écrit rien. Les événements d'un délégué portent le dossier du parent : le parent associe chaque délégué à sa branche fille.
 - **Synthèse :** à chaque grave et à la clôture, `time-aggregate.sh` totalise le journal et git dans `metrics.json` : minutes d'agent (session principale + délégués), minutes humaines (une absence de plus de 6 h avant un prompt ou une réponse compte zéro), un drapeau `partial` quand le journal manque le début de la branche (hook installé en cours de route : la branche est écartée du calibrage), questions, minutes de vérification, tokens des délégués, fichiers et lignes modifiés.
-- **Estimation :** chaque tâche du plan porte `**Estimated files:**` ; `time-calibrate.sh` convertit le total en minutes d'agent avec une fourchette (`≈ 120 files · ≈ 60 min (45-78)`), à partir des dernières mesures du projet ou de `references/estimation.json` (0,5 min et 5 k tokens par fichier). Marquée *indicative* tant que cinq branches ne sont pas mesurées et que sept sur dix ne tombent pas dans leur fourchette. Les lettres d'effort restent une taille relative, sans durée.
+- **Estimation :** chaque tâche du plan compte les chemins listés dans son `**Files:**` (un `(≈ n)` explicite en fin de ligne pour un motif ou des fichiers encore inconnus) ; un seul appel `time-calibrate.sh --files 3,5,8` convertit chaque tâche et le total en minutes d'agent avec une fourchette (`≈ 120 files · ≈ 60 min (45-78)`), à partir des dernières mesures du projet ou de `references/estimation.json` (0,5 min et 5 k tokens par fichier). Marquée *indicative* tant que cinq branches ne sont pas mesurées et que sept sur dix ne tombent pas dans leur fourchette. Les lettres d'effort restent une taille relative, sans durée.
 - **Par tâche :** chaque tâche porte aussi `**Estimated time:**`, figé à l'écriture du plan. `time-mark.sh` marque son démarrage et sa coche dans le journal ; `time-aggregate.sh --task` mesure les minutes d'agent entre les deux marques (attentes de question retirées, même règle d'absence) et la coche écrit `**Actual time:**`, ou `—` sans mesure (pas de journal, hook installé en cours de route, marque manquante). Tout délégué, même dépôt ou projet lié, écrit ses marques dans le journal du parent (ligne `TIME_LOG:` de son prompt), où arrivent déjà ses événements, et rend le réel de chaque tâche dans `FORGE_DONE` ; une tâche parente déléguée à un projet lié reçoit la somme de ses tâches enfant (`time-aggregate.sh --task T1,T2`, `—` dès qu'un enfant n'est pas mesuré) ; une tâche-branche d'essaim reprend `agent_minutes` du `metrics.json` de la branche. Le tableau d'avancement affiche Estimé et Réel côte à côte.
 - **Commandes de vérification :** la ligne `**Check pattern:**` de `project.md` (expression régulière) désigne les commandes Bash comptées comme vérifications.
 
@@ -502,18 +504,29 @@ ligne `**Depends on:**`, une tâche socle des points d'extension passe en tête 
 - **Lancement :** `swarm-status.sh` liste les branches en cours, lançables et en attente, et simule la fusion de la
   parente. Jusqu'à N branches lançables (3 par défaut, modifié seulement sur demande) reçoivent un worktree, la
   parente fusionnée, un brief, leur propre installation des dépendances et leur port, et un forge délégué chacune,
-  toutes dans le même tour.
+  toutes dans le même tour. À la reprise, les branches lançables sont proposées par une question `Swarm` (lancer,
+  travailler sur les tâches du parent, plus tard) : rouvrir une session ne lance jamais de délégué de lui-même.
 - **Relais :** questions préfixées par leur branche, groupées dans une même fenêtre quand plusieurs attendent,
   renvoyées au délégué quand le contexte de décision manque ; notes de coordination quand deux branches touchent le
   même module.
 - **Fin d'une branche :** une question — fusionner et lancer la suivante, fusionner, vérifier avant de fusionner
-  (l'application tourne depuis le worktree) ou ne rien faire. Le parent seul fusionne dans la branche parente :
+  (l'application tourne depuis le worktree) ou ne rien faire ; une option de fusion commite le travail de la
+  branche, et d'abord la tâche du parent en cours. Le parent seul fusionne dans la branche parente :
   avance rapide, ou fusion inverse avec règles de conflit, vérification complète puis avance rapide ; jamais de
   push, jamais de fusion vers la branche par défaut.
 - **Parent au travail :** pendant que les délégués travaillent, le parent prend les tâches ordinaires prenables,
   relais en priorité.
-- **État :** `swarm.md` garde N, les branches, les choix transmis et les notes de coordination ; des délégués
-  arrêtés par accident sont relancés depuis lui avec une ligne `RESUME:`.
+- **Limites :** la question d'un délégué n'atteint le parent qu'entre deux tours : tant que des délégués tournent,
+  le parent prend une seule tâche ordinaire par tour. Les worktrees vivent à côté du dépôt, hors du dossier de la
+  session : autoriser ce dossier (`/add-dir ../<dépôt>.worktrees` ou `additionalDirectories`), sinon les délégués en
+  tâche de fond s'arrêtent sur des demandes de permission. Les fichiers ignorés (`.env`, configuration locale) ne
+  sont pas copiés dans un worktree et la base de développement reste partagée entre délégués : garder les
+  vérifications en base pour la vérification d'ensemble finale. Sous Windows, des `node_modules` profonds peuvent
+  demander `git config core.longpaths true`.
+- **État :** `swarm.md` garde N, les branches avec l'identifiant de leur délégué et leur port, les choix transmis
+  et les notes de coordination ; à la reprise, une question `Resume` relance les délégués arrêtés avec une ligne
+  `RESUME:` et le même port — jamais sans réponse, un délégué encore actif ailleurs partagerait son worktree avec
+  le nouveau.
 
 ---
 
@@ -596,19 +609,21 @@ un tiers est conservé de la même façon, sous `AAAAMMJJ-email-<sujet>.txt` et 
 
 ## Format du plan
 
+Libellés de structure en anglais, tels que le skill les écrit quelle que soit la langue ; seul le contenu suit la langue de l'utilisateur.
+
 ```markdown
 # Plan — <BRANCH>
-**Objectif :** ...
-**Date :** ...
-**Estimation :** ≈ 3 fichiers · ≈ 2 min (1-2)
+**Objective:** ...
+**Date:** ...
+**Estimate:** ≈ 3 files · ≈ 2 min (1-2)
 
-## Tâches
+## Tasks
 
 ### T1 — Titre
-**Effort :** S
-**Fichiers estimés :** 3
-**Fichiers :** `src/...`
-**Description :** ...
+**Effort:** S
+**Estimated time:** ≈ 2 min (1-2)
+**Files:** `src/a.ts`, `src/b.ts`, `tests/a.test.ts`
+**Description:** ...
 [ ]
 
 <!-- Tâche L ou XL : décomposer en micro-étapes avant de démarrer
@@ -616,8 +631,8 @@ un tiers est conservé de la même façon, sous `AAAAMMJJ-email-<sujet>.txt` et 
 [ ] T1.2 — ...
 -->
 
-## Récapitulatif
-| Tâche | Effort | Fichiers | Statut |
+## Summary
+| Task | Effort | Files | Status |
 |---|---|---|---|
 | T1 | S | 3 | [ ] |
 | **Total** | **1 S** | **3** | |

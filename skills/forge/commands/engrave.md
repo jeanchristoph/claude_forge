@@ -30,12 +30,11 @@ Mode délégué `SCOPE: branch` → `--root` vaut ROOT (le worktree) ; compte re
 **Déclencheur :** étape 0 de la Livraison, étape 1 de la Clôture sur `Solved` (`commands/closure.md`), fusion d'une branche fille d'essaim (`commands/swarm.md`).
 
 **Réaction — dans l'ordre :**
-1. Exécuter `bash <SKILL_DIR>/scripts/time-aggregate.sh --root <ROOT> --branch <BRANCH>`. Branche fille d'un essaim → ajouter `--parent-log <dépôt principal>/.forge/branch/<PARENT>/time-log.jsonl --base <PARENT>`.
-2. `planned_files` = somme des `**Estimated files:**` des tâches de PLAN ; aucun champ → `null`.
+1. Exécuter `bash <SKILL_DIR>/scripts/time-aggregate.sh --root <ROOT> --branch <BRANCH>`. Branche fille d'un essaim → ajouter `--parent-log <dépôt principal>/.forge/branch/<PARENT_BRANCH>/time-log.jsonl --base <PARENT_BRANCH>` (`<PARENT_BRANCH>` : vocabulaire de `commands/swarm.md`).
+2. `planned_files` = somme des fichiers des tâches de PLAN (« Fichiers d'une tâche », `phases/p4-plan.md`) ; plan sans `**Estimated time:**` → `null`.
 3. Écrire `.forge/branch/<BRANCH>/metrics.json` — un seul objet JSON sur une ligne, fichier réécrit à chaque passage, valeurs cumulées depuis le début de la branche, l'historique restant dans git. Champs dans cet ordre, libellés figés :
    `event` (`engrave` / `closure`), `date` (`AAAA-MM-JJ`), `branch`, `mode`, `model` (identifiant du modèle de la session), `planned_files`, `actual_files` (`files`), `lines_added`, `lines_deleted`, `agent_minutes` (`parent_minutes` + `delegated_minutes`, `null` si les deux le sont), `human_minutes`, `questions`, `check_minutes`, `tokens`, `partial` (repris tel quel : `true` quand le journal ne couvre pas le début de la branche — durées gardées, branche écartée du calibrage).
-4. Exécuter `bash <SKILL_DIR>/scripts/time-calibrate.sh --root <ROOT>`. `source` à `project` et ratios différents de la ligne `**Estimation ratios:**` de `.forge/project.md` → réécrire cette ligne, sous `## Tools & access` : `**Estimation ratios:** <minutes_per_file> min/file · <tokens_per_file> tokens/file · <measured_branches> measured branches`, puis une entrée LOG avec l'ancienne valeur.
-5. Compte rendu de la Livraison : une ligne sous le tableau, estimé et réel côte à côte — `Estimated ≈ <planned_files> files · ≈ <min> min (<bas>-<haut>) · actual <actual_files> files · <agent_minutes> min` ; estimé tiré de l'en-tête `**Estimate:**` de PLAN (étape 6 de `phases/p4-plan.md`), valeur absente → `—`. `partial` à `true` → ajouter ` · partial measure`.
+4. Compte rendu de la Livraison : une ligne sous le tableau, estimé et réel côte à côte — `Estimated ≈ <planned_files> files · ≈ <min> min (<bas>-<haut>) · actual <actual_files> files · <agent_minutes> min` ; estimé tiré de l'en-tête `**Estimate:**` de PLAN (étape 6 de `phases/p4-plan.md`), valeur absente → `—`. `partial` à `true` → ajouter ` · partial measure`.
 
 ⚠️ `time-log.jsonl` (événements bruts) reste local, ignoré par git ; seul `metrics.json` est versionné.
 ⚠️ Aucune heure, aucune durée estimée à la main : sans journal, les durées restent `null`.

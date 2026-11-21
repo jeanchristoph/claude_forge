@@ -219,6 +219,16 @@ test_exits_zero_and_writes_nothing_on_invalid_input() {
   assert_equals "" "$output"
 }
 
+# Bash < 5 n'a pas EPOCHREALTIME : variable retirée dans le shell qui exécute le hook.
+test_exits_zero_and_writes_nothing_without_clock() {
+  : > "$TIME_LOG"
+  local output
+  output=$(printf '%s' "$(event_json Stop)" | bash -c 'unset EPOCHREALTIME; . "$1"' hook "$HOOK_SCRIPT")
+  assert_equals "0" "$?"
+  assert_equals "" "$output"
+  assert_equals "" "$(logged)"
+}
+
 test_writes_nothing_on_stdout() {
   local output
   output=$(run_hook "$(event_json Stop)")
@@ -289,6 +299,7 @@ run_test test_writes_nothing_for_unforged_branch "n'écrit rien pour une branche
 run_test test_writes_nothing_outside_git "n'écrit rien hors dépôt git"
 run_test test_writes_nothing_on_detached_head "n'écrit rien en tête détachée"
 run_test test_exits_zero_and_writes_nothing_on_invalid_input "sort en 0 sans rien écrire sur une entrée invalide"
+run_test test_exits_zero_and_writes_nothing_without_clock "sort en 0 sans rien écrire sans horloge EPOCHREALTIME (bash < 5)"
 run_test test_writes_nothing_on_stdout "n'écrit rien sur la sortie standard"
 run_test test_appends_one_line_per_event "ajoute une ligne par événement"
 run_test test_marks_late_start_when_plan_exists_before_log "marque un départ tardif quand le plan existe avant le journal"

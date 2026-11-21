@@ -92,8 +92,9 @@ Chercher `time-hook.sh` dans `~/.claude/settings.json` avec le Grep tool. Absent
 Ne pas réécrire intégralement — modifier uniquement ce qui a changé :
 - Lire l'existant `@.forge/project.md`
 - Lire `.forge/coding-standards.md`
-- Identifier les sections obsolètes ou incomplètes
+- Identifier les sections obsolètes ou incomplètes — ligne `**Check pattern:**` absente comprise (section « Vérifications » ci-dessus)
 - Proposer les modifications à l'humain avant d'écrire
 - Conserver ce qui est toujours valide tel quel
-- Écrire `.forge/project.md` après validation explicite. STOP — ne pas continuer.
+- Écrire `.forge/project.md` après validation explicite.
+- Exécuter « Contrôle — hook de mesure » ci-dessus. STOP — ne pas continuer.
 

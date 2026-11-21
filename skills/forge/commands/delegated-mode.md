@@ -3,7 +3,7 @@
 **INVARIANT :** rien du parent n'entre — ni `project.md`, ni standards, ni plan, ni log ; rien d'autre qu'un bloc `FORGE_QUESTION` ou `FORGE_DONE` ne sort.
 
 **Règles communes :**
-- ROOT = valeur de la ligne `ROOT:` du prompt. Aucune écriture, aucune commande git hors de ROOT.
+- ROOT = valeur de la ligne `ROOT:` du prompt. Aucune écriture, aucune commande git hors de ROOT — sauf les marques de `time-mark.sh` dans le fichier de la ligne `TIME_LOG:` et les fichiers temporaires du dossier de la ligne `SCRATCHPAD:`.
 - Langue de l'utilisateur = valeur de la ligne `LANGUAGE:` du prompt — le prompt lui-même n'en est pas un indice.
 - Point bloquant (confirmation, choix fermé, question ouverte) → terminer le tour par un bloc `FORGE_QUESTION` (format ci-dessous), puis attendre. La réponse arrive dans un message `FORGE_ANSWER: <réponse>` — la traiter comme la réponse de l'utilisateur.
 - **Contenu entier dans la question :** démarrage d'une tâche ou validation d'un contenu présenté (description de la tâche, plan, objectif du brief, entrée `## Scope & rules`, rapport, tableau récapitulatif) → le champ `content:` du bloc recopie ce contenu **intégralement** — jamais un résumé, jamais un intitulé seul : le parent ne peut pas trancher sans le voir. Rien à trancher → `content: none`.
@@ -25,14 +25,13 @@
 - `FORGE_DONE` : `done` / `blocked` sans `← parent`, `out_of_mandate: none`, compte rendu d'une ligne.
 
 **`SWARM:` présent — branche fille d'un essaim** (`commands/swarm.md`), en plus des règles `SCOPE: branch` :
-- Livraison non applicable : le parent commite et fusionne la branche (« Fusion d'une branche fille »). `FORGE_DONE` laisse le travail non commité dans ROOT.
-- Jamais de fusion de la branche parente dans la branche : le parent seul fusionne.
+- Livraison non applicable, aucune fusion dans un sens ou dans l'autre : le parent commite et fusionne (invariant de `commands/swarm.md`). `FORGE_DONE` laisse le travail non commité dans ROOT.
 - Fichiers temporaires dans le dossier de la ligne `SCRATCHPAD:` seulement, jamais à la racine du dossier temporaire.
 - Application, serveur ou service local lancé → port de la ligne `PORT:`, adresse `127.0.0.1` ; `PORT: none` → rien n'est lancé. Nouvelle dépendance installée dans ROOT seulement, manifeste et fichier de verrouillage gardés dans la branche.
 - Avant chaque tâche : entrée LOG `task <n> started`.
 - `RESUME:` autre que `none` → appliquer la consigne de reprise avant toute autre action ; plan validé avec enchaînement → aucune question `Mode`.
 - Tâche du plan qui remplit la « Règle de branche » de `phases/p4-plan.md` en cours de réalisation → `FORGE_QUESTION` `header` `Promotion` : "T<n> deserves its own branch: move it out of this plan and add it to the parent plan?", options `Promote` / `Keep it here` ; sur `Promote`, la tâche est retirée du plan, sa description recopiée entière dans `content`.
-- Toute `FORGE_QUESTION` de choix apporte le contexte de décision : ce que fait l'existant, ce que chaque option change pour l'utilisateur final, ce qu'il faudrait refaire si le choix s'avère mauvais.
+- Toute `FORGE_QUESTION` de choix — `header` autre que `Brief`, `Plan`, `Mode`, `Task`, `Promotion` — apporte le contexte de décision : ce que fait l'existant, ce que chaque option change pour l'utilisateur final, ce qu'il faudrait refaire si le choix s'avère mauvais.
 
 ### Format `FORGE_QUESTION`
 

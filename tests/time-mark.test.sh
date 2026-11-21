@@ -70,6 +70,36 @@ test_escapes_branch_name() {
   assert_matches '"branch":"odd\\"name"\}$' "$(cat "$PARENT_LOG")"
 }
 
+test_accepts_micro_step() {
+  : > "$OWN_LOG"
+  mark --task T2.1 --event start
+  assert_matches '"task":"T2.1"\}$' "$(cat "$OWN_LOG")"
+}
+
+# ── Lignes de délégué ─────────────────────────────────────────────────────────
+
+test_writes_delegate_line_without_timestamp() {
+  : > "$PARENT_LOG"
+  bash "$MARK_SCRIPT" --time-log "$PARENT_LOG" --event delegate --agent-id a1b2 --branch 'feat/x'
+  assert_equals '{"event":"delegate","agent_id":"a1b2","branch":"feat/x"}' "$(cat "$PARENT_LOG")"
+}
+
+test_writes_delegate_usage_line_with_tokens() {
+  : > "$PARENT_LOG"
+  bash "$MARK_SCRIPT" --time-log "$PARENT_LOG" --event delegate_usage --agent-id a1b2 --tokens 0123456
+  assert_equals '{"event":"delegate_usage","agent_id":"a1b2","tokens":123456}' "$(cat "$PARENT_LOG")"
+}
+
+test_writes_no_delegate_line_on_invalid_arguments() {
+  : > "$PARENT_LOG"
+  bash "$MARK_SCRIPT" --time-log "$PARENT_LOG" --event delegate --agent-id a1b2 || exit 1
+  bash "$MARK_SCRIPT" --time-log "$PARENT_LOG" --event delegate_usage --agent-id a1b2 --tokens 12k || exit 1
+  bash "$MARK_SCRIPT" --time-log "$PARENT_LOG" --event delegate_usage --tokens 12 || exit 1
+  bash "$MARK_SCRIPT" --root "$WORK" --event delegate --agent-id a1b2 --branch feature || exit 1
+  assert_equals 0 "$(wc -c < "$PARENT_LOG" | tr -d ' ')"
+  [ ! -e "$OWN_LOG" ] || { echo "    own log written"; exit 1; }
+}
+
 # ── Rien d'écrit ──────────────────────────────────────────────────────────────
 
 test_writes_nothing_without_log() {
@@ -91,6 +121,17 @@ test_exits_zero_and_writes_nothing_on_invalid_arguments() {
   mark --task T1 --event start --unknown x || exit 1
   bash "$MARK_SCRIPT" --root "$WORK" --task T1 --event start || exit 1
   assert_equals 0 "$(wc -c < "$OWN_LOG" | tr -d ' ')"
+}
+
+# Bash < 5 n'a pas EPOCHREALTIME : variable retirée dans le shell qui exécute le marqueur.
+test_exits_zero_and_writes_nothing_without_clock() {
+  : > "$OWN_LOG"
+  local output
+  output=$(bash -c 'unset EPOCHREALTIME; script=$1; shift; . "$script"' mark "$MARK_SCRIPT" \
+    --root "$WORK" --branch feature --task T1 --event start)
+  assert_equals "0" "$?"
+  assert_equals "" "$output"
+  assert_equals "" "$(cat "$OWN_LOG")"
 }
 
 test_writes_nothing_on_stdout() {
@@ -120,9 +161,14 @@ run_test test_appends_start_then_done_to_branch_log "ajoute la marque de début 
 run_test test_keeps_existing_lines "garde les lignes déjà présentes du journal"
 run_test test_delegate_mark_goes_to_parent_log_with_branch "range la marque d'un délégué dans le journal du parent, avec sa branche"
 run_test test_escapes_branch_name "échappe le nom de branche"
+run_test test_accepts_micro_step "accepte une micro-étape T2.1"
+run_test test_writes_delegate_line_without_timestamp "écrit la ligne delegate sans horodatage"
+run_test test_writes_delegate_usage_line_with_tokens "écrit la ligne delegate_usage avec ses tokens"
+run_test test_writes_no_delegate_line_on_invalid_arguments "n'écrit aucune ligne de délégué sur des arguments invalides"
 run_test test_writes_nothing_without_log "n'écrit rien sans journal de la branche"
 run_test test_writes_nothing_without_parent_log "n'écrit rien sans journal du parent"
 run_test test_exits_zero_and_writes_nothing_on_invalid_arguments "sort en 0 sans rien écrire sur des arguments invalides"
+run_test test_exits_zero_and_writes_nothing_without_clock "sort en 0 sans rien écrire sans horloge EPOCHREALTIME (bash < 5)"
 run_test test_writes_nothing_on_stdout "n'écrit rien sur la sortie standard"
 
 echo "$PASSED passed, $FAILED failed"

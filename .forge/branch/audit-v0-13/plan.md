@@ -8,7 +8,7 @@
 ### T1 — Apports de la 0.13 en fluidité et vitesse
 **Effort:** M
 **Estimated time:** ≈ 1 min (1-1)
-**Actual time:** ≈ 0.1 min · 1 files
+**Actual time:** —
 **Files:** `.forge/branch/audit-v0-13/output/20261122-audit-v0-13.md`
 **Description:** Diff `v0.12.6..v0.13.0` et CHANGELOG. Pour chaque parcours (démarrage, brief, plan, tâche, grave, clôture) : questions posées, appels de scripts, fichiers lus avant/après. Gains (estimation, mesure, essaim, log-entry.sh) et coûts ajoutés (latence Git Bash, tokens lus, étapes en plus). Conclusion chiffrée gain net / perte.
 [x] Perte nette modérée sur le parcours courant ; notes dans scratchpad/audit/t1.md
@@ -16,7 +16,7 @@
 ### T2 — Audit d'intégration du swarm
 **Effort:** L
 **Estimated time:** ≈ 1 min (1-1)
-**Actual time:** ≈ 0.5 min · 1 files
+**Actual time:** —
 **Files:** `.forge/branch/audit-v0-13/output/20261122-audit-v0-13.md`
 **Description:** `commands/swarm.md`, `scripts/swarm-status.sh`, `p4-plan.md` (Règle de branche, Plan de branches), `p5-resume.md`, `delegated-mode.md`, `delegation.md`. Vérifier : déclencheur atteignable (seuil `branch_minutes` vs `minutes_per_file`), nombre d'actions utilisateur du plan à la fusion finale, relais `FORGE_QUESTION`, reprise après interruption, conflits de fusion, cohérence instructions ↔ champs JSON des scripts. Constats avec fichier:ligne et gravité.
 [x] 2 bloquants, verdict non sur les 3 critères ; notes dans scratchpad/audit/t2.md
@@ -24,7 +24,7 @@
 ### T3 — Non-régression des autres fonctions
 **Effort:** M
 **Estimated time:** ≈ 1 min (1-1)
-**Actual time:** ≈ 0.7 min · 1 files
+**Actual time:** —
 **Files:** `.forge/branch/audit-v0-13/output/20261122-audit-v0-13.md`
 **Description:** Lancer toutes les suites `tests/*.test.sh`. Relire le diff des fonctions existantes : garde master, brief, plan sans essaim, mode `Validate and chain`, délégation projet lié, grave, clôture, forge-clickup, hook PreCompact, installeurs. Rejouer à sec les parcours types sur les instructions 0.12.6 vs 0.13.0 pour repérer tout comportement modifié ou cassé.
 [x] 11 suites OK (313 cas), 3 régressions moyennes ; notes dans scratchpad/audit/t3.md
@@ -32,7 +32,7 @@
 ### T4 — Angles d'amélioration et piste plugin Claude Code
 **Effort:** M
 **Estimated time:** ≈ 1 min (1-1)
-**Actual time:** ≈ 0.3 min · 1 files
+**Actual time:** —
 **Files:** `.forge/branch/audit-v0-13/output/20261122-audit-v0-13.md`
 **Description:** Pistes UX, performance (moins d'appels/lectures), niveau d'information (ligne d'état, compte rendu), fluidité (moins de questions). Étude du format plugin Claude Code (slash commands, hooks, skills, marketplace, mises à jour) face aux installeurs et à update.sh actuels : migration proposée. Chaque piste : gain, coût, risque, priorité.
 [x] Pistes P1-P3 et migration plugin en 2 versions ; notes dans scratchpad/audit/t4.md
@@ -123,7 +123,7 @@
 - `/forge help`, mise à jour non bloquante, chargement à la demande documentés.
 - `CHANGELOG.md` : entrée `[Unreleased]`.
 - `project.md` : `task-files.sh`, `references/`, convention « Idempotence ».
-**Actual time:** ≈ 2.5 min · 4 files
+**Actual time:** —
 [x] README FR (main) + EN (délégué, mêmes sections) ; CHANGELOG [Unreleased] ; project.md ; 12 suites OK, 335 cas
 
 ### T13 — Validation d'un ajout de tâches alignée sur un plan neuf
@@ -135,8 +135,36 @@
 - `Validate and chain` → tâches écrites au plan puis exécutées dans l'ordre, sans autre question.
 - `Validate` → tâches écrites au plan seulement, puis question `Mode` / `Task` comme un plan neuf.
 - Gabarit — question `Plan` à trois options ; mêmes options en `FORGE_QUESTION`.
-**Actual time:** ≈ 0.1 min · 1 files
+**Actual time:** —
 [x] Fait avant T12 pour documenter le README une seule fois ; étape 9 et question `Test` alignées
+
+### T14 — Temps des sous-agents ordinaires compté dans la mesure
+**Effort:** M
+**Estimated time:** ≈ 2 min (1-3)
+**Files:** `skills/forge/scripts/time-aggregate.sh`, `tests/time-aggregate.test.sh`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:**
+1. Mesure de branche : toute paire `SubagentStart` / `SubagentStop` du journal comptée en minutes déléguées, même sans ligne `delegate`.
+2. Agent associé par une ligne `delegate` à une autre branche (branche fille, projet lié) toujours écarté : jamais compté deux fois.
+3. `--task` : même règle, intervalle coupé à la fenêtre de la tâche.
+4. `delegates` et `mode` tiennent compte des agents ordinaires.
+5. Tests : agent ordinaire, agent de branche fille, fenêtre de tâche, agent sans `SubagentStop`.
+6. README FR/EN et CHANGELOG `[Unreleased]`.
+**Actual time:** ≈ 3.2 min · 5 files
+[x] Branche : 14,7 min parent + 29,1 min de sous-agents (7) ; time-aggregate 78/78 ; limite documentée : tâches parallèles à fenêtres superposées comptent chacune les agents de leur fenêtre
+
+### T15 — Tâches simultanées : réel non attribuable, écrit `—` par le script
+**Effort:** M
+**Estimated time:** ≈ 2 min (1-3)
+**Files:** `skills/forge/scripts/time-aggregate.sh`, `tests/time-aggregate.test.sh`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:**
+1. `time-aggregate.sh --task` : une autre tâche ouverte pendant la fenêtre → `measured: false`, raison `overlapping_tasks`.
+2. p5 écrit alors `**Actual time:** —` et la tâche sort du calibrage, sans correction à la main.
+3. Aucune répartition inventée entre tâches.
+4. Mesure de branche (`metrics.json`) inchangée.
+5. Tests : démarrage simultané, tâches successives, tâche démarrée pendant une autre.
+6. README FR/EN (limite remplacée par la règle) et CHANGELOG.
+**Actual time:** ≈ 1.1 min · 5 files
+[x] time-aggregate 82/82 ; la règle classe aussi T12 et T13 (T13 faite pendant T12) en overlapping_tasks → réels passés à —
 
 ## Risks
 - Estimation par fichiers inadaptée à un audit (1 min par tâche irréaliste : le travail est de la lecture, pas de l'écriture) — constat à intégrer à T1/T4.
@@ -161,4 +189,6 @@ None
 | T11 — A9 Hook PreCompact bash + SessionStart | M | 6 | [x] |
 | T12 — A12 Documentation alignée | S | 4 | [x] |
 | T13 — Ajout de tâches : options d'un plan neuf | S | 1 | [x] |
-| **Total** | **6S, 6M, L** | **40** | |
+| T14 — Sous-agents ordinaires mesurés | M | 5 | [x] |
+| T15 — Tâches simultanées non attribuables | M | 5 | [x] |
+| **Total** | **6S, 8M, L** | **50** | |

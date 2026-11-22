@@ -1,2 +1,5 @@
+- [2026-11-22 18:45] T15 : tâches simultanées non mesurées par le script (overlapping_tasks) ; réels de T12 et T13 passés à — selon cette règle
+- [2026-11-22 18:40] Réels de T1-T4 remplacés par — : tâches menées en parallèle par des agents de fond, part de chaque tâche non mesurable ; écartées du calibrage, temps gardé au niveau de la branche
+- [2026-11-22 18:15] T14 : sous-agents ordinaires comptés dans la mesure (branche et tâche) ; test « écarte les événements de ses délégués » remplacé par la règle « délégué à une autre branche »
 - [2026-11-22 17:47] T6-T13 implémentés (A1, A2, A3, A7, A8, A9, A12 + options d'ajout de tâches) ; 12 suites OK, 335 cas ; T13 fait avant T12 pour documenter une seule fois
 - [2026-11-22 15:22] Rapport d'audit écrit : output/20261122-audit-v0-13.md + 4 annexes

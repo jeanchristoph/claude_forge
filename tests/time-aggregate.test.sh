@@ -166,16 +166,55 @@ test_sums_check_durations_of_main_session() {
   assert_contains '"check_minutes":1.5' "$(aggregate)"
 }
 
-test_ignores_delegate_events_of_own_log() {
-  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+test_ignores_events_of_agent_delegated_to_another_branch() {
+  own_events '{"event":"delegate","agent_id":"x1","branch":"feature-child"}' \
+             '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
              '{"ts":10000,"event":"SubagentStart","session":"s","agent_id":"x1"}' \
              '{"ts":20000,"event":"PostToolUse","session":"s","agent_id":"x1","tool":"Bash","duration_ms":600000,"check":true}' \
+             '{"ts":50000,"event":"SubagentStop","session":"s","agent_id":"x1"}' \
              '{"ts":60000,"event":"Stop","session":"s"}'
   local output
   output=$(aggregate)
   assert_contains '"parent_minutes":1.0' "$output"
   assert_contains '"check_minutes":0.0' "$output"
   assert_contains '"delegated_minutes":0.0' "$output"
+  assert_contains '"delegates":0' "$output"
+}
+
+test_counts_ordinary_subagent_of_own_log() {
+  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":10000,"event":"SubagentStart","session":"s","agent_id":"x1"}' \
+             '{"ts":20000,"event":"PostToolUse","session":"s","agent_id":"x1","tool":"Bash","duration_ms":30000,"check":true}' \
+             '{"ts":60000,"event":"Stop","session":"s"}' \
+             '{"ts":190000,"event":"SubagentStop","session":"s","agent_id":"x1"}'
+  local output
+  output=$(aggregate)
+  assert_contains '"parent_minutes":1.0' "$output"
+  assert_contains '"delegated_minutes":3.0' "$output"
+  assert_contains '"check_minutes":0.5' "$output"
+  assert_contains '"delegates":1' "$output"
+  assert_contains '"mode":"mixed"' "$output"
+}
+
+test_sums_parallel_ordinary_subagents() {
+  own_events '{"ts":0,"event":"SubagentStart","session":"s","agent_id":"x1"}' \
+             '{"ts":0,"event":"SubagentStart","session":"s","agent_id":"x2"}' \
+             '{"ts":60000,"event":"SubagentStop","session":"s","agent_id":"x1"}' \
+             '{"ts":120000,"event":"SubagentStop","session":"s","agent_id":"x2"}'
+  local output
+  output=$(aggregate)
+  assert_contains '"delegated_minutes":3.0' "$output"
+  assert_contains '"delegates":2' "$output"
+}
+
+test_ignores_ordinary_subagent_still_running() {
+  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":10000,"event":"SubagentStart","session":"s","agent_id":"x1"}' \
+             '{"ts":60000,"event":"Stop","session":"s"}'
+  local output
+  output=$(aggregate)
+  assert_contains '"delegated_minutes":0.0' "$output"
+  assert_contains '"delegates":0' "$output"
 }
 
 # ── Délégués ──────────────────────────────────────────────────────────────────
@@ -619,6 +658,77 @@ test_task_unmeasured_without_log() {
   assert_contains '"measured":false,"reason":"no_log"' "$(aggregate --task T1)"
 }
 
+test_task_counts_ordinary_subagent_inside_window() {
+  own_events '{"ts":0,"event":"task_start","task":"T1"}' \
+             '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":0,"event":"SubagentStart","session":"s","agent_id":"x1"}' \
+             '{"ts":60000,"event":"Stop","session":"s"}' \
+             '{"ts":180000,"event":"SubagentStop","session":"s","agent_id":"x1"}' \
+             '{"ts":240000,"event":"UserPromptSubmit","session":"s","origin":"agent"}' \
+             '{"ts":240000,"event":"task_done","task":"T1"}' \
+             '{"ts":300000,"event":"SubagentStart","session":"s","agent_id":"x2"}' \
+             '{"ts":360000,"event":"SubagentStop","session":"s","agent_id":"x2"}'
+  assert_contains '"agent_minutes":4.0' "$(aggregate --task T1)"
+}
+
+test_task_ignores_agent_delegated_to_another_branch() {
+  own_events '{"event":"delegate","agent_id":"x1","branch":"feature-child"}' \
+             '{"ts":0,"event":"task_start","task":"T1"}' \
+             '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":0,"event":"SubagentStart","session":"s","agent_id":"x1"}' \
+             '{"ts":60000,"event":"Stop","session":"s"}' \
+             '{"ts":120000,"event":"SubagentStop","session":"s","agent_id":"x1"}' \
+             '{"ts":120000,"event":"task_done","task":"T1"}'
+  assert_contains '"agent_minutes":1.0' "$(aggregate --task T1)"
+}
+
+test_task_unmeasured_when_started_with_another_task() {
+  own_events '{"ts":0,"event":"task_start","task":"T1"}' \
+             '{"ts":0,"event":"task_start","task":"T2"}' \
+             '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":120000,"event":"Stop","session":"s"}' \
+             '{"ts":60000,"event":"task_done","task":"T1"}' \
+             '{"ts":120000,"event":"task_done","task":"T2"}'
+  local first second
+  first=$(aggregate --task T1)
+  second=$(aggregate --task T2)
+  assert_contains '"measured":false' "$first"
+  assert_contains '"reason":"overlapping_tasks"' "$first"
+  assert_contains '"measured":false' "$second"
+  assert_contains '"reason":"overlapping_tasks"' "$second"
+}
+
+test_task_measured_when_tasks_follow_each_other() {
+  own_events '{"ts":0,"event":"task_start","task":"T1"}' \
+             '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":60000,"event":"task_done","task":"T1"}' \
+             '{"ts":60000,"event":"task_start","task":"T2"}' \
+             '{"ts":180000,"event":"task_done","task":"T2"}' \
+             '{"ts":180000,"event":"Stop","session":"s"}'
+  assert_contains '"agent_minutes":1.0' "$(aggregate --task T1)"
+  assert_contains '"agent_minutes":2.0' "$(aggregate --task T2)"
+}
+
+test_task_unmeasured_when_another_task_runs_inside_it() {
+  own_events '{"ts":0,"event":"task_start","task":"T1"}' \
+             '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":30000,"event":"task_start","task":"T2"}' \
+             '{"ts":60000,"event":"task_done","task":"T2"}' \
+             '{"ts":120000,"event":"task_done","task":"T1"}' \
+             '{"ts":120000,"event":"Stop","session":"s"}'
+  assert_contains '"reason":"overlapping_tasks"' "$(aggregate --task T1)"
+  assert_contains '"reason":"overlapping_tasks"' "$(aggregate --task T2)"
+}
+
+test_task_ignores_open_task_of_another_branch() {
+  own_events '{"ts":0,"event":"task_start","task":"T1"}' \
+             '{"ts":0,"event":"task_start","task":"T7","branch":"other"}' \
+             '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":60000,"event":"task_done","task":"T1"}' \
+             '{"ts":60000,"event":"Stop","session":"s"}'
+  assert_contains '"agent_minutes":1.0' "$(aggregate --task T1)"
+}
+
 test_task_measures_delegate_from_parent_log() {
   parent_events '{"event":"delegate","agent_id":"a1","branch":"feature"}' \
                 '{"ts":0,"event":"SubagentStart","agent_id":"a1"}' \
@@ -731,7 +841,10 @@ run_test test_closes_turn_interrupted_by_escape_without_counting_the_pause "ferm
 run_test test_closes_turn_interrupted_by_task_notification "ferme un tour interrompu par une notification de tâche de fond"
 run_test test_keeps_interleaved_sessions_apart "sépare deux sessions entrelacées"
 run_test test_sums_check_durations_of_main_session "additionne les vérifications de la session principale"
-run_test test_ignores_delegate_events_of_own_log "écarte des durées de la branche les événements de ses délégués"
+run_test test_ignores_events_of_agent_delegated_to_another_branch "écarte les événements d'un agent délégué à une autre branche"
+run_test test_counts_ordinary_subagent_of_own_log "compte un sous-agent ordinaire du journal de la branche"
+run_test test_sums_parallel_ordinary_subagents "additionne des sous-agents ordinaires lancés en parallèle"
+run_test test_ignores_ordinary_subagent_still_running "écarte un sous-agent ordinaire encore en cours"
 run_test test_sums_runs_of_delegates_mapped_to_branch "additionne les exécutions des délégués associés à la branche"
 run_test test_counts_delegate_mapped_after_its_start "compte un délégué associé à sa branche après son démarrage"
 run_test test_measures_events_written_out_of_order "mesure des événements écrits dans le désordre"
@@ -782,6 +895,12 @@ run_test test_task_unmeasured_without_start_mark "tâche : non mesurée sans mar
 run_test test_task_unmeasured_without_done_mark "tâche : non mesurée sans marque de fin"
 run_test test_task_unmeasured_with_late_start "tâche : non mesurée sur un journal à départ tardif"
 run_test test_task_unmeasured_without_log "tâche : non mesurée sans journal"
+run_test test_task_counts_ordinary_subagent_inside_window "tâche : compte un sous-agent ordinaire dans la fenêtre"
+run_test test_task_ignores_agent_delegated_to_another_branch "tâche : écarte un agent délégué à une autre branche"
+run_test test_task_unmeasured_when_started_with_another_task "tâche : non mesurée quand une autre tâche démarre en même temps"
+run_test test_task_measured_when_tasks_follow_each_other "tâche : mesurée quand les tâches se suivent"
+run_test test_task_unmeasured_when_another_task_runs_inside_it "tâche : non mesurée quand une autre tâche s'exécute pendant elle"
+run_test test_task_ignores_open_task_of_another_branch "tâche : écarte une tâche ouverte d'une autre branche"
 run_test test_task_measures_delegate_from_parent_log "tâche : mesure un délégué depuis le journal du parent"
 run_test test_task_counts_delegate_still_running_up_to_done_mark "tâche : compte un délégué encore en cours jusqu'à la marque de fin"
 run_test test_task_ignores_main_session_marks_for_delegate "tâche : écarte les marques sans branche pour un délégué"

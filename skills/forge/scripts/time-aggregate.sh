@@ -5,6 +5,9 @@
 #   Session principale : événements sans agent_id du journal de la branche
 #   Délégués : identifiants associés à la branche par les lignes {"event":"delegate"} du journal de la parente,
 #   leurs événements lus dans ce même journal (un délégué porte toujours le cwd de la session qui l'a lancé) ;
+#   sous-agents ordinaires (outil Agent sans délégation forge) : paires SubagentStart → SubagentStop du journal de la
+#   branche, comptées comme délégués ; un agent associé à une autre branche par une ligne delegate en est écarté,
+#   son temps revenant à la mesure de cette branche ;
 #   tokens = somme des lignes {"event":"delegate_usage"} écrites par la parente à chaque retour d'un délégué
 # Usage : time-aggregate.sh --branch <name> [--root <dir>] [--parent-log <file>] [--base <ref>] [--task T<n>[,T<n>…]]
 #   --parent-log : journal de la branche parente, pour une branche fille travaillée par des délégués
@@ -82,7 +85,16 @@ readonly DURATIONS_PROGRAM="$AWK_HELPERS"'
     if (event == "delegate_usage") { tokens += field("tokens"); has_tokens = 1 }
     next
   }
-  field("agent_id") != "" { next }
+  field("event") == "delegate" && field("branch") != branch { other_branch[field("agent_id")] = 1; next }
+  field("agent_id") != "" {
+    id = field("agent_id"); event = field("event"); ts = field("ts") + 0
+    if (id in other_branch) next
+    seen = 1
+    if (event == "SubagentStart") agent_start[id] = ts
+    if (event == "SubagentStop" && (id in agent_start)) { delegated += ts - agent_start[id]; delete agent_start[id]; runs[id] = 1 }
+    if (event == "PostToolUse" && field("check") == "true") checks += field("duration_ms")
+    next
+  }
   {
     seen = 1; event = field("event"); session = field("session"); ts = field("ts") + 0
     if (event == "UserPromptSubmit") {
@@ -118,14 +130,27 @@ readonly DURATIONS_PROGRAM="$AWK_HELPERS"'
 # Fenêtre d'une tâche : dernière marque task_start, puis la première task_done qui la suit.
 #   Marques de la session principale sans « branch » ; marques d'un délégué (journal de la parente) avec sa branche.
 #   Sortie : « début fin raison fichiers », « - » pour une valeur absente ; raison late_start, missing_start,
-#   missing_done ou ok ; fichiers « null » quand une des deux marques n'a pas d'empreinte.
+#   missing_done, overlapping_tasks ou ok ; fichiers « null » quand une des deux marques n'a pas d'empreinte.
+#   BUSINESS_RULE: une autre tâche de la même branche ouverte pendant la fenêtre (démarrée avant la fin, terminée après
+#   le début, ou jamais terminée) rend la tâche non mesurée — overlapping_tasks : session et agents travaillent pour
+#   les deux, aucune part ne leur est attribuable sans l'inventer. La mesure de la branche, elle, compte tout.
 readonly TASK_WINDOW_PROGRAM="$AWK_HELPERS$TASK_FILES_AWK"'
   field("event") == "late_start" { late = 1; next }
-  field("task") != task || field("branch") != mark_branch { next }
+  field("branch") != mark_branch { next }
+  field("task") != task && field("event") == "task_start" { other_start[++others] = field("ts") + 0; other_open[field("task")] = others; next }
+  field("task") != task && field("event") == "task_done" && (field("task") in other_open) {
+    other_end[other_open[field("task")]] = field("ts") + 0; delete other_open[field("task")]; next
+  }
+  field("task") != task { next }
   field("event") == "task_start" { start = field("ts"); start_files = raw_string_field("files"); finish = ""; next }
   field("event") == "task_done" && start != "" && finish == "" { finish = field("ts"); finish_files = raw_string_field("files") }
+  function overlaps(   i) {
+    for (i = 1; i <= others; i++)
+      if (other_start[i] < finish + 0 && (!(i in other_end) || other_end[i] > start + 0)) return 1
+    return 0
+  }
   END {
-    reason = late ? "late_start" : (start == "" ? "missing_start" : (finish == "" ? "missing_done" : "ok"))
+    reason = late ? "late_start" : (start == "" ? "missing_start" : (finish == "" ? "missing_done" : (overlaps() ? "overlapping_tasks" : "ok")))
     files = (start_files == "<none>" || finish_files == "<none>" || finish == "") ? "null" : changed_files(start_files, finish_files)
     printf "%s %s %s %s\n", (start == "" ? "-" : start), (finish == "" ? "-" : finish), reason, files
   }'
@@ -172,7 +197,14 @@ readonly TASK_DURATIONS_PROGRAM="$AWK_HELPERS"'
     if (event == "SubagentStop" && (id in agent_start)) { delegated += inside(agent_start[id], ts); delete agent_start[id] }
     next
   }
-  field("agent_id") != "" { next }
+  field("event") == "delegate" && field("branch") != branch { other_branch[field("agent_id")] = 1; next }
+  field("agent_id") != "" {
+    id = field("agent_id"); event = field("event"); ts = field("ts") + 0
+    if (id in other_branch) next
+    if (event == "SubagentStart") agent_start[id] = ts
+    if (event == "SubagentStop" && (id in agent_start)) { delegated += inside(agent_start[id], ts); delete agent_start[id] }
+    next
+  }
   {
     event = field("event"); session = field("session"); ts = field("ts") + 0
     if (event == "UserPromptSubmit") {

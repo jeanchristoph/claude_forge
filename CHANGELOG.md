@@ -18,6 +18,8 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ### Changed
 
+- Measure: ordinary subagents (the Agent tool used without a forge delegation) now count as delegated minutes, from their `SubagentStart` → `SubagentStop` pair in the branch log, for the branch and for each task (share inside the task window); an agent delegated to another branch (swarm child, linked project) stays excluded, its time belonging to that branch. Before, they were ignored and a task run by background agents measured only the parent's few seconds.
+- Task measure: a task whose window overlaps another task of the same branch (started together, or one started inside the other) is no longer measured (`overlapping_tasks`, `**Actual time:** —`) and leaves the calibration; its time still counts in the branch measure.
 - Script permissions: both installers allow the skill's scripts (`Bash(bash "<home>/.claude/skills/forge/scripts/*)`, quoted and unquoted), `SKILL.md` declares the same scripts in `allowed-tools` and fixes one call form, `bash "<SKILL_DIR>/scripts/<script>.sh" …`: outside auto mode, LOG entries, task marks and estimates no longer ask for permission. The unused rule `Bash(bash -c "git branch --show-current*)` is purged on install.
 - Resume no longer reads `project.md` and `coding-standards.md`: they are read when the first task of the turn starts, or before a direct action that changes code (section « Contexte du code » of `p5-resume.md`).
 - Rare sections load on demand from `commands/`: drafted email (`email.md`), teacher mode (`teacher.md`), SQL deployment script (`deployment-sql.md`), rule propagation to `CLAUDE.md` (`rule-propagation.md`), branch rename (`branch-rename.md`); their triggers stay in `SKILL.md` and `p5-resume.md`.

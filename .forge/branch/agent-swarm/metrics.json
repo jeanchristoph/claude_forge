@@ -1,1 +1,1 @@
-{"event":"engrave","date":"2026-11-22","branch":"agent-swarm","mode":"parent","model":"claude-opus-5-5","planned_files":111,"actual_files":32,"lines_added":4457,"lines_deleted":97,"agent_minutes":62.9,"human_minutes":160.7,"questions":25,"check_minutes":13.6,"tokens":null,"partial":true}
+{"event":"engrave","date":"2026-11-22","branch":"agent-swarm","mode":"parent","model":"claude-opus-5-5","planned_files":111,"actual_files":32,"lines_added":4461,"lines_deleted":98,"agent_minutes":63.2,"human_minutes":161.5,"questions":25,"check_minutes":13.6,"tokens":null,"partial":true}

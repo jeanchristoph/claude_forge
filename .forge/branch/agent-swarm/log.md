@@ -1,3 +1,4 @@
+- [2026-11-22 02:39] Version 0.13.0 préparée à la demande : CHANGELOG figé, livraison vers master, tag v0.13.0 et release GitHub.
 - [2026-11-22 02:36] Échantillon du calibrage porté à 40 dernières tâches, dès 20, à la demande.
 - [2026-11-22 02:35] Repli sur les branches retiré du calibrage à la demande : ratios et fourchette tirés des seules tâches (référence sous 10), branches gardées pour les coûts fixes ; measured_branches retiré.
 - [2026-11-22 02:19] T40 terminée : fichiers réels mesurés par tâche (empreintes des marques), estimation calée sur les tâches, comptage par tâche des deux côtés au grave ; 320 tests verts.

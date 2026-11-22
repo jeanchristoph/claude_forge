@@ -10,6 +10,8 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ## [Unreleased]
 
+## [0.13.0] — 2026-11-22
+
 ### Added
 
 - Swarm of child branches (`commands/swarm.md`): a plan with at least two groups of tasks meeting the branch rule (one module or feature slice, ≥ 15 min of agent time, delivered and tested on its own) becomes a plan of branches with `**Depends on:**`; "Validate and launch the swarm" runs up to N = 3 delegated forges in parallel, each in its own worktree with its own dependency install and port; questions relayed with a branch prefix and grouped, one end-of-branch question, merges into the parent branch only (fast-forward or reverse merge), `swarm.md` state file, resume after interruption, parent works on ordinary tasks meanwhile, optional ClickUp sub-tasks.
@@ -365,7 +367,8 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 - Idempotent Unix and Windows installers, with `settings.json` merge and no duplicate entries on reinstall.
 - `main` / `master` guard: on a protected branch, forge asks for a ticket ID or a branch name before continuing.
 
-[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.12.6...HEAD
+[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.0...HEAD
+[0.13.0]: https://github.com/jeanchristoph/claude_forge/compare/v0.12.6...v0.13.0
 [0.12.6]: https://github.com/jeanchristoph/claude_forge/compare/v0.12.5...v0.12.6
 [0.12.5]: https://github.com/jeanchristoph/claude_forge/compare/v0.12.4...v0.12.5
 [0.12.4]: https://github.com/jeanchristoph/claude_forge/compare/v0.12.3...v0.12.4

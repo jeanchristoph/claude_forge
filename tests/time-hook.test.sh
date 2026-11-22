@@ -261,6 +261,31 @@ test_resolves_branch_containing_a_slash() {
   assert_contains '"event":"Stop"' "$(cat "$WORK/.forge/branch/feature/x/time-log.jsonl")"
 }
 
+# Faux git en tête du PATH : chaque appel laisse une trace dans $SANDBOX/git-calls.
+with_git_spy() {
+  mkdir -p "$SANDBOX/spy"
+  printf '#!/bin/bash\necho called >> "%s/git-calls"\nexec "%s" "$@"\n' "$SANDBOX" "$(command -v git)" > "$SANDBOX/spy/git"
+  chmod +x "$SANDBOX/spy/git"
+}
+
+test_exits_without_git_outside_forge_project() {
+  local project="$SANDBOX/plain"
+  git init -q "$project"
+  with_git_spy
+  printf '{"cwd":"%s","hook_event_name":"Stop","session_id":"s1"}' "$(escaped_cwd "$project")" \
+    | PATH="$SANDBOX/spy:$PATH" bash "$HOOK_SCRIPT"
+  assert_equals ".git" "$(ls -A "$project")"
+  [ ! -e "$SANDBOX/git-calls" ] || { echo "    git called"; exit 1; }
+}
+
+test_logs_from_subfolder_of_forge_project() {
+  mkdir -p "$WORK/src/deep"
+  with_git_spy
+  printf '{"session_id":"s1","cwd":"%s","hook_event_name":"Stop"}' "$(escaped_cwd "$WORK/src/deep")"     | PATH="$SANDBOX/spy:$PATH" bash "$HOOK_SCRIPT"
+  assert_contains '"event":"Stop"' "$(logged)"
+  [ -e "$SANDBOX/git-calls" ] || { echo "    spy never called"; exit 1; }
+}
+
 run_test() {
   local result
   setup_sandbox
@@ -305,6 +330,8 @@ run_test test_appends_one_line_per_event "ajoute une ligne par événement"
 run_test test_marks_late_start_when_plan_exists_before_log "marque un départ tardif quand le plan existe avant le journal"
 run_test test_marks_no_late_start_without_plan "ne marque aucun départ tardif sans plan"
 run_test test_resolves_branch_containing_a_slash "résout une branche contenant un slash"
+run_test test_exits_without_git_outside_forge_project "hors projet forgé : sort sans lancer git, rien écrit"
+run_test test_logs_from_subfolder_of_forge_project "journalise depuis un sous-dossier d'un projet forgé"
 
 echo "$PASSED passed, $FAILED failed"
 [ $FAILED -eq 0 ]

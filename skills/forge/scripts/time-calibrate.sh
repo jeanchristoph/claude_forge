@@ -9,8 +9,10 @@
 #   dès 20 (source tasks) ; erreur appliquée si elle s'écarte de plus de 20 % de 1 ; référence sinon
 #   Fourchette : 20e et 80e centiles du rapport durée réelle ÷ durée estimée, dès 20 tâches (range_source)
 #   Coûts fixes d'un essaim (delegate_minutes, merge_minutes) : médiane des 5 dernières mesures des branches
-#   Estimation : 1 minute au moins, bornes de la fourchette comprises ; indicative tant que ratios ou fourchette
-#   viennent de la référence
+#   Coût fixe de vérification par tâche (check_minutes) : médiane de la part « min checks » des réels, dès 20 tâches qui
+#   la portent (check_source tasks) ; référence sinon. r se calcule alors sur le réel moins cette part
+#   Estimation d'une tâche : check_minutes + fichiers × r ; d'une liste : somme des tâches. 1 minute au moins, bornes
+#   de la fourchette comprises ; indicative tant que ratios ou fourchette viennent de la référence
 # Usage : time-calibrate.sh [--root <dir>] [--files <n>[,<n>…]] [--groups <n>,<n>[,…] [--slots <n>]]
 #   --files : nombre de fichiers à estimer — ajoute un objet "estimate" (minutes et fourchette) ;
 #   liste séparée par des virgules (une valeur par tâche d'un plan) → "estimate" porte sur la somme,
@@ -51,7 +53,7 @@ readonly METRICS_PROGRAM='
   { printf "%s %s %s\n", field("date"), field("delegate_setup_minutes"), field("merge_minutes") }'
 
 # Une ligne par tâche mesurée d'un plan : « date<TAB>rang<TAB>réel ÷ estimé<TAB>minutes réelles<TAB>fichiers réels
-# (- sans mesure)<TAB>fichiers prévus ». Tâche gardée quand elle porte un **Estimated time:** et un **Actual time:**
+# (- sans mesure)<TAB>fichiers prévus<TAB>minutes de vérification (- pour un réel antérieur à leur mesure) ». Tâche gardée quand elle porte un **Estimated time:** et un **Actual time:**
 # chiffré ; écartées : tâche-branche d'essaim et tâche déléguée à un projet lié, dont le réel additionne plusieurs tâches.
 readonly TASK_SAMPLES_PROGRAM="$TASK_FILES_AWK"'
   function minutes_of(line) {
@@ -61,7 +63,7 @@ readonly TASK_SAMPLES_PROGRAM="$TASK_FILES_AWK"'
   function flush(   planned) {
     planned = planned_files_from(estimated_files_line, files_line)
     if (in_task && !is_aggregate && estimated > 0 && actual > 0)
-      printf "%s\t%04d\t%s\t%s\t%s\t%d\n", date, order, actual / estimated, actual, actual_files, planned
+      printf "%s\t%04d\t%s\t%s\t%s\t%d\t%s\n", date, order, actual / estimated, actual, actual_files, planned, checks
     in_task = 0
   }
   FNR == 1 { flush(); date = "0000-00-00"; order = 0 }
@@ -69,13 +71,14 @@ readonly TASK_SAMPLES_PROGRAM="$TASK_FILES_AWK"'
   /^\*\*Date:\*\*/ && date == "0000-00-00" { date = $0; sub(/^\*\*Date:\*\* */, "", date); date = substr(date, 1, 10) }
   /^### T[0-9]+/ {
     flush(); in_task = 1; order++; is_aggregate = ($0 ~ / Branch /)
-    estimated = 0; actual = 0; actual_files = "-"; estimated_files_line = ""; files_line = ""; next
+    estimated = 0; actual = 0; actual_files = "-"; checks = "-"; estimated_files_line = ""; files_line = ""; next
   }
   /^## / { flush(); next }
   in_task && /^\*\*Estimated time:\*\*/ { estimated = minutes_of($0) }
   in_task && /^\*\*Actual time:\*\*/ {
     actual = minutes_of($0)
     if (match($0, /[0-9]+ files/)) actual_files = substr($0, RSTART, RLENGTH) + 0
+    if (match($0, /[0-9]+(\.[0-9]+)? min checks/)) checks = substr($0, RSTART, RLENGTH) + 0
   }
   in_task && /^\*\*Estimated files:\*\*/ { estimated_files_line = $0 }
   in_task && /^\*\*Files:\*\*/ { files_line = $0 }
@@ -83,7 +86,8 @@ readonly TASK_SAMPLES_PROGRAM="$TASK_FILES_AWK"'
   END { flush() }'
 
 # Calibrage par tâche sur les échantillons triés du plus récent au plus ancien, « - » pour une valeur absente :
-#   « écarts basse haute tâches_à_fichiers minutes_par_fichier erreur_fichiers » ; bornes et ratios absents sous le minimum.
+#   « écarts basse haute tâches_à_fichiers minutes_par_fichier erreur_fichiers vérifications » ; bornes, ratios et
+#   vérifications absents sous le minimum. Minutes par fichier sur le réel moins les vérifications quand il les porte.
 readonly TASK_CALIBRATION_PROGRAM='
   # Centile p (0 à 1) de valeurs triées en place, interpolé entre les deux rangs voisins.
   function percentile(values, count, p,   i, j, swap, position, below) {
@@ -93,12 +97,16 @@ readonly TASK_CALIBRATION_PROGRAM='
     return below >= count ? values[count] : values[below] + (position - below) * (values[below + 1] - values[below])
   }
   { gaps[++gap_count] = $3 }
-  $5 != "-" && $5 > 0 && $6 > 0 { ++file_count; rates[file_count] = $4 / $5; errors[file_count] = $5 / $6 }
+  $7 != "-" { check_values[++check_count] = $7 }
+  $5 != "-" && $5 > 0 && $6 > 0 && $4 - ($7 != "-" ? $7 : 0) > 0 {
+    ++file_count; rates[file_count] = ($4 - ($7 != "-" ? $7 : 0)) / $5; errors[file_count] = $5 / $6
+  }
   END {
-    low = high = rate = error = "-"
+    low = high = rate = error = check = "-"
     if (gap_count >= min_tasks) { low = percentile(gaps, gap_count, low_percentile); high = percentile(gaps, gap_count, high_percentile) }
     if (file_count >= min_tasks) { rate = percentile(rates, file_count, 0.5); error = percentile(errors, file_count, 0.5) }
-    printf "%d %s %s %d %s %s\n", gap_count, low, high, file_count, rate, error
+    if (check_count >= min_tasks) check = percentile(check_values, check_count, 0.5)
+    printf "%d %s %s %d %s %s %s\n", gap_count, low, high, file_count, rate, error, check
   }'
 
 # Calcul sur les synthèses triées de la plus récente à la plus ancienne.
@@ -107,18 +115,19 @@ readonly CALIBRATION_PROGRAM='
     for (i = 2; i <= count; i++) for (j = i; j > 1 && values[j - 1] > values[j]; j--) { swap = values[j]; values[j] = values[j - 1]; values[j - 1] = swap }
     return count % 2 ? values[(count + 1) / 2] : (values[count / 2] + values[count / 2 + 1]) / 2
   }
-  function estimate_object(files, r, correction,   minutes) {
-    minutes = files * correction * r
+  # BUSINESS_RULE: chaque tâche paie ses vérifications, quel que soit son nombre de fichiers
+  function estimate_object(files, r, correction, tasks,   minutes) {
+    minutes = tasks * check_minutes + files * correction * r
     return sprintf("{\"files\":%d,\"minutes\":%d,\"low\":%d,\"high\":%d}", files, whole_minutes(minutes), whole_minutes(minutes * low), whole_minutes(minutes * high))
   }
   # Estimation de la somme, puis une par valeur quand la liste en compte plusieurs.
   function render_estimates(files, r, correction,   count, values, i, total) {
     count = split(files, values, ",")
     for (i = 1; i <= count; i++) total += values[i]
-    printf ",\"estimate\":%s", estimate_object(total, r, correction)
+    printf ",\"estimate\":%s", estimate_object(total, r, correction, count)
     if (count < 2) return
     printf ",\"estimates\":["
-    for (i = 1; i <= count; i++) printf "%s%s", (i > 1 ? "," : ""), estimate_object(values[i], r, correction)
+    for (i = 1; i <= count; i++) printf "%s%s", (i > 1 ? "," : ""), estimate_object(values[i], r, correction, 1)
     printf "]"
   }
   # Gain estimé de tout essaim : groupes triés du plus long au plus court, chacun confié au délégué le moins chargé.
@@ -159,7 +168,9 @@ readonly CALIBRATION_PROGRAM='
     printf "\"indicative\":%s,", indicative
     printf "\"source\":\"%s\",\"range_source\":\"%s\",", (has_rates ? "tasks" : "reference"), (task_low != "-" ? "tasks" : "reference")
     printf "\"delegate_minutes\":%s,\"merge_minutes\":%s,", delegate_minutes + 0, merge_minutes + 0
-    printf "\"fixed_costs_source\":\"%s\"", ((setup_count || merge_count) ? "project" : "reference")
+    printf "\"fixed_costs_source\":\"%s\",", ((setup_count || merge_count) ? "project" : "reference")
+    if (task_check != "-") check_minutes = task_check
+    printf "\"check_minutes\":%.1f,\"check_source\":\"%s\"", check_minutes, (task_check != "-" ? "tasks" : "reference")
     if (files != "") render_estimates(files, r, apply ? file_error : 1)
     if (groups != "") render_swarm(groups, r, apply ? file_error : 1)
   }'
@@ -198,10 +209,10 @@ read_reference() {
   [[ $content =~ $pattern ]] && REPLY=${BASH_REMATCH[1]}
 }
 
-# Calibrage par tâche, sortie de TASK_CALIBRATION_PROGRAM dans REPLY ; « 0 - - 0 - - » sans plan.
+# Calibrage par tâche, sortie de TASK_CALIBRATION_PROGRAM dans REPLY ; « 0 - - 0 - - - » sans plan.
 read_task_calibration() {
   local branch_dir="$ROOT/.forge/branch"
-  REPLY="0 - - 0 - -"
+  REPLY="0 - - 0 - - -"
   [ -d "$branch_dir" ] || return 0
   REPLY=$(find "$branch_dir" -name plan.md -exec awk "$TASK_SAMPLES_PROGRAM" {} + \
     | LC_ALL=C sort -t$'\t' -k1,1r -k2,2r | head -n "$RECENT_FOR_RANGE" \
@@ -217,19 +228,20 @@ list_metrics() {
 }
 
 main() {
-  local reference_r low high delegate_minutes merge_minutes task_count task_low task_high file_count task_rate task_error
+  local reference_r low high delegate_minutes merge_minutes check_minutes task_count task_low task_high file_count task_rate task_error task_check
   parse_arguments "$@"
   read_reference minutes_per_file; reference_r=$REPLY
   read_reference delegate_minutes; delegate_minutes=$REPLY
   read_reference merge_minutes; merge_minutes=$REPLY
+  read_reference check_minutes; check_minutes=$REPLY
   read_reference range_low; low=$REPLY
   read_reference range_high; high=$REPLY
   read_task_calibration
-  read -r task_count task_low task_high file_count task_rate task_error <<< "$REPLY"
+  read -r task_count task_low task_high file_count task_rate task_error task_check <<< "$REPLY"
   list_metrics | awk -v reference_r="$reference_r" -v low="$low" -v high="$high" \
     -v files="$FILES" -v groups="$BRANCH_GROUPS" -v slots="$SLOTS" -v delegate_minutes="$delegate_minutes" \
     -v merge_minutes="$merge_minutes" -v recent_ratios=$RECENT_FOR_RATIOS -v task_low="$task_low" -v task_high="$task_high" \
-    -v task_rate="$task_rate" -v task_error="$task_error" \
+    -v task_rate="$task_rate" -v task_error="$task_error" -v check_minutes="$check_minutes" -v task_check="$task_check" \
     -v tolerance=$FILE_ERROR_TOLERANCE "$CALIBRATION_PROGRAM"
   # Seuil de la règle de branche, recopié tel quel : les bornes de la fourchette servent au calcul, jamais recopiées
   read_reference branch_minutes

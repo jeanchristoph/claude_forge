@@ -2,7 +2,9 @@
 # Séquence git de la livraison forge (grave / engrave).
 #   preview → décrit la séquence en JSON sur une ligne, n'écrit rien
 #   run     → exécute la séquence, s'arrête au premier échec git, rend compte de chaque opération en JSON sur une ligne
-# Usage : engrave.sh <preview|run> --branch <BRANCH> --message <msg> [--root <dir>] [target...]
+# Usage : engrave.sh <preview|run> --branch <BRANCH> --message <msg> [--root <dir>] [--model <id>] [target...]
+#   --model : run écrit d'abord la synthèse de mesure (metrics.sh, .forge/branch/<BRANCH>/metrics.json), qui part
+#   avec le commit ; son compte rendu est rendu sous « metrics » — sans dossier de branche forge, rien n'est écrit
 # Sortie : 0 succès · 1 usage ou garde · 2 échec git (conflit, push rejeté) — le JSON de run est écrit dans les deux cas
 
 set -u
@@ -28,6 +30,8 @@ MODE=""
 BRANCH=""
 MESSAGE=""
 ROOT="."
+MODEL=""
+METRICS_JSON=""
 TARGETS=()
 
 # Une action = une opération git sur une branche ; les tableaux sont indexés par action.
@@ -46,7 +50,7 @@ RESULT_REASON=""
 
 fail_usage() {
   echo "engrave: $1" >&2
-  echo "usage: engrave.sh <preview|run> --branch <BRANCH> --message <msg> [--root <dir>] [target...]" >&2
+  echo "usage: engrave.sh <preview|run> --branch <BRANCH> --message <msg> [--root <dir>] [--model <id>] [target...]" >&2
   exit $EXIT_USAGE
 }
 
@@ -63,6 +67,7 @@ parse_arguments() {
       --branch)  require_value "$1" $#; BRANCH=$2; shift 2 ;;
       --message) require_value "$1" $#; MESSAGE=$2; shift 2 ;;
       --root)    require_value "$1" $#; ROOT=$2; shift 2 ;;
+      --model)   require_value "$1" $#; MODEL=$2; shift 2 ;;
       -*)        fail_usage "unknown option $1" ;;
       *)         TARGETS+=("$1"); shift ;;
     esac
@@ -289,13 +294,21 @@ render_json() {
     actions+="$separator$(render_json_action "$i")"
     separator=","
   done
-  printf '{"branch":%s,"status":%s,"actions":[%s]}\n' \
-    "$(json_string "$BRANCH")" "$(json_string "$SEQUENCE_STATUS")" "$actions"
+  printf '{"branch":%s,"status":%s,"actions":[%s]%s}\n' \
+    "$(json_string "$BRANCH")" "$(json_string "$SEQUENCE_STATUS")" "$actions" "${METRICS_JSON:+,\"metrics\":$METRICS_JSON}"
+}
+
+# Synthèse de mesure écrite avant la séquence : metrics.json part avec le commit de la livraison.
+write_metrics() {
+  [ "$MODE" = run ] && [ -n "$MODEL" ] && [ -d "$ROOT/.forge/branch/$BRANCH" ] || return 0
+  METRICS_JSON=$(bash "$(dirname "${BASH_SOURCE[0]}")/metrics.sh" --root "$ROOT" --branch "$BRANCH" --event engrave --model "$MODEL") \
+    || METRICS_JSON=""
 }
 
 main() {
   parse_arguments "$@"
   validate_arguments
+  write_metrics
   build_actions
   case $MODE in
     preview) render_json ;;

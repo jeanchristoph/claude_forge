@@ -4,5 +4,6 @@
   "range_high": 1.3,
   "delegate_minutes": 8,
   "merge_minutes": 5,
+  "check_minutes": 2,
   "branch_minutes": 15
 }

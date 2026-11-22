@@ -117,7 +117,8 @@ forge/
 │   │   │   └── estimation.json        (minutes per file until a project has its own measures, estimate range, fixed costs of a branch, branch threshold)
 │   │   └── scripts/
 │   │       ├── checks.sh              (startup checks, run detached: input/ and time-log.jsonl lines in .gitignore)
-│   │       ├── engrave.sh             (shipping sequence: preview / run)
+│   │       ├── engrave.sh             (shipping sequence: preview / run; run --model writes metrics.json first)
+│   │       ├── metrics.sh             (branch measure summary: writes metrics.json, reports the estimated vs actual line as JSON)
 │   │       ├── json.sh                (JSON rendering shared by the scripts)
 │   │       ├── log-entry.sh           (log entry: timestamp read from the local clock, entry written at the top of log.md)
 │   │       ├── status.sh              (startup status: state, progress, resumable branches, as JSON)
@@ -125,8 +126,10 @@ forge/
 │   │       ├── time-aggregate.sh      (one branch's measure: agent, human and check minutes, files and lines, as JSON)
 │   │       ├── time-calibrate.sh      (project ratios from metrics.json, estimate for a number of files, as JSON)
 │   │       ├── time-hook.sh           (time measurement hook: one line per event in the branch time-log.jsonl)
-│   │       ├── time-mark.sh           (task marks: start and done of a plan task in the time-log.jsonl)
-│   │       ├── task-files.sh          (shared awk: planned files of a task, files changed between two fingerprints)
+│   │       ├── time-mark.sh           (delegate, token and merge marks in the time-log.jsonl)
+│   │       ├── plan-hook.sh           (tick hook: task marks and **Actual time:** written when a plan task is ticked)
+│   │       ├── task-marks.sh          (shared bash: clock, folder fingerprint, task mark line)
+│   │       ├── task-files.sh          (shared awk: task status, planned files of a task, files changed between two fingerprints)
 │   │       └── update.sh              (skill update: check / run, as JSON)
 │   └── forge-clickup/        → extension: ClickUp task kickoff
 │       └── SKILL.md
@@ -158,6 +161,8 @@ forge/
 │   ├── time-calibrate.test.sh → bash tests/time-calibrate.test.sh, throwaway folders only
 │   ├── time-hook.test.sh     → bash tests/time-hook.test.sh, throwaway repositories only
 │   ├── time-mark.test.sh     → bash tests/time-mark.test.sh, throwaway folders only
+│   ├── metrics.test.sh       → bash tests/metrics.test.sh, throwaway repositories only
+│   ├── plan-hook.test.sh     → bash tests/plan-hook.test.sh, throwaway repositories only
 │   └── update.test.sh        → bash tests/update.test.sh, throwaway repositories only
 ├── .gitattributes
 └── .gitignore
@@ -226,7 +231,7 @@ L/XL tasks include a commented decomposition block (`T1.1`, `T1.2`, …) to fill
 ### State 5 — Active
 **Condition:** brief + plan present
 
-Reads the brief and the plan silently; `project.md` and `coding-standards.md` are read only when the first task of the turn starts, or a direct code change — a resume to ship, review or close does not load them. If `log.md` has entries, displays a one-line "**Last session:**" recap of the last 10 first, then the progress table. Then offers the two modes — chaining the open tasks or picking one yourself — and waits. No open task: no mode is offered, the question is left open.
+Reads the brief and the plan silently; `project.md` and `coding-standards.md` are read only when the first task of the turn starts, or a direct code change — a resume to ship, review or close does not load them. If `log.md` has entries, displays a one-line "**Last session:**" recap of the last 10 first, then the progress table — `## Summary` of the plan, as the hook keeps it. Then offers the two modes — chaining the open tasks or picking one yourself — and waits. No open task: no mode is offered, the question is left open.
 
 ---
 
@@ -332,13 +337,15 @@ A single hook, in bash, for both platforms: Git Bash is already required on Wind
 
 ## Time measurement and estimate
 
-Both installers also add `bash ~/.claude/skills/forge/scripts/time-hook.sh` (shell `bash`, Git Bash on Windows, `async`: Claude Code never waits for it) to six events: `UserPromptSubmit`, `Stop`, `SubagentStart`, `SubagentStop`, `PreToolUse` on `AskUserQuestion`, `PostToolUse` on `AskUserQuestion|Bash`. Hooks declared in a skill's frontmatter are not used: they miss subagents and are lost when a session is resumed.
+Both installers also add `bash ~/.claude/skills/forge/scripts/time-hook.sh` (shell `bash`, Git Bash on Windows, `async`: Claude Code never waits for it) to six events: `UserPromptSubmit`, `Stop`, `SubagentStart`, `SubagentStop`, `PreToolUse` on `AskUserQuestion`, `PostToolUse` on `AskUserQuestion|Bash`. Outside a forge project (no `.forge` folder in the session folder or its parents), it exits at once, without any git process. They also add `bash ~/.claude/skills/forge/scripts/plan-hook.sh` on `PostToolUse` for `Edit|Write|MultiEdit`, synchronous: it acts only on a `.forge/branch/<branch>/plan.md` and exits at once for any other file. Hooks declared in a skill's frontmatter are not used: they miss subagents and are lost when a session is resumed.
 
 - **Measure:** the hook adds one line per event to `.forge/branch/<branch>/time-log.jsonl` of the branch checked out in the session folder — timestamps, ids, durations, never a prompt, command or tool output. Outside a forged project it writes nothing. A delegate's events carry the parent's folder: the parent maps each delegate to its child branch.
-- **Summary:** at each engrave and at closure, `time-aggregate.sh` sums the log and git into `metrics.json`: agent minutes (main session + delegates, ordinary subagents included: any agent started by the session and not delegated to another branch counts for its duration, parallel agents added up), human minutes (an absence of more than 6 h before a prompt or an answer counts zero), a `partial` flag when the log misses the start of the branch (hook installed late: such a branch is left out of calibration), questions, check minutes, tokens of delegates, files and lines changed.
+- **Summary:** at each engrave (`engrave.sh run --model <id>`, before `git add`) and at closure, `metrics.sh` — never the model — has `time-aggregate.sh` sum the log and git and writes `metrics.json`: agent minutes (main session + delegates, ordinary subagents included: any agent started by the session and not delegated to another branch counts for its duration, parallel agents added up), human minutes (an absence of more than 6 h before a prompt or an answer counts zero), a `partial` flag when the log misses the start of the branch (hook installed late: such a branch is left out of calibration), questions, check minutes, tokens of delegates, files and lines changed.
 - **Files per task:** each task mark carries a fingerprint of the working folder (path and content hash of every changed or new file, outside `.forge`, nothing written to the repository); a task's actual files are those that appear, change or disappear between its two marks — a file changed by three tasks counts in each — written as `**Actual time:** ≈ <min> min · <n> files`. From twenty such tasks, minutes per file and the file forecast correction come from the last forty tasks rather than from whole branches, both sides counted per task.
 - **Estimate:** each plan task counts the paths listed in its `**Files:**` (an explicit `(≈ n)` at the end of the line for a glob or files still unknown); one `time-calibrate.sh --files 3,5,8` call turns every task and the total into agent minutes with a range (`≈ 120 files · ≈ 60 min (45-78)`), from the project's last forty measured tasks once twenty are measured with their files, otherwise from `references/estimation.json` (0.5 min per file) — never from whole branches. The range comes from the 20th and 80th percentiles of actual ÷ estimated time over the last forty measured tasks, read from the branch plans (child branches of a swarm included), once twenty are measured (0.75–1.3 before); every estimate is recomputed from the latest measures. Marked *indicative* while rates or range still come from the reference values. Effort letters stay as relative size, without any duration.
-- **Per task:** each task also states `**Estimated time:**`, frozen when the plan is written. `time-mark.sh` marks its start and its tick in the log; `time-aggregate.sh --task` measures the agent minutes between both marks (question waits removed, same absence rule) and the tick writes `**Actual time:**`, or `—` when there is no measure (no log, hook installed late, missing mark). Every delegate, same repository or linked project, writes its marks to the parent's log (`TIME_LOG:` line of its prompt), where its events already land, and reports each task's actual time in `FORGE_DONE`; a parent task delegated to a linked project gets the sum of its child tasks (`time-aggregate.sh --task T1,T2`, `—` as soon as one child is unmeasured); a swarm branch task takes `agent_minutes` from the branch `metrics.json`. The progress table shows Estimated and Actual side by side. An ordinary subagent counts in the task for its share inside the window; two tasks open at the same time are not measured (`—`, reason `overlapping_tasks`): no share can be attributed to either without inventing it, and their time still counts in the branch measure.
+- **Written by the hook:** on every write of `plan.md`, `plan-hook.sh` estimates each task that has `**Files:**` but no `**Estimated time:**` (one `time-calibrate.sh` call), adds the `**Estimate:**` header when missing, and rebuilds `## Summary` from the tasks: `Task | Effort | Files | Estimated | Actual | Status`, short titles kept, `**Total**`, and `**Remaining**` for the open tasks. On resume, this table is the progress table, shown as is, with no script call.
+- **Check cost per task:** every task pays its checks whatever its size — under Git Bash a full test run can cost several minutes for a one-file change. A task's estimate is `check_minutes + files × minutes per file`: `check_minutes` is the median of the `· <c> min checks` part of the actual times once twenty tasks carry it, `2` from `references/estimation.json` before; minutes per file are then taken from the actual time minus its checks. A list of tasks gets one check cost per task. Actual times written before this part existed are still read.
+- **Per task:** each task also states `**Estimated time:**`, frozen when the hook first writes it. The model sets no mark: `plan-hook.sh` sees the tick in `plan.md`, writes the task's start (last checkpoint: previous tick or first write of the plan, a `plan_checkpoint` line of the log) and its end, measures the agent minutes between both with `time-aggregate.sh --task` (question waits removed, same absence rule) and writes `**Actual time:**` with the share of check commands (`≈ 10.2 min · 9 files · 2.3 min checks`), or `—` when there is no measure (no log, hook installed late, first pass). A task picked out of order is measured from the previous tick; two tasks ticked in one edit are simultaneous. For every delegate, same repository or linked project, the hook writes the marks to the parent's log (`TIME_LOG:` line of its prompt), where its events already land; the delegate and reports each task's actual time in `FORGE_DONE`; a parent task delegated to a linked project gets the sum of its child tasks (`time-aggregate.sh --task T1,T2`, `—` as soon as one child is unmeasured); a swarm branch task takes `agent_minutes` from the branch `metrics.json`. The progress table shows Estimated and Actual side by side. An ordinary subagent counts in the task for its share inside the window; two tasks open at the same time are not measured (`—`, reason `overlapping_tasks`): no share can be attributed to either without inventing it, and their time still counts in the branch measure.
 - **Check commands:** the `**Check pattern:**` line of `project.md` (regular expression) marks the Bash commands counted as checks.
 
 ---
@@ -632,11 +639,14 @@ the same way, as `YYYYMMDD-email-<topic>.txt` and `.html`.
 -->
 
 ## Summary
-| Task | Effort | Files | Status |
-|---|---|---|---|
-| T1 | S | 3 | [ ] |
-| **Total** | **1 S** | **3** | |
+| Task | Effort | Files | Estimated | Actual | Status |
+|---|---|---|---|---|---|
+| T1 — Title | S | 3 | ≈ 2 min | — | [ ] |
+| **Total** | **1S** | **3** | **≈ 2 min** | **—** | |
+| **Remaining** | | **3** | **≈ 2 min (1-2)** | | |
 ```
+
+**Written by the hook:** `**Estimate:**`, every `**Estimated time:**`, `**Actual time:**` and the whole `## Summary` (cells copied from the tasks, blocked reason included, `**Total**`, `**Remaining**` for the open tasks) are kept by `plan-hook.sh` on every write of `plan.md`; the model writes the tasks and the short title of each summary row.
 
 **Statuses:** `[ ]` to do · `[x]` done · `[!]` blocked · `[-]` dropped  
 **Effort:** XS · S · M · L · XL — relative size, no duration attached; XL → split into sub-tasks, or into a branch  

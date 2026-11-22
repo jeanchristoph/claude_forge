@@ -127,6 +127,14 @@ foreach ($timeEvent in $timeEvents.Keys) {
     $s.hooks.$timeEvent = $groups + $group
 }
 
+# Hook de coche du plan : retire toute entrée plan-hook existante, puis l'ajoute après chaque écriture de fichier.
+# Synchrone : il réécrit plan.md et renvoie au modèle le réel écrit ; hors plan forge, il sort aussitôt.
+$planHook = [PSCustomObject]@{ type = "command"; command = "bash ~/.claude/skills/forge/scripts/plan-hook.sh"; shell = "bash" }
+$planGroups = @($s.hooks.PostToolUse | Where-Object {
+    -not (@($_.hooks) | Where-Object { $_.command -like "*plan-hook.sh*" })
+})
+$s.hooks.PostToolUse = $planGroups + [PSCustomObject]@{ matcher = "Edit|Write|MultiEdit"; hooks = @($planHook) }
+
 # Sans BOM : install.sh et les autres lecteurs JSON le refusent.
 [IO.File]::WriteAllText($sp, ($s | ConvertTo-Json -Depth 10), (New-Object Text.UTF8Encoding $false))
 Write-Host "Done."

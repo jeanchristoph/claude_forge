@@ -60,7 +60,7 @@ test_returns_fixed_costs_and_branch_threshold() {
   local output
   output=$(calibrate)
   assert_contains '"delegate_minutes":8,"merge_minutes":5,"fixed_costs_source":"reference"' "$output"
-  assert_contains '"fixed_costs_source":"reference","branch_minutes":15}' "$output"
+  assert_contains '"fixed_costs_source":"reference","check_minutes":2.0,"check_source":"reference","branch_minutes":15}' "$output"
   case $output in *range_low*|*range_high*) echo "    range bounds copied"; exit 1 ;; esac
 }
 
@@ -115,14 +115,14 @@ test_rejects_malformed_groups_or_slots() {
 }
 
 test_estimates_at_least_one_minute() {
-  assert_contains '"estimate":{"files":1,"minutes":1,"low":1,"high":1}' "$(calibrate --files 1)"
+  assert_contains '"estimate":{"files":1,"minutes":2,"low":2,"high":3}' "$(calibrate --files 1)"
 }
 
 test_estimates_each_task_of_a_list_and_their_sum() {
   local output
   output=$(calibrate --files 3,5,8)
-  assert_contains '"estimate":{"files":16,"minutes":8,"low":6,"high":10}' "$output"
-  assert_contains '"estimates":[{"files":3,"minutes":2,"low":1,"high":2},{"files":5,"minutes":2,"low":2,"high":3},{"files":8,"minutes":4,"low":3,"high":5}]' "$output"
+  assert_contains '"estimate":{"files":16,"minutes":14,"low":10,"high":18}' "$output"
+  assert_contains '"estimates":[{"files":3,"minutes":4,"low":3,"high":5},{"files":5,"minutes":4,"low":3,"high":6},{"files":8,"minutes":6,"low":4,"high":8}]' "$output"
 }
 
 test_gives_no_list_for_a_single_value() {
@@ -130,7 +130,7 @@ test_gives_no_list_for_a_single_value() {
 }
 
 test_estimates_files_with_range() {
-  assert_contains '"estimate":{"files":120,"minutes":60,"low":45,"high":78}' "$(calibrate --files 120)"
+  assert_contains '"estimate":{"files":120,"minutes":62,"low":46,"high":81}' "$(calibrate --files 120)"
 }
 
 # ── Ratios du projet ──────────────────────────────────────────────────────────
@@ -155,10 +155,11 @@ test_estimates_files_with_range() {
 # ── Fourchette ────────────────────────────────────────────────────────────────
 
 # Plan d'une branche : nom, date, puis une tâche par argument « estimé:réel » — réel « — » non mesuré,
-# « minutes/fichiers » avec ses fichiers réels ; chaque tâche liste un fichier prévu ;
+# « minutes/fichiers » avec ses fichiers réels, « minutes/fichiers/vérifications » avec sa part de vérifications ;
+# chaque tâche liste un fichier prévu ;
 # préfixe « branch: » pour une tâche-branche d'essaim, « delegated: » pour une tâche déléguée à un projet lié.
 write_plan_tasks() {
-  local branch=$1 date=$2 index=0 task kind estimated actual title note
+  local branch=$1 date=$2 index=0 task kind estimated actual title note minutes files checks
   shift 2
   mkdir -p "$WORK/.forge/branch/$branch"
   {
@@ -171,6 +172,9 @@ write_plan_tasks() {
       [ "$kind" = delegated ] && note="delegated to ../api @ forge/x · done"
       printf '\n### T%d — %s\n**Effort:** S\n**Estimated time:** ≈ %s min (1-2)\n' "$index" "$title" "$estimated"
       if [ "$actual" = "—" ]; then printf '**Actual time:** —\n'
+      elif [[ $actual == */*/* ]]; then
+        IFS=/ read -r minutes files checks <<< "$actual"
+        printf '**Actual time:** ≈ %s min · %s files · %s min checks\n' "$minutes" "$files" "$checks"
       elif [[ $actual == */* ]]; then printf '**Actual time:** ≈ %s min · %s files\n' "${actual%/*}" "${actual#*/}"
       else printf '**Actual time:** ≈ %s min\n' "$actual"; fi
       printf '**Files:** `a`\n**Description:** d\n[x] %s\n' "$note"
@@ -190,7 +194,7 @@ test_keeps_reference_range_below_twenty_tasks() {
   local output
   output=$(calibrate --files 100)
   assert_contains '"range_source":"reference"' "$output"
-  assert_contains '"estimate":{"files":100,"minutes":50,"low":38,"high":65}' "$output"
+  assert_contains '"estimate":{"files":100,"minutes":52,"low":39,"high":68}' "$output"
 }
 
 # Vingt tâches exactement à leur estimation : la fourchette se resserre sur elle.
@@ -200,14 +204,14 @@ test_narrows_range_for_regular_tasks() {
   local output
   output=$(calibrate --files 100)
   assert_contains '"range_source":"tasks"' "$output"
-  assert_contains '"estimate":{"files":100,"minutes":50,"low":50,"high":50}' "$output"
+  assert_contains '"estimate":{"files":100,"minutes":52,"low":52,"high":52}' "$output"
 }
 
 # Écarts réels ÷ estimés de 0,4 à 2 : centiles 20 et 80 à 0,76 et 1,28.
 test_widens_range_for_dispersed_tasks() {
   write_plan_tasks feature 2026-11-01 10:4 10:4 10:6 10:6 10:8 10:8 10:9 10:9 10:10 10:10 \
     10:10 10:10 10:11 10:11 10:12 10:12 10:16 10:16 10:20 10:20
-  assert_contains '"estimate":{"files":100,"minutes":50,"low":38,"high":64}' "$(calibrate --files 100)"
+  assert_contains '"estimate":{"files":100,"minutes":52,"low":40,"high":67}' "$(calibrate --files 100)"
 }
 
 test_ignores_unmeasured_branch_and_delegated_tasks() {
@@ -221,7 +225,7 @@ test_keeps_forty_most_recent_tasks() {
   write_plan_tasks old 2026-11-01 $(repeat_task 40 10:20)
   # shellcheck disable=SC2046
   write_plan_tasks new 2026-11-02 $(repeat_task 40 10:10)
-  assert_contains '"estimate":{"files":100,"minutes":50,"low":50,"high":50}' "$(calibrate --files 100)"
+  assert_contains '"estimate":{"files":100,"minutes":52,"low":52,"high":52}' "$(calibrate --files 100)"
 }
 
 test_counts_tasks_of_child_branch_plans() {
@@ -241,7 +245,7 @@ test_takes_rates_from_tasks_with_their_files() {
   output=$(calibrate --files 2)
   assert_contains '"minutes_per_file":2.00,"file_error":3.00,"apply_file_error":true' "$output"
   assert_contains '"source":"tasks"' "$output"
-  assert_contains '"estimate":{"files":2,"minutes":12' "$output"
+  assert_contains '"estimate":{"files":2,"minutes":14' "$output"
 }
 
 
@@ -304,6 +308,32 @@ test_rejects_unknown_argument() {
   assert_equals "1" "$?"
 }
 
+# ── Coût fixe de vérification ─────────────────────────────────────────────────
+
+# Vingt tâches : 6 min réelles dont 1 min de vérifications, 3 fichiers → coût fixe 1 min, (6 − 1) ÷ 3 min par fichier.
+test_takes_check_cost_from_tasks_and_rate_without_checks() {
+  # shellcheck disable=SC2046
+  write_plan_tasks feature 2026-11-01 $(repeat_task 20 10:6/3/1)
+  local output
+  output=$(calibrate --files 2)
+  assert_contains '"minutes_per_file":1.67,' "$output"
+  assert_contains '"check_minutes":1.0,"check_source":"tasks"' "$output"
+  assert_contains '"estimate":{"files":2,"minutes":11,' "$output"
+}
+
+test_keeps_reference_check_cost_below_twenty_tasks() {
+  # shellcheck disable=SC2046
+  write_plan_tasks feature 2026-11-01 $(repeat_task 19 10:6/3/1)
+  assert_contains '"check_minutes":2.0,"check_source":"reference"' "$(calibrate)"
+}
+
+test_list_estimate_counts_check_cost_once_per_task() {
+  local output
+  output=$(calibrate --files 2,2)
+  assert_contains '"estimate":{"files":4,"minutes":6,' "$output"
+  assert_contains '"estimates":[{"files":2,"minutes":3,' "$output"
+}
+
 run_test() {
   local result
   setup_sandbox
@@ -328,7 +358,7 @@ run_test test_computes_swarm_gain_for_branches_spread_over_slots "calcule le gai
 run_test test_shows_no_gain_for_two_short_branches "ne montre aucun gain pour deux branches courtes"
 run_test test_queues_branches_beyond_available_slots "met en file les branches au-delà des délégués disponibles"
 run_test test_rejects_malformed_groups_or_slots "refuse des groupes ou un nombre de délégués mal formés"
-run_test test_estimates_at_least_one_minute "estime au moins une minute, bornes comprises"
+run_test test_estimates_at_least_one_minute "une tâche d'un fichier : coût fixe de vérification compris, bornes au moins d'une minute"
 run_test test_estimates_each_task_of_a_list_and_their_sum "estime chaque tâche d'une liste et leur somme en un appel"
 run_test test_gives_no_list_for_a_single_value "ne rend pas de liste pour une seule valeur"
 run_test test_estimates_files_with_range "estime un nombre de fichiers avec sa fourchette"
@@ -347,6 +377,9 @@ run_test test_ignores_partial_branch_for_fixed_costs "écarte une branche mesur�
 run_test test_rejects_non_numeric_files "refuse un nombre de fichiers non entier"
 run_test test_rejects_malformed_files_list "refuse une liste de fichiers mal formée"
 run_test test_rejects_unknown_argument "refuse un argument inconnu"
+run_test test_takes_check_cost_from_tasks_and_rate_without_checks "coût fixe tiré des vérifications des tâches, minutes par fichier hors vérifications"
+run_test test_keeps_reference_check_cost_below_twenty_tasks "coût fixe de référence sous vingt tâches qui portent leurs vérifications"
+run_test test_list_estimate_counts_check_cost_once_per_task "estimation d'une liste : un coût fixe par tâche"
 
 echo "$PASSED passed, $FAILED failed"
 [ $FAILED -eq 0 ]

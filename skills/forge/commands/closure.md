@@ -6,7 +6,7 @@
 
 1. **Confirmer** que le problème initial est bien résolu : rappeler en une ligne l'objectif tel que décrit dans `## Objective` du brief, lister les tâches `[ ]` de PLAN, puis poser le choix avec `AskUserQuestion` — `header` : `Closure`, options `Solved` / `Not yet`, ces tâches recopiées dans la question.
    `Not yet` → demander ce qui reste, et STOP. Aucune suite sans `Solved`.
-   `Solved` → écrire la « Synthèse de mesure — `metrics.json` » de `commands/engrave.md`, `event` à `closure` ; elle part avec la prochaine Livraison, qui la réécrit avec `event` à `engrave` — valeurs cumulées depuis le début de la branche, seule la dernière synthèse compte.
+   `Solved` → `bash <SKILL_DIR>/scripts/metrics.sh --root <ROOT> --branch <BRANCH> --event closure --model <identifiant du modèle de la session>` (« Synthèse de mesure — `metrics.json` » de `commands/engrave.md`) ; elle part avec la prochaine Livraison, qui la réécrit avec `event` à `engrave` — valeurs cumulées depuis le début de la branche, seule la dernière synthèse compte.
 
 2. **Tâches ouvertes — sur `Solved`, uniquement si PLAN contient au moins une tâche `[ ]`.** Aucune tâche `[ ]` → étape entièrement silencieuse : passer à l'étape 3.
    - Poser le choix avec `AskUserQuestion` — `header` : `Tasks`, les tâches `[ ]` recopiées dans la question, trois options :

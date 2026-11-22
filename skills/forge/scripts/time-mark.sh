@@ -23,6 +23,7 @@
 exec 2>/dev/null
 
 source "$(dirname "${BASH_SOURCE[0]}")/json.sh" || exit 0
+source "$(dirname "${BASH_SOURCE[0]}")/task-marks.sh" || exit 0
 
 readonly TIME_LOG_NAME="time-log.jsonl"
 readonly TASK_PATTERN='^T[0-9]+(\.[0-9]+)?$'
@@ -65,45 +66,16 @@ has_required_arguments() {
   esac
 }
 
-# Millisecondes depuis l'epoch, sans sous-processus ; le séparateur décimal suit la locale.
-# Rend 1 sans EPOCHREALTIME (bash < 5) : aucune heure fiable, rien ne s'écrit.
-current_time_ms() {
-  local microseconds=${EPOCHREALTIME/[.,]/}
-  [ ${#microseconds} -gt 3 ] || return 1
-  REPLY=${microseconds:0:${#microseconds}-3}
-}
-
-# Empreinte du dossier de la tâche dans REPLY, une ligne « chemin<TAB>hash » par fichier modifié, nouveau ou supprimé ;
-# rend 1 hors dépôt git. Hash limité à 12 caractères : il ne sert qu'à voir qu'un contenu a changé.
-snapshot_files() {
-  local entry path lines="" index=0 paths=() hashes=()
-  git -C "$ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1 || return 1
-  while IFS= read -r -d '' entry; do
-    path=${entry:3}
-    if [[ ${entry:0:2} == *D* ]]; then lines+="$path"$'\t'"-"$'\n'; else paths+=("$path"); fi
-  done < <(git -C "$ROOT" status --porcelain -z --no-renames --untracked-files=all -- . ':(exclude).forge')
-  if [ ${#paths[@]} -gt 0 ]; then
-    mapfile -t hashes < <(cd "$ROOT" && printf '%s\n' "${paths[@]}" | git hash-object --stdin-paths)
-    for path in "${paths[@]}"; do
-      lines+="$path"$'\t'"${hashes[index]:0:12}"$'\n'
-      index=$((index + 1))
-    done
-  fi
-  REPLY=${lines%$'\n'}
-}
-
 build_task_line() {
+  local time files_json=""
   current_time_ms || return 1
-  LINE="{\"ts\":$REPLY,\"event\":\"task_$EVENT\",\"task\":\"$TASK\""
-  if [ -n "$TIME_LOG" ]; then
-    json_escape "$BRANCH"
-    LINE+=",\"branch\":$REPLY"
-  fi
-  if snapshot_files; then
+  time=$REPLY
+  if snapshot_files "$ROOT"; then
     json_escape "$REPLY"
-    LINE+=",\"files\":$REPLY"
+    files_json=$REPLY
   fi
-  LINE+="}"
+  task_mark_line "$time" "task_$EVENT" "$TASK" "${TIME_LOG:+$BRANCH}" "$files_json"
+  LINE=$REPLY
 }
 
 build_delegate_line() {

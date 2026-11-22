@@ -1,7 +1,7 @@
 #!/bin/bash
 # Hook de mesure du temps : ajoute une ligne horodatée au journal de la branche extraite dans le cwd de l'événement.
 #   Déclaré dans settings.json par les installeurs (UserPromptSubmit, Stop, SubagentStart, SubagentStop,
-#   PreToolUse et PostToolUse sur AskUserQuestion|Bash), donc global : hors projet forgé, il sort sans rien écrire
+#   PreToolUse et PostToolUse sur AskUserQuestion|Bash), donc global : sans dossier .forge dans le cwd ou ses parents, il sort aussitôt, sans processus git
 #   Ne calcule rien, n'affiche rien, ne bloque jamais : sortie 0 dans tous les cas, rien sur la sortie standard
 #   Ne garde aucun contenu (prompt, commande, réponse d'outil) : seuls des identifiants, durées et marqueurs
 #   Les événements d'un délégué arrivent avec le cwd du parent et un agent_id : ils tombent dans le journal du parent
@@ -44,9 +44,20 @@ current_time_ms() {
 }
 
 # Journal de la branche extraite dans le cwd, dans REPLY ; vide hors dépôt, tête détachée ou branche non forgée.
+# Dossier .forge dans <dir> ou l'un de ses parents ? Recherche en bash pur, sans processus : hors projet forgé,
+# le hook sort avant tout git.
+has_forge_folder() {
+  local dir=${1%/}
+  while [ -n "$dir" ]; do
+    [ -d "$dir/.forge" ] && return 0
+    [ "$dir" = "${dir%/*}" ] && return 1
+    dir=${dir%/*}
+  done
+  return 1
+}
+
 resolve_time_log() {
   local cwd=$1 lines top branch
-  cwd=${cwd//\\\\/\/}
   REPLY=""
   lines=$(git -C "$cwd" rev-parse --show-toplevel --abbrev-ref HEAD) || return
   top=${lines%%$'\n'*}
@@ -124,7 +135,7 @@ is_late_start() {
 }
 
 main() {
-  local time_log
+  local time_log cwd
   # Heure prise avant toute lecture : l'analyse d'une grosse sortie d'outil et git la décaleraient
   current_time_ms || exit 0
   EVENT_TIME=$REPLY
@@ -135,7 +146,9 @@ main() {
   read_string_field tool_name; TOOL=$REPLY
   is_measured_event || exit 0
   read_string_field cwd
-  resolve_time_log "$REPLY"
+  cwd=${REPLY//\\\\/\/}
+  has_forge_folder "$cwd" || exit 0
+  resolve_time_log "$cwd"
   time_log=$REPLY
   [ -n "$time_log" ] || exit 0
   if is_late_start "$time_log"; then

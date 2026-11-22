@@ -27,11 +27,8 @@ Si BRIEF contient `## Origin` (`SCOPE: linked` — mandat) → les étapes ci-de
    **Option B — [Name]** : [1-2 sentences] | + ... | - ...
    ```
    Puis poser le choix avec `AskUserQuestion` — `header` : `Approach`, une option par approche (label `Option X — Name`, description = son compromis), quatre au maximum. Attendre le choix avant de continuer.
-6. Générer le plan (format ci-dessous), puis l'estimer en un seul appel :
-   - exécuter `bash <SKILL_DIR>/scripts/time-calibrate.sh --root <ROOT> --files <n1>,<n2>,…` — une valeur par tâche, dans l'ordre du plan : ses fichiers (« Fichiers d'une tâche » ci-dessous) ;
-   - chaque tâche porte `**Estimated time:** ≈ <minutes> min (<low>-<high>)`, tiré de son rang dans `estimates` — `estimate` pour un plan d'une seule tâche ;
-   - écrire l'en-tête `**Estimate:**` depuis `estimate` : `≈ <files> files · ≈ <minutes> min (<low>-<high>)`, suivi de ` · indicative` quand `indicative` est vrai.
-   ⚠️ `**Estimated time:**` est figé à l'écriture du plan, jamais recalculé : c'est la prévision comparée au réel (`**Actual time:**`, section « Mesure d'une tâche » de `phases/p5-resume.md`). Tâche ajoutée en cours de branche → son estimation au ratio du moment, figée à son tour.
+6. Générer le plan (format ci-dessous), puis l'estimer pour la présentation en un seul appel : `bash <SKILL_DIR>/scripts/time-calibrate.sh --root <ROOT> --files <n1>,<n2>,…` — une valeur par tâche, dans l'ordre du plan : ses fichiers (« Fichiers d'une tâche » ci-dessous). Présenter chaque tâche avec son rang dans `estimates`, et le plan avec `estimate`.
+   ⚠️ Jamais de `**Estimate:**`, de `**Estimated time:**` ni de colonne `Estimated` / `Actual` / ligne `**Remaining**` écrits par le modèle : le hook `scripts/plan-hook.sh` les écrit à chaque écriture de `plan.md` — temps estimé de chaque tâche sous `**Effort:**`, en-tête sous `**Date:**`, `## Summary` régénéré depuis les tâches. `**Estimated time:**` est figé à son écriture, jamais recalculé : c'est la prévision comparée au réel (`**Actual time:**`, section « Mesure d'une tâche » de `phases/p5-resume.md`). Tâche ajoutée en cours de branche → estimée par le hook au ratio du moment, figée à son tour.
    Au moins deux groupes de tâches remplissent la « Règle de branche » ci-dessous → appliquer « Plan de branches » avant de présenter. Mode délégué → jamais de plan de branches : un sous-agent ne lance pas d'autres sous-agents ; la tâche qui le mériterait passe par la question `Promotion` (`commands/delegated-mode.md`).
    Présenter le plan.
 7. Poser le choix avec `AskUserQuestion` — `header` : `Plan`, motif « Validation d'un contenu » de `SKILL.md` : le changement demandé arrive en texte libre, itérer, reposer la question. Trois options, dans cet ordre :
@@ -58,13 +55,11 @@ Si BRIEF contient `## Origin` (`SCOPE: linked` — mandat) → les étapes ci-de
 # Plan — <BRANCH>
 **Objective:** [1 phrase tirée du brief]
 **Date:** [date du jour]
-**Estimate:** ≈ [fichiers] files · ≈ [minutes] min ([bas]-[haut])
 
 ## Tasks
 
 ### T1 — [Titre court et précis]
 **Effort:** XS/S/M/L/XL
-**Estimated time:** ≈ [minutes] min ([bas]-[haut])
 **Files:** `chemin/vers/fichier`, `chemin/vers/test`
 **Description:** [Ce qui doit être fait, comment, avec quels patterns]
 [ ]
@@ -82,11 +77,12 @@ Si BRIEF contient `## Origin` (`SCOPE: linked` — mandat) → les étapes ci-de
 - [ ] [Quoi — quand : before / after deploy] · [T1, T3] — `output/AAAAMMJJ-intitule.sql`
 
 ## Summary
-| Task | Effort | Files | Status |
-|---|---|---|---|
-| T1 — ... | S | 3 | [ ] |
-| **Total** | **[répartition des lettres]** | **[somme]** | |
+| Task | Effort | Files | Estimated | Actual | Status |
+|---|---|---|---|---|---|
+| T1 — [titre court] | S | 3 | — | — | [ ] |
 ```
+
+**Écrit par le hook :** `**Estimate:**` sous `**Date:**`, `**Estimated time:**` sous `**Effort:**`, `**Actual time:**` à la coche, et `## Summary` entier — colonnes `Estimated` et `Actual` recopiées des tâches, `Status` recopié de la ligne de statut (raison d'un `[!]` comprise), lignes `**Total**` et `**Remaining**` (tâches ouvertes). Le modèle n'écrit que la ligne de chaque tâche avec son titre court ; le hook garde ce titre, ajoute la ligne d'une tâche absente et réécrit tout le reste.
 
 **Fichiers d'une tâche :** nombre de chemins listés dans `**Files:**`, tests compris. Ligne avec un motif (`src/**/*.ts`) ou des fichiers encore inconnus → nombre écrit en fin de ligne, `(≈ n)`, qui prime. Ancien plan qui porte `**Estimated files:**` → ce champ prime.
 **Effort :** XS · S · M · L · XL — taille relative des tâches, sans durée attachée ; XL → découper en sous-tâches, ou en branche si la tâche remplit la « Règle de branche ».
@@ -121,7 +117,6 @@ Si BRIEF contient `## Origin` (`SCOPE: linked` — mandat) → les étapes ci-de
 ```markdown
 ### T2 — Branch `<BRANCH>-<slug>` — [Titre]
 **Effort:** L
-**Estimated time:** ≈ [minutes] min ([bas]-[haut])
 **Files:** `[dossier ou module touché]` (≈ [nombre])
 **Depends on:** T1, `<BRANCH>-<autre-slug>`
 **Brief:** [objectif de la branche en une phrase]

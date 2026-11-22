@@ -538,8 +538,21 @@ test_task_measures_turn_part_inside_window() {
              '{"ts":30000,"event":"task_start","task":"T2"}' \
              '{"ts":90000,"event":"task_done","task":"T2"}' \
              '{"ts":120000,"event":"Stop","session":"s"}'
-  assert_equals '{"branch":"feature","task":"T2","agent_minutes":1.0,"human_minutes":0.0,"questions":0,"actual_files":null,"measured":true,"reason":null}' \
+  assert_equals '{"branch":"feature","task":"T2","agent_minutes":1.0,"human_minutes":0.0,"questions":0,"check_minutes":0.0,"actual_files":null,"measured":true,"reason":null}' \
     "$(aggregate --task T2)"
+}
+
+test_task_counts_checks_finished_inside_window() {
+  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":10000,"event":"PostToolUse","session":"s","tool":"Bash","duration_ms":6000,"check":true}' \
+             '{"ts":20000,"event":"task_start","task":"T1"}' \
+             '{"ts":50000,"event":"PostToolUse","session":"s","tool":"Bash","duration_ms":12000,"check":true}' \
+             '{"ts":60000,"event":"PostToolUse","session":"s","tool":"Bash","duration_ms":9000}' \
+             '{"ts":70000,"event":"PostToolUse","session":"s","agent_id":"a1","tool":"Bash","duration_ms":6000,"check":true}' \
+             '{"ts":80000,"event":"task_done","task":"T1"}' \
+             '{"ts":90000,"event":"PostToolUse","session":"s","tool":"Bash","duration_ms":30000,"check":true}' \
+             '{"ts":100000,"event":"Stop","session":"s"}'
+  assert_contains '"check_minutes":0.3,' "$(aggregate --task T1)"
 }
 
 test_task_counts_open_turn_up_to_done_mark() {
@@ -637,7 +650,7 @@ test_task_ignores_marks_of_other_tasks() {
 test_task_unmeasured_without_start_mark() {
   own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
              '{"ts":60000,"event":"task_done","task":"T1"}'
-  assert_equals '{"branch":"feature","task":"T1","agent_minutes":null,"human_minutes":null,"questions":null,"actual_files":null,"measured":false,"reason":"missing_start"}' \
+  assert_equals '{"branch":"feature","task":"T1","agent_minutes":null,"human_minutes":null,"questions":null,"check_minutes":null,"actual_files":null,"measured":false,"reason":"missing_start"}' \
     "$(aggregate --task T1)"
 }
 
@@ -720,6 +733,17 @@ test_task_unmeasured_when_another_task_runs_inside_it() {
   assert_contains '"reason":"overlapping_tasks"' "$(aggregate --task T2)"
 }
 
+test_task_restarted_before_its_end_leaves_no_phantom_open_task() {
+  own_events '{"ts":0,"event":"task_start","task":"T1"}' \
+             '{"ts":5000,"event":"task_start","task":"T1"}' \
+             '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":60000,"event":"task_done","task":"T1"}' \
+             '{"ts":60000,"event":"task_start","task":"T2"}' \
+             '{"ts":120000,"event":"task_done","task":"T2"}' \
+             '{"ts":120000,"event":"Stop","session":"s"}'
+  assert_contains '"agent_minutes":1.0' "$(aggregate --task T2)"
+}
+
 test_task_ignores_open_task_of_another_branch() {
   own_events '{"ts":0,"event":"task_start","task":"T1"}' \
              '{"ts":0,"event":"task_start","task":"T7","branch":"other"}' \
@@ -792,7 +816,7 @@ aggregate_linked() {
 
 test_task_measures_linked_project_delegate_from_parent_log() {
   linked_events
-  assert_equals '{"branch":"parent/main-branch","task":"T2","agent_minutes":1.5,"human_minutes":0.0,"questions":0,"actual_files":null,"measured":true,"reason":null}' \
+  assert_equals '{"branch":"parent/main-branch","task":"T2","agent_minutes":1.5,"human_minutes":0.0,"questions":0,"check_minutes":0.0,"actual_files":null,"measured":true,"reason":null}' \
     "$(aggregate_linked --task T2)"
 }
 
@@ -803,7 +827,7 @@ test_task_sums_child_tasks_of_a_parent_task() {
 
 test_task_sum_unmeasured_when_one_child_is_unmeasured() {
   linked_events
-  assert_contains '"agent_minutes":null,"human_minutes":null,"questions":null,"actual_files":null,"measured":false,"reason":"missing_done"' \
+  assert_contains '"agent_minutes":null,"human_minutes":null,"questions":null,"check_minutes":null,"actual_files":null,"measured":false,"reason":"missing_done"' \
     "$(aggregate_linked --task T1,T3)"
 }
 
@@ -882,6 +906,7 @@ run_test test_ignores_forge_files "écarte les fichiers de .forge"
 run_test test_sums_task_files_and_their_planned_files_for_the_branch "additionne fichiers réels et prévus des tâches mesurées de la branche"
 run_test test_measures_files_of_a_delegate_in_its_worktree "mesure les fichiers d'un délégué dans son worktree"
 run_test test_task_measures_turn_part_inside_window "tâche : mesure la part d'un tour comprise dans la fenêtre"
+run_test test_task_counts_checks_finished_inside_window "tâche : compte les vérifications terminées dans la fenêtre, session et agents"
 run_test test_task_counts_open_turn_up_to_done_mark "tâche : compte un tour encore ouvert jusqu'à la marque de fin"
 run_test test_task_ignores_older_turn_left_without_stop "tâche : écarte un tour plus ancien resté sans Stop"
 run_test test_task_closes_turn_interrupted_by_prompt_at_last_activity "tâche : ferme au dernier événement un tour interrompu par un prompt"
@@ -900,6 +925,7 @@ run_test test_task_ignores_agent_delegated_to_another_branch "tâche : écarte u
 run_test test_task_unmeasured_when_started_with_another_task "tâche : non mesurée quand une autre tâche démarre en même temps"
 run_test test_task_measured_when_tasks_follow_each_other "tâche : mesurée quand les tâches se suivent"
 run_test test_task_unmeasured_when_another_task_runs_inside_it "tâche : non mesurée quand une autre tâche s'exécute pendant elle"
+run_test test_task_restarted_before_its_end_leaves_no_phantom_open_task "tâche : une autre tâche redémarrée avant sa fin ne reste pas ouverte pour toujours"
 run_test test_task_ignores_open_task_of_another_branch "tâche : écarte une tâche ouverte d'une autre branche"
 run_test test_task_measures_delegate_from_parent_log "tâche : mesure un délégué depuis le journal du parent"
 run_test test_task_counts_delegate_still_running_up_to_done_mark "tâche : compte un délégué encore en cours jusqu'à la marque de fin"

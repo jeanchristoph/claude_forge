@@ -38,16 +38,19 @@ forge/
 │   │   │   └── estimation.json       (valeurs de référence de l'estimation : minutes par fichier, fourchette, coûts fixes d'une branche, seuil de branche)
 │   │   └── scripts/
 │   │       ├── checks.sh             (contrôles de démarrage, lancés détachés par SKILL.md sans attente : ligne input/ de branche dans le .gitignore)
-│   │       ├── engrave.sh            (séquence git de la livraison : preview / run, appelée par p5-resume.md)
+│   │       ├── engrave.sh            (séquence git de la livraison : preview / run, appelée par p5-resume.md ; run --model écrit d'abord metrics.json par metrics.sh)
+│   │       ├── metrics.sh            (synthèse de mesure : écrit metrics.json, rend la ligne estimé / réel en JSON ; livraison, clôture, fusion d'essaim)
 │   │       ├── json.sh               (rendu JSON sans jq, chargé par les scripts du skill)
 │   │       ├── log-entry.sh          (seule écriture d'une entrée LOG : horloge locale, entrée en tête de log.md, fins de ligne gardées ; règle « Entrée LOG » de SKILL.md)
+│   │       ├── plan-hook.sh          (hook de coche déclaré par les installeurs, PostToolUse synchrone : marques de tâche et **Actual time:** à la coche ; état = lignes plan_checkpoint du journal)
 │   │       ├── status.sh             (état au lancement en JSON, lecture seule, appelé par SKILL.md ; peu de processus, Git Bash les paie cher)
-│   │       ├── task-files.sh         (fonctions awk communes, chargées par time-aggregate.sh et time-calibrate.sh : fichiers prévus d'une tâche, fichiers changés entre deux empreintes)
+│   │       ├── task-files.sh         (fonctions awk communes, chargées par time-aggregate.sh, time-calibrate.sh, status.sh et plan-hook.sh : statut d'une tâche, fichiers prévus, fichiers changés entre deux empreintes)
+│   │       ├── task-marks.sh         (fonctions bash communes à time-mark.sh et plan-hook.sh : horloge, empreinte du dossier, ligne de marque)
 │   │       ├── swarm-status.sh       (état de l'essaim en JSON : en cours, lançables, en attente, fusion simulée, tâches du parent)
 │   │       ├── time-aggregate.sh     (mesure d'une branche en JSON : journal du hook + git, lu par la synthèse metrics.json)
 │   │       ├── time-calibrate.sh     (ratios du projet et estimation d'un nombre de fichiers, en JSON ; références dans references/estimation.json)
 │   │       ├── time-hook.sh          (hook de mesure déclaré par les installeurs : une ligne par événement dans time-log.jsonl)
-│   │       ├── time-mark.sh          (marques task_start / task_done d'une tâche du plan dans time-log.jsonl, lues par time-aggregate.sh --task)
+│   │       ├── time-mark.sh          (marques de délégué, de tokens et de fusion dans time-log.jsonl ; marques de tâche à la main, le hook de coche les pose sinon)
 │   │       └── update.sh             (mise à jour du skill : check / run en JSON, appelé avec status.sh ; contrôle réseau détaché toutes les 24 heures)
 │   └── forge-clickup/
 │       └── SKILL.md               (guichet ClickUp : ouvre la tâche, crée la branche, passe la main à forge)
@@ -71,6 +74,8 @@ forge/
 │   ├── install.test.sh        (tests des deux installeurs, HOME jetable : bash tests/install.test.sh)
 │   ├── checks.test.sh         (tests des contrôles de démarrage, dépôts jetables : bash tests/checks.test.sh)
 │   ├── log-entry.test.sh      (tests des entrées de LOG, dossiers jetables : bash tests/log-entry.test.sh)
+│   ├── metrics.test.sh        (tests de la synthèse de mesure, dépôts jetables : bash tests/metrics.test.sh)
+│   ├── plan-hook.test.sh      (tests du hook de coche, dépôts jetables : bash tests/plan-hook.test.sh)
 │   ├── status.test.sh         (tests de l'état au lancement, dépôts jetables : bash tests/status.test.sh)
 │   ├── swarm-status.test.sh   (tests de l'état de l'essaim, dépôts jetables : bash tests/swarm-status.test.sh)
 │   ├── time-aggregate.test.sh (tests de l'agrégation de la mesure, dépôts jetables : bash tests/time-aggregate.test.sh)
@@ -128,4 +133,4 @@ Fichiers générés dans **chaque projet cible** par le skill (pas dans ce dép�
 ## Tools & access
 - MCPs disponibles : claude-in-chrome, datagrip, phpstorm, webstorm (non utilisés par ce dépôt en l'état)
 - Documentation externe : aucune référence externe identifiée dans le dépôt
-**Check pattern:** `bash tests/`
+**Check pattern:** `bash tests/|tests/\*\.test\.sh`

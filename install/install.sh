@@ -100,6 +100,14 @@ for (const [event, matcher] of Object.entries(timeEvents)) {
   s.hooks[event].push(matcher ? { matcher, hooks: [timeHook] } : { hooks: [timeHook] });
 }
 
+// Hook de coche du plan : retire toute entrée plan-hook existante, puis l'ajoute après chaque écriture de fichier.
+// Synchrone : il réécrit plan.md et renvoie au modèle le réel écrit ; hors plan forge, il sort aussitôt.
+const planHook = { type: 'command', command: 'bash ~/.claude/skills/forge/scripts/plan-hook.sh', shell: 'bash' };
+s.hooks.PostToolUse = (s.hooks.PostToolUse || []).filter(g =>
+  !g.hooks || !g.hooks.some(h => h.command && h.command.includes('plan-hook.sh'))
+);
+s.hooks.PostToolUse.push({ matcher: 'Edit|Write|MultiEdit', hooks: [planHook] });
+
 fs.writeFileSync(sp, JSON.stringify(s, null, 2));
 console.log('Settings OK.');
 " "${SKILL_NAMES[@]}"

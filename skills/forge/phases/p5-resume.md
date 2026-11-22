@@ -9,7 +9,7 @@
    - Des entrées existent → afficher un résumé en tête : "**Last session :** [points clés]"
    - ⚠️ Jamais de lecture directe de `log.md` — la taille du fichier ne doit jamais peser sur le coût de la reprise.
 5. Lire `@.forge/branch/<BRANCH>/plan.md`
-6. Afficher le tableau d'avancement (format ci-dessous). `.forge/branch/<BRANCH>/ticket.json` présent → afficher au-dessus une ligne `Ticket: [<code>](<url>)`.
+6. Afficher le tableau d'avancement : `## Summary` du plan recopié tel quel (« Format du tableau d'avancement » ci-dessous). `.forge/branch/<BRANCH>/ticket.json` présent → afficher au-dessus une ligne `Ticket: [<code>](<url>)`.
 7. **Aucune tâche ouverte** — une `[!] blocked` n'est pas ouverte → aucun mode proposé. Demander en une ligne quoi faire ensuite, puis STOP.
    > "Nothing open — what do we do next?"
 
@@ -49,23 +49,16 @@
 
 ## Format du tableau d'avancement
 
-| Tâche | Effort | Fichiers | Estimé | Réel | Statut |
-|---|---|---|---|---|---|
-| T1 — ... | S | 3 | ≈ 2 min | ≈ 3 min | [x] |
-| T2 — ... | M | 8 | ≈ 4 min | — | [ ] |
-| T3 — ... | L | 15 | ≈ 8 min | — | [!] blocked — brief reason |
+`## Summary` de PLAN, recopié tel quel : `Task | Effort | Files | Estimated | Actual | Status`, puis `**Total**` et `**Remaining**` — gabarit de `phases/p4-plan.md`, tenu à jour par le hook `scripts/plan-hook.sh` à chaque écriture du plan. Aucun appel de script, aucun recalcul.
 
-- Estimé : minutes de `**Estimated time:**`, sans la fourchette. Réel : valeur de `**Actual time:**`, `—` si absente.
-- Fichiers : fichiers de la tâche (« Fichiers d'une tâche », `phases/p4-plan.md`).
-- Sous le tableau, une ligne de reste à faire quand au moins une tâche ouverte porte `**Estimated time:**` : `bash <SKILL_DIR>/scripts/time-calibrate.sh --root <ROOT> --files <somme des fichiers des tâches ouvertes>`, puis `Remaining ≈ <files> files · ≈ <minutes> min (<low>-<high>)`, suivi de ` · indicative` quand `indicative` est vrai.
-- Plan sans `**Estimated time:**` → colonnes Fichiers, Estimé et Réel et ligne de reste omises. Tâche sans `**Estimated time:**` dans un plan qui en porte → `—` dans ces colonnes.
+⚠️ Plan antérieur au hook, sans colonnes `Estimated` / `Actual` → tableau recopié tel quel ; la première écriture du plan les ajoute.
 
 ---
 
 ## Règles de mise à jour du plan
 
 **Silencieuse (automatique)** — après tâche terminée ou événement notable :
-- Cocher `[x]`, ajouter note max 1 ligne, marquer `[!]` si bloqué. Coche → section « Mesure d'une tâche » ci-dessous.
+- Cocher `[x]`, ajouter note max 1 ligne, marquer `[!]` si bloqué. Coche → section « Mesure d'une tâche » ci-dessous. `## Summary` jamais édité à la main pour un statut, une estimation ou un réel : le hook le régénère.
   ⚠️ Coche par l'outil Edit sur la ligne de statut exacte de la tâche — jamais par `sed` ni par une expression régulière : `[ ]` y désigne un espace, et le remplacement corrompt le reste du fichier.
 - Script diffusé à part du déploiement git (section « Contenu généré » du SKILL) → ajouter l'étape dans `## Deployment` : quoi, moment d'exécution, numéros des tâches d'origine, chemin de la copie dans OUTPUT. `None` remplacé par la première étape. Étape qui exécute du SQL → « Script de déploiement SQL » de « Commandes — chargées à la demande » ci-dessous.
 
@@ -84,15 +77,16 @@
 
 ## Mesure d'une tâche
 
-**Déclencheur :** démarrage d'une tâche du plan, ou sa coche `[x]` — dans tous les modes, enchaîné, tâche choisie ou délégué. Tâche-branche d'un essaim → aucune marque : son réel vient de « Fusion d'une branche fille » (`commands/swarm.md`). Tâche déléguée à un projet lié → aucune marque : son réel vient du retour du délégué (« Retour — application de `FORGE_DONE` », `commands/delegation.md`).
+**Déclencheur :** coche `[x]` d'une tâche du plan — dans tous les modes, enchaîné, tâche choisie ou délégué.
 
 **Réaction — dans l'ordre :**
-1. Démarrage → `bash <SKILL_DIR>/scripts/time-mark.sh --root <ROOT> --branch <BRANCH> --task T<n> --event start`, avant toute autre action de la tâche.
-2. Coche → `bash <SKILL_DIR>/scripts/time-mark.sh --root <ROOT> --branch <BRANCH> --task T<n> --event done`, puis `bash <SKILL_DIR>/scripts/time-aggregate.sh --root <ROOT> --branch <BRANCH> --task T<n>`, en un seul appel Bash.
-3. Écrire sous `**Estimated time:**` de la tâche, à défaut sous `**Effort:**` : `measured` vrai → `**Actual time:** ≈ <agent_minutes> min · <actual_files> files`, sans la partie fichiers quand `actual_files` est `null` ; `measured` faux → `**Actual time:** —`.
+1. Aucune marque, aucun appel de script : le hook `scripts/plan-hook.sh` (`PostToolUse` sur `Edit|Write|MultiEdit`) voit la coche dans `plan.md`.
+2. Le hook écrit dans le journal de mesure le début de la tâche (dernier point d'étape : coche précédente ou première écriture du plan) et sa fin, puis calcule le réel par `time-aggregate.sh --task`.
+3. Le hook écrit sous `**Estimated time:**` de la tâche, à défaut sous `**Effort:**` : `**Actual time:** ≈ <agent_minutes> min · <actual_files> files · <check_minutes> min checks`, sans la partie fichiers quand `actual_files` est `null` ; sans mesure → `**Actual time:** —`. La part de vérifications nourrit le coût fixe de vérification de l'estimation.
 
-⚠️ Jamais de durée estimée à la main à la place d'une mesure absente : `—` seul.
-⚠️ Les deux scripts n'écrivent rien sans journal de mesure (hook non installé) : jamais d'erreur à signaler, `**Actual time:** —`.
+⚠️ Jamais de `**Actual time:**` écrit à la main, jamais de durée estimée à la place d'une mesure absente. Hook signalé dans le contexte (`forge plan-hook: …`) → relire `plan.md` avant de l'éditer de nouveau.
+⚠️ Tâche-branche d'un essaim (titre `— Branch <X>`) → aucune marque du hook : son réel vient de « Fusion d'une branche fille » (`commands/swarm.md`). Tâche déléguée à un projet lié (note `delegated to`) → aucune marque du hook : son réel vient du retour du délégué (« Retour — application de `FORGE_DONE` », `commands/delegation.md`).
+⚠️ Plusieurs tâches cochées d'un même coup → tâches simultanées, `—` pour chacune : cocher chaque tâche à sa fin, une par édition.
 
 ---
 
@@ -156,7 +150,7 @@ Une demande complémentaire est toujours une tâche du plan — jamais de choix 
 
 1. **Formuler** la tâche telle qu'elle entre au plan — titre, effort, temps estimé, fichiers, description — précédée de :
    > "This request isn't in the current plan."
-   Temps estimé : `bash <SKILL_DIR>/scripts/time-calibrate.sh --root <ROOT> --files <fichiers de la tâche>`, `estimate` au ratio du moment, écrit `**Estimated time:**` et figé à la validation.
+   Temps estimé présenté : `bash <SKILL_DIR>/scripts/time-calibrate.sh --root <ROOT> --files <fichiers de la tâche>`, `estimate` au ratio du moment. Jamais écrit par le modèle : le hook `scripts/plan-hook.sh` écrit `**Estimated time:**` à l'écriture du plan et le fige.
    Si la demande change durablement le périmètre → ajouter à la même présentation l'entrée proposée pour `## Scope & rules` du brief.
 
 2. **Poser une seule question** avec `AskUserQuestion` — `header` : `Plan`, options de la question `Plan` d'un plan neuf (étape 7 de `p4-plan.md`), dans cet ordre : `Validate and chain` / `Validate` / `Cancel` — motif « Validation d'un contenu » de `SKILL.md` : le changement demandé arrive en texte libre, reformuler, reposer la question. Champ `question` = la tâche formulée, recopiée en dur selon le « Gabarit — question `Plan` » ci-dessous, puis une ligne vide et la phrase de question. Aucun champ `preview`. Mode délégué → `FORGE_QUESTION`, la tâche formulée entière dans `content`.

@@ -15,6 +15,12 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 - `/forge help` (`commands/help.md`): the cycle, every plain-word command (`engrave`, "clean the forge", "update the forge", "launch the swarm", closure, delegation) and the `.forge/` files, translated on display; `help` is reserved and never becomes a branch name. The first `project.md` written points to it.
 - State hook also on `SessionStart` (matcher `compact|resume`): objective of the brief, plan and last three LOG entries are injected again after a compaction or when a session resumes.
 - `status.sh --target <name>`: `target_exists` in the JSON, used by `/forge <argument>` instead of a separate `git rev-parse` call.
+- Tick hook `plan-hook.sh` (`PostToolUse` on `Edit|Write|MultiEdit`, synchronous, declared by both installers): when a plan task is ticked `[x]`, it writes the task marks itself (start = last checkpoint, a `plan_checkpoint` line of the time log) and `**Actual time:**` under the task; the model no longer calls `time-mark.sh` nor `time-aggregate.sh --task`. Swarm branch tasks and tasks delegated to a linked project keep their own actual time.
+- The same hook writes the estimates (`**Estimated time:**` of each task with `**Files:**`, `**Estimate:**` header when missing, never recomputed) and rebuilds `## Summary` on every plan write: `Task | Effort | Files | Estimated | Actual | Status`, short titles kept, blocked reason copied, `**Total**` and `**Remaining**` rows. Resume shows this table as is instead of rebuilding it.
+- `metrics.sh` writes `metrics.json` (same fields, same order) and reports the estimated vs actual line as JSON; `engrave.sh run --model <id>` calls it before `git add`, closure and swarm merges call it directly. The model no longer computes nor writes the summary.
+- Estimate per task = fixed check cost + files × minutes per file: `time-aggregate.sh --task` reports `check_minutes`, the tick hook writes it into the actual time (`· <c> min checks`), `time-calibrate.sh` takes the median check cost from twenty such tasks (`check_minutes`: 2 in `references/estimation.json` before) and computes minutes per file without it; a list of tasks counts one check cost per task (summary `**Remaining**` included).
+- Task measure: a task started again before its end keeps only its latest start; the older one no longer stays open forever and no longer makes every later task `overlapping_tasks`.
+- Time hook outside forge projects: with no `.forge` folder in the session folder or its parents, `time-hook.sh` exits before any git process (≈ 70 ms instead of ≈ 97 ms per event under Git Bash, bash start-up being most of what is left).
 
 ### Changed
 
@@ -24,6 +30,7 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 - Resume no longer reads `project.md` and `coding-standards.md`: they are read when the first task of the turn starts, or before a direct action that changes code (section « Contexte du code » of `p5-resume.md`).
 - Rare sections load on demand from `commands/`: drafted email (`email.md`), teacher mode (`teacher.md`), SQL deployment script (`deployment-sql.md`), rule propagation to `CLAUDE.md` (`rule-propagation.md`), branch rename (`branch-rename.md`); their triggers stay in `SKILL.md` and `p5-resume.md`.
 - A new forge version is announced at the end of the status line, without a question at startup; installing is offered only on "update the forge".
+- Shared code: task status reading moves from `status.sh` to `task-files.sh` (also read by `plan-hook.sh`); clock, folder fingerprint and task mark line move from `time-mark.sh` to `task-marks.sh`. Same behaviour.
 - Adding tasks during a branch offers the same choices as a new plan: validate and chain, validate (then choose how to run the tasks), cancel.
 - One state hook in bash for both platforms: the Windows installer replaces `forge-precompact.ps1`, file and `settings.json` entry included.
 

@@ -15,7 +15,7 @@
 #   --task       : mesure d'une seule tâche, entre ses marques task_start et task_done écrites par time-mark.sh —
 #   marques lues dans le journal de la branche, ou avec --parent-log dans celui de la parente (marques portant la branche) ;
 #   plusieurs tâches séparées par des virgules → somme, non mesurée dès qu'une ne l'est pas ;
-#   sortie propre à la tâche, sans volume ni mode
+#   sortie propre à la tâche, sans volume ni mode ; check_minutes = vérifications terminées dans sa fenêtre
 #   delegate_setup_minutes : mise en route d'une branche fille — premier SubagentStart d'un délégué associé → première
 #   marque task_start de la branche dans le journal de la parente (exécution relancée non comptée) ; null sans mesure
 #   merge_minutes : durée moyenne d'une fusion de branche fille, marques merge_start → merge_done du journal de la
@@ -134,10 +134,14 @@ readonly DURATIONS_PROGRAM="$AWK_HELPERS"'
 #   BUSINESS_RULE: une autre tâche de la même branche ouverte pendant la fenêtre (démarrée avant la fin, terminée après
 #   le début, ou jamais terminée) rend la tâche non mesurée — overlapping_tasks : session et agents travaillent pour
 #   les deux, aucune part ne leur est attribuable sans l'inventer. La mesure de la branche, elle, compte tout.
+#   Une autre tâche redémarrée avant sa fin : le nouveau début remplace l'ancien, jamais laissé ouvert pour toujours.
 readonly TASK_WINDOW_PROGRAM="$AWK_HELPERS$TASK_FILES_AWK"'
   field("event") == "late_start" { late = 1; next }
   field("branch") != mark_branch { next }
-  field("task") != task && field("event") == "task_start" { other_start[++others] = field("ts") + 0; other_open[field("task")] = others; next }
+  field("task") != task && field("event") == "task_start" {
+    if (field("task") in other_open) delete other_start[other_open[field("task")]]
+    other_start[++others] = field("ts") + 0; other_open[field("task")] = others; next
+  }
   field("task") != task && field("event") == "task_done" && (field("task") in other_open) {
     other_end[other_open[field("task")]] = field("ts") + 0; delete other_open[field("task")]; next
   }
@@ -146,7 +150,7 @@ readonly TASK_WINDOW_PROGRAM="$AWK_HELPERS$TASK_FILES_AWK"'
   field("event") == "task_done" && start != "" && finish == "" { finish = field("ts"); finish_files = raw_string_field("files") }
   function overlaps(   i) {
     for (i = 1; i <= others; i++)
-      if (other_start[i] < finish + 0 && (!(i in other_end) || other_end[i] > start + 0)) return 1
+      if ((i in other_start) && other_start[i] < finish + 0 && (!(i in other_end) || other_end[i] > start + 0)) return 1
     return 0
   }
   END {
@@ -181,12 +185,16 @@ readonly PLANNED_FILES_PROGRAM="$TASK_FILES_AWK"'
 #   Un tour ou une exécution de délégué encore ouvert à la fin du journal compte jusqu'à window_end : la marque task_done
 #   s'écrit en cours de tour, avant son Stop. Seul le plus récent compte : un tour plus ancien sans Stop est une session
 #   interrompue, jamais la tâche en cours. Prompt sur un tour ouvert : même fermeture que DURATIONS_PROGRAM.
-#   Sortie : « agent humain questions ».
+#   Vérifications : durée des commandes « check » (motif de project.md) terminées dans la fenêtre, session et agents.
+#   Sortie : « agent humain questions vérifications ».
 readonly TASK_DURATIONS_PROGRAM="$AWK_HELPERS"'
   function inside(from, to) {
     if (from < window_start) from = window_start
     if (to > window_end) to = window_end
     return to > from ? to - from : 0
+  }
+  function count_check(event, ts) {
+    if (event == "PostToolUse" && field("check") == "true" && ts >= window_start && ts <= window_end) checks += field("duration_ms")
   }
   FNR == 1 { file_index++; reading_parent = (has_parent_log && file_index == 1) }
   reading_parent && field("event") == "delegate" && field("branch") == branch { delegate[field("agent_id")] = 1; next }
@@ -195,6 +203,7 @@ readonly TASK_DURATIONS_PROGRAM="$AWK_HELPERS"'
     if (!(id in delegate)) next
     if (event == "SubagentStart") agent_start[id] = ts
     if (event == "SubagentStop" && (id in agent_start)) { delegated += inside(agent_start[id], ts); delete agent_start[id] }
+    count_check(event, ts)
     next
   }
   field("event") == "delegate" && field("branch") != branch { other_branch[field("agent_id")] = 1; next }
@@ -203,10 +212,12 @@ readonly TASK_DURATIONS_PROGRAM="$AWK_HELPERS"'
     if (id in other_branch) next
     if (event == "SubagentStart") agent_start[id] = ts
     if (event == "SubagentStop" && (id in agent_start)) { delegated += inside(agent_start[id], ts); delete agent_start[id] }
+    count_check(event, ts)
     next
   }
   {
     event = field("event"); session = field("session"); ts = field("ts") + 0
+    count_check(event, ts)
     if (event == "UserPromptSubmit") {
       if (field("origin") == "human" && (session in last_stop) && !is_absence(ts - last_stop[session])) human += inside(last_stop[session], ts)
       if (session in turn_start) parent += inside(turn_start[session], last_activity[session]) - turn_questions[session]
@@ -234,7 +245,7 @@ readonly TASK_DURATIONS_PROGRAM="$AWK_HELPERS"'
     if (session != "") parent += inside(turn_start[session], window_end) - turn_questions[session]
     id = latest_open(agent_start)
     if (id != "") delegated += inside(agent_start[id], window_end)
-    printf "%s %s %d\n", minutes(parent + delegated), minutes(human), questions
+    printf "%s %s %d %s\n", minutes(parent + delegated), minutes(human), questions, minutes(checks)
   }'
 
 ROOT="."
@@ -315,41 +326,41 @@ read_task_window() {
   REPLY=$(sort_by_time "$marks_log" | awk -v task="$task" -v mark_branch="$mark_branch" "$TASK_WINDOW_PROGRAM")
 }
 
-# « agent humain questions fichiers » d'une tâche dans REPLY, ou « raison » seule quand elle n'est pas mesurée.
+# « agent humain questions vérifications fichiers » d'une tâche dans REPLY, ou « raison » seule quand elle n'est pas mesurée.
 measure_task() {
   local window_start window_end reason files
   read_task_window "$1"
   read -r window_start window_end reason files <<< "$REPLY"
   [ "$reason" = "ok" ] || { REPLY=$reason; return; }
-  REPLY="0.0 0.0 0"
+  REPLY="0.0 0.0 0 0.0"
   run_on_logs "$TASK_DURATIONS_PROGRAM" -v window_start="$window_start" -v window_end="$window_end"
   REPLY+=" ${files:-null}"
 }
 
 render_task() {
-  local agent=$1 human=$2 questions=$3 files=$4 reason=$5 branch_json task_json measured=true reason_json=null
+  local agent=$1 human=$2 questions=$3 checks=$4 files=$5 reason=$6 branch_json task_json measured=true reason_json=null
   if [ "$reason" != "ok" ]; then
     measured=false; reason_json="\"$reason\""
   fi
   json_escape "$BRANCH"; branch_json=$REPLY
   json_escape "$TASK"; task_json=$REPLY
-  printf '{"branch":%s,"task":%s,"agent_minutes":%s,"human_minutes":%s,"questions":%s,"actual_files":%s,"measured":%s,"reason":%s}\n' \
-    "$branch_json" "$task_json" "$agent" "$human" "$questions" "$files" "$measured" "$reason_json"
+  printf '{"branch":%s,"task":%s,"agent_minutes":%s,"human_minutes":%s,"questions":%s,"check_minutes":%s,"actual_files":%s,"measured":%s,"reason":%s}\n' \
+    "$branch_json" "$task_json" "$agent" "$human" "$questions" "$checks" "$files" "$measured" "$reason_json"
 }
 
 # Mesure d'une ou plusieurs tâches (T1,T4 : tâches enfant d'une même tâche parente), sommées.
 # BUSINESS_RULE: une seule tâche non mesurée rend la somme non mesurée — jamais de somme partielle présentée comme complète ;
 # même règle pour les fichiers : une tâche sans empreinte rend la somme des fichiers nulle
 aggregate_task() {
-  local task totals="0.0 0.0 0 0" tasks
+  local task totals="0.0 0.0 0 0.0 0" tasks
   IFS=, read -ra tasks <<< "$TASK"
   for task in "${tasks[@]}"; do
     measure_task "$task"
     case $REPLY in
       *" "*) totals=$(awk -v a="$totals" -v b="$REPLY" 'BEGIN { split(a, x, " "); split(b, y, " ")
-                files = (x[4] == "null" || y[4] == "null") ? "null" : x[4] + y[4]
-                printf "%.1f %.1f %d %s", x[1] + y[1], x[2] + y[2], x[3] + y[3], files }') ;;
-      *)     render_task null null null null "$REPLY"; return ;;
+                files = (x[5] == "null" || y[5] == "null") ? "null" : x[5] + y[5]
+                printf "%.1f %.1f %d %.1f %s", x[1] + y[1], x[2] + y[2], x[3] + y[3], x[4] + y[4], files }') ;;
+      *)     render_task null null null null null "$REPLY"; return ;;
     esac
   done
   # shellcheck disable=SC2086 — découpage voulu des champs numériques

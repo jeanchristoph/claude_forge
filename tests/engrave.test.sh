@@ -390,6 +390,45 @@ test_rejects_root_outside_git_repository() {
 
 # ── Lanceur ───────────────────────────────────────────────────────────────────
 
+# ── Synthèse de mesure ────────────────────────────────────────────────────────
+
+prepare_forge_branch() {
+  git -C "$WORK" checkout -q ship
+  mkdir -p "$WORK/.forge/branch/ship"
+  printf '# Plan — ship\n**Estimate:** ≈ 1 files · ≈ 1 min (1-2)\n' > "$WORK/.forge/branch/ship/plan.md"
+}
+
+test_run_with_model_commits_metrics_file() {
+  prepare_forge_branch
+  local output
+  output=$(engrave run --root "$WORK" --branch ship --message "ship it" --model claude-test)
+  git -C "$WORK" show --name-only --format= HEAD | grep -qx '.forge/branch/ship/metrics.json' || { echo "    metrics.json not committed"; exit 1; }
+  [[ $output == *'"metrics":{"metrics_file":'*'"estimated_minutes":1,'* ]] || { echo "    $output"; exit 1; }
+  [[ $(git -C "$WORK" show HEAD:.forge/branch/ship/metrics.json) == '{"event":"engrave",'*'"model":"claude-test",'* ]] || exit 1
+}
+
+test_run_without_model_writes_no_metrics() {
+  prepare_forge_branch
+  local output
+  output=$(engrave run --root "$WORK" --branch ship --message "ship it")
+  [ ! -e "$WORK/.forge/branch/ship/metrics.json" ] || { echo "    metrics.json written"; exit 1; }
+  [[ $output != *'"metrics"'* ]] || exit 1
+}
+
+test_preview_with_model_writes_nothing() {
+  prepare_forge_branch
+  engrave preview --root "$WORK" --branch ship --message "ship it" --model claude-test >/dev/null
+  [ ! -e "$WORK/.forge/branch/ship/metrics.json" ] || { echo "    metrics.json written"; exit 1; }
+}
+
+test_run_with_model_outside_forge_branch_writes_no_metrics() {
+  git -C "$WORK" checkout -q ship
+  commit_file "$WORK" change.txt "change"
+  local output
+  output=$(engrave run --root "$WORK" --branch ship --message "ship it" --model claude-test)
+  [[ $output != *'"metrics"'* ]] || exit 1
+}
+
 run_test() {
   local name=$1 label=$2
   setup_sandbox
@@ -436,6 +475,10 @@ run_test test_rejects_empty_message "refuse un message vide"
 run_test test_rejects_wrong_current_branch "refuse de livrer si la branche courante n'est pas celle annoncée"
 run_test test_rejects_unknown_mode "refuse un mode inconnu"
 run_test test_rejects_root_outside_git_repository "refuse une racine hors dépôt git"
+run_test test_run_with_model_commits_metrics_file "avec --model, run écrit metrics.json avant le commit et le rend sous metrics"
+run_test test_run_without_model_writes_no_metrics "sans --model, aucune synthèse de mesure"
+run_test test_preview_with_model_writes_nothing "l'aperçu n'écrit jamais la synthèse de mesure"
+run_test test_run_with_model_outside_forge_branch_writes_no_metrics "sans dossier de branche forge, aucune synthèse"
 
 echo "$PASSED passed, $FAILED failed"
 [ $FAILED -eq 0 ]

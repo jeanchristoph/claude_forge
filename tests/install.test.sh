@@ -212,6 +212,19 @@ test_keeps_foreign_hook_of_measured_event() {
   assert_contains 'time-hook.sh' "$stop_hooks"
 }
 
+test_adds_synchronous_plan_hook_after_file_writes() {
+  run_installer || exit 1
+  local post_hooks
+  post_hooks=$(event_hooks PostToolUse)
+  assert_contains '"matcher":"Edit|Write|MultiEdit","hooks":[{"type":"command","command":"bash ~/.claude/skills/forge/scripts/plan-hook.sh","shell":"bash"}]' "$post_hooks"
+  assert_contains 'time-hook.sh' "$post_hooks"
+}
+
+test_second_install_adds_plan_hook_once() {
+  run_installer && run_installer || exit 1
+  assert_equals 1 "$(count_occurrences 'plan-hook.sh' "$CLAUDE_DIR/settings.json")"
+}
+
 # ── install.json ──────────────────────────────────────────────────────────────
 
 test_records_tag_and_origin_from_git_copy() {
@@ -310,6 +323,8 @@ run_common_tests() {
   run_test test_adds_time_hook_to_every_measured_event "ajoute le hook de mesure, asynchrone, à chaque événement écouté, avec ses filtres"
   run_test test_second_install_adds_time_hook_once "une seconde installation n'ajoute pas le hook de mesure en double"
   run_test test_keeps_foreign_hook_of_measured_event "garde un hook étranger d'un événement écouté"
+  run_test test_adds_synchronous_plan_hook_after_file_writes "ajoute le hook de coche du plan, synchrone, après chaque écriture de fichier"
+  run_test test_second_install_adds_plan_hook_once "une seconde installation n'ajoute pas le hook de coche en double"
   run_test test_records_tag_and_origin_from_git_copy "enregistre le tag et le dépôt d'origine d'une copie git"
   run_test test_records_null_version_outside_git "enregistre une version et un dépôt nuls hors dépôt git"
   run_test test_install_record_is_read_by_update_check "update.sh check lit l'install.json produit"

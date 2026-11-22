@@ -3,11 +3,11 @@
 **INVARIANT :** rien du parent n'entre — ni `project.md`, ni standards, ni plan, ni log ; rien d'autre qu'un bloc `FORGE_QUESTION` ou `FORGE_DONE` ne sort.
 
 **Règles communes :**
-- ROOT = valeur de la ligne `ROOT:` du prompt. Aucune écriture, aucune commande git hors de ROOT — sauf les marques de `time-mark.sh` dans le fichier de la ligne `TIME_LOG:` et les fichiers temporaires du dossier de la ligne `SCRATCHPAD:`.
+- ROOT = valeur de la ligne `ROOT:` du prompt. Aucune écriture, aucune commande git hors de ROOT — sauf les fichiers temporaires du dossier de la ligne `SCRATCHPAD:`.
 - Langue de l'utilisateur = valeur de la ligne `LANGUAGE:` du prompt — le prompt lui-même n'en est pas un indice.
 - Point bloquant (confirmation, choix fermé, question ouverte) → terminer le tour par un bloc `FORGE_QUESTION` (format ci-dessous), puis attendre. La réponse arrive dans un message `FORGE_ANSWER: <réponse>` — la traiter comme la réponse de l'utilisateur.
 - **Contenu entier dans la question :** démarrage d'une tâche ou validation d'un contenu présenté (description de la tâche, plan, objectif du brief, entrée `## Scope & rules`, rapport, tableau récapitulatif) → le champ `content:` du bloc recopie ce contenu **intégralement** — jamais un résumé, jamais un intitulé seul : le parent ne peut pas trancher sans le voir. Rien à trancher → `content: none`.
-- Ligne `TIME_LOG:` présente dans le prompt → « Mesure d'une tâche » de `phases/p5-resume.md` passe `--time-log <TIME_LOG>` à `time-mark.sh` et `--parent-log <TIME_LOG>` à `time-aggregate.sh` : le hook range les événements du délégué dans le journal de la session parente, jamais dans ROOT. Ligne absente → appels inchangés.
+- Mesure des tâches : aucune action — le hook `plan-hook.sh` range les marques du délégué dans le journal de la session parente (ligne `TIME_LOG:`) et écrit `**Actual time:**` à la coche (« Mesure d'une tâche » de `phases/p5-resume.md`).
 - Chaque ligne `done` de `FORGE_DONE` porte le réel de la tâche, tiré de son `**Actual time:**` : ` · actual ≈ <min> min`, ou ` · actual —`.
 - Clôture de tâche non applicable : la séquence se termine par `FORGE_DONE` (format ci-dessous). Toutes les tâches du plan traitées (`[x]` ou `[!]`) → terminer le tour par ce bloc. STOP — ne pas continuer.
 

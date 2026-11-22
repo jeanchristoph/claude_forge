@@ -166,6 +166,80 @@
 **Actual time:** ≈ 1.1 min · 5 files
 [x] time-aggregate 82/82 ; la règle classe aussi T12 et T13 (T13 faite pendant T12) en overlapping_tasks → réels passés à —
 
+### T16 — Coche détectée par un hook : réel écrit sans le modèle
+**Effort:** L
+**Estimated time:** ≈ 6 min (2-8)
+**Actual time:** ≈ 18.0 min · 14 files
+**Files:** `skills/forge/scripts/plan-hook.sh`, `skills/forge/scripts/task-marks.sh`, `skills/forge/scripts/time-mark.sh`, `skills/forge/scripts/task-files.sh`, `skills/forge/scripts/status.sh`, `tests/plan-hook.test.sh`, `install/install.sh`, `install/install.ps1`, `tests/install.test.sh`, `skills/forge/phases/p5-resume.md`, `skills/forge/commands/delegated-mode.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`, `.forge/project.md`
+**Description:**
+1. `plan-hook.sh`, hook `PostToolUse` synchrone sur `Edit|Write|MultiEdit`, actif seulement quand le fichier modifié est un `.forge/branch/<b>/plan.md`.
+2. État dans le journal de mesure : ligne `plan_checkpoint` (heure, empreinte, tâches cochées) ; pas de `plan-state` ; sans journal → `—`.
+3. Premier passage → premier point d'étape. Tâche `### Tn` passée à `[x]` → `task_start` rétroactive (heure et empreinte du dernier point d'étape), `task_done` maintenant, nouveau point d'étape ; réel par `time-aggregate.sh --task`, écrit sous la tâche. Deux coches d'un coup → `—` (règle de T15). Sous-tâches `T2.1` ignorées.
+4. Coche retirée → liste mise à jour, point d'étape inchangé.
+5. Délégué (`agent_id`) → marques dans le journal du parent, branche lue dans le chemin du plan.
+6. `additionalContext` : `plan.md` réécrit, réel donné.
+7. `current_time_ms`, `snapshot_files` et ligne de marque extraits de `time-mark.sh` vers `task-marks.sh` ; `time-mark.sh` inchangé en comportement. Lecteur de statut des tâches (`TASKS_PROGRAM`) déplacé de `status.sh` vers `task-files.sh`, partagé avec `plan-hook.sh` ; format de `plan.md` inchangé.
+8. Installeurs : hook déclaré, idempotence gardée.
+9. p5 « Mesure d'une tâche » réduite à un renvoi au hook ; `delegated-mode.md` allégé.
+10. Tests : coche simple, deux coches, plan réécrit sans coche, coche retirée puis remise, tâche hors ordre, délégué, fichier hors plan, sans journal.
+[x] plan-hook 17/17, install 39/39 ; 13 suites OK (364 cas)
+
+### T17 — Estimation et tableau récapitulatif tenus par le hook
+**Effort:** L
+**Estimated time:** ≈ 4 min (1-5)
+**Actual time:** ≈ 9.8 min · 7 files
+**Files:** `skills/forge/scripts/plan-hook.sh`, `tests/plan-hook.test.sh`, `skills/forge/phases/p4-plan.md`, `skills/forge/phases/p5-resume.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:**
+1. Écriture du plan → tâche avec `**Files:**` sans `**Estimated time:**` estimée (un seul appel `time-calibrate.sh`) ; en-tête `**Estimate:**` ajouté s'il manque.
+2. Estimation existante jamais recalculée.
+3. p4 étape 6 et p5 « Demande hors périmètre » : plus de recopie de minutes par le modèle ; un seul appel pour afficher l'estimation avant la question.
+4. `## Summary` = `Task | Effort | Files | Estimated | Actual | Status`, tenu à jour par le hook : `Estimated` et `Actual` recopiés de la tâche, `Status` recopié de la ligne de statut (raison du blocage comprise), ligne retrouvée par `T<n> —`, titre court gardé.
+5. Ancien tableau sans ces colonnes → colonnes ajoutées ; tâche absente du tableau → ligne ajoutée avec le titre de son en-tête.
+6. Ligne `**Total**` : somme des fichiers, des minutes estimées et des réels mesurés.
+7. Ligne `**Remaining**` sous le total : fichiers et minutes (fourchette) des tâches ouvertes, par `time-calibrate.sh` ; retirée quand plus rien n'est ouvert.
+8. Gabarit `## Summary` de `p4-plan.md` mis à jour.
+9. Reprise (p5, étape 6) : `## Summary` affiché tel quel, sans recalcul ; « Format du tableau d'avancement » réduit à un renvoi au gabarit.
+10. Tests : plan neuf, tâche ajoutée, estimation gardée, motif `(≈ n)` ; colonnes ajoutées, cellules mises à jour, titre court gardé, tâche absente ajoutée ; raison du blocage, total, reste à faire, reste à faire retiré.
+[x] plan-hook 27/27 ; 13 suites OK (374 cas)
+
+### T18 — `metrics.json` écrit par un script, sans le modèle
+**Effort:** M
+**Estimated time:** ≈ 5 min (1-8)
+**Actual time:** ≈ 10.2 min · 9 files
+**Files:** `skills/forge/scripts/metrics.sh`, `tests/metrics.test.sh`, `skills/forge/scripts/engrave.sh`, `tests/engrave.test.sh`, `skills/forge/commands/engrave.md`, `skills/forge/commands/closure.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`, `.forge/project.md`
+**Description:**
+1. Nouveau `metrics.sh --root --branch --event engrave|closure --model <id> [--parent-log --base]` : appelle `time-aggregate.sh`, compte fichiers prévus et réels (par tâche, à défaut branche), écrit `metrics.json` (une ligne, ordre de champs figé actuel), rend en JSON les valeurs de la ligne « Estimated … actual … » ; mise en page par le modèle.
+2. `engrave.sh run --model <id>` appelle `metrics.sh` juste avant `git add -A` quand `.forge/branch/<b>/` existe ; son JSON ajouté au rendu sous `metrics`.
+3. Clôture → `metrics.sh --event closure` ; fusion d'une branche fille → même script avec `--parent-log` et `--base` (renvoi de `swarm.md` inchangé).
+4. « Synthèse de mesure » de `engrave.md` réduite à l'appel et au gabarit de la ligne ; `closure.md` idem.
+5. Retiré : `remaining` rendu par `status.sh`, couvert par la ligne `**Remaining**` de T17.
+6. Tests : champs et ordre de `metrics.json`, `null` sans journal, fichiers par tâche et repli branche, estimation lue dans `**Estimate:**`, `metrics.json` commité au grave, événement `closure`.
+[x] metrics 9/9, engrave 37/37 ; 14 suites OK (387 cas)
+
+### T19 — Hook de mesure allégé hors projets forge
+**Effort:** S
+**Estimated time:** ≈ 2 min (1-3)
+**Actual time:** ≈ 5.0 min · 5 files
+**Files:** `skills/forge/scripts/time-hook.sh`, `tests/time-hook.test.sh`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:**
+1. Sortie immédiate sans `.forge/` dans le dossier de session ou ses parents, recherche en bash pur, sans processus git.
+2. Coût mesuré avant/après, projet sans forge et projet forge.
+3. Tests : projet sans forge (rien écrit, aucun git), sous-dossier d'un projet forge (journal écrit).
+[x] hors forge ≈ 97 → 70 ms par événement, forge inchangé ≈ 100 ms ; time-hook 30/30 ; 14 suites OK (389 cas)
+
+### T20 — Coût fixe des vérifications par tâche dans l'estimation
+**Effort:** M
+**Estimated time:** ≈ 6 min (2-11)
+**Actual time:** ≈ 12.9 min · 11 files · 8.9 min checks
+**Files:** `skills/forge/scripts/time-aggregate.sh`, `tests/time-aggregate.test.sh`, `skills/forge/scripts/time-calibrate.sh`, `tests/time-calibrate.test.sh`, `skills/forge/references/estimation.json`, `skills/forge/scripts/plan-hook.sh`, `tests/plan-hook.test.sh`, `skills/forge/phases/p5-resume.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`, `.forge/project.md`
+**Description:**
+1. `time-aggregate.sh --task` rend `check_minutes` : durée des commandes de vérification dans la fenêtre de la tâche.
+2. Le hook écrit le réel avec cette part : `**Actual time:** ≈ <min> min · <n> files · <c> min checks` (trace versionnée pour le calibrage).
+3. Temps estimé = coût fixe de vérification + minutes par fichier × fichiers ; coût fixe = médiane des vérifications par tâche, minutes par fichier calculées hors vérifications ; référence dans `estimation.json` sous 20 tâches mesurées.
+4. Motif de vérification de ce projet élargi à `tests/[a-z-]*\.test\.sh`, pour compter les boucles.
+5. Tests : vérifications comptées dans la fenêtre, réel écrit avec leur part, coût fixe tiré de la référence puis des tâches, minutes par fichier hors vérifications, ancien réel sans part toujours lu.
+[x] référence 2 min (choix utilisateur) ; motif retenu `bash tests/|tests/\*\.test\.sh` ; début répété d'une tâche remplacé (fantôme ouvert corrigé) ; 14 suites OK (397 cas)
+
 ## Risks
 - Estimation par fichiers inadaptée à un audit (1 min par tâche irréaliste : le travail est de la lecture, pas de l'écriture) — constat à intégrer à T1/T4.
 - Le rejeu à sec (T3) est une lecture d'instructions, pas une exécution réelle de `/forge` : une régression de comportement du modèle peut échapper.
@@ -174,21 +248,26 @@
 None
 
 ## Summary
-| Task | Effort | Files | Status |
-|---|---|---|---|
-| T1 — Apports 0.13 | M | 1 | [x] |
-| T2 — Audit swarm | L | 1 | [x] |
-| T3 — Non-régression | M | 1 | [x] |
-| T4 — Améliorations & plugin | M | 1 | [x] |
-| T5 — Rapport consolidé | S | 1 | [x] |
-| T6 — A1 Permissions des scripts | M | 8 | [x] |
-| T7 — A2 Lectures différées | S | 1 | [x] |
-| T8 — A3 Sections rares à la demande | M | 9 | [x] |
-| T9 — A7 Mise à jour non bloquante | S | 3 | [x] |
-| T10 — A8 /forge help | S | 3 | [x] |
-| T11 — A9 Hook PreCompact bash + SessionStart | M | 6 | [x] |
-| T12 — A12 Documentation alignée | S | 4 | [x] |
-| T13 — Ajout de tâches : options d'un plan neuf | S | 1 | [x] |
-| T14 — Sous-agents ordinaires mesurés | M | 5 | [x] |
-| T15 — Tâches simultanées non attribuables | M | 5 | [x] |
-| **Total** | **6S, 8M, L** | **50** | |
+| Task | Effort | Files | Estimated | Actual | Status |
+|---|---|---|---|---|---|
+| T1 — Apports 0.13 | M | 1 | ≈ 1 min | — | [x] |
+| T2 — Audit swarm | L | 1 | ≈ 1 min | — | [x] |
+| T3 — Non-régression | M | 1 | ≈ 1 min | — | [x] |
+| T4 — Améliorations & plugin | M | 1 | ≈ 1 min | — | [x] |
+| T5 — Rapport consolidé | S | 1 | ≈ 1 min | ≈ 1.5 min · 0 files | [x] |
+| T6 — A1 Permissions des scripts | M | 8 | ≈ 4 min | ≈ 2.2 min · 6 files | [x] |
+| T7 — A2 Lectures différées | S | 1 | ≈ 1 min | ≈ 0.4 min · 1 files | [x] |
+| T8 — A3 Sections rares à la demande | M | 9 | ≈ 4 min | ≈ 1.4 min · 8 files | [x] |
+| T9 — A7 Mise à jour non bloquante | S | 3 | ≈ 2 min | ≈ 0.5 min · 2 files | [x] |
+| T10 — A8 /forge help | S | 3 | ≈ 2 min | ≈ 0.3 min · 3 files | [x] |
+| T11 — A9 Hook PreCompact bash + SessionStart | M | 6 | ≈ 3 min | ≈ 2.2 min · 6 files | [x] |
+| T12 — A12 Documentation alignée | S | 4 | ≈ 2 min | — | [x] |
+| T13 — Ajout de tâches : options d'un plan neuf | S | 1 | ≈ 1 min | — | [x] |
+| T14 — Sous-agents ordinaires mesurés | M | 5 | ≈ 2 min | ≈ 3.2 min · 5 files | [x] |
+| T15 — Tâches simultanées non attribuables | M | 5 | ≈ 2 min | ≈ 1.1 min · 5 files | [x] |
+| T16 — Coche détectée par un hook | L | 15 | ≈ 6 min | ≈ 18.0 min · 14 files | [x] |
+| T17 — Estimation et tableau tenus par le hook | L | 7 | ≈ 4 min | ≈ 9.8 min · 7 files | [x] |
+| T18 — metrics.json par script | M | 10 | ≈ 5 min | ≈ 10.2 min · 9 files | [x] |
+| T19 — Hook de mesure allégé | S | 5 | ≈ 2 min | ≈ 5.0 min · 5 files | [x] |
+| T20 — Coût fixe des vérifications par tâche dans l'estimation | M | 12 | ≈ 6 min | ≈ 12.9 min · 11 files · 8.9 min checks | [x] |
+| **Total** | **7S, 10M, 3L** | **99** | **≈ 51 min** | **≈ 68.7 min** | |

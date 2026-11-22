@@ -1,3 +1,14 @@
+- [2026-11-22 20:59] T20 : coût fixe de vérification par tâche (référence 2 min), réel avec part checks, début répété d'une tâche remplacé ; T20 ≈ 12.9 min dont 8.9 min de tests ; 14 suites OK, 397 cas
+- [2026-11-22 20:47] Coût fixe de vérification de référence : 2 min par tâche (estimation.json check_minutes), choix utilisateur
+- [2026-11-22 20:40] T20 ajoutée : coût fixe des vérifications par tâche dans l'estimation (écarts estimé/réel de T16-T19 dus aux tests)
+- [2026-11-22 20:37] Réels de T18 et T19 remis à la main : passage manuel du hook après deux coches, vues comme simultanées (règle T15)
+- [2026-11-22 20:37] T19 : time-hook.sh sort sans git hors projet forgé (≈ 97 → 70 ms) ; 14 suites OK, 389 cas
+- [2026-11-22 20:29] T18 : metrics.sh écrit metrics.json (grave via engrave.sh run --model, clôture, essaim) ; 14 suites OK, 387 cas
+- [2026-11-22 20:20] T18 redéfinie : metrics.sh à part (engrave, clôture, essaim) ; remaining de status.sh retiré, couvert par **Remaining** de T17
+- [2026-11-22 19:33] T17 : estimations et ## Summary (Estimated, Actual, Status, Total, Remaining) tenus par plan-hook.sh ; Summary de cette branche régénéré par le hook ; 13 suites OK, 374 cas
+- [2026-11-22 19:23] T16 : plan-hook.sh (coche → marques et réel), task-marks.sh, lecteur de statut partagé dans task-files.sh ; 13 suites OK, 364 cas
+- [2026-11-22 19:17] T17 étendue : ## Summary tenu par le hook (Estimated, Actual, Status, Remaining), affiché tel quel à la reprise ; format de plan.md inchangé pour T16
+- [2026-11-22 19:02] T16 redéfinie : état dans le journal (plan_checkpoint), début rétroactif, task-marks.sh extrait de time-mark.sh
 - [2026-11-22 18:45] T15 : tâches simultanées non mesurées par le script (overlapping_tasks) ; réels de T12 et T13 passés à — selon cette règle
 - [2026-11-22 18:40] Réels de T1-T4 remplacés par — : tâches menées en parallèle par des agents de fond, part de chaque tâche non mesurable ; écartées du calibrage, temps gardé au niveau de la branche
 - [2026-11-22 18:15] T14 : sous-agents ordinaires comptés dans la mesure (branche et tâche) ; test « écarte les événements de ses délégués » remplacé par la règle « délégué à une autre branche »

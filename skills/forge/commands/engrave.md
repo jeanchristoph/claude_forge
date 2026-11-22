@@ -13,7 +13,7 @@
 Mode délégué `SCOPE: branch` → `--root` vaut ROOT (le worktree) ; compte rendu de livraison recopié entier dans le `content` du bloc qui termine le tour. `SCOPE: linked` → Livraison non applicable (section « Mode délégué » de `SKILL.md`).
 
 **Réaction — dans l'ordre :**
-0. Écrire la « Synthèse de mesure — `metrics.json` » ci-dessous : elle part avec le commit.
+0. Synthèse de mesure : aucune action — `engrave.sh run --model` l'écrit avant le `git add` (« Synthèse de mesure — `metrics.json` » ci-dessous), elle part avec le commit.
 1. Générer automatiquement le message de commit (règles COMMITS GIT : max 150 car., pas de mention Claude) — pas de confirmation sur le message lui-même.
 2. Livraison relayée — pour chaque projet lié (ci-dessous) : poser les deux questions, retenir la séquence du lié.
 3. Exécuter aussitôt le script en `run` pour le parent (« Script de livraison » ci-dessous), sans question ni affichage préalable.
@@ -27,18 +27,16 @@ Mode délégué `SCOPE: branch` → `--root` vaut ROOT (le worktree) ; compte re
 
 ### Synthèse de mesure — `metrics.json`
 
-**Déclencheur :** étape 0 de la Livraison, étape 1 de la Clôture sur `Solved` (`commands/closure.md`), fusion d'une branche fille d'essaim (`commands/swarm.md`).
+**Déclencheur :** Livraison (écrite par `engrave.sh run --model`, étape 3), étape 1 de la Clôture sur `Solved` (`commands/closure.md`), fusion d'une branche fille d'essaim (`commands/swarm.md`).
 
-**Réaction — dans l'ordre :**
-1. Exécuter `bash <SKILL_DIR>/scripts/time-aggregate.sh --root <ROOT> --branch <BRANCH>`. Branche fille d'un essaim → ajouter `--parent-log <dépôt principal>/.forge/branch/<PARENT_BRANCH>/time-log.jsonl --base <PARENT_BRANCH>` (`<PARENT_BRANCH>` : vocabulaire de `commands/swarm.md`).
-2. Fichiers prévus et réels, comptés de la même façon des deux côtés — par tâche :
-   - `measured_tasks` > 0 → `planned_files` = `task_planned_files`, `actual_files` = `task_files` ;
-   - sinon → `planned_files` = `null`, `actual_files` = `files` (aucune tâche à comparer : seules les minutes par fichier en tirent parti).
-3. Écrire `.forge/branch/<BRANCH>/metrics.json` — un seul objet JSON sur une ligne, fichier réécrit à chaque passage, valeurs cumulées depuis le début de la branche, l'historique restant dans git. Champs dans cet ordre, libellés figés :
-   `event` (`engrave` / `closure`), `date` (`AAAA-MM-JJ`), `branch`, `mode`, `model` (identifiant du modèle de la session), `planned_files`, `actual_files`, `branch_files` (`files` : fichiers distincts de la branche selon git), `lines_added`, `lines_deleted`, `agent_minutes` (`parent_minutes` + `delegated_minutes`, `null` si les deux le sont), `human_minutes`, `questions`, `check_minutes`, `tokens`, `partial` (repris tel quel : `true` quand le journal ne couvre pas le début de la branche — durées gardées, branche écartée du calibrage), `delegate_setup_minutes` (mise en route du délégué, branche fille d'un essaim), `merge_minutes` (durée moyenne des fusions de branches filles faites dans la branche) — repris tels quels, `null` sans mesure ; le calibrage en tire les coûts fixes d'une branche.
-4. Compte rendu de la Livraison : une ligne sous le tableau, estimé et réel côte à côte — `Estimated ≈ <planned_files> files · ≈ <min> min (<bas>-<haut>) · actual <actual_files> files · <agent_minutes> min` ; estimé tiré de l'en-tête `**Estimate:**` de PLAN (étape 6 de `phases/p4-plan.md`), valeur absente → `—`. `partial` à `true` → ajouter ` · partial measure`.
+**Réaction :** jamais écrite par le modèle — `scripts/metrics.sh` l'écrit et rend compte en JSON :
+- Livraison → aucun appel : `engrave.sh run` reçoit `--model <identifiant du modèle de la session>` et écrit la synthèse avant le `git add` ; compte rendu sous `metrics` du JSON de `run`.
+- Clôture → `bash <SKILL_DIR>/scripts/metrics.sh --root <ROOT> --branch <BRANCH> --event closure --model <identifiant du modèle de la session>`.
+- Branche fille d'un essaim → même appel, `--event engrave`, sous `--root <WORKTREE>`, avec `--parent-log <dépôt principal>/.forge/branch/<PARENT_BRANCH>/time-log.jsonl --base <PARENT_BRANCH>` (`<PARENT_BRANCH>` : vocabulaire de `commands/swarm.md`).
 
-⚠️ `time-log.jsonl` (événements bruts) reste local, ignoré par git ; seul `metrics.json` est versionné.
+Compte rendu de la Livraison : une ligne sous le tableau, depuis `metrics` — `Estimated ≈ <planned_files> files · ≈ <estimated_minutes> min (<estimated_low>-<estimated_high>) · actual <actual_files> files · <agent_minutes> min` ; valeur `null` → `—` ; `partial` à `true` → ajouter ` · partial measure`. `metrics` absent (dossier de branche absent) → aucune ligne.
+
+⚠️ `metrics.json` : un objet sur une ligne, réécrit à chaque passage, valeurs cumulées depuis le début de la branche — champs, ordre et règles de comptage fixés par `scripts/metrics.sh`. `time-log.jsonl` (événements bruts) reste local, ignoré par git ; seul `metrics.json` est versionné.
 ⚠️ Aucune heure, aucune durée estimée à la main : sans journal, les durées restent `null`.
 
 ### Livraison relayée — projets liés
@@ -62,11 +60,11 @@ Mode délégué `SCOPE: branch` → `--root` vaut ROOT (le worktree) ; compte re
 
 ### Script de livraison
 
-**Appel :** `bash <SKILL_DIR>/scripts/engrave.sh run --root <ROOT> --branch <BRANCH> --message "<message>" [branches citées, dans l'ordre]` — autant de branches qu'en cite l'utilisateur, aucune comprise.
+**Appel :** `bash <SKILL_DIR>/scripts/engrave.sh run --root <ROOT> --branch <BRANCH> --message "<message>" --model <identifiant du modèle de la session> [branches citées, dans l'ordre]` — autant de branches qu'en cite l'utilisateur, aucune comprise.
 
 **Le script porte la séquence entière** — ne jamais la recomposer en commandes git à la main :
 - `run` → exécute une opération git par action, dans cet ordre : `add`, `commit`, `push` de `<BRANCH>` ; pour chaque branche citée, `checkout` de la cible, `merge` de `<BRANCH>` — jamais la branche précédente de la chaîne —, `push` de la cible ; `checkout` final de retour sur `<BRANCH>` dès qu'une branche est citée. Premier échec git → arrêt, erreur git sur la sortie d'erreur ; conflit → dépôt laissé sur la cible, merge en cours.
-- JSON de `run`, écrit sur une ligne en succès comme en échec git : `{"branch":"<BRANCH>","status":"done|failed","actions":[{"step":1,"action":"add","branch":"<branche>","status":"<statut>","detail":<détail|null>,"reason":<raison|null>},…]}`.
+- JSON de `run`, écrit sur une ligne en succès comme en échec git : `{"branch":"<BRANCH>","status":"done|failed","actions":[{"step":1,"action":"add","branch":"<branche>","status":"<statut>","detail":<détail|null>,"reason":<raison|null>},…],"metrics":{…}}` — `metrics` présent avec `--model` et un dossier `.forge/branch/<BRANCH>/`.
 - Statut d'une action : `done` exécutée · `skipped` écartée avant exécution, `reason` dit pourquoi · `failed` en échec, `reason` = `conflict`, `rejected` ou `git error` · `not_run` non exécutée, la séquence s'étant arrêtée avant elle.
 - `detail` d'une action `done` : `commit` → hash court ; `push` → `<remote>: <ancien>..<nouveau>`, `<remote>: up to date` ou `<remote>: new branch` ; `merge` → `fast-forward`, `merge commit <hash court>` ou `already up to date` ; `add` / `checkout` → `null`. Action `failed` sur conflit → fichiers en conflit, séparés par `, `.
 - Branche citée égale à `<BRANCH>` → absente des actions. Branche absente → une seule action `merge` en `skipped`, `branch missing`, jamais créée. Branche extraite dans un autre worktree → idem, `checked out in another worktree`. Working tree propre → `add` et `commit` en `skipped`, `nothing to commit`, le `push` reste. Après un échec, une action `skipped` garde son statut et sa raison.

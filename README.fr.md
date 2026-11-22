@@ -105,7 +105,7 @@ forge/
 │   │   │   ├── p4-plan.md             (État 4 — Plan)
 │   │   │   └── p5-resume.md           (État 5 — Actif)
 │   │   ├── references/
-│   │   │   └── estimation.json        (ratios de référence et seuils de la règle de branche, tant que le projet n'a pas ses mesures)
+│   │   │   └── estimation.json        (minutes par fichier tant que le projet n'a pas ses mesures, fourchette, coûts fixes d'une branche, seuil de branche)
 │   │   └── scripts/
 │   │       ├── checks.sh              (contrôles de démarrage, lancés détachés : lignes input/ et time-log.jsonl dans le .gitignore)
 │   │       ├── engrave.sh             (séquence de livraison : preview / run)
@@ -117,6 +117,7 @@ forge/
 │   │       ├── time-calibrate.sh      (ratios du projet tirés des metrics.json, estimation d'un nombre de fichiers, en JSON)
 │   │       ├── time-hook.sh           (hook de mesure : une ligne par événement dans le time-log.jsonl de la branche)
 │   │       ├── time-mark.sh           (marques de tâche : début et coche d'une tâche du plan dans le time-log.jsonl)
+│   │       ├── task-files.sh          (fonctions awk communes : fichiers prévus d'une tâche, fichiers changés entre deux empreintes)
 │   │       └── update.sh              (mise à jour du skill : check / run, en JSON)
 │   └── forge-clickup/        → extension : ouverture de tâche ClickUp
 │       └── SKILL.md
@@ -326,7 +327,8 @@ Les deux installeurs ajoutent aussi `bash ~/.claude/skills/forge/scripts/time-ho
 
 - **Mesure :** le hook ajoute une ligne par événement au `.forge/branch/<branche>/time-log.jsonl` de la branche extraite dans le dossier de la session — horodatages, identifiants, durées, jamais un prompt, une commande ni une sortie d'outil. Hors projet forgé, il n'écrit rien. Les événements d'un délégué portent le dossier du parent : le parent associe chaque délégué à sa branche fille.
 - **Synthèse :** à chaque grave et à la clôture, `time-aggregate.sh` totalise le journal et git dans `metrics.json` : minutes d'agent (session principale + délégués), minutes humaines (une absence de plus de 6 h avant un prompt ou une réponse compte zéro), un drapeau `partial` quand le journal manque le début de la branche (hook installé en cours de route : la branche est écartée du calibrage), questions, minutes de vérification, tokens des délégués, fichiers et lignes modifiés.
-- **Estimation :** chaque tâche du plan compte les chemins listés dans son `**Files:**` (un `(≈ n)` explicite en fin de ligne pour un motif ou des fichiers encore inconnus) ; un seul appel `time-calibrate.sh --files 3,5,8` convertit chaque tâche et le total en minutes d'agent avec une fourchette (`≈ 120 files · ≈ 60 min (45-78)`), à partir des dernières mesures du projet ou de `references/estimation.json` (0,5 min et 5 k tokens par fichier). Marquée *indicative* tant que cinq branches ne sont pas mesurées et que sept sur dix ne tombent pas dans leur fourchette. Les lettres d'effort restent une taille relative, sans durée.
+- **Fichiers par tâche :** chaque marque de tâche porte l'empreinte du dossier de travail (chemin et hash du contenu de chaque fichier modifié ou nouveau, hors `.forge`, rien d'écrit dans le dépôt) ; les fichiers réels d'une tâche sont ceux qui apparaissent, changent ou disparaissent entre ses deux marques — un fichier modifié par trois tâches compte dans chacune —, écrits `**Actual time:** ≈ <min> min · <n> files`. Dès vingt tâches ainsi mesurées, minutes par fichier et correction des fichiers prévus viennent des quarante dernières tâches plutôt que des branches entières, les deux côtés comptés par tâche.
+- **Estimation :** chaque tâche du plan compte les chemins listés dans son `**Files:**` (un `(≈ n)` explicite en fin de ligne pour un motif ou des fichiers encore inconnus) ; un seul appel `time-calibrate.sh --files 3,5,8` convertit chaque tâche et le total en minutes d'agent avec une fourchette (`≈ 120 files · ≈ 60 min (45-78)`), à partir des quarante dernières tâches mesurées du projet dès vingt mesurées avec leurs fichiers, sinon de `references/estimation.json` (0,5 min par fichier) — jamais des branches entières. La fourchette vient des 20e et 80e centiles du rapport durée réelle ÷ durée estimée des quarante dernières tâches mesurées, lues dans les plans des branches (branches filles d'un essaim comprises), dès vingt mesurées (0,75–1,3 avant) ; chaque estimation se recalcule sur les dernières mesures. Marquée *indicative* tant que ratios ou fourchette viennent des valeurs de référence. Les lettres d'effort restent une taille relative, sans durée.
 - **Par tâche :** chaque tâche porte aussi `**Estimated time:**`, figé à l'écriture du plan. `time-mark.sh` marque son démarrage et sa coche dans le journal ; `time-aggregate.sh --task` mesure les minutes d'agent entre les deux marques (attentes de question retirées, même règle d'absence) et la coche écrit `**Actual time:**`, ou `—` sans mesure (pas de journal, hook installé en cours de route, marque manquante). Tout délégué, même dépôt ou projet lié, écrit ses marques dans le journal du parent (ligne `TIME_LOG:` de son prompt), où arrivent déjà ses événements, et rend le réel de chaque tâche dans `FORGE_DONE` ; une tâche parente déléguée à un projet lié reçoit la somme de ses tâches enfant (`time-aggregate.sh --task T1,T2`, `—` dès qu'un enfant n'est pas mesuré) ; une tâche-branche d'essaim reprend `agent_minutes` du `metrics.json` de la branche. Le tableau d'avancement affiche Estimé et Réel côte à côte.
 - **Commandes de vérification :** la ligne `**Check pattern:**` de `project.md` (expression régulière) désigne les commandes Bash comptées comme vérifications.
 
@@ -496,10 +498,13 @@ parent, puisque rien n'a été délégué. Le worktree reste en place — forge 
 plan avec ≥ 2 tâches-branches → « Valider et lancer l'essaim » → N branches filles en parallèle
 ```
 
-Quand au moins deux tâches d'un plan méritent leur propre branche — quatre critères sur cinq : nouveau module ou
-API publique, décisions à trancher, livrée et testée seule, ≥ 15 min d'agent, ≥ 3 couches ; ou plus de 300 k
-tokens —, le plan devient un **plan de branches** : chacune devient `### Tn — Branch <parente>-<slug>` avec une
-ligne `**Depends on:**`, une tâche socle des points d'extension passe en tête et une vérification d'ensemble en dernier.
+Quand au moins deux groupes de tâches méritent leur propre branche — tâches d'un même module ou d'une même tranche
+fonctionnelle, ensemble ≥ 15 min d'agent, livrées et testées seules sans fichier partagé avec un autre groupe —, le
+plan devient un **plan de branches** : chaque groupe devient une `### Tn — Branch <parente>-<slug>` avec une ligne
+`**Depends on:**`, une tâche socle des points d'extension passe en tête et une vérification d'ensemble en dernier.
+Sous le tableau des groupes, `time-calibrate.sh --groups` affiche le gain : durée en essaim (chaque branche plus
+environ 8 min de mise en route du délégué, réparties sur N délégués, puis environ 5 min par fusion, l'une après
+l'autre) contre durée en série ; les dépendances sont ignorées, le chiffre est optimiste.
 
 - **Lancement :** `swarm-status.sh` liste les branches en cours, lançables et en attente, et simule la fusion de la
   parente. Jusqu'à N branches lançables (3 par défaut, modifié seulement sur demande) reçoivent un worktree, la

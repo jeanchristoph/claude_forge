@@ -1,13 +1,8 @@
 {
   "minutes_per_file": 0.5,
-  "tokens_per_file": 5000,
   "range_low": 0.75,
   "range_high": 1.3,
   "delegate_minutes": 8,
   "merge_minutes": 5,
-  "delegate_tokens": 50000,
-  "branch_criteria_required": 4,
-  "branch_minutes": 15,
-  "branch_tokens": 300000,
-  "branch_layers": 3
+  "branch_minutes": 15
 }

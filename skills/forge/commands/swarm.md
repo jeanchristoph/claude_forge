@@ -100,6 +100,7 @@ Boucle de relais de `commands/delegation.md`, avec ces règles en plus :
 **Déclencheur :** option de fusion de « Fin d'une branche fille », ou demande explicite de l'utilisateur. Autorisation pour cette séquence seulement.
 
 **Réaction — dans l'ordre :**
+0. `bash <SKILL_DIR>/scripts/time-mark.sh --time-log <chemin absolu de TIME_LOG> --event merge_start --branch <X>` — mesure du coût d'une fusion.
 1. Tâche du parent avec des modifications non commitées → la terminer et la commiter d'abord : jamais de fusion par-dessus.
 2. Entrée LOG de `<X>`, `--root <WORKTREE> --branch <X>` : `Done, merged into <PARENT_BRANCH>`. « Synthèse de mesure — `metrics.json` » de `commands/engrave.md` sous `--root <WORKTREE>`, avec `--parent-log` et `--base <PARENT_BRANCH>`. Puis `git -C "<WORKTREE>" status --porcelain` affiché : fichier non suivi qui n'a pas sa place dans la branche (sortie de build, `.env`, fichier local) → arrêt, question ; sinon `git -C "<WORKTREE>" add -A`, commit (message ≤ 150 caractères, sans mention de Claude).
 3. `<PARENT_BRANCH>` ancêtre de `<X>` → `git merge --ff-only <X>` dans le dépôt principal.
@@ -110,7 +111,7 @@ Boucle de relais de `commands/delegation.md`, avec ces règles en plus :
    - conflit logique (même traitement modifié des deux côtés : gestionnaire d'événement, aiguillage d'une commande) → combiner les deux comportements, ordre des effets justifié ; doute → `git -C "<WORKTREE>" merge --abort`, question à l'utilisateur avec les deux versions ;
    - fichier généré → prendre un côté, le régénérer par la commande du projet ;
    - plus aucun marqueur de conflit (recherche acceptant `\r?\n`), vérification complète verte → commit de fusion `Merge <PARENT_BRANCH> into <X>: <fichiers combinés>`, puis étape 3.
-5. PLAN : tâche `<X>` cochée `[x]`, note d'une ligne — hashes, `estimated ≈ <fichiers> files · <min> min · actual <fichiers> files · <min> min` tiré de `metrics.json` ; `**Actual time:** ≈ <agent_minutes> min` écrit sous son `**Estimated time:**`, `agent_minutes` à `null` → `**Actual time:** —`. Vérification impossible dans le worktree → ajoutée à la tâche finale de vérification d'ensemble. LOG parent.
+5. `bash <SKILL_DIR>/scripts/time-mark.sh --time-log <chemin absolu de TIME_LOG> --event merge_done --branch <X>` — fusion réussie seulement : une fusion abandonnée laisse sa marque de début sans fin, jamais comptée. PLAN : tâche `<X>` cochée `[x]`, note d'une ligne — hashes, `estimated ≈ <fichiers> files · <min> min · actual <fichiers> files · <min> min` tiré de `metrics.json` ; `**Actual time:** ≈ <agent_minutes> min` écrit sous son `**Estimated time:**`, `agent_minutes` à `null` → `**Actual time:** —`. Vérification impossible dans le worktree → ajoutée à la tâche finale de vérification d'ensemble. LOG parent.
 6. Compte rendu : tableau des opérations au format du « Gabarit — compte rendu de livraison » de `commands/engrave.md`, conflits résolus, vérification, tâches débloquées.
 7. « Retrait d'un worktree de branche fille ». Réécrire SWARM.
 

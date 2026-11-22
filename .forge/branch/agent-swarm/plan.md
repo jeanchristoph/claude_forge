@@ -261,6 +261,46 @@
 [x] 11 suites vertes (297 tests). Journal réel : parent 9,5 min avec l'ancien script, 18,1 avec le nouveau. Dépôt `develop` sans master ni main : `files: null`, calibrage en JSON valide (code 0). Reprise de l'essaim vérifiée à la lecture seulement (étape 8 de p5, déclencheurs de swarm.md) : rejouer des instructions demande une vraie session.
 
 
+### T36 — Règle de branche fondée sur la seule durée d'un groupe de tâches
+**Effort:** M
+**Estimated time:** ≈ 4 min (3-5)
+**Files:** `skills/forge/phases/p4-plan.md`, `skills/forge/commands/delegated-mode.md`, `skills/forge/references/estimation.json`, `skills/forge/scripts/time-calibrate.sh`, `tests/time-calibrate.test.sh`, `skills/forge/commands/swarm.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Décision du 2026-11-22. La règle juge des groupes de tâches d'un même module ou d'une même tranche fonctionnelle : groupe en branche quand sa durée estimée (somme des fichiers × `minutes_per_file`) atteint `branch_minutes` (15 min, au-delà du coût fixe d'une branche ≈ 8 min de délégué + 5 min de fusion) et qu'il se livre et se teste seul, sans fichier partagé avec un autre groupe hors socle des points d'extension. Critères module/API, décisions, couches et tokens retirés. Plan de branches dès deux groupes ; tableau des groupes (tâches, fichiers, durée, verdict). `estimation.json` et sortie de `time-calibrate.sh` réduits à `minutes_per_file`, `range_low`, `range_high`, `branch_minutes` ; ratio de tokens et `tokens` des estimations retirés, mesure brute `tokens` gardée dans `metrics.json`. Question `Promotion` renvoyée à la nouvelle règle. Tests, README EN/FR, CHANGELOG.
+**Actual time:** ≈ 0.6 min
+[x] Règle p4 sur groupes (durée + indépendance), tableau des groupes ; coûts fixes remis à la demande et utilisés : `time-calibrate.sh --groups [--slots]` rend le gain d'essaim (série, essaim, coût fixe, tokens en plus), affiché sous le tableau et dans l'option de lancement ; 15 min gardé sur décision (gain ≈ nul à 15 min, réel vers 30) ; tokens retirés ; 25 + 24 tests verts ; README EN/FR, CHANGELOG.
+
+### T37 — Coûts fixes d'une branche mesurés et calibrés
+**Effort:** M
+**Estimated time:** ≈ 4 min (3-5)
+**Files:** `skills/forge/scripts/time-mark.sh`, `tests/time-mark.test.sh`, `skills/forge/scripts/time-aggregate.sh`, `tests/time-aggregate.test.sh`, `skills/forge/scripts/time-calibrate.sh`, `tests/time-calibrate.test.sh`, `skills/forge/commands/swarm.md`, `skills/forge/commands/engrave.md`, `CHANGELOG.md`
+**Description:** Demande utilisateur. Mise en route : `time-aggregate.sh` rend `delegate_setup_minutes` = `SubagentStart` du délégué → sa première marque `task_start` (première exécution seulement). Fusion : `time-mark.sh --event merge_start|merge_done --branch <X>` autour de « Fusion d'une branche fille » ; `merge_minutes` entre les deux, attentes de question retirées. `metrics.json` gagne ces deux champs, `null` sans mesure. `time-calibrate.sh` remplace `delegate_minutes` et `merge_minutes` par la médiane des branches mesurées dès qu'il y en a une ; le gain d'essaim utilise les valeurs du projet. Tests par cas, CHANGELOG.
+**Actual time:** ≈ 5.0 min
+[x] `delegate_setup_minutes` (mise en route) et `merge_minutes` (moyenne des fusions de la branche, marques du parent) dans time-aggregate et metrics.json ; marques `merge_start` / `merge_done` (time-mark.sh, swarm.md étapes 0 et 5) ; calibrage : médianes → `delegate_minutes` / `merge_minutes`, `fixed_costs_source` ; option d'essaim toujours proposée avec gain ou perte (p4) ; 11 suites vertes (307 tests) ; CHANGELOG.
+
+### T38 — Fourchette d'estimation calée sur les écarts mesurés du projet
+**Effort:** S
+**Estimated time:** ≈ 2 min (2-3)
+**Files:** `skills/forge/scripts/time-calibrate.sh`, `tests/time-calibrate.test.sh`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Demande utilisateur. Rapport durée réelle ÷ durée estimée des 10 dernières branches mesurées (partielles écartées) ; dès 5 rapports, bornes = 20e et 80e centiles, sinon 0,75 et 1,3 ; champ `range_source`. `indicative` = moins de 5 branches mesurées ; contrôle « 7 sur 10 », `checked` et `in_range` retirés (circulaires). Tests : < 5 branches, régulières, dispersées, partielles écartées. README EN/FR, CHANGELOG.
+**Actual time:** ≈ 0.8 min
+[x] Fonction `percentile` (interpolée), bornes aux centiles 20/80 dès 5 branches, `range_source`, `indicative` = moins de 5 mesures ; `checked` / `in_range` et constante `RELIABLE_SHARE` retirés ; 2 tests remplacés, 4 ajoutés (30 verts) ; README EN/FR, CHANGELOG.
+
+### T39 — Fourchette calée sur les écarts mesurés des tâches
+**Effort:** M
+**Estimated time:** ≈ 4 min (3-5)
+**Files:** `skills/forge/scripts/time-calibrate.sh`, `tests/time-calibrate.test.sh`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Correction de T38 (fourchette mesurée sur des branches, appliquée à des tâches). Une seule fourchette, sur les tâches : `time-calibrate.sh` lit les `plan.md` des branches (filles d'essaim comprises), rapport réel ÷ estimé de chaque tâche portant `**Estimated time:**` et `**Actual time:**` mesuré, des plus récentes aux plus anciennes (date du plan, ordre des tâches) ; ligne de tâche-branche et tâche déléguée à un projet lié écartées. Dès 10 tâches, centiles 20/80 des 30 dernières, sinon 0,75 et 1,3 ; `range_source`. Calcul sur les branches de T38 retiré. Tests, README EN/FR, CHANGELOG.
+**Actual time:** ≈ 0.9 min
+[x] `TASK_GAPS_PROGRAM` (plans lus, tâche-branche et tâche déléguée écartées) et `TASK_RANGE_PROGRAM` (centiles) ; fenêtre ramenée à 20 tâches à la demande ; calcul sur les branches retiré ; 6 tests remplacent les 4 de T38 (32 verts) ; README EN/FR, CHANGELOG. Sur ce dépôt : 16 tâches mesurées, écarts de 0,15 à 4,8.
+
+### T40 — Fichiers réels mesurés par tâche, estimation calée sur les tâches
+**Effort:** M
+**Estimated time:** ≈ 6 min (1-7)
+**Files:** `skills/forge/scripts/time-mark.sh`, `tests/time-mark.test.sh`, `skills/forge/scripts/time-aggregate.sh`, `tests/time-aggregate.test.sh`, `skills/forge/scripts/time-calibrate.sh`, `tests/time-calibrate.test.sh`, `skills/forge/phases/p5-resume.md`, `skills/forge/commands/engrave.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Demande utilisateur. `time-mark.sh` ajoute à `start` et `done` l'empreinte du dossier de la tâche (chemin et hash des fichiers modifiés ou nouveaux, hors `.forge`), sans écrire dans le dépôt ni l'index ; `time-aggregate.sh --task` rend `actual_files` (fichiers apparus, changés ou disparus entre les marques, comptés dans chaque tâche qui les touche). Coche : `**Actual time:** ≈ <min> min · <n> files`. Calibrage par tâche dès 10 tâches (20 dernières) : minutes par fichier et correction des fichiers prévus ; sinon calcul par branche. Mêmes règles pour les tâches des branches filles ; tâche-branche et tâche déléguée écartées. `grave` : `planned_files` / `actual_files` en sommes par tâche, comptage git sous `branch_files`. Tests, README EN/FR, CHANGELOG.
+**Actual time:** ≈ 12.1 min
+[x] Empreinte `git status` + `hash-object` dans les marques ; awk partagé `scripts/task-files.sh` (fichiers prévus, fichiers changés) ; `actual_files` par tâche, `task_files` / `task_planned_files` / `measured_tasks` par branche ; calibrage `source: tasks` dès 10 tâches avec fichiers ; p5 (coche `· n files`), engrave (comptage par tâche des deux côtés, `branch_files`) ; 13 tests ajoutés (73 + 34 + 15 verts, 320 au total) ; README EN/FR, CHANGELOG. Fichiers réels de cette tâche non mesurés : marques posées par le skill installé, sans empreinte.
+
 ## Risks
 - Hooks de frontmatter qui ne couvriraient pas les sous-agents → T4 bascule sur les installeurs (hook global, actif aussi hors forge : le script sort sans rien écrire hors projet forgé).
 - Commande d'installation par worktree (§8.1) : absente de `project.md` aujourd'hui → T10 la lit dans `## Tools & access`, sinon la demande une fois et la note dans `project.md`.
@@ -308,4 +348,9 @@ None
 | T33 — Essaim : commits annoncés, règles, limites | M | [x] |
 | T34 — Cohérence des instructions et de la documentation | M | [x] |
 | T35 — Vérification d'ensemble | XS | [x] |
-| **Total** | **6 XS · 13 S · 13 M · 3 L** | |
+| T36 — Règle de branche fondée sur la durée d'un groupe | M | [x] |
+| T37 — Coûts fixes d'une branche mesurés et calibrés | M | [x] |
+| T38 — Fourchette calée sur les écarts mesurés | S | [x] |
+| T39 — Fourchette calée sur les écarts des tâches | M | [x] |
+| T40 — Fichiers réels par tâche, estimation calée sur les tâches | M | [x] |
+| **Total** | **6 XS · 14 S · 17 M · 3 L** | |

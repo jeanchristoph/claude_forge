@@ -13,6 +13,13 @@
 #   marques lues dans le journal de la branche, ou avec --parent-log dans celui de la parente (marques portant la branche) ;
 #   plusieurs tâches séparées par des virgules → somme, non mesurée dès qu'une ne l'est pas ;
 #   sortie propre à la tâche, sans volume ni mode
+#   delegate_setup_minutes : mise en route d'une branche fille — premier SubagentStart d'un délégué associé → première
+#   marque task_start de la branche dans le journal de la parente (exécution relancée non comptée) ; null sans mesure
+#   merge_minutes : durée moyenne d'une fusion de branche fille, marques merge_start → merge_done du journal de la
+#   branche (posées par le parent), attentes de question retirées ; null sans fusion mesurée
+#   Fichiers par tâche : empreintes des marques task_start et task_done (time-mark.sh) ; un fichier touché par
+#   plusieurs tâches compte dans chacune. --task → actual_files ; branche → task_files (somme des tâches mesurées),
+#   task_planned_files (leurs fichiers prévus, lus dans plan.md), measured_tasks ; files reste le comptage unique de git
 #   partial : mesure incomplète — journal ouvert par une ligne late_start, ou premier commit propre à la branche
 #   antérieur au premier événement du journal ; le calibrage écarte une telle branche
 # Sortie : 0 JSON écrit · 1 usage, sans JSON
@@ -20,6 +27,7 @@
 set -u
 
 source "$(dirname "${BASH_SOURCE[0]}")/json.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/task-files.sh"
 
 readonly EXIT_USAGE=1
 readonly TIME_LOG_NAME="time-log.jsonl"
@@ -64,8 +72,10 @@ readonly DURATIONS_PROGRAM="$AWK_HELPERS"'
   reading_parent && field("event") == "delegate" && field("branch") == branch { delegate[field("agent_id")] = 1; next }
   reading_parent {
     id = field("agent_id"); event = field("event"); ts = field("ts") + 0
+    if (event == "task_start" && field("branch") == branch) { if (setup_start != "" && setup_end == "") setup_end = ts; next }
     if (!(id in delegate)) next
     seen = 1
+    if (event == "SubagentStart" && setup_start == "") setup_start = ts
     if (event == "SubagentStart") agent_start[id] = ts
     if (event == "SubagentStop" && (id in agent_start)) { delegated += ts - agent_start[id]; delete agent_start[id]; runs[id] = 1 }
     if (event == "PostToolUse" && field("check") == "true") checks += field("duration_ms")
@@ -87,29 +97,60 @@ readonly DURATIONS_PROGRAM="$AWK_HELPERS"'
     } else if (event == "PostToolUse" && field("tool") == "AskUserQuestion" && (session in question_start)) {
       wait = ts - question_start[session]; delete question_start[session]
       questions++; question_time += human_share(wait); human += human_share(wait); turn_questions[session] += wait
+      for (merged in merge_start) merge_questions[merged] += wait
     } else if (event == "PostToolUse" && field("check") == "true") {
       checks += field("duration_ms")
+    } else if (event == "merge_start") {
+      merged = field("branch"); merge_start[merged] = ts; merge_questions[merged] = 0
+    } else if (event == "merge_done" && (field("branch") in merge_start)) {
+      merged = field("branch"); merge_total += ts - merge_start[merged] - merge_questions[merged]; merges++
+      delete merge_start[merged]
     }
     last_activity[session] = ts
   }
   END {
-    if (!seen) { print "null null null 0 null null 0 null"; exit }
+    if (!seen) { print "null null null 0 null null 0 null null null"; exit }
     count = 0; for (id in runs) count++
-    printf "%s %s %s %d %s %s %d %s\n", minutes(parent), minutes(delegated), minutes(human), questions, minutes(question_time), minutes(checks), count, (has_tokens ? tokens : "null")
+    printf "%s %s %s %d %s %s %d %s ", minutes(parent), minutes(delegated), minutes(human), questions, minutes(question_time), minutes(checks), count, (has_tokens ? tokens : "null")
+    printf "%s %s\n", (setup_end != "" ? minutes(setup_end - setup_start) : "null"), (merges ? minutes(merge_total / merges) : "null")
   }'
 
 # Fenêtre d'une tâche : dernière marque task_start, puis la première task_done qui la suit.
 #   Marques de la session principale sans « branch » ; marques d'un délégué (journal de la parente) avec sa branche.
-#   Sortie : « début fin raison », « - » pour une valeur absente ; raison late_start, missing_start, missing_done ou ok.
-readonly TASK_WINDOW_PROGRAM="$AWK_HELPERS"'
+#   Sortie : « début fin raison fichiers », « - » pour une valeur absente ; raison late_start, missing_start,
+#   missing_done ou ok ; fichiers « null » quand une des deux marques n'a pas d'empreinte.
+readonly TASK_WINDOW_PROGRAM="$AWK_HELPERS$TASK_FILES_AWK"'
   field("event") == "late_start" { late = 1; next }
   field("task") != task || field("branch") != mark_branch { next }
-  field("event") == "task_start" { start = field("ts"); finish = ""; next }
-  field("event") == "task_done" && start != "" && finish == "" { finish = field("ts") }
+  field("event") == "task_start" { start = field("ts"); start_files = raw_string_field("files"); finish = ""; next }
+  field("event") == "task_done" && start != "" && finish == "" { finish = field("ts"); finish_files = raw_string_field("files") }
   END {
     reason = late ? "late_start" : (start == "" ? "missing_start" : (finish == "" ? "missing_done" : "ok"))
-    printf "%s %s %s\n", (start == "" ? "-" : start), (finish == "" ? "-" : finish), reason
+    files = (start_files == "<none>" || finish_files == "<none>" || finish == "") ? "null" : changed_files(start_files, finish_files)
+    printf "%s %s %s %s\n", (start == "" ? "-" : start), (finish == "" ? "-" : finish), reason, files
   }'
+
+# Fichiers de toutes les tâches mesurées d'une branche : « tâche fichiers » par tâche, première task_done après la
+# dernière task_start ; tâche sans empreinte absente.
+readonly TASK_FILES_PROGRAM="$AWK_HELPERS$TASK_FILES_AWK"'
+  field("branch") != mark_branch { next }
+  field("event") == "task_start" { task = field("task"); start_files[task] = raw_string_field("files"); open[task] = 1; next }
+  field("event") == "task_done" && (field("task") in open) {
+    task = field("task"); delete open[task]
+    done_files = raw_string_field("files")
+    if (start_files[task] != "<none>" && done_files != "<none>") measured[task] = changed_files(start_files[task], done_files)
+  }
+  END { for (task in measured) printf "%s %d\n", task, measured[task] }'
+
+# Fichiers prévus de chaque tâche d'un plan : « tâche fichiers ».
+readonly PLANNED_FILES_PROGRAM="$TASK_FILES_AWK"'
+  function flush() { if (task != "") printf "%s %d\n", task, planned_files_from(estimated_line, files_line); task = "" }
+  { sub(/\r$/, "") }
+  /^### T[0-9]+/ { flush(); task = $2; estimated_line = ""; files_line = ""; next }
+  /^## / { flush(); next }
+  task != "" && /^\*\*Estimated files:\*\*/ { estimated_line = $0 }
+  task != "" && /^\*\*Files:\*\*/ { files_line = $0 }
+  END { flush() }'
 
 # Durées d'une tâche, mêmes règles que DURATIONS_PROGRAM, chaque intervalle borné à la fenêtre [window_start, window_end].
 #   Un tour ou une exécution de délégué encore ouvert à la fin du journal compte jusqu'à window_end : la marque task_done
@@ -223,9 +264,10 @@ run_on_logs() {
   esac
 }
 
-# Sortie de DURATIONS_PROGRAM : « parent délégués humain questions attente vérifications délégués_lancés tokens ».
+# Sortie de DURATIONS_PROGRAM : « parent délégués humain questions attente vérifications délégués_lancés tokens
+# mise_en_route fusion ».
 read_durations() {
-  REPLY="null null null 0 null null 0 null"
+  REPLY="null null null 0 null null 0 null null null"
   run_on_logs "$DURATIONS_PROGRAM"
 }
 
@@ -241,42 +283,59 @@ read_task_window() {
   REPLY=$(sort_by_time "$marks_log" | awk -v task="$task" -v mark_branch="$mark_branch" "$TASK_WINDOW_PROGRAM")
 }
 
-# « agent humain questions » d'une tâche dans REPLY, ou « raison » seule quand elle n'est pas mesurée.
+# « agent humain questions fichiers » d'une tâche dans REPLY, ou « raison » seule quand elle n'est pas mesurée.
 measure_task() {
-  local window_start window_end reason
+  local window_start window_end reason files
   read_task_window "$1"
-  read -r window_start window_end reason <<< "$REPLY"
+  read -r window_start window_end reason files <<< "$REPLY"
   [ "$reason" = "ok" ] || { REPLY=$reason; return; }
   REPLY="0.0 0.0 0"
   run_on_logs "$TASK_DURATIONS_PROGRAM" -v window_start="$window_start" -v window_end="$window_end"
+  REPLY+=" ${files:-null}"
 }
 
 render_task() {
-  local agent=$1 human=$2 questions=$3 reason=$4 branch_json task_json measured=true reason_json=null
+  local agent=$1 human=$2 questions=$3 files=$4 reason=$5 branch_json task_json measured=true reason_json=null
   if [ "$reason" != "ok" ]; then
     measured=false; reason_json="\"$reason\""
   fi
   json_escape "$BRANCH"; branch_json=$REPLY
   json_escape "$TASK"; task_json=$REPLY
-  printf '{"branch":%s,"task":%s,"agent_minutes":%s,"human_minutes":%s,"questions":%s,"measured":%s,"reason":%s}\n' \
-    "$branch_json" "$task_json" "$agent" "$human" "$questions" "$measured" "$reason_json"
+  printf '{"branch":%s,"task":%s,"agent_minutes":%s,"human_minutes":%s,"questions":%s,"actual_files":%s,"measured":%s,"reason":%s}\n' \
+    "$branch_json" "$task_json" "$agent" "$human" "$questions" "$files" "$measured" "$reason_json"
 }
 
 # Mesure d'une ou plusieurs tâches (T1,T4 : tâches enfant d'une même tâche parente), sommées.
-# BUSINESS_RULE: une seule tâche non mesurée rend la somme non mesurée — jamais de somme partielle présentée comme complète
+# BUSINESS_RULE: une seule tâche non mesurée rend la somme non mesurée — jamais de somme partielle présentée comme complète ;
+# même règle pour les fichiers : une tâche sans empreinte rend la somme des fichiers nulle
 aggregate_task() {
-  local task totals="0.0 0.0 0" tasks
+  local task totals="0.0 0.0 0 0" tasks
   IFS=, read -ra tasks <<< "$TASK"
   for task in "${tasks[@]}"; do
     measure_task "$task"
     case $REPLY in
       *" "*) totals=$(awk -v a="$totals" -v b="$REPLY" 'BEGIN { split(a, x, " "); split(b, y, " ")
-                printf "%.1f %.1f %d", x[1] + y[1], x[2] + y[2], x[3] + y[3] }') ;;
-      *)     render_task null null null "$REPLY"; return ;;
+                files = (x[4] == "null" || y[4] == "null") ? "null" : x[4] + y[4]
+                printf "%.1f %.1f %d %s", x[1] + y[1], x[2] + y[2], x[3] + y[3], files }') ;;
+      *)     render_task null null null null "$REPLY"; return ;;
     esac
   done
   # shellcheck disable=SC2086 — découpage voulu des champs numériques
   render_task $totals ok
+}
+
+# « réels prévus tâches » des tâches mesurées de la branche dans REPLY : fichiers réels sommés (empreintes des marques),
+# fichiers prévus de ces mêmes tâches (plan.md), nombre de tâches ; « null null 0 » sans tâche mesurée.
+read_task_files() {
+  local marks_log="$ROOT/.forge/branch/$BRANCH/$TIME_LOG_NAME" mark_branch="" plan="$ROOT/.forge/branch/$BRANCH/plan.md"
+  [ -n "$PARENT_LOG" ] && { marks_log=$PARENT_LOG; mark_branch=$BRANCH; }
+  REPLY="null null 0"
+  [ -s "$marks_log" ] && [ -f "$plan" ] || return 0
+  REPLY=$(awk 'FNR == NR { planned[$1] = $2; next }
+               ($1 in planned) { actual += $2; expected += planned[$1]; count++ }
+               END { if (count) printf "%d %d %d", actual, expected, count; else print "null null 0" }' \
+    <(awk "$PLANNED_FILES_PROGRAM" "$plan") \
+    <(sort_by_time "$marks_log" | awk -v mark_branch="$mark_branch" "$TASK_FILES_PROGRAM"))
 }
 
 resolve_mode() {
@@ -343,24 +402,28 @@ read_volume() {
 
 render() {
   local parent=$1 delegated=$2 human=$3 questions=$4 question_time=$5 checks=$6 delegates=$7 tokens=$8
-  local files=$9 added=${10} deleted=${11} partial=${12} mode branch_json
+  local setup=$9 merge=${10} task_files=${11} task_planned=${12} measured_tasks=${13}
+  local files=${14} added=${15} deleted=${16} partial=${17} mode branch_json
   resolve_mode "$parent" "$delegated"; mode=$REPLY
   json_escape "$BRANCH"; branch_json=$REPLY
   printf '{"branch":%s,"parent_minutes":%s,"delegated_minutes":%s,"human_minutes":%s,' "$branch_json" "$parent" "$delegated" "$human"
   printf '"questions":%s,"question_minutes":%s,"check_minutes":%s,"delegates":%s,"mode":%s,' "$questions" "$question_time" "$checks" "$delegates" "$mode"
-  printf '"tokens":%s,"files":%s,"lines_added":%s,"lines_deleted":%s,"partial":%s}\n' "$tokens" "$files" "$added" "$deleted" "$partial"
+  printf '"tokens":%s,"files":%s,"lines_added":%s,"lines_deleted":%s,"partial":%s,' "$tokens" "$files" "$added" "$deleted" "$partial"
+  printf '"delegate_setup_minutes":%s,"merge_minutes":%s,' "$setup" "$merge"
+  printf '"task_files":%s,"task_planned_files":%s,"measured_tasks":%s}\n' "$task_files" "$task_planned" "$measured_tasks"
 }
 
 main() {
-  local durations volume start partial
+  local durations task_files volume start partial
   parse_arguments "$@"
   [ -z "$TASK" ] || { aggregate_task; return; }
   read_durations; durations=$REPLY
+  read_task_files; task_files=$REPLY
   resolve_start_point; start=$REPLY
   read_volume "$start"; volume=$REPLY
   read_partial "$start"; partial=$REPLY
   # shellcheck disable=SC2086 — découpage voulu des champs numériques
-  render $durations $volume "$partial"
+  render $durations $task_files $volume "$partial"
 }
 
 main "$@"

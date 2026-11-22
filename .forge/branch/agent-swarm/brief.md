@@ -14,3 +14,4 @@ Ajouter au skill forge le travail en essaim d'agents IA, en trois développement
 - Les points à vérifier du §7 de la proposition de hook (hooks déclarés dans le frontmatter d'un skill, `cwd` et `agent_id` des sous-agents) sont vérifiés avant d'écrire les scripts. Le repli par réglages passe par les installeurs existants (`install.ps1` / `install.sh`, qui fusionnent déjà `settings.json` pour le hook `PreCompact`), jamais par une écriture du skill dans les réglages.
 - L'essaim ne pousse rien et ne fusionne jamais vers la branche par défaut : la parente est livrée par `grave`, sur décision de l'utilisateur.
 - Hors périmètre : la mise en commun des mesures entre projets (§3.1 de l'estimation, « plus tard »).
+- Écart à la proposition (décision du 2026-11-22) : la règle de branche ne garde que la durée estimée d'un groupe de tâches et un garde-fou d'indépendance ; critères qualitatifs et seuil de tokens retirés, la mesure brute des tokens reste dans `metrics.json`.

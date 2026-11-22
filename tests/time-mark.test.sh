@@ -100,6 +100,22 @@ test_writes_no_delegate_line_on_invalid_arguments() {
   [ ! -e "$OWN_LOG" ] || { echo "    own log written"; exit 1; }
 }
 
+test_writes_merge_marks_with_merged_branch() {
+  : > "$PARENT_LOG"
+  bash "$MARK_SCRIPT" --time-log "$PARENT_LOG" --event merge_start --branch 'parent-a'
+  bash "$MARK_SCRIPT" --time-log "$PARENT_LOG" --event merge_done --branch 'parent-a'
+  assert_matches '^\{"ts":[0-9]{13},"event":"merge_start","branch":"parent-a"\}$' "$(sed -n 1p "$PARENT_LOG")"
+  assert_matches '^\{"ts":[0-9]{13},"event":"merge_done","branch":"parent-a"\}$' "$(sed -n 2p "$PARENT_LOG")"
+}
+
+test_writes_no_merge_mark_without_time_log_or_branch() {
+  : > "$OWN_LOG"
+  : > "$PARENT_LOG"
+  bash "$MARK_SCRIPT" --root "$WORK" --branch feature --event merge_start || exit 1
+  bash "$MARK_SCRIPT" --time-log "$PARENT_LOG" --event merge_done || exit 1
+  assert_equals 0 "$(cat "$OWN_LOG" "$PARENT_LOG" | wc -c | tr -d ' ')"
+}
+
 # ── Rien d'écrit ──────────────────────────────────────────────────────────────
 
 test_writes_nothing_without_log() {
@@ -165,6 +181,8 @@ run_test test_accepts_micro_step "accepte une micro-étape T2.1"
 run_test test_writes_delegate_line_without_timestamp "écrit la ligne delegate sans horodatage"
 run_test test_writes_delegate_usage_line_with_tokens "écrit la ligne delegate_usage avec ses tokens"
 run_test test_writes_no_delegate_line_on_invalid_arguments "n'écrit aucune ligne de délégué sur des arguments invalides"
+run_test test_writes_merge_marks_with_merged_branch "écrit les marques de fusion avec la branche fusionnée"
+run_test test_writes_no_merge_mark_without_time_log_or_branch "n'écrit aucune marque de fusion sans journal ni branche"
 run_test test_writes_nothing_without_log "n'écrit rien sans journal de la branche"
 run_test test_writes_nothing_without_parent_log "n'écrit rien sans journal du parent"
 run_test test_exits_zero_and_writes_nothing_on_invalid_arguments "sort en 0 sans rien écrire sur des arguments invalides"

@@ -79,7 +79,7 @@
 **Réaction — dans l'ordre :**
 1. Démarrage → `bash <SKILL_DIR>/scripts/time-mark.sh --root <ROOT> --branch <BRANCH> --task T<n> --event start`, avant toute autre action de la tâche.
 2. Coche → `bash <SKILL_DIR>/scripts/time-mark.sh --root <ROOT> --branch <BRANCH> --task T<n> --event done`, puis `bash <SKILL_DIR>/scripts/time-aggregate.sh --root <ROOT> --branch <BRANCH> --task T<n>`, en un seul appel Bash.
-3. Écrire sous `**Estimated time:**` de la tâche, à défaut sous `**Effort:**` : `measured` vrai → `**Actual time:** ≈ <agent_minutes> min` ; `measured` faux → `**Actual time:** —`.
+3. Écrire sous `**Estimated time:**` de la tâche, à défaut sous `**Effort:**` : `measured` vrai → `**Actual time:** ≈ <agent_minutes> min · <actual_files> files`, sans la partie fichiers quand `actual_files` est `null` ; `measured` faux → `**Actual time:** —`.
 
 ⚠️ Jamais de durée estimée à la main à la place d'une mesure absente : `—` seul.
 ⚠️ Les deux scripts n'écrivent rien sans journal de mesure (hook non installé) : jamais d'erreur à signaler, `**Actual time:** —`.

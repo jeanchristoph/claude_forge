@@ -30,7 +30,7 @@
 - Application, serveur ou service local lancé → port de la ligne `PORT:`, adresse `127.0.0.1` ; `PORT: none` → rien n'est lancé. Nouvelle dépendance installée dans ROOT seulement, manifeste et fichier de verrouillage gardés dans la branche.
 - Avant chaque tâche : entrée LOG `task <n> started`.
 - `RESUME:` autre que `none` → appliquer la consigne de reprise avant toute autre action ; plan validé avec enchaînement → aucune question `Mode`.
-- Tâche du plan qui remplit la « Règle de branche » de `phases/p4-plan.md` en cours de réalisation → `FORGE_QUESTION` `header` `Promotion` : "T<n> deserves its own branch: move it out of this plan and add it to the parent plan?", options `Promote` / `Keep it here` ; sur `Promote`, la tâche est retirée du plan, sa description recopiée entière dans `content`.
+- Tâche ou groupe de tâches du plan qui remplit la « Règle de branche » de `phases/p4-plan.md` en cours de réalisation → `FORGE_QUESTION` `header` `Promotion` : "T<n> deserves its own branch: move it out of this plan and add it to the parent plan?", options `Promote` / `Keep it here` ; sur `Promote`, la tâche est retirée du plan, sa description recopiée entière dans `content`.
 - Toute `FORGE_QUESTION` de choix — `header` autre que `Brief`, `Plan`, `Mode`, `Task`, `Promotion` — apporte le contexte de décision : ce que fait l'existant, ce que chaque option change pour l'utilisateur final, ce qu'il faudrait refaire si le choix s'avère mauvais.
 
 ### Format `FORGE_QUESTION`

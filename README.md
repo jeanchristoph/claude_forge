@@ -107,7 +107,7 @@ forge/
 │   │   │   ├── p4-plan.md             (State 4 — Plan)
 │   │   │   └── p5-resume.md           (State 5 — Active)
 │   │   ├── references/
-│   │   │   └── estimation.json        (reference ratios and branch-rule thresholds, used until a project has its own measures)
+│   │   │   └── estimation.json        (minutes per file until a project has its own measures, estimate range, fixed costs of a branch, branch threshold)
 │   │   └── scripts/
 │   │       ├── checks.sh              (startup checks, run detached: input/ and time-log.jsonl lines in .gitignore)
 │   │       ├── engrave.sh             (shipping sequence: preview / run)
@@ -119,6 +119,7 @@ forge/
 │   │       ├── time-calibrate.sh      (project ratios from metrics.json, estimate for a number of files, as JSON)
 │   │       ├── time-hook.sh           (time measurement hook: one line per event in the branch time-log.jsonl)
 │   │       ├── time-mark.sh           (task marks: start and done of a plan task in the time-log.jsonl)
+│   │       ├── task-files.sh          (shared awk: planned files of a task, files changed between two fingerprints)
 │   │       └── update.sh              (skill update: check / run, as JSON)
 │   └── forge-clickup/        → extension: ClickUp task kickoff
 │       └── SKILL.md
@@ -327,7 +328,8 @@ Both installers also add `bash ~/.claude/skills/forge/scripts/time-hook.sh` (she
 
 - **Measure:** the hook adds one line per event to `.forge/branch/<branch>/time-log.jsonl` of the branch checked out in the session folder — timestamps, ids, durations, never a prompt, command or tool output. Outside a forged project it writes nothing. A delegate's events carry the parent's folder: the parent maps each delegate to its child branch.
 - **Summary:** at each engrave and at closure, `time-aggregate.sh` sums the log and git into `metrics.json`: agent minutes (main session + delegates), human minutes (an absence of more than 6 h before a prompt or an answer counts zero), a `partial` flag when the log misses the start of the branch (hook installed late: such a branch is left out of calibration), questions, check minutes, tokens of delegates, files and lines changed.
-- **Estimate:** each plan task counts the paths listed in its `**Files:**` (an explicit `(≈ n)` at the end of the line for a glob or files still unknown); one `time-calibrate.sh --files 3,5,8` call turns every task and the total into agent minutes with a range (`≈ 120 files · ≈ 60 min (45-78)`), from the project's last measures or from `references/estimation.json` (0.5 min and 5k tokens per file). Marked *indicative* until five branches are measured and seven in ten land in their range. Effort letters stay as relative size, without any duration.
+- **Files per task:** each task mark carries a fingerprint of the working folder (path and content hash of every changed or new file, outside `.forge`, nothing written to the repository); a task's actual files are those that appear, change or disappear between its two marks — a file changed by three tasks counts in each — written as `**Actual time:** ≈ <min> min · <n> files`. From twenty such tasks, minutes per file and the file forecast correction come from the last forty tasks rather than from whole branches, both sides counted per task.
+- **Estimate:** each plan task counts the paths listed in its `**Files:**` (an explicit `(≈ n)` at the end of the line for a glob or files still unknown); one `time-calibrate.sh --files 3,5,8` call turns every task and the total into agent minutes with a range (`≈ 120 files · ≈ 60 min (45-78)`), from the project's last forty measured tasks once twenty are measured with their files, otherwise from `references/estimation.json` (0.5 min per file) — never from whole branches. The range comes from the 20th and 80th percentiles of actual ÷ estimated time over the last forty measured tasks, read from the branch plans (child branches of a swarm included), once twenty are measured (0.75–1.3 before); every estimate is recomputed from the latest measures. Marked *indicative* while rates or range still come from the reference values. Effort letters stay as relative size, without any duration.
 - **Per task:** each task also states `**Estimated time:**`, frozen when the plan is written. `time-mark.sh` marks its start and its tick in the log; `time-aggregate.sh --task` measures the agent minutes between both marks (question waits removed, same absence rule) and the tick writes `**Actual time:**`, or `—` when there is no measure (no log, hook installed late, missing mark). Every delegate, same repository or linked project, writes its marks to the parent's log (`TIME_LOG:` line of its prompt), where its events already land, and reports each task's actual time in `FORGE_DONE`; a parent task delegated to a linked project gets the sum of its child tasks (`time-aggregate.sh --task T1,T2`, `—` as soon as one child is unmeasured); a swarm branch task takes `agent_minutes` from the branch `metrics.json`. The progress table shows Estimated and Actual side by side.
 - **Check commands:** the `**Check pattern:**` line of `project.md` (regular expression) marks the Bash commands counted as checks.
 
@@ -496,10 +498,12 @@ the branch is engraved.
 plan with ≥ 2 branch tasks → "Validate and launch the swarm" → N child branches run in parallel
 ```
 
-When at least two tasks of a plan deserve their own branch — four of five criteria: new module or public API,
-decisions to settle, delivered and tested on its own, ≥ 15 min of agent time, ≥ 3 layers; or more than 300k
-tokens — the plan becomes a **plan of branches**: each such task is `### Tn — Branch <parent>-<slug>`
-with a `**Depends on:**` line, a shared-extension-points task comes first and an overall check task last.
+When at least two groups of tasks deserve their own branch — tasks of one module or one feature slice, together
+≥ 15 min of agent time, delivered and tested on their own without sharing files with another group — the plan
+becomes a **plan of branches**: each such group is one `### Tn — Branch <parent>-<slug>` with a
+`**Depends on:**` line, a shared-extension-points task comes first and an overall check task last. Under the
+groups table, `time-calibrate.sh --groups` shows the gain: swarm time (each branch plus about 8 min of delegate
+set-up, spread over N delegates, then about 5 min per merge, one after another) against serial time; dependencies are ignored, so it is an optimistic figure.
 
 - **Launch:** `swarm-status.sh` lists running, launchable and waiting branches and simulates the merge of the
   parent. Up to N (3 by default, changed only on request) launchable branches get a worktree, the parent merged in,

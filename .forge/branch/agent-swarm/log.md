@@ -1,3 +1,16 @@
+- [2026-11-22 02:36] Échantillon du calibrage porté à 40 dernières tâches, dès 20, à la demande.
+- [2026-11-22 02:35] Repli sur les branches retiré du calibrage à la demande : ratios et fourchette tirés des seules tâches (référence sous 10), branches gardées pour les coûts fixes ; measured_branches retiré.
+- [2026-11-22 02:19] T40 terminée : fichiers réels mesurés par tâche (empreintes des marques), estimation calée sur les tâches, comptage par tâche des deux côtés au grave ; 320 tests verts.
+- [2026-11-22 02:07] Règle « Règles et mesures universelles » ajoutée à coding-standards.md à la demande ; T40 ajoutée : fichiers réels par tâche, estimation calée sur les tâches.
+- [2026-11-22 01:58] T39 terminée : fourchette calée sur les écarts des 20 dernières tâches mesurées (fenêtre ramenée de 30 à 20 à la demande), dès 10 ; 32 tests verts.
+- [2026-11-22 01:55] T39 ajoutée à la demande : une seule fourchette, calée sur les écarts mesurés des tâches (correction de T38) ; option « une seule fourchette » retenue contre « deux fourchettes ».
+- [2026-11-22 01:38] T38 terminée : fourchette calée sur les centiles 20/80 des écarts mesurés dès 5 branches, recalculée à chaque appel ; 30 tests verts.
+- [2026-11-22 01:37] T38 ajoutée à la demande : fourchette d'estimation calée sur les écarts mesurés (centiles 20 et 80).
+- [2026-11-22 01:35] Copie de range_low et range_high retirée de la sortie de time-calibrate.sh à la demande : bornes gardées pour la fourchette et la fiabilité.
+- [2026-11-22 01:33] delegate_tokens retiré à la demande : valeur jamais mesurée, servait au seul affichage des tokens en plus d'un essaim.
+- [2026-11-22 01:31] T37 terminée : coûts fixes d'une branche mesurés (mise en route, fusion) et calibrés ; option d'essaim toujours proposée avec gain ou perte estimés ; 307 tests verts.
+- [2026-11-22 01:23] T37 ajoutée à la demande : coûts fixes d'une branche (mise en route du délégué, fusion) mesurés et calibrés. T37 « tokens estimés et réels au plan » proposée puis abandonnée.
+- [2026-11-22 01:05] T36 ajoutée à la demande : règle de branche sur la seule durée d'un groupe de tâches ; critère de tokens retiré (choix « Retirer »), mesure brute gardée.
 - [2026-11-22 00:28] T23 à T35 terminées : corrections de l'audit (calibrage, hook bash < 5, tour interrompu, agrégation 20× plus rapide, lignes de délégué par script, essaim sans lancement ni relance sans accord, swarm-status invalid/blocked/stale, cohérence) ; 11 suites vertes (297 tests).
 - [2026-11-22 00:03] Colonnes Effort et Fichiers remises dans le tableau d'avancement à la demande (p5-resume.md, CHANGELOG revenus à l'état gravé).
 - [2026-11-22 00:03] T23 à T35 ajoutées au plan à la demande : corrections issues de l'audit du 2026-11-21 (≈ 66 fichiers, ≈ 33 min indicatif).

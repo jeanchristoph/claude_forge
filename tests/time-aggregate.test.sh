@@ -5,6 +5,7 @@
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 AGGREGATE_SCRIPT="$REPO_ROOT/skills/forge/scripts/time-aggregate.sh"
+MARK_SCRIPT="$REPO_ROOT/skills/forge/scripts/time-mark.sh"
 PASSED=0
 FAILED=0
 
@@ -383,6 +384,114 @@ test_changes_nothing_in_repository() {
   assert_equals "$before" "$(git -C "$WORK" status --porcelain)"
 }
 
+# ── Coûts fixes d'une branche ─────────────────────────────────────────────────
+
+test_measures_delegate_setup_until_first_task_mark() {
+  parent_events '{"event":"delegate","agent_id":"a1","branch":"feature"}' \
+                '{"ts":0,"event":"SubagentStart","session":"p","agent_id":"a1"}' \
+                '{"ts":360000,"event":"task_start","task":"T1","branch":"feature"}' \
+                '{"ts":600000,"event":"task_start","task":"T2","branch":"feature"}' \
+                '{"ts":900000,"event":"SubagentStop","session":"p","agent_id":"a1"}'
+  assert_contains '"delegate_setup_minutes":6.0' "$(aggregate --parent-log "$PARENT_LOG")"
+}
+
+test_counts_setup_of_first_run_only_after_relaunch() {
+  parent_events '{"event":"delegate","agent_id":"a1","branch":"feature"}' \
+                '{"event":"delegate","agent_id":"a2","branch":"feature"}' \
+                '{"ts":0,"event":"SubagentStart","session":"p","agent_id":"a1"}' \
+                '{"ts":240000,"event":"task_start","task":"T1","branch":"feature"}' \
+                '{"ts":300000,"event":"SubagentStop","session":"p","agent_id":"a1"}' \
+                '{"ts":900000,"event":"SubagentStart","session":"p","agent_id":"a2"}' \
+                '{"ts":1200000,"event":"task_start","task":"T2","branch":"feature"}'
+  assert_contains '"delegate_setup_minutes":4.0' "$(aggregate --parent-log "$PARENT_LOG")"
+}
+
+test_ignores_task_marks_of_other_branches_for_setup() {
+  parent_events '{"event":"delegate","agent_id":"a1","branch":"feature"}' \
+                '{"ts":0,"event":"SubagentStart","session":"p","agent_id":"a1"}' \
+                '{"ts":60000,"event":"task_start","task":"T1","branch":"other"}' \
+                '{"ts":180000,"event":"task_start","task":"T1","branch":"feature"}'
+  assert_contains '"delegate_setup_minutes":3.0' "$(aggregate --parent-log "$PARENT_LOG")"
+}
+
+test_averages_merges_without_question_waits() {
+  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":0,"event":"merge_start","branch":"feature-a"}' \
+             '{"ts":60000,"event":"PreToolUse","session":"s","tool":"AskUserQuestion"}' \
+             '{"ts":180000,"event":"PostToolUse","session":"s","tool":"AskUserQuestion"}' \
+             '{"ts":420000,"event":"merge_done","branch":"feature-a"}' \
+             '{"ts":500000,"event":"merge_start","branch":"feature-b"}' \
+             '{"ts":680000,"event":"merge_done","branch":"feature-b"}' \
+             '{"ts":700000,"event":"Stop","session":"s"}'
+  assert_contains '"merge_minutes":4.0' "$(aggregate)"
+}
+
+test_returns_null_fixed_costs_without_marks() {
+  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":0,"event":"merge_start","branch":"feature-a"}' \
+             '{"ts":60000,"event":"Stop","session":"s"}'
+  assert_contains '"delegate_setup_minutes":null,"merge_minutes":null,' "$(aggregate)"
+}
+
+# ── Fichiers par tâche ────────────────────────────────────────────────────────
+
+# Marque réelle de time-mark.sh dans le dépôt jetable : tâche, événement.
+mark() {
+  bash "$MARK_SCRIPT" --root "$WORK" --branch feature --task "$1" --event "$2"
+}
+
+task_files() {
+  local output pattern='"actual_files":([0-9a-z]+)'
+  output=$(aggregate --task "$1")
+  [[ $output =~ $pattern ]] && printf '%s' "${BASH_REMATCH[1]}"
+}
+
+test_counts_a_file_in_every_task_that_changes_it() {
+  : > "$OWN_LOG"
+  mark T1 start; printf 'one\n' > "$WORK/shared.txt"; printf 'b\n' > "$WORK/b.txt"; mark T1 done
+  mark T2 start; printf 'two\n' > "$WORK/shared.txt"; mark T2 done
+  assert_equals 2 "$(task_files T1)"
+  assert_equals 1 "$(task_files T2)"
+}
+
+test_ignores_file_left_unchanged_during_the_task() {
+  : > "$OWN_LOG"
+  printf 'before\n' > "$WORK/earlier.txt"
+  mark T1 start; printf 'x\n' > "$WORK/x.txt"; mark T1 done
+  assert_equals 1 "$(task_files T1)"
+}
+
+test_counts_deleted_tracked_file_but_not_temporary_one() {
+  : > "$OWN_LOG"
+  mark T1 start; rm "$WORK/readme.txt"; printf 'tmp\n' > "$WORK/tmp.txt"; rm "$WORK/tmp.txt"; mark T1 done
+  assert_equals 1 "$(task_files T1)"
+}
+
+test_ignores_forge_files() {
+  : > "$OWN_LOG"
+  mark T1 start; printf 'note\n' > "$WORK/.forge/branch/feature/plan.md"; mark T1 done
+  assert_equals 0 "$(task_files T1)"
+}
+
+test_sums_task_files_and_their_planned_files_for_the_branch() {
+  : > "$OWN_LOG"
+  printf '# Plan\n\n## Tasks\n\n### T1 — a\n**Files:** `a.txt`, `b.txt`\n[x]\n\n### T2 — b\n**Files:** `a.txt`\n[x]\n\n### T3 — c\n**Files:** `c.txt`\n[ ]\n' \
+    > "$WORK/.forge/branch/feature/plan.md"
+  mark T1 start; printf 'a\n' > "$WORK/a.txt"; mark T1 done
+  mark T2 start; printf 'a2\n' > "$WORK/a.txt"; mark T2 done
+  assert_contains '"task_files":2,"task_planned_files":3,"measured_tasks":2}' "$(aggregate)"
+}
+
+test_measures_files_of_a_delegate_in_its_worktree() {
+  : > "$PARENT_LOG"
+  git -C "$WORK" worktree add -q "$SANDBOX/child wt" -b child
+  bash "$MARK_SCRIPT" --root "$SANDBOX/child wt" --branch child --task T1 --event start --time-log "$PARENT_LOG"
+  printf 'c\n' > "$SANDBOX/child wt/c.txt"
+  bash "$MARK_SCRIPT" --root "$SANDBOX/child wt" --branch child --task T1 --event done --time-log "$PARENT_LOG"
+  assert_contains '"actual_files":1' "$(bash "$AGGREGATE_SCRIPT" --root "$SANDBOX/child wt" --branch child --parent-log "$PARENT_LOG" --task T1)"
+  git -C "$WORK" worktree remove --force "$SANDBOX/child wt"
+}
+
 # ── Tâche ─────────────────────────────────────────────────────────────────────
 
 test_task_measures_turn_part_inside_window() {
@@ -390,7 +499,7 @@ test_task_measures_turn_part_inside_window() {
              '{"ts":30000,"event":"task_start","task":"T2"}' \
              '{"ts":90000,"event":"task_done","task":"T2"}' \
              '{"ts":120000,"event":"Stop","session":"s"}'
-  assert_equals '{"branch":"feature","task":"T2","agent_minutes":1.0,"human_minutes":0.0,"questions":0,"measured":true,"reason":null}' \
+  assert_equals '{"branch":"feature","task":"T2","agent_minutes":1.0,"human_minutes":0.0,"questions":0,"actual_files":null,"measured":true,"reason":null}' \
     "$(aggregate --task T2)"
 }
 
@@ -489,7 +598,7 @@ test_task_ignores_marks_of_other_tasks() {
 test_task_unmeasured_without_start_mark() {
   own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
              '{"ts":60000,"event":"task_done","task":"T1"}'
-  assert_equals '{"branch":"feature","task":"T1","agent_minutes":null,"human_minutes":null,"questions":null,"measured":false,"reason":"missing_start"}' \
+  assert_equals '{"branch":"feature","task":"T1","agent_minutes":null,"human_minutes":null,"questions":null,"actual_files":null,"measured":false,"reason":"missing_start"}' \
     "$(aggregate --task T1)"
 }
 
@@ -573,7 +682,7 @@ aggregate_linked() {
 
 test_task_measures_linked_project_delegate_from_parent_log() {
   linked_events
-  assert_equals '{"branch":"parent/main-branch","task":"T2","agent_minutes":1.5,"human_minutes":0.0,"questions":0,"measured":true,"reason":null}' \
+  assert_equals '{"branch":"parent/main-branch","task":"T2","agent_minutes":1.5,"human_minutes":0.0,"questions":0,"actual_files":null,"measured":true,"reason":null}' \
     "$(aggregate_linked --task T2)"
 }
 
@@ -584,7 +693,7 @@ test_task_sums_child_tasks_of_a_parent_task() {
 
 test_task_sum_unmeasured_when_one_child_is_unmeasured() {
   linked_events
-  assert_contains '"agent_minutes":null,"human_minutes":null,"questions":null,"measured":false,"reason":"missing_done"' \
+  assert_contains '"agent_minutes":null,"human_minutes":null,"questions":null,"actual_files":null,"measured":false,"reason":"missing_done"' \
     "$(aggregate_linked --task T1,T3)"
 }
 
@@ -648,6 +757,17 @@ run_test test_marks_no_partial_without_log "ne marque rien de partiel sans journ
 run_test test_rejects_missing_branch "refuse l'absence de branche"
 run_test test_rejects_unknown_argument "refuse un argument inconnu"
 run_test test_changes_nothing_in_repository "ne modifie rien dans le dépôt"
+run_test test_measures_delegate_setup_until_first_task_mark "mesure la mise en route d'un délégué jusqu'à sa première marque de tâche"
+run_test test_counts_setup_of_first_run_only_after_relaunch "ne compte que la mise en route de la première exécution après une relance"
+run_test test_ignores_task_marks_of_other_branches_for_setup "écarte les marques de tâche des autres branches pour la mise en route"
+run_test test_averages_merges_without_question_waits "fait la moyenne des fusions, attentes de question retirées"
+run_test test_returns_null_fixed_costs_without_marks "rend des coûts fixes nuls sans marques complètes"
+run_test test_counts_a_file_in_every_task_that_changes_it "compte un fichier dans chaque tâche qui le modifie"
+run_test test_ignores_file_left_unchanged_during_the_task "écarte un fichier resté inchangé pendant la tâche"
+run_test test_counts_deleted_tracked_file_but_not_temporary_one "compte un fichier suivi supprimé, pas un fichier créé puis supprimé"
+run_test test_ignores_forge_files "écarte les fichiers de .forge"
+run_test test_sums_task_files_and_their_planned_files_for_the_branch "additionne fichiers réels et prévus des tâches mesurées de la branche"
+run_test test_measures_files_of_a_delegate_in_its_worktree "mesure les fichiers d'un délégué dans son worktree"
 run_test test_task_measures_turn_part_inside_window "tâche : mesure la part d'un tour comprise dans la fenêtre"
 run_test test_task_counts_open_turn_up_to_done_mark "tâche : compte un tour encore ouvert jusqu'à la marque de fin"
 run_test test_task_ignores_older_turn_left_without_stop "tâche : écarte un tour plus ancien resté sans Stop"

@@ -10,6 +10,17 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ## [Unreleased]
 
+### Added
+
+- `time-calibrate.sh` reports `branch_files`: files of a group at the branch threshold (`branch_minutes` ÷ applied minutes per file, rounded up); the model no longer computes it.
+- Swarm actually chosen: the groups table with a `branch` / `task` verdict is always shown once the plan reaches `branch_files`; tasks added during a branch that meet the branch rule are offered as branch tasks with "Validate and launch the swarm"; `Promotion` of a task that turns out branch-sized is offered in the parent too, before any file of the task is written (common text in `p5-resume.md`, delegates refer to it).
+- Ordinary subagents limited to reading (exploration, search, review, checks): never parallel writing in the same working tree; writing stays in the session or goes through the swarm.
+
+### Changed
+
+- Swarm with a single branch: the plan of branches starts from one group meeting the branch rule (two before), the parent being a parallel lane itself; `time-calibrate.sh --groups … --parent <files>/<tasks>` counts the parent's ordinary tasks as one more lane (swarm time = longest lane + merges, serial time includes them, `parent_minutes` reported); the groups table gets a `Parent` row and shows from `branch_files` files.
+- Swarm parent never idle: while delegates run, the parent chains the ordinary tasks it can take instead of one per turn, and hands back only when none is left. `Mode` is asked once for the whole swarm and kept in the `**Parent mode:**` line of `swarm.md`. A delegate's notification arrives between two tool calls: the parent ends the current action, relays at once, then resumes its task.
+
 ## [0.13.2] — 2026-11-22
 
 ### Changed

@@ -509,17 +509,27 @@ parent, puisque rien n'a été délégué. Le worktree reste en place — forge 
 ## Essaim de branches filles
 
 ```
-plan avec ≥ 2 tâches-branches → « Valider et lancer l'essaim » → N branches filles en parallèle
+plan avec ≥ 1 tâche-branche → « Valider et lancer l'essaim » → branches filles en parallèle du parent
 ```
 
-Quand au moins deux groupes de tâches méritent leur propre branche — tâches d'un même module ou d'une même tranche
+Quand au moins un groupe de tâches mérite sa propre branche — tâches d'un même module ou d'une même tranche
 fonctionnelle, ensemble ≥ 15 min d'agent, livrées et testées seules sans fichier partagé avec un autre groupe —, le
 plan devient un **plan de branches** : chaque groupe devient une `### Tn — Branch <parente>-<slug>` avec une ligne
 `**Depends on:**`, une tâche socle des points d'extension passe en tête et une vérification d'ensemble en dernier.
 Sous le tableau des groupes, `time-calibrate.sh --groups` affiche le gain : durée en essaim (chaque branche plus
 environ 8 min de mise en route du délégué, réparties sur N délégués, puis environ 5 min par fusion, l'une après
-l'autre) contre durée en série ; les dépendances sont ignorées, le chiffre est optimiste.
+l'autre) contre durée en série ; avec `--parent`, les tâches ordinaires du parent comptent comme une voie de plus :
+une seule branche menée à côté du travail du parent peut être rentable ; les dépendances sont ignorées, le chiffre
+est optimiste.
 
+- **Choix visible :** `time-calibrate.sh` convertit le seuil en fichiers (`branch_files`, 30 aux valeurs de
+  référence). Dès que le plan compte ce nombre de fichiers, le tableau des groupes s'affiche toujours, verdict
+  `branch` ou `task` pour chacun, même quand aucun groupe n'est retenu.
+- **Ajouts et promotion :** des tâches ajoutées en cours de branche qui remplissent la règle sont proposées en
+  tâche-branche, avec « Valider et lancer l'essaim ». Une tâche dont la taille réelle apparaît à l'exploration est
+  proposée comme branche (`Promotion`), avant tout fichier écrit — chez le parent comme chez un délégué.
+- **Sous-agents ordinaires :** lecture seulement (exploration, recherche, revue, vérification). Jamais d'écriture
+  parallèle dans le même working tree : l'écriture reste dans la session, en série, ou passe par l'essaim.
 - **Lancement :** `swarm-status.sh` liste les branches en cours, lançables et en attente, et simule la fusion de la
   parente. Jusqu'à N branches lançables (3 par défaut, modifié seulement sur demande) reçoivent un worktree, la
   parente fusionnée, un brief, leur propre installation des dépendances et leur port, et un forge délégué chacune,
@@ -533,10 +543,11 @@ l'autre) contre durée en série ; les dépendances sont ignorées, le chiffre e
   branche, et d'abord la tâche du parent en cours. Le parent seul fusionne dans la branche parente :
   avance rapide, ou fusion inverse avec règles de conflit, vérification complète puis avance rapide ; jamais de
   push, jamais de fusion vers la branche par défaut.
-- **Parent au travail :** pendant que les délégués travaillent, le parent prend les tâches ordinaires prenables,
-  relais en priorité.
-- **Limites :** la question d'un délégué n'atteint le parent qu'entre deux tours : tant que des délégués tournent,
-  le parent prend une seule tâche ordinaire par tour. Les worktrees vivent à côté du dépôt, hors du dossier de la
+- **Parent au travail :** pendant que les délégués travaillent, le parent enchaîne les tâches ordinaires prenables —
+  `Mode` demandé une seule fois pour tout l'essaim, gardé dans `swarm.md` — et ne rend la main que lorsqu'il n'en
+  reste plus. La notification d'un délégué arrive entre deux appels d'outils, même au milieu d'une tâche du parent :
+  le parent termine l'action en cours, relaie aussitôt, puis reprend sa tâche.
+- **Limites :** les worktrees vivent à côté du dépôt, hors du dossier de la
   session : autoriser ce dossier (`/add-dir ../<dépôt>.worktrees` ou `additionalDirectories`), sinon les délégués en
   tâche de fond s'arrêtent sur des demandes de permission. Les fichiers ignorés (`.env`, configuration locale) ne
   sont pas copiés dans un worktree et la base de développement reste partagée entre délégués : garder les

@@ -509,16 +509,26 @@ the branch is engraved.
 ## Swarm of child branches
 
 ```
-plan with ≥ 2 branch tasks → "Validate and launch the swarm" → N child branches run in parallel
+plan with ≥ 1 branch task → "Validate and launch the swarm" → child branches run in parallel with the parent
 ```
 
-When at least two groups of tasks deserve their own branch — tasks of one module or one feature slice, together
+When at least one group of tasks deserves its own branch — tasks of one module or one feature slice, together
 ≥ 15 min of agent time, delivered and tested on their own without sharing files with another group — the plan
 becomes a **plan of branches**: each such group is one `### Tn — Branch <parent>-<slug>` with a
 `**Depends on:**` line, a shared-extension-points task comes first and an overall check task last. Under the
 groups table, `time-calibrate.sh --groups` shows the gain: swarm time (each branch plus about 8 min of delegate
-set-up, spread over N delegates, then about 5 min per merge, one after another) against serial time; dependencies are ignored, so it is an optimistic figure.
+set-up, spread over N delegates, then about 5 min per merge, one after another) against serial time; with `--parent`, the
+parent's ordinary tasks count as one more lane, so a single branch running alongside the parent's work can pay off;
+dependencies are ignored, so it is an optimistic figure.
 
+- **Visible choice:** `time-calibrate.sh` turns the threshold into files (`branch_files`, 30 with the reference
+  values). Once the plan counts that many files, the groups table is always shown, with a `branch` or `task`
+  verdict for each, even when no group is kept.
+- **Additions and promotion:** tasks added during the branch that meet the rule are offered as a branch task, with
+  "Validate and launch the swarm". A task whose real size shows up while exploring is offered as a branch
+  (`Promotion`), before any file is written — in the parent as in a delegate.
+- **Ordinary subagents:** reading only (exploration, search, review, checks). Never parallel writing in the same
+  working tree: writing stays in the session, one task after another, or goes through the swarm.
 - **Launch:** `swarm-status.sh` lists running, launchable and waiting branches and simulates the merge of the
   parent. Up to N (3 by default, changed only on request) launchable branches get a worktree, the parent merged in,
   a brief, their own dependency install and port, and a delegated forge each — all in the same turn. On resume,
@@ -529,9 +539,11 @@ set-up, spread over N delegates, then about 5 min per merge, one after another) 
 - **End of a branch:** one question — merge and launch the next branch, merge, check before merging (the app runs
   from the worktree) or do nothing; a merge option commits the branch work, and the parent's task in progress first. The parent alone merges into the parent branch: fast-forward, or reverse merge
   with conflict rules, full check, then fast-forward; never a push, never a merge into the default branch.
-- **Parent at work:** while delegates run, the parent takes the ordinary tasks it can take, relays first.
-- **Limits:** a delegate's question reaches the parent only between two turns, so while delegates run the parent
-  takes one ordinary task per turn. Worktrees live next to the repository, outside the session folder: allow that
+- **Parent at work:** while delegates run, the parent chains the ordinary tasks it can take — `Mode` asked once for
+  the whole swarm, kept in `swarm.md` — and hands back only when none is left. A delegate's notification arrives
+  between two tool calls, even in the middle of a parent task: the parent ends the current action, relays at once,
+  then resumes its task.
+- **Limits:** worktrees live next to the repository, outside the session folder: allow that
   folder (`/add-dir ../<repository>.worktrees` or `additionalDirectories`) or background delegates stop on permission
   prompts. Ignored files (`.env`, local configuration) are not copied into a worktree and the development database
   stays shared between delegates: keep database checks for the final overall check. On Windows, deep

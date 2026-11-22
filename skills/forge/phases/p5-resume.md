@@ -19,7 +19,7 @@
 8. **Plan de branches** (au moins une tâche `### Tn — Branch <x>` ouverte) → aucune question `Mode` : exécuter `bash <SKILL_DIR>/scripts/swarm-status.sh --root <ROOT> --branch <BRANCH>`, afficher l'essaim — en cours (avec `done/total`), lançables, en attente (dépendance nommée), tâches du parent —, puis la première ligne qui s'applique :
    - SWARM porte des branches `running` ou `waiting for merge` dont le délégué n'a pas été lancé dans cette conversation → « Reprise de l'essaim » (`commands/swarm.md`), qui pose la question `Resume`.
    - Branches lançables sans conflit → « Relance de l'essaim » ci-dessous.
-   - Tâches ordinaires prenables (`ordinary` de `swarm-status.sh`, `waiting_for` vide) → étape 9, limitée à ces tâches.
+   - Tâches ordinaires prenables (`ordinary` de `swarm-status.sh`, `waiting_for` vide) → étape 9, limitée à ces tâches ; `**Parent mode:**` de SWARM renseigné → aucune question `Mode`, mode repris (« Plan mixte — travail du parent » de `commands/swarm.md`).
    - Sinon → une ligne : "Waiting for delegates or dependencies: `<X>` (`<dépendance>`)." STOP.
 
    Aucun lancement sans réponse : une reprise de session n'est jamais un accord pour lancer des délégués.
@@ -90,6 +90,31 @@
 
 ---
 
+## Sous-agents ordinaires
+
+**Condition :** sous-agent lancé pendant une tâche par l'outil `Agent`, hors délégué forge (prompt `FORGE_DELEGATED`).
+
+**Réaction :**
+- Usage limité à la lecture : exploration, recherche, revue, vérification indépendante.
+- Écriture d'un fichier de ROOT → session elle-même, en série ; travail d'écriture parallélisable → tâche-branche et essaim (« Règle de branche » de `phases/p4-plan.md`, « Promotion d'une tâche » ci-dessous).
+
+⚠️ Jamais d'écriture par un sous-agent ordinaire, encore moins par plusieurs en parallèle dans le même working tree : aucun isolement, conflits sur les mêmes fichiers, tâches simultanées non mesurables (`overlapping_tasks`).
+
+---
+
+## Promotion d'une tâche
+
+**Déclencheur :** tâche ordinaire en cours dont la taille réelle, apparue à l'exploration, remplit la « Règle de branche » de `phases/p4-plan.md` — session principale ou délégué d'un essaim (`commands/delegated-mode.md`).
+
+**Réaction — dans l'ordre :**
+1. Poser le choix avec `AskUserQuestion` — `header` : `Promotion`, question "T<n> deserves its own branch: turn it into a branch task?", la description de la tâche réécrite en tâche-branche (« Format d'une tâche-branche » de `phases/p4-plan.md`) écrite en entier avant la question, options `Promote` / `Keep it here`.
+2. Sur `Promote` → PLAN : la tâche réécrite en tâche-branche, entrée LOG `T<n> promoted to branch <X>`, puis étape 8 des « Actions », qui propose son lancement.
+3. Sur `Keep it here` → la tâche continue dans la session.
+
+⚠️ Question posée avant le premier fichier écrit pour la tâche : une branche fille part de la branche parente commitée, un travail entamé ne la suivrait pas. Fichier déjà écrit → aucune question, la tâche se termine en série.
+
+---
+
 ## Mise à jour du brief et du log
 
 Le brief est vivant. Les changements de scope sont gérés par la **Surveillance** ci-dessous.
@@ -152,12 +177,14 @@ Une demande complémentaire est toujours une tâche du plan — jamais de choix 
    > "This request isn't in the current plan."
    Temps estimé présenté : `bash <SKILL_DIR>/scripts/time-calibrate.sh --root <ROOT> --files <fichiers de la tâche>`, `estimate` au ratio du moment. Jamais écrit par le modèle : le hook `hooks/plan-hook.sh` écrit `**Estimated time:**` à l'écriture du plan et le fige.
    Si la demande change durablement le périmètre → ajouter à la même présentation l'entrée proposée pour `## Scope & rules` du brief.
+   Tâches formulées qui remplissent la « Règle de branche » de `phases/p4-plan.md` et plan qui remplit alors le déclencheur de son « Plan de branches », tâches-branches déjà au plan comprises → les présenter en tâche-branche (« Format d'une tâche-branche »), tableau des groupes en tête. Mode délégué → jamais : « Promotion d'une tâche » ci-dessous.
 
-2. **Poser une seule question** avec `AskUserQuestion` — `header` : `Plan`, options de la question `Plan` d'un plan neuf (étape 7 de `p4-plan.md`), dans cet ordre : `Validate and chain` / `Validate` / `Cancel` — motif « Validation d'un contenu » de `SKILL.md` : le changement demandé arrive en texte libre, reformuler, reposer la question. Champ `question` = la tâche formulée, recopiée en dur selon le « Gabarit — question `Plan` » ci-dessous, puis une ligne vide et la phrase de question. Aucun champ `preview`. Mode délégué → `FORGE_QUESTION`, la tâche formulée entière dans `content`.
+2. **Poser une seule question** avec `AskUserQuestion` — `header` : `Plan`, options de la question `Plan` d'un plan neuf (étape 7 de `p4-plan.md`), dans cet ordre : `Validate and chain` / `Validate` / `Cancel`, précédées de `Validate and launch the swarm` quand une tâche-branche est formulée — motif « Validation d'un contenu » de `SKILL.md` : le changement demandé arrive en texte libre, reformuler, reposer la question. Champ `question` = la tâche formulée, recopiée en dur selon le « Gabarit — question `Plan` » ci-dessous, puis une ligne vide et la phrase de question. Aucun champ `preview`. Mode délégué → `FORGE_QUESTION`, la tâche formulée entière dans `content`.
 
    ⚠️ Le texte écrit avant `AskUserQuestion` peut être masqué à l'écran de l'utilisateur : la tâche recopiée dans `question` est la seule copie garantie visible avec la question.
 
-3. **Sur `Validate and chain` ou `Validate`** → appliquer la mise à jour du plan (tâches ajoutées, effort, position dans la séquence), écrire `.forge/branch/<BRANCH>/plan.md`, écrire `.forge/branch/<BRANCH>/brief.md` si `## Scope & rules` change, puis :
+3. **Sur `Validate and launch the swarm`, `Validate and chain` ou `Validate`** → appliquer la mise à jour du plan (tâches ajoutées, effort, position dans la séquence), écrire `.forge/branch/<BRANCH>/plan.md`, écrire `.forge/branch/<BRANCH>/brief.md` si `## Scope & rules` change, puis :
+   - `Validate and launch the swarm` → « Délégation — essaim de branches filles » de `commands/swarm.md`.
    - `Validate and chain` → enchaîner toutes les tâches ouvertes dans l'ordre, sans autre question — même règle qu'à l'étape 9 des « Actions ».
    - `Validate` → rien n'est exécuté : étape 9 des « Actions », question `Mode` ou `Task` comme pour un plan neuf.
 
@@ -179,6 +206,7 @@ question: T[n] — [Titre]
 option 1: [Valider et enchaîner] — [Ajoute T[n] au plan et l'exécute, sans autre question.]
 option 2: [Valider] — [Ajoute T[n] au plan, puis demande comment exécuter les tâches.]
 option 3: [Annuler] — [Rien n'entre au plan.]
+          Tâche-branche formulée → option en tête : [Valider et lancer l'essaim] — [Ajoute T[n] au plan et lance sa branche fille.]
 ```
 
 ---

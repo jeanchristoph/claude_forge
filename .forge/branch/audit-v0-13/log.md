@@ -1,3 +1,11 @@
+- [2026-11-22 23:38] T25 : plan de branches dès un groupe, voie du parent dans le gain (time-calibrate.sh --parent, parent_minutes), ligne Parent du tableau des groupes ; 14 suites OK (410 cas)
+- [2026-11-22 23:31] T24 : branch_files dans time-calibrate.sh, tableau des groupes toujours visible, règle de branche sur les ajouts, promotion côté parent, sous-agents ordinaires en lecture ; 14 suites OK (406 cas)
+- [2026-11-22 23:24] T25 ajoutée : essaim d'une seule branche en parallèle du parent (Valider et enchaîner)
+- [2026-11-22 23:22] T24 ajoutée : essaim réellement choisi (Valider et enchaîner)
+- [2026-11-22 23:20] Essaim réellement utilisé : mesures A (tableau des groupes), B (règle sur ajouts), C (sous-agents en lecture), D (promotion côté parent) retenues
+- [2026-11-22 23:17] T23 : parent de l'essaim enchaîne ses tâches, Mode demandé une fois (**Parent mode:** de SWARM), relais entre deux appels d'outils (vérifié par sonde) ; swarm-status 24 cas OK
+- [2026-11-22 23:15] T23 ajoutée : parent de l'essaim jamais à l'arrêt (Valider et enchaîner)
+- [2026-11-22 23:13] Essaim plus fluide : fusion auto refusée (Next gardée), relais des filles inchangé, rétrogradation et délégation sans confirmation refusées ; parent jamais à l'arrêt retenu
 - [2026-11-22 22:28] Version 0.13.2 préparée : section CHANGELOG figée, tag v0.13.2 et release GitHub
 - [2026-11-22 22:03] T22 : hooks dans skills/forge/hooks/, installeurs aux nouveaux chemins avec retrait des anciens ; 14 suites OK, 402 cas
 - [2026-11-22 21:55] T22 ajoutée : hooks rangés dans skills/forge/hooks/ (option B retenue)

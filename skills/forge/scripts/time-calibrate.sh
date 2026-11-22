@@ -13,7 +13,7 @@
 #   la portent (check_source tasks) ; référence sinon. r se calcule alors sur le réel moins cette part
 #   Estimation d'une tâche : check_minutes + fichiers × r ; d'une liste : somme des tâches. 1 minute au moins, bornes
 #   de la fourchette comprises ; indicative tant que ratios ou fourchette viennent de la référence
-# Usage : time-calibrate.sh [--root <dir>] [--files <n>[,<n>…]] [--groups <n>[/<t>],<n>[/<t>][,…] [--slots <n>]]
+# Usage : time-calibrate.sh [--root <dir>] [--files <n>[,<n>…]] [--groups <n>[/<t>],<n>[/<t>][,…] [--slots <n>] [--parent <n>[/<t>]]]
 #   --files : nombre de fichiers à estimer — ajoute un objet "estimate" (minutes et fourchette) ;
 #   liste séparée par des virgules (une valeur par tâche d'un plan) → "estimate" porte sur la somme,
 #   "estimates" donne une estimation par valeur, dans l'ordre
@@ -23,6 +23,11 @@
 #   parallèle (3 à défaut). Essaim = chaque branche dure ses minutes + delegate_minutes, réparties sur les
 #   délégués (la plus longue d'abord), puis une fusion de merge_minutes par branche, l'une après l'autre ;
 #   dépendances ignorées : estimation optimiste
+#   --parent (avec --groups) : fichiers et tâches ordinaires que le parent mène pendant l'essaim — une voie de plus,
+#   sans coût de délégué ; série = branches + parent ; essaim = la plus longue des voies, puis les fusions ;
+#   ajoute "parent_minutes" à l'objet "swarm"
+#   branch_minutes : seuil de la règle de branche (référence) ; branch_files : fichiers d'un groupe à ce seuil,
+#   branch_minutes ÷ minutes par fichier appliquées, arrondi au-dessus
 # Sortie : 0 JSON écrit · 1 usage, sans JSON
 
 set -u
@@ -132,12 +137,12 @@ readonly CALIBRATION_PROGRAM='
     printf "]"
   }
   # Gain estimé de tout essaim : groupes triés du plus long au plus court, chacun confié au délégué le moins chargé.
-  function render_swarm(groups, r, correction,   count, values, i, j, swap, load, slot, best, serial, parallel, fixed, parts) {
+  # Travail ordinaire du parent : une voie de plus, sans coût de délégué, menée pendant que les délégués travaillent.
+  function render_swarm(groups, parent, r, correction,   count, values, i, j, swap, load, slot, best, serial, parallel, fixed, parts, parent_load) {
     count = split(groups, values, ",")
-    for (i = 1; i <= count; i++) {
-      if (split(values[i], parts, "/") < 2) parts[2] = 1
-      values[i] = parts[2] * check_minutes + parts[1] * correction * r; serial += values[i]
-    }
+    for (i = 1; i <= count; i++) values[i] = group_minutes(values[i], r, correction)
+    for (i = 1; i <= count; i++) serial += values[i]
+    if (parent != "") { parent_load = group_minutes(parent, r, correction); serial += parent_load }
     for (i = 2; i <= count; i++) for (j = i; j > 1 && values[j - 1] < values[j]; j--) { swap = values[j]; values[j] = values[j - 1]; values[j - 1] = swap }
     for (slot = 1; slot <= slots; slot++) load[slot] = 0
     for (i = 1; i <= count; i++) {
@@ -145,10 +150,23 @@ readonly CALIBRATION_PROGRAM='
       for (slot = 2; slot <= slots; slot++) if (load[slot] < load[best]) best = slot
       load[best] += values[i] + delegate_minutes
     }
+    parallel = parent_load
     for (slot = 1; slot <= slots; slot++) if (load[slot] > parallel) parallel = load[slot]
     parallel += count * merge_minutes
     fixed = count * (delegate_minutes + merge_minutes)
-    printf ",\"swarm\":{\"branches\":%d,\"slots\":%d,\"serial_minutes\":%d,\"swarm_minutes\":%d,\"fixed_minutes\":%d}", count, slots, whole_minutes(serial), whole_minutes(parallel), fixed
+    printf ",\"swarm\":{\"branches\":%d,\"slots\":%d,\"serial_minutes\":%d,\"swarm_minutes\":%d,\"fixed_minutes\":%d", count, slots, whole_minutes(serial), whole_minutes(parallel), fixed
+    if (parent != "") printf ",\"parent_minutes\":%d", whole_minutes(parent_load)
+    printf "}"
+  }
+  # Minutes par groupe « fichiers[/tâches] » : coût fixe de vérification de chaque tâche, plus ses fichiers.
+  function group_minutes(group, r, correction,   parts) {
+    if (split(group, parts, "/") < 2) parts[2] = 1
+    return parts[2] * check_minutes + parts[1] * correction * r
+  }
+  # Fichiers par groupe au seuil de la règle de branche, arrondis au-dessus : le modèle ne refait jamais ce calcul.
+  function branch_files(threshold, rate,   count) {
+    count = int(threshold / rate)
+    return count * rate < threshold ? count + 1 : count
   }
   # Minutes entières, au moins une : une estimation à 0 min ne dit rien.
   function whole_minutes(value,   rounded) {
@@ -176,17 +194,20 @@ readonly CALIBRATION_PROGRAM='
     if (task_check != "-") check_minutes = task_check
     printf "\"check_minutes\":%.1f,\"check_source\":\"%s\"", check_minutes, (task_check != "-" ? "tasks" : "reference")
     if (files != "") render_estimates(files, r, apply ? file_error : 1)
-    if (groups != "") render_swarm(groups, r, apply ? file_error : 1)
+    if (groups != "") render_swarm(groups, parent, r, apply ? file_error : 1)
+    # Seuil de la règle de branche recopié tel quel, et son équivalent en fichiers aux minutes par fichier appliquées
+    printf ",\"branch_minutes\":%s,\"branch_files\":%d}\n", branch_minutes + 0, branch_files(branch_minutes, r * (apply ? file_error : 1))
   }'
 
 ROOT="."
 FILES=""
 BRANCH_GROUPS=""
+PARENT_WORK=""
 SLOTS=$DEFAULT_SLOTS
 
 fail_usage() {
   echo "time-calibrate: $1" >&2
-  echo "usage: time-calibrate.sh [--root <dir>] [--files <n>[,<n>…]] [--groups <n>[/<t>],<n>[/<t>][,…] [--slots <n>]]" >&2
+  echo "usage: time-calibrate.sh [--root <dir>] [--files <n>[,<n>…]] [--groups <n>[/<t>],<n>[/<t>][,…] [--slots <n>] [--parent <n>[/<t>]]]" >&2
   exit $EXIT_USAGE
 }
 
@@ -197,6 +218,7 @@ parse_arguments() {
       --files) [ $# -ge 2 ] || fail_usage "$1 needs a value"; FILES=$2; shift 2 ;;
       --groups) [ $# -ge 2 ] || fail_usage "$1 needs a value"; BRANCH_GROUPS=$2; shift 2 ;;
       --slots) [ $# -ge 2 ] || fail_usage "$1 needs a value"; SLOTS=$2; shift 2 ;;
+      --parent) [ $# -ge 2 ] || fail_usage "$1 needs a value"; PARENT_WORK=$2; shift 2 ;;
       *)       fail_usage "unknown argument $1" ;;
     esac
   done
@@ -205,6 +227,8 @@ parse_arguments() {
   [[ -z $BRANCH_GROUPS || $BRANCH_GROUPS =~ ^[0-9]+(/[1-9][0-9]*)?(,[0-9]+(/[1-9][0-9]*)?)*$ ]] \
     || fail_usage "--groups needs <files>[/<tasks>] values separated by commas"
   [[ $SLOTS =~ ^[1-9][0-9]*$ ]] || fail_usage "--slots needs a positive whole number"
+  [[ -z $PARENT_WORK || $PARENT_WORK =~ ^[0-9]+(/[1-9][0-9]*)?$ ]] || fail_usage "--parent needs <files>[/<tasks>]"
+  [[ -z $PARENT_WORK || -n $BRANCH_GROUPS ]] || fail_usage "--parent needs --groups"
 }
 
 # Valeur numérique d'un champ du fichier de référence, dans REPLY.
@@ -233,7 +257,7 @@ list_metrics() {
 }
 
 main() {
-  local reference_r low high delegate_minutes merge_minutes check_minutes task_count task_low task_high file_count task_rate task_error task_check
+  local reference_r low high branch_minutes delegate_minutes merge_minutes check_minutes task_count task_low task_high file_count task_rate task_error task_check
   parse_arguments "$@"
   read_reference minutes_per_file; reference_r=$REPLY
   read_reference delegate_minutes; delegate_minutes=$REPLY
@@ -241,16 +265,14 @@ main() {
   read_reference check_minutes; check_minutes=$REPLY
   read_reference range_low; low=$REPLY
   read_reference range_high; high=$REPLY
+  read_reference branch_minutes; branch_minutes=$REPLY
   read_task_calibration
   read -r task_count task_low task_high file_count task_rate task_error task_check <<< "$REPLY"
   list_metrics | awk -v reference_r="$reference_r" -v low="$low" -v high="$high" \
-    -v files="$FILES" -v groups="$BRANCH_GROUPS" -v slots="$SLOTS" -v delegate_minutes="$delegate_minutes" \
+    -v files="$FILES" -v groups="$BRANCH_GROUPS" -v parent="$PARENT_WORK" -v slots="$SLOTS" -v delegate_minutes="$delegate_minutes" \
     -v merge_minutes="$merge_minutes" -v recent_ratios=$RECENT_FOR_RATIOS -v task_low="$task_low" -v task_high="$task_high" \
     -v task_rate="$task_rate" -v task_error="$task_error" -v check_minutes="$check_minutes" -v task_check="$task_check" \
-    -v tolerance=$FILE_ERROR_TOLERANCE "$CALIBRATION_PROGRAM"
-  # Seuil de la règle de branche, recopié tel quel : les bornes de la fourchette servent au calcul, jamais recopiées
-  read_reference branch_minutes
-  printf ',"branch_minutes":%s}\n' "$REPLY"
+    -v tolerance=$FILE_ERROR_TOLERANCE -v branch_minutes="$branch_minutes" "$CALIBRATION_PROGRAM"
 }
 
 main "$@"

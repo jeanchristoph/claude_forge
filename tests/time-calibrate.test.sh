@@ -60,7 +60,7 @@ test_returns_fixed_costs_and_branch_threshold() {
   local output
   output=$(calibrate)
   assert_contains '"delegate_minutes":8,"merge_minutes":5,"fixed_costs_source":"reference"' "$output"
-  assert_contains '"fixed_costs_source":"reference","check_minutes":2.0,"check_source":"reference","branch_minutes":15}' "$output"
+  assert_contains '"fixed_costs_source":"reference","check_minutes":2.0,"check_source":"reference","branch_minutes":15,"branch_files":30}' "$output"
   case $output in *range_low*|*range_high*) echo "    range bounds copied"; exit 1 ;; esac
 }
 
@@ -110,6 +110,34 @@ test_queues_branches_beyond_available_slots() {
 # Groupe de 30 fichiers en 4 tâches : 4 × 2 + 15 = 23 min, contre 17 min pour une seule tâche.
 test_counts_check_cost_of_each_task_of_a_group() {
   assert_contains '"serial_minutes":40,' "$(calibrate --groups 30/4,30)"
+}
+
+# Une branche seule : 17 min + 8 de délégué + 5 de fusion = 30 min contre 17 en série, aucune voie pour compenser.
+test_shows_loss_for_single_branch_without_parent_work() {
+  local output
+  output=$(calibrate --groups 30)
+  assert_contains '"branches":1,"slots":3,"serial_minutes":17,"swarm_minutes":30,"fixed_minutes":13}' "$output"
+}
+
+# Une branche (17 min) et 20 fichiers du parent en 3 tâches (16 min) : série 33, essaim max(25, 16) + 5 = 30.
+test_counts_parent_work_as_parallel_lane_for_single_branch() {
+  assert_contains '"serial_minutes":33,"swarm_minutes":30,"fixed_minutes":13,"parent_minutes":16}' \
+    "$(calibrate --groups 30 --parent 20/3)"
+}
+
+# Deux branches de 32 min (+ 8 chacune) et un parent de 48 min : la voie du parent fixe la durée, 48 + 2 × 5 = 58.
+test_lets_longest_parent_lane_set_swarm_time() {
+  assert_contains '"branches":2,"slots":3,"serial_minutes":112,"swarm_minutes":58,"fixed_minutes":26,"parent_minutes":48}' \
+    "$(calibrate --groups 60,60 --parent 80/4)"
+}
+
+test_rejects_parent_work_without_groups_or_malformed() {
+  calibrate --parent 20/3 >/dev/null 2>&1
+  assert_equals "1" "$?"
+  calibrate --groups 30 --parent 20/0 >/dev/null 2>&1
+  assert_equals "1" "$?"
+  calibrate --groups 30 --parent 20,3 >/dev/null 2>&1
+  assert_equals "1" "$?"
 }
 
 test_rejects_malformed_groups_or_slots() {
@@ -255,6 +283,19 @@ test_takes_rates_from_tasks_with_their_files() {
   assert_contains '"estimate":{"files":2,"minutes":14' "$output"
 }
 
+# 2 min par fichier × erreur 3 appliquée = 6 min par fichier : 15 ÷ 6 = 2,5 → 3 fichiers, arrondi au-dessus.
+test_rounds_branch_files_up_at_applied_rate() {
+  # shellcheck disable=SC2046
+  write_plan_tasks feature 2026-11-01 $(repeat_task 20 10:6/3)
+  assert_contains '"branch_minutes":15,"branch_files":3}' "$(calibrate)"
+}
+
+# 5 min par fichier, erreur dans la tolérance : 15 ÷ 5 = 3 fichiers tout juste, sans fichier de plus.
+test_keeps_exact_branch_files_at_calibrated_rate() {
+  # shellcheck disable=SC2046
+  write_plan_tasks feature 2026-11-01 $(repeat_task 20 10:5/1)
+  assert_contains '"branch_files":3}' "$(calibrate)"
+}
 
 test_ignores_file_error_within_tolerance() {
   # shellcheck disable=SC2046
@@ -365,6 +406,10 @@ run_test test_computes_swarm_gain_for_branches_spread_over_slots "calcule le gai
 run_test test_shows_no_gain_for_two_short_branches "ne montre aucun gain pour deux branches courtes"
 run_test test_queues_branches_beyond_available_slots "met en file les branches au-delà des délégués disponibles"
 run_test test_counts_check_cost_of_each_task_of_a_group "essaim : coût fixe de vérification de chaque tâche d'un groupe"
+run_test test_shows_loss_for_single_branch_without_parent_work "une branche seule sans travail du parent : perte affichée"
+run_test test_counts_parent_work_as_parallel_lane_for_single_branch "une branche seule : travail du parent compté comme voie parallèle"
+run_test test_lets_longest_parent_lane_set_swarm_time "plusieurs branches : la voie du parent la plus longue fixe la durée"
+run_test test_rejects_parent_work_without_groups_or_malformed "refuse un travail du parent sans groupes ou mal formé"
 run_test test_rejects_malformed_groups_or_slots "refuse des groupes ou un nombre de délégués mal formés"
 run_test test_estimates_at_least_one_minute "une tâche d'un fichier : coût fixe de vérification compris, bornes au moins d'une minute"
 run_test test_estimates_each_task_of_a_list_and_their_sum "estime chaque tâche d'une liste et leur somme en un appel"
@@ -377,6 +422,8 @@ run_test test_ignores_unmeasured_branch_and_delegated_tasks "écarte les tâches
 run_test test_keeps_forty_most_recent_tasks "ne garde que les quarante tâches les plus récentes"
 run_test test_counts_tasks_of_child_branch_plans "compte les tâches des plans de branches filles"
 run_test test_takes_rates_from_tasks_with_their_files "tire minutes par fichier et erreur de prévision des tâches mesurées avec leurs fichiers"
+run_test test_rounds_branch_files_up_at_applied_rate "seuil de branche en fichiers arrondi au-dessus, aux minutes par fichier appliquées"
+run_test test_keeps_exact_branch_files_at_calibrated_rate "seuil de branche en fichiers exact sans fichier de plus"
 run_test test_ignores_file_error_within_tolerance "n'applique pas l'erreur de prévision sous 20 %"
 run_test test_uses_reference_rates_below_twenty_tasks_even_with_measured_branches "prend les ratios de référence sous vingt tâches, branches mesurées ou non"
 run_test test_is_reliable_once_rates_and_range_come_from_tasks "est fiable quand ratios et fourchette viennent des tâches"

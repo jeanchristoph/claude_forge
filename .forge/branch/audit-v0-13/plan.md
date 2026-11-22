@@ -1,7 +1,7 @@
 # Plan — audit-v0-13
 **Objective:** Auditer la 0.13.0 face à la 0.12.6 (fluidité, swarm, non-régression) et proposer des améliorations, plugin Claude Code compris.
 **Date:** 2026-11-22
-**Estimate:** ≈ 134 files · ≈ 73 min (28-112) · indicative
+**Estimate:** ≈ 154 files · ≈ 89 min (32-142) · indicative
 
 ## Tasks
 
@@ -268,6 +268,48 @@
 5. Tests : suites des trois hooks depuis leur nouveau chemin, installation aux nouveaux chemins, réinstallation par-dessus une 0.13.1 (anciennes entrées et ancien dossier retirés, sans doublon).
 [x] p0, delegated-mode, task-files.sh, task-marks.sh sans chemin à changer (nom seul) ; ancien dossier gardé s'il contient un fichier étranger ; 14 suites OK (402 cas)
 
+### T23 — Parent de l'essaim jamais à l'arrêt
+**Effort:** S
+**Estimated time:** ≈ 4 min (1-9)
+**Actual time:** ≈ 4.3 min · 19 files · 0.3 min checks
+**Files:** `skills/forge/commands/swarm.md`, `skills/forge/phases/p5-resume.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:**
+- Question `Mode` des tâches du parent posée une seule fois pendant l'essaim ; le mode retenu vaut pour toute la durée de l'essaim.
+- Après chaque relais (réponse transmise à un délégué, question `Next` tranchée), le parent reprend aussitôt la tâche ordinaire prenable suivante, sans nouvelle question.
+- Le parent enchaîne ses tâches ordinaires tant qu'il en reste une prenable ; entre deux tâches, il relaie d'abord toute notification de délégué en attente. Remplace « une seule tâche par tour, puis rendre la main » (`swarm.md:78`).
+- Le parent ne rend la main que sans tâche prenable : « Waiting for delegates: … ».
+- À vérifier : arrivée d'une notification de délégué entre deux appels d'outils ou seulement en fin de tour ; dans le second cas, documenter qu'une question attend au plus la fin de la tâche du parent en cours.
+- Documentation : `p5-resume.md` étape 8, README FR/EN, CHANGELOG.
+[x] sonde : notification d'un sous-agent reçue entre deux appels d'outils ; `**Parent mode:**` dans SWARM ; swarm-status 24 cas OK
+
+### T24 — Essaim réellement choisi : groupes visibles, règle sur les ajouts, sous-agents en lecture
+**Effort:** M
+**Estimated time:** ≈ 6 min (2-11)
+**Actual time:** ≈ 9.2 min · 9 files · 4.9 min checks
+**Files:** `skills/forge/scripts/time-calibrate.sh`, `tests/time-calibrate.test.sh`, `skills/forge/phases/p4-plan.md`, `skills/forge/phases/p5-resume.md`, `skills/forge/commands/delegated-mode.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:**
+1. `time-calibrate.sh` rend aussi `branch_files` : fichiers d'un groupe au seuil de branche (`branch_minutes` ÷ `minutes_per_file`, arrondi au-dessus) — plus de calcul par le modèle ; tests référence et calibré.
+2. A — `p4-plan.md` : total des fichiers du plan ≥ 2 × `branch_files` → tableau des groupes (tâches, fichiers, durée, indépendance, verdict `branch` / `task`) toujours affiché, même sans branche retenue.
+3. B — `p5-resume.md`, « Demande hors périmètre » : tâches ajoutées qui remplissent la Règle de branche → présentées en tâche-branche, option `Validate and launch the swarm` ajoutée à la question `Plan`.
+4. C — `p5-resume.md`, « Sous-agents ordinaires » : exploration, recherche, vérification indépendante seulement ; jamais d'écriture parallèle dans le même working tree — essaim, sinon série.
+5. D — `p5-resume.md` : tâche du parent qui remplit la Règle de branche en cours de réalisation → question `Promotion` (modèle de `delegated-mode.md`), la tâche quitte le plan et devient tâche-branche ; texte commun à un seul endroit, renvoi depuis l'autre.
+6. Documentation : README FR/EN, CHANGELOG.
+[x] Promotion avant tout fichier écrit de la tâche ; déclencheur de swarm.md complété (ajout de tâches) ; 14 suites OK (406 cas)
+
+### T25 — Essaim d'une seule branche en parallèle du parent
+**Effort:** M
+**Estimated time:** ≈ 6 min (1-10)
+**Actual time:** ≈ 7.4 min · 7 files · 5.6 min checks
+**Files:** `skills/forge/scripts/time-calibrate.sh`, `tests/time-calibrate.test.sh`, `skills/forge/phases/p4-plan.md`, `skills/forge/commands/swarm.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:**
+1. `time-calibrate.sh --groups … --parent <fichiers>/<tâches>` : travail ordinaire du parent = voie à part ; durée de l'essaim = max(voie du parent, voies des délégués) + fusions ; série = tout, parent compris ; tests 1 branche avec/sans parent, plusieurs branches avec parent.
+2. `p4-plan.md` : « Plan de branches » dès un groupe qui remplit la Règle de branche (au lieu de deux) ; ligne « Parent » dans le tableau des groupes, gain calculé avec `--parent`.
+3. Point A de T24 aligné : tableau affiché dès total ≥ `branch_files` (au lieu de 2 ×).
+4. Option `Validate and launch the swarm` toujours proposée, perte comprise, estimation sous les yeux.
+5. `swarm.md`, « Plan mixte » : cas d'une branche unique explicité, vérification d'ensemble finale inchangée.
+6. Documentation : README FR/EN, CHANGELOG.
+[x] `parent_minutes` rendu seulement avec `--parent`, refusé sans `--groups` ; point 4 déjà en place (p4 étape 7) ; 14 suites OK (410 cas)
+
 ## Risks
 - Estimation par fichiers inadaptée à un audit (1 min par tâche irréaliste : le travail est de la lecture, pas de l'écriture) — constat à intégrer à T1/T4.
 - Le rejeu à sec (T3) est une lecture d'instructions, pas une exécution réelle de `/forge` : une régression de comportement du modèle peut échapper.
@@ -300,4 +342,7 @@ None
 | T20 — Coût fixe des vérifications par tâche dans l'estimation | M | 12 | ≈ 6 min | ≈ 12.9 min · 11 files · 8.9 min checks | [x] |
 | T21 — Corrections de fin d'audit : mesure, estimation, tableau | M | 12 | ≈ 8 min | ≈ 9.6 min · 12 files · 6.9 min checks | [x] |
 | T22 — Hooks rangés dans `skills/forge/hooks/` | M | 23 | ≈ 14 min | ≈ 8.4 min · 18 files · 6.6 min checks | [x] |
-| **Total** (16/22 measured) | **5S, 9M, 2L** | **125** | **≈ 66 min** | **≈ 86.7 min** | |
+| T23 — Parent de l'essaim jamais à l'arrêt | S | 5 | ≈ 4 min | ≈ 4.3 min · 19 files · 0.3 min checks | [x] |
+| T24 — Essaim réellement choisi : groupes visibles, règle sur les ajouts, sous-agents en lecture | M | 8 | ≈ 6 min | ≈ 9.2 min · 9 files · 4.9 min checks | [x] |
+| T25 — Essaim d'une seule branche en parallèle du parent | M | 7 | ≈ 6 min | ≈ 7.4 min · 7 files · 5.6 min checks | [x] |
+| **Total** (19/25 measured) | **6S, 11M, 2L** | **145** | **≈ 82 min** | **≈ 107.6 min** | |

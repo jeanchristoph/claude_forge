@@ -10,7 +10,7 @@
 
 ## Délégation — essaim de branches filles
 
-**Déclencheur :** `Validate and launch the swarm` (`phases/p4-plan.md`), demande explicite de lancer des branches filles, réponse `Launch` à « Relance de l'essaim » (`phases/p5-resume.md`), étape 5 de « Fin d'une branche fille ». Chacun est un choix de l'utilisateur et vaut confirmation : aucune autre question avant le lancement. Jamais de lancement sans l'un d'eux — une reprise de session n'en est pas un.
+**Déclencheur :** `Validate and launch the swarm` (plan neuf de `phases/p4-plan.md`, ajout de tâches de `phases/p5-resume.md`), demande explicite de lancer des branches filles, réponse `Launch` à « Relance de l'essaim » (`phases/p5-resume.md`), étape 5 de « Fin d'une branche fille ». Chacun est un choix de l'utilisateur et vaut confirmation : aucune autre question avant le lancement. Jamais de lancement sans l'un d'eux — une reprise de session n'en est pas un.
 
 **Réaction — dans l'ordre :**
 1. Exécuter `bash <SKILL_DIR>/scripts/swarm-status.sh --root <ROOT> --branch <PARENT_BRANCH>`.
@@ -75,7 +75,7 @@ Boucle de relais de `commands/delegation.md`, avec ces règles en plus :
 - Chaque choix transmis → ligne dans `## Choices sent to delegates` de SWARM.
 - `FORGE_DONE` → « Fin d'une branche fille ».
 
-⚠️ Relais avant tout : une question ou une fin de délégué n'atteint le parent qu'entre deux tours — jamais au milieu d'un tour. Pendant que des délégués tournent, le parent prend une seule tâche ordinaire par tour et rend la main à sa fin : un long tour enchaîné bloquerait les délégués en attente de réponse.
+⚠️ Relais avant tout : la notification d'un délégué (`FORGE_QUESTION`, `FORGE_DONE`) arrive entre deux appels d'outils, au milieu d'une tâche du parent comprise. Notification reçue → terminer l'action en cours, relayer aussitôt, puis reprendre la tâche du parent là où elle s'est arrêtée.
 
 ---
 
@@ -134,6 +134,7 @@ Réécrit par le parent à chaque événement — lancement, question, réponse,
 # Swarm — <PARENT_BRANCH>
 **N:** 3
 **Parent task:** T<m> — [titre], ou none
+**Parent mode:** chain, pick, ou none
 
 | Branch | State | Worktree | Agent | Port | Since | Last event |
 |---|---|---|---|---|---|---|
@@ -175,13 +176,15 @@ Colonne `Agent` : identifiant du délégué en cours, remplacé à chaque relanc
 
 ## Plan mixte — travail du parent
 
-**Condition :** PLAN porte des tâches ordinaires ouvertes à côté des tâches-branches.
+**Condition :** PLAN porte des tâches ordinaires ouvertes à côté des tâches-branches — une seule tâche-branche comprise : sa branche fille et le parent avancent en parallèle, vérification d'ensemble finale inchangée.
 
 **Réaction — dans l'ordre :**
 1. Tâches ordinaires qui débloquent des branches (socle des points d'extension, données partagées) → exécutées par le parent avant le lancement de ces branches.
 2. Pendant que les délégués travaillent, prendre une à une les tâches de `ordinary` (`swarm-status.sh`) dont `waiting_for` est vide et `is_last` faux, qui ne modifient aucun fichier d'une branche en cours — étape 9 de `phases/p5-resume.md`, limitée à ces tâches. Tâche prise → `**Parent task:**` de SWARM.
+   - Question `Mode` posée une seule fois pour toute la durée de l'essaim, réponse écrite dans `**Parent mode:**` de SWARM (`chain` / `pick`) ; jamais reposée tant que la ligne existe.
+   - Tâche terminée ou relais traité → tâche prenable suivante aussitôt, dans le mode retenu, sans rendre la main.
 3. Chaque tâche du parent commitée fait avancer `<PARENT_BRANCH>` : la fusion des branches en cours passera par une fusion inverse.
-4. Plus de tâche prenable → une ligne : "Waiting for delegates: `<X>`, `<Y>`."
+4. Plus de tâche prenable → une ligne : "Waiting for delegates: `<X>`, `<Y>`." Seul moment où le parent rend la main pendant l'essaim.
 5. Toutes les branches fusionnées et toutes les tâches ordinaires faites → tâche finale de vérification d'ensemble, depuis le dépôt principal.
 
 ---

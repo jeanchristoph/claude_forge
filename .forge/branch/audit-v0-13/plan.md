@@ -1,7 +1,7 @@
 # Plan — audit-v0-13
 **Objective:** Auditer la 0.13.0 face à la 0.12.6 (fluidité, swarm, non-régression) et proposer des améliorations, plugin Claude Code compris.
 **Date:** 2026-11-22
-**Estimate:** ≈ 5 files · ≈ 2 min (2-3) · indicative
+**Estimate:** ≈ 111 files · ≈ 59 min (24-86) · indicative
 
 ## Tasks
 
@@ -240,6 +240,21 @@
 5. Tests : vérifications comptées dans la fenêtre, réel écrit avec leur part, coût fixe tiré de la référence puis des tâches, minutes par fichier hors vérifications, ancien réel sans part toujours lu.
 [x] référence 2 min (choix utilisateur) ; motif retenu `bash tests/|tests/\*\.test\.sh` ; début répété d'une tâche remplacé (fantôme ouvert corrigé) ; 14 suites OK (397 cas)
 
+### T21 — Corrections de fin d'audit : mesure, estimation, tableau
+**Effort:** M
+**Estimated time:** ≈ 8 min (2-16)
+**Actual time:** ≈ 9.6 min · 12 files · 6.9 min checks
+**Files:** `skills/forge/scripts/json.sh`, `skills/forge/scripts/time-hook.sh`, `skills/forge/scripts/plan-hook.sh`, `tests/plan-hook.test.sh`, `skills/forge/scripts/time-calibrate.sh`, `tests/time-calibrate.test.sh`, `skills/forge/phases/p4-plan.md`, `skills/forge/commands/closure.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`, `.forge/project.md`
+**Description:**
+1. Lecture d'un champ du JSON des hooks déplacée dans `json.sh`, chargée par `time-hook.sh` et `plan-hook.sh` (copie supprimée).
+2. `closure.md` : plus de report manuel des statuts dans `## Summary`.
+3. Essaim : coût fixe des tests par tâche ; `--groups` accepte `<fichiers>/<tâches>` par groupe (1 par défaut), p4 « Plan de branches » passe le nombre de tâches de chaque groupe.
+4. Tableau du bas : `**Total**` calculé sur les seules tâches au réel mesuré (nombre, efforts, fichiers, somme des estimés, somme des réels) — estimé et réel comparables ; l'estimé du plan entier reste dans `**Estimate:**`, les tâches ouvertes dans `**Remaining**` (choix utilisateur, à la place d'une ligne `**Measured**`).
+5. Un réel déjà mesuré n'est jamais remplacé par « — » (deux coches dans une même modification).
+6. En-tête `**Estimate:**` recalculé à chaque écriture du plan : somme des fichiers et des estimés figés de toutes les tâches, avec leur fourchette ; estimés par tâche toujours figés.
+7. Tests : lecture partagée du JSON, groupe d'essaim à plusieurs tâches, `**Total**` des seules tâches mesurées, réel gardé face à « — », en-tête qui suit une tâche ajoutée.
+[x] plan-hook 31/31, time-calibrate 31/31 ; 14 suites OK (400 cas)
+
 ## Risks
 - Estimation par fichiers inadaptée à un audit (1 min par tâche irréaliste : le travail est de la lecture, pas de l'écriture) — constat à intégrer à T1/T4.
 - Le rejeu à sec (T3) est une lecture d'instructions, pas une exécution réelle de `/forge` : une régression de comportement du modèle peut échapper.
@@ -270,4 +285,5 @@ None
 | T18 — metrics.json par script | M | 10 | ≈ 5 min | ≈ 10.2 min · 9 files | [x] |
 | T19 — Hook de mesure allégé | S | 5 | ≈ 2 min | ≈ 5.0 min · 5 files | [x] |
 | T20 — Coût fixe des vérifications par tâche dans l'estimation | M | 12 | ≈ 6 min | ≈ 12.9 min · 11 files · 8.9 min checks | [x] |
-| **Total** | **7S, 10M, 3L** | **99** | **≈ 51 min** | **≈ 68.7 min** | |
+| T21 — Corrections de fin d'audit : mesure, estimation, tableau | M | 12 | ≈ 8 min | ≈ 9.6 min · 12 files · 6.9 min checks | [x] |
+| **Total** (15/21 measured) | **5S, 8M, 2L** | **102** | **≈ 52 min** | **≈ 78.3 min** | |

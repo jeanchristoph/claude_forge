@@ -40,7 +40,7 @@ forge/
 │   │       ├── checks.sh             (contrôles de démarrage, lancés détachés par SKILL.md sans attente : ligne input/ de branche dans le .gitignore)
 │   │       ├── engrave.sh            (séquence git de la livraison : preview / run, appelée par p5-resume.md ; run --model écrit d'abord metrics.json par metrics.sh)
 │   │       ├── metrics.sh            (synthèse de mesure : écrit metrics.json, rend la ligne estimé / réel en JSON ; livraison, clôture, fusion d'essaim)
-│   │       ├── json.sh               (rendu JSON sans jq, chargé par les scripts du skill)
+│   │       ├── json.sh               (rendu JSON sans jq et lecture des champs du JSON des hooks, chargé par les scripts du skill)
 │   │       ├── log-entry.sh          (seule écriture d'une entrée LOG : horloge locale, entrée en tête de log.md, fins de ligne gardées ; règle « Entrée LOG » de SKILL.md)
 │   │       ├── plan-hook.sh          (hook de coche déclaré par les installeurs, PostToolUse synchrone : marques de tâche et **Actual time:** à la coche ; état = lignes plan_checkpoint du journal)
 │   │       ├── status.sh             (état au lancement en JSON, lecture seule, appelé par SKILL.md ; peu de processus, Git Bash les paie cher)

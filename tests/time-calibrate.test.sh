@@ -81,7 +81,7 @@ test_takes_fixed_costs_from_measured_branches() {
   local output
   output=$(calibrate --groups 60,60,60)
   assert_contains '"delegate_minutes":6,"merge_minutes":3,"fixed_costs_source":"project"' "$output"
-  assert_contains '"swarm_minutes":45,"fixed_minutes":27' "$output"
+  assert_contains '"swarm_minutes":47,"fixed_minutes":27' "$output"
 }
 
 test_keeps_reference_merge_cost_without_merge_measure() {
@@ -93,22 +93,29 @@ test_keeps_reference_merge_cost_without_merge_measure() {
 
 # 3 × 60 fichiers = 3 × 30 min : en parallèle 30 + 8 sur chaque délégué, puis 3 fusions de 5 min.
 test_computes_swarm_gain_for_branches_spread_over_slots() {
-  assert_contains '"swarm":{"branches":3,"slots":3,"serial_minutes":90,"swarm_minutes":53,"fixed_minutes":39}' \
+  assert_contains '"swarm":{"branches":3,"slots":3,"serial_minutes":96,"swarm_minutes":55,"fixed_minutes":39}' \
     "$(calibrate --groups 60,60,60)"
 }
 
-# 2 × 30 fichiers = 2 × 15 min : les coûts fixes mangent le parallélisme.
+# 2 × 30 fichiers = 2 × (2 + 15) min : les coûts fixes mangent le parallélisme.
 test_shows_no_gain_for_two_short_branches() {
-  assert_contains '"serial_minutes":30,"swarm_minutes":33' "$(calibrate --groups 30,30)"
+  assert_contains '"serial_minutes":34,"swarm_minutes":35' "$(calibrate --groups 30,30)"
 }
 
 # Plus de branches que de délégués : la plus longue d'abord, chacune au délégué le moins chargé.
 test_queues_branches_beyond_available_slots() {
-  assert_contains '"branches":3,"slots":2,"serial_minutes":60,"swarm_minutes":71' "$(calibrate --groups 40,40,40 --slots 2)"
+  assert_contains '"branches":3,"slots":2,"serial_minutes":66,"swarm_minutes":75' "$(calibrate --groups 40,40,40 --slots 2)"
+}
+
+# Groupe de 30 fichiers en 4 tâches : 4 × 2 + 15 = 23 min, contre 17 min pour une seule tâche.
+test_counts_check_cost_of_each_task_of_a_group() {
+  assert_contains '"serial_minutes":40,' "$(calibrate --groups 30/4,30)"
 }
 
 test_rejects_malformed_groups_or_slots() {
   calibrate --groups 3,,5 >/dev/null 2>&1
+  assert_equals "1" "$?"
+  calibrate --groups 3/0,5 >/dev/null 2>&1
   assert_equals "1" "$?"
   calibrate --groups 3,5 --slots 0 >/dev/null 2>&1
   assert_equals "1" "$?"
@@ -357,6 +364,7 @@ run_test test_keeps_reference_merge_cost_without_merge_measure "garde le coût d
 run_test test_computes_swarm_gain_for_branches_spread_over_slots "calcule le gain d'un essaim réparti sur les délégués"
 run_test test_shows_no_gain_for_two_short_branches "ne montre aucun gain pour deux branches courtes"
 run_test test_queues_branches_beyond_available_slots "met en file les branches au-delà des délégués disponibles"
+run_test test_counts_check_cost_of_each_task_of_a_group "essaim : coût fixe de vérification de chaque tâche d'un groupe"
 run_test test_rejects_malformed_groups_or_slots "refuse des groupes ou un nombre de délégués mal formés"
 run_test test_estimates_at_least_one_minute "une tâche d'un fichier : coût fixe de vérification compris, bornes au moins d'une minute"
 run_test test_estimates_each_task_of_a_list_and_their_sum "estime chaque tâche d'une liste et leur somme en un appel"

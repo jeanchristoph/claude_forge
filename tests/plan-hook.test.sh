@@ -320,19 +320,20 @@ test_existing_estimate_is_never_recomputed() {
   assert_equals 2 "$(grep -c '^\*\*Estimated time:\*\*' "$PLAN")"
 }
 
-test_added_task_gets_its_estimate_only() {
+test_added_task_gets_its_estimate_and_header_follows() {
   write_new_plan
   run_hook "$PLAN" >/dev/null
-  local header first
-  header=$(grep '^\*\*Estimate:\*\*' "$PLAN")
+  local first
   first=$(grep -m1 '^\*\*Estimated time:\*\*' "$PLAN")
   printf '\n### T3 — Ajoutée\n**Effort:** S\n**Files:** `c.txt`\n**Description:** trois\n[ ]\n' > "$SANDBOX/task"
   sed -i "/^## Summary/e cat $SANDBOX/task" "$PLAN"
   run_hook "$PLAN" >/dev/null
-  assert_equals "$header" "$(grep '^\*\*Estimate:\*\*' "$PLAN")"
   assert_equals "$first" "$(grep -m1 '^\*\*Estimated time:\*\*' "$PLAN")"
   assert_equals 3 "$(grep -c '^\*\*Estimated time:\*\*' "$PLAN")"
   assert_matches '^\| T3 — Ajoutée \| S \| 1 \|' "$(summary_row_of T3)"
+  local minutes
+  minutes=$(grep '^\*\*Estimated time:\*\*' "$PLAN" | awk '{ sum += $4 } END { print sum }')
+  assert_matches "^\\*\\*Estimate:\\*\\* ≈ 9 files · ≈ $minutes min \\(" "$(grep '^\*\*Estimate:\*\*' "$PLAN")"
 }
 
 test_summary_gets_new_columns_and_keeps_short_title() {
@@ -341,6 +342,24 @@ test_summary_gets_new_columns_and_keeps_short_title() {
   assert_equals '| Task | Effort | Files | Estimated | Actual | Status |' "$(grep -F '| Task |' "$PLAN")"
   assert_equals '|---|---|---|---|---|---|' "$(grep -F '|---|' "$PLAN")"
   assert_matches '^\| T1 — Court \| S \| 2 \| ≈ [0-9]+ min \| — \| \[ \] \|$' "$(summary_row_of T1)"
+}
+
+test_total_counts_only_measured_tasks() {
+  : > "$OWN_LOG"
+  seed_checkpoint 1700000000000 ""
+  write_plan "[x]" "[ ]" "[ ]"
+  run_hook "$PLAN" >/dev/null
+  assert_equals '| **Total** (1/3 measured) | **1S** | **1** | **≈ 1 min** | **≈ 0.0 min** | |' "$(summary_row_of '**Total**')"
+}
+
+test_measured_actual_is_never_replaced_by_dash() {
+  : > "$OWN_LOG"
+  seed_checkpoint 1700000000000 ""
+  write_plan "[x]" "[x]" "[ ]"
+  sed -i 's/^\*\*Estimated time:\*\* ≈ 1 min (1-2)$/&\n**Actual time:** ≈ 3.0 min · 1 files/' "$PLAN"
+  run_hook "$PLAN" >/dev/null
+  assert_equals '**Actual time:** ≈ 3.0 min · 1 files' "$(actual_line_of T1)"
+  assert_equals '**Actual time:** ≈ 3.0 min · 1 files' "$(actual_line_of T2)"
 }
 
 test_summary_cells_follow_task_fields() {
@@ -355,7 +374,7 @@ test_summary_cells_follow_task_fields() {
 test_total_and_remaining_rows() {
   write_new_plan
   run_hook "$PLAN" >/dev/null
-  assert_matches '^\| \*\*Total\*\* \| \*\*1S, 1M\*\* \| \*\*8\*\* \| \*\*≈ [0-9]+ min\*\* \| \*\*—\*\* \| \|$' "$(summary_row_of '**Total**')"
+  assert_equals '| **Total** (0/2 measured) | | | — | — | |' "$(summary_row_of '**Total**')"
   assert_matches '^\| \*\*Remaining\*\* \| \| \*\*8\*\* \| \*\*≈ [0-9]+ min \([0-9]+-[0-9]+\)\*\* \| \| \|$' "$(summary_row_of '**Remaining**')"
 }
 
@@ -433,8 +452,10 @@ run_test test_windows_path_in_hook_json "lit un chemin Windows à barres oblique
 run_test test_new_plan_gets_estimates_and_header "plan neuf : temps estimé de chaque tâche et en-tête Estimate écrits"
 run_test test_pattern_count_is_used_for_estimate "motif (≈ n) : compte de fichiers retenu"
 run_test test_existing_estimate_is_never_recomputed "estimation existante jamais recalculée"
-run_test test_added_task_gets_its_estimate_only "tâche ajoutée : seule elle est estimée, l'en-tête reste figé"
+run_test test_added_task_gets_its_estimate_and_header_follows "tâche ajoutée : seule elle est estimée, l'en-tête suit la somme des tâches"
 run_test test_summary_gets_new_columns_and_keeps_short_title "ancien tableau : colonnes Estimated et Actual ajoutées, titre court gardé"
+run_test test_total_counts_only_measured_tasks "ligne Total : seules les tâches au réel mesuré, estimé et réel comparables"
+run_test test_measured_actual_is_never_replaced_by_dash "un réel mesuré n'est jamais remplacé par « — »"
 run_test test_summary_cells_follow_task_fields "cellules recopiées des tâches : réel, statut, raison du blocage échappée"
 run_test test_total_and_remaining_rows "lignes Total et Remaining"
 run_test test_remaining_row_removed_when_nothing_is_open "ligne Remaining retirée quand plus rien n'est ouvert"

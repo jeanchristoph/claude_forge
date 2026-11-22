@@ -1,3 +1,7 @@
+- [2026-11-22 21:22] Version 0.13.1 préparée : section CHANGELOG figée, tag v0.13.1 et release GitHub
+- [2026-11-22 21:20] T21 : json.sh partagé, closure allégée, essaim avec coût des tests, Total sur tâches mesurées, réel mesuré protégé, en-tête Estimate recalculé ; 14 suites OK, 400 cas
+- [2026-11-22 21:12] T21 point 4 : Total sur les seules tâches mesurées (choix utilisateur), pas de ligne Measured
+- [2026-11-22 21:10] T21 ajoutée : corrections de fin d'audit (json.sh partagé, closure, essaim, ligne Measured, réel gardé, en-tête Estimate recalculé) ; réduction du temps des tests reportée
 - [2026-11-22 20:59] T20 : coût fixe de vérification par tâche (référence 2 min), réel avec part checks, début répété d'une tâche remplacé ; T20 ≈ 12.9 min dont 8.9 min de tests ; 14 suites OK, 397 cas
 - [2026-11-22 20:47] Coût fixe de vérification de référence : 2 min par tâche (estimation.json check_minutes), choix utilisateur
 - [2026-11-22 20:40] T20 ajoutée : coût fixe des vérifications par tâche dans l'estimation (écarts estimé/réel de T16-T19 dus aux tests)

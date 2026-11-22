@@ -49,7 +49,7 @@
 
 ## Format du tableau d'avancement
 
-`## Summary` de PLAN, recopié tel quel : `Task | Effort | Files | Estimated | Actual | Status`, puis `**Total**` et `**Remaining**` — gabarit de `phases/p4-plan.md`, tenu à jour par le hook `scripts/plan-hook.sh` à chaque écriture du plan. Aucun appel de script, aucun recalcul.
+`## Summary` de PLAN, recopié tel quel : `Task | Effort | Files | Estimated | Actual | Status`, puis `**Total**` (tâches mesurées seules) et `**Remaining**` (tâches ouvertes) — gabarit de `phases/p4-plan.md`, tenu à jour par le hook `scripts/plan-hook.sh` à chaque écriture du plan. Aucun appel de script, aucun recalcul.
 
 ⚠️ Plan antérieur au hook, sans colonnes `Estimated` / `Actual` → tableau recopié tel quel ; la première écriture du plan les ajoute.
 

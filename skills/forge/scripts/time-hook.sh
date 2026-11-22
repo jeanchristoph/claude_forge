@@ -21,14 +21,6 @@ readonly AGENT_PROMPT_PATTERN='"prompt":"<(agent-message|task-notification)'
 INPUT=""
 EVENT_TIME=""
 
-# Valeur texte d'un champ de premier niveau dans REPLY, vide si absent. Une clé précédée d'une barre oblique
-# inverse appartient à une chaîne échappée (commande, réponse d'outil), jamais au JSON du hook.
-read_string_field() {
-  local pattern="(^|[^\\])\"$1\":\"(([^\"\\]|\\\\.)*)\""
-  REPLY=""
-  [[ $INPUT =~ $pattern ]] && REPLY=${BASH_REMATCH[2]}
-}
-
 read_number_field() {
   local pattern="(^|[^\\])\"$1\":([0-9]+)"
   REPLY=""
@@ -90,7 +82,7 @@ is_check_command() {
   read_check_pattern "$project_file"
   pattern=$REPLY
   [ -n "$pattern" ] || return 1
-  read_string_field command
+  json_string_field command "$INPUT"
   [ -n "$REPLY" ] && [[ $REPLY =~ $pattern ]]
 }
 
@@ -114,7 +106,7 @@ build_line() {
   local time_log=$1
   LINE="{\"ts\":$EVENT_TIME"
   append_field event "$EVENT"
-  read_string_field session_id
+  json_string_field session_id "$INPUT"
   [ -n "$REPLY" ] && append_field session "$REPLY"
   [ -n "$AGENT_ID" ] && append_field agent_id "$AGENT_ID"
   [ -n "$TOOL" ] && append_field tool "$TOOL"
@@ -140,13 +132,13 @@ main() {
   current_time_ms || exit 0
   EVENT_TIME=$REPLY
   INPUT=$(cat) || exit 0
-  read_string_field hook_event_name; EVENT=$REPLY
-  read_string_field agent_id; AGENT_ID=$REPLY
-  read_string_field agent_type; AGENT_TYPE=$REPLY
-  read_string_field tool_name; TOOL=$REPLY
+  json_string_field hook_event_name "$INPUT"; EVENT=$REPLY
+  json_string_field agent_id "$INPUT"; AGENT_ID=$REPLY
+  json_string_field agent_type "$INPUT"; AGENT_TYPE=$REPLY
+  json_string_field tool_name "$INPUT"; TOOL=$REPLY
   is_measured_event || exit 0
-  read_string_field cwd
-  cwd=${REPLY//\\\\/\/}
+  json_path_field cwd "$INPUT"
+  cwd=$REPLY
   has_forge_folder "$cwd" || exit 0
   resolve_time_log "$cwd"
   time_log=$REPLY

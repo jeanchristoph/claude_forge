@@ -15,7 +15,7 @@
      - `Keep open` → "Left as is, still resumable."
    - Traitement différent par tâche → reçu en texte libre, appliqué tâche par tâche.
    - `Mark done` → ligne de statut `[x]`. `Drop` → ligne de statut `[-] dropped`. `Keep open` → aucun changement.
-   - Reporter chaque statut changé dans `## Summary` de PLAN, écrire une entrée dans LOG.
+   - Écrire une entrée dans LOG. `## Summary` de PLAN jamais édité à la main : le hook `scripts/plan-hook.sh` le régénère à l'écriture des lignes de statut.
 
    ⚠️ `Solved` ne vaut jamais `[x]` : le problème résolu ne prouve pas que chaque tâche a été faite.
    ⚠️ Tâche `[!]` → jamais modifiée par cette étape.

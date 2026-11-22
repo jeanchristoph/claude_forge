@@ -13,11 +13,12 @@
 #   la portent (check_source tasks) ; référence sinon. r se calcule alors sur le réel moins cette part
 #   Estimation d'une tâche : check_minutes + fichiers × r ; d'une liste : somme des tâches. 1 minute au moins, bornes
 #   de la fourchette comprises ; indicative tant que ratios ou fourchette viennent de la référence
-# Usage : time-calibrate.sh [--root <dir>] [--files <n>[,<n>…]] [--groups <n>,<n>[,…] [--slots <n>]]
+# Usage : time-calibrate.sh [--root <dir>] [--files <n>[,<n>…]] [--groups <n>[/<t>],<n>[/<t>][,…] [--slots <n>]]
 #   --files : nombre de fichiers à estimer — ajoute un objet "estimate" (minutes et fourchette) ;
 #   liste séparée par des virgules (une valeur par tâche d'un plan) → "estimate" porte sur la somme,
 #   "estimates" donne une estimation par valeur, dans l'ordre
-#   --groups : fichiers de chaque groupe retenu pour un plan de branches, séparés par des virgules — ajoute
+#   --groups : fichiers de chaque groupe retenu pour un plan de branches, suivis de « /<tâches> » (1 à défaut),
+#   séparés par des virgules — chaque tâche du groupe paie son coût fixe de vérification — ajoute
 #   un objet "swarm" : durée en série, durée en essaim et coût fixe ; --slots : délégués en
 #   parallèle (3 à défaut). Essaim = chaque branche dure ses minutes + delegate_minutes, réparties sur les
 #   délégués (la plus longue d'abord), puis une fusion de merge_minutes par branche, l'une après l'autre ;
@@ -131,9 +132,12 @@ readonly CALIBRATION_PROGRAM='
     printf "]"
   }
   # Gain estimé de tout essaim : groupes triés du plus long au plus court, chacun confié au délégué le moins chargé.
-  function render_swarm(groups, r, correction,   count, values, i, j, swap, load, slot, best, serial, parallel, fixed) {
+  function render_swarm(groups, r, correction,   count, values, i, j, swap, load, slot, best, serial, parallel, fixed, parts) {
     count = split(groups, values, ",")
-    for (i = 1; i <= count; i++) { values[i] = values[i] * correction * r; serial += values[i] }
+    for (i = 1; i <= count; i++) {
+      if (split(values[i], parts, "/") < 2) parts[2] = 1
+      values[i] = parts[2] * check_minutes + parts[1] * correction * r; serial += values[i]
+    }
     for (i = 2; i <= count; i++) for (j = i; j > 1 && values[j - 1] < values[j]; j--) { swap = values[j]; values[j] = values[j - 1]; values[j - 1] = swap }
     for (slot = 1; slot <= slots; slot++) load[slot] = 0
     for (i = 1; i <= count; i++) {
@@ -182,7 +186,7 @@ SLOTS=$DEFAULT_SLOTS
 
 fail_usage() {
   echo "time-calibrate: $1" >&2
-  echo "usage: time-calibrate.sh [--root <dir>] [--files <n>[,<n>…]] [--groups <n>,<n>[,…] [--slots <n>]]" >&2
+  echo "usage: time-calibrate.sh [--root <dir>] [--files <n>[,<n>…]] [--groups <n>[/<t>],<n>[/<t>][,…] [--slots <n>]]" >&2
   exit $EXIT_USAGE
 }
 
@@ -198,7 +202,8 @@ parse_arguments() {
   done
   [ -d "$ROOT" ] || fail_usage "not a directory: $ROOT"
   [[ -z $FILES || $FILES =~ ^[0-9]+(,[0-9]+)*$ ]] || fail_usage "--files needs whole numbers separated by commas"
-  [[ -z $BRANCH_GROUPS || $BRANCH_GROUPS =~ ^[0-9]+(,[0-9]+)*$ ]] || fail_usage "--groups needs whole numbers separated by commas"
+  [[ -z $BRANCH_GROUPS || $BRANCH_GROUPS =~ ^[0-9]+(/[1-9][0-9]*)?(,[0-9]+(/[1-9][0-9]*)?)*$ ]] \
+    || fail_usage "--groups needs <files>[/<tasks>] values separated by commas"
   [[ $SLOTS =~ ^[1-9][0-9]*$ ]] || fail_usage "--slots needs a positive whole number"
 }
 

@@ -40,7 +40,8 @@ readonly PLAN_TASKS_PROGRAM="$TASK_STATUS_AWK"'
   task != "" && is_status_line($0) { status = status_of($0); if ($0 ~ /delegated to/) is_skipped = 1 }
   END { flush() }'
 
-# Réécrit **Actual time:** des tâches de « updates » (« tâche<TAB>valeur » par ligne) : ancienne ligne retirée,
+# Réécrit **Actual time:** des tâches de « updates » (« tâche<TAB>valeur » par ligne) — un réel déjà mesuré (≈) n'est
+# jamais remplacé par « — » (deux coches d'une même modification, simultanées pour la mesure) : ancienne ligne retirée,
 # nouvelle sous **Estimated time:**, à défaut sous **Effort:**, à défaut sous le titre ; fins de ligne gardées.
 # Le plan est lu deux fois : repérage, puis réécriture.
 readonly ACTUAL_TIME_PROGRAM='
@@ -53,6 +54,7 @@ readonly ACTUAL_TIME_PROGRAM='
     if (line ~ /^### T[0-9]+/) { split(line, words, " "); task = (words[2] in value) ? words[2] : ""; if (task != "") anchor[task] = FNR; next }
     if (line ~ /^## /) { task = ""; next }
     if (task == "") next
+    if (line ~ /^\*\*Actual time:\*\*/ && value[task] == "—" && line ~ /≈/) { delete anchor[task]; task = ""; next }
     if (line ~ /^\*\*Actual time:\*\*/) drop[FNR] = 1
     else if (line ~ /^\*\*Estimated time:\*\*/) { anchor[task] = FNR; has_estimate[task] = 1 }
     else if (line ~ /^\*\*Effort:\*\*/ && !(task in has_estimate)) anchor[task] = FNR
@@ -82,14 +84,28 @@ readonly INVENTORY_PROGRAM="$TASK_STATUS_AWK$TASK_FILES_AWK"'
 
 # Réécriture du plan, lu deux fois (repérage, puis écriture) :
 #   estimates (« id<TAB>≈ m min (b-h) » par ligne) → **Estimated time:** inséré sous **Effort:** ;
-#   header_estimate non vide → **Estimate:** inséré sous **Date:** ;
+#   **Estimate:** recalculé depuis les estimations figées des tâches (fichiers de toutes les tâches, minutes et
+#   fourchette sommées), mention indicative gardée ; absent → inséré sous **Date:**, indicatif si indicative vaut 1 ;
 #   ## Summary → table régénérée à la place de ses lignes « | », texte libre gardé ; section ajoutée en fin si absente ;
+#   **Total** calculé sur les seules tâches au réel mesuré : estimé et réel portent sur les mêmes tâches ;
 #   remaining (« fichiers<TAB>≈ m min (b-h) ») vide → pas de ligne **Remaining**. Fins de ligne du plan gardées.
 readonly SUMMARY_PROGRAM="$TASK_STATUS_AWK$TASK_FILES_AWK"'
   function trim(text) { sub(/^[ \t]+/, "", text); sub(/[ \t]+$/, "", text); return text }
   function after_label(text, label) { return trim(substr(text, length(label) + 1)) }
   function first_number(text) { return match(text, /[0-9]+(\.[0-9]+)?/) ? substr(text, RSTART, RLENGTH) + 0 : 0 }
   function without_range(text) { sub(/ *\([^)]*\)$/, "", text); return text }
+  function record_estimate(id, text) {
+    estimated[id] = without_range(text)
+    if (match(text, /\([0-9]+-[0-9]+\)/)) { split(substr(text, RSTART + 1, RLENGTH - 2), bounds, "-"); estimated_low[id] = bounds[1]; estimated_high[id] = bounds[2] }
+  }
+  function header_value(   i, id, total_files, minutes, low, high, has_estimates) {
+    for (i = 1; i <= tasks; i++) {
+      id = order[i]; total_files += files[id]
+      if (estimated[id] == "") continue
+      has_estimates = 1; minutes += first_number(estimated[id]); low += estimated_low[id]; high += estimated_high[id]
+    }
+    return has_estimates ? sprintf("≈ %d files · ≈ %d min (%d-%d)", total_files, minutes, low, high) : ""
+  }
   function escape_pipes(text) { gsub(/\|/, "\\|", text); return text }
   function status_cell(text) { return (status_of(text) == "blocked") ? escape_pipes(text) : substr(text, 1, 3) }
   function flush_task() { if (task != "") files[task] = planned_files_from(estimated_files_line, files_line); task = "" }
@@ -99,7 +115,7 @@ readonly SUMMARY_PROGRAM="$TASK_STATUS_AWK$TASK_FILES_AWK"'
     return mix
   }
   function emit_row(cells) { print "| " cells " |" newline }
-  function emit_table(   i, id, title, estimate, actual, estimated_total, actual_total, has_estimates, has_actuals, total_files, pair) {
+  function emit_table(   i, id, title, estimate, actual, estimated_total, actual_total, measured, measured_files, pair) {
     emit_row("Task | Effort | Files | Estimated | Actual | Status")
     print "|---|---|---|---|---|---|" newline
     for (i = 1; i <= tasks; i++) {
@@ -107,12 +123,14 @@ readonly SUMMARY_PROGRAM="$TASK_STATUS_AWK$TASK_FILES_AWK"'
       title = (id in summary_title) ? summary_title[id] : heading[id]
       estimate = (estimated[id] != "") ? estimated[id] : "—"
       actual = (actual_time[id] != "") ? actual_time[id] : "—"
-      if (estimated[id] != "") { estimated_total += first_number(estimated[id]); has_estimates = 1 }
-      if (actual ~ /^≈/) { actual_total += first_number(actual); has_actuals = 1 }
-      total_files += files[id]; effort_count[effort[id]]++
+      if (actual ~ /^≈/) {
+        measured++; measured_files += files[id]; effort_count[effort[id]]++
+        estimated_total += first_number(estimated[id]); actual_total += first_number(actual)
+      }
       emit_row(title " | " effort[id] " | " files[id] " | " estimate " | " actual " | " status[id])
     }
-    emit_row("**Total** | **" effort_mix() "** | **" total_files "** | **" (has_estimates ? sprintf("≈ %g min", estimated_total) : "—") "** | **" (has_actuals ? sprintf("≈ %.1f min", actual_total) : "—") "** |")
+    if (measured) emit_row("**Total** (" measured "/" tasks " measured) | **" effort_mix() "** | **" measured_files "** | **" sprintf("≈ %g min", estimated_total) "** | **" sprintf("≈ %.1f min", actual_total) "** |")
+    else emit_row("**Total** (0/" tasks " measured) | | | — | — |")
     if (remaining != "") { split(remaining, pair, "\t"); emit_row("**Remaining** | | **" pair[1] "** | **" pair[2] "** | |") }
     table_written = 1
   }
@@ -127,25 +145,33 @@ readonly SUMMARY_PROGRAM="$TASK_STATUS_AWK$TASK_FILES_AWK"'
     status[task] = "[ ]"; estimated_files_line = ""; files_line = ""; in_summary = 0; next
   }
   FNR == NR && line ~ /^## / { flush_task(); in_summary = (line ~ /^## Summary/); next }
+  FNR == NR && line ~ /^\*\*Estimate:\*\*/ { has_header = 1; is_indicative = (line ~ /indicative/) }
   FNR == NR && in_summary && line ~ /^\| *T[0-9]+/ { split(line, cells, "|"); split(trim(cells[2]), words, " "); summary_title[words[1]] = trim(cells[2]); next }
   FNR == NR && task != "" {
     if (line ~ /^\*\*Effort:\*\*/) effort[task] = after_label(line, "**Effort:**")
-    else if (line ~ /^\*\*Estimated time:\*\*/) estimated[task] = without_range(after_label(line, "**Estimated time:**"))
+    else if (line ~ /^\*\*Estimated time:\*\*/) record_estimate(task, after_label(line, "**Estimated time:**"))
     else if (line ~ /^\*\*Actual time:\*\*/) actual_time[task] = after_label(line, "**Actual time:**")
     else if (line ~ /^\*\*Estimated files:\*\*/) estimated_files_line = line
     else if (line ~ /^\*\*Files:\*\*/) files_line = line
     else if (is_status_line(line)) status[task] = status_cell(line)
   }
   FNR == NR { next }
-  FNR == 1 { flush_task(); in_summary = 0; for (id in new_estimate) if (estimated[id] == "") estimated[id] = without_range(new_estimate[id]) }
+  FNR == 1 {
+    flush_task(); in_summary = 0
+    for (id in new_estimate) if (estimated[id] == "") record_estimate(id, new_estimate[id])
+    header = header_value()
+    if (!has_header) is_indicative = (indicative == 1)
+    if (header != "" && is_indicative) header = header " · indicative"
+  }
   line ~ /^## / {
     if (in_summary && !table_written) emit_table()
     in_summary = (line ~ /^## Summary/); if (in_summary) has_summary = 1
     print; next
   }
   in_summary && line ~ /^\|/ { if (!table_written) emit_table(); next }
+  line ~ /^\*\*Estimate:\*\*/ && header != "" { print "**Estimate:** " header eol; next }
   { print }
-  line ~ /^\*\*Date:\*\*/ && header_estimate != "" { print "**Estimate:** " header_estimate newline }
+  line ~ /^\*\*Date:\*\*/ && !has_header && header != "" { print "**Estimate:** " header newline }
   is_task_heading(line) { current = $2 }
   line ~ /^\*\*Effort:\*\*/ && (current in new_estimate) { print "**Estimated time:** " new_estimate[current] newline }
   END {
@@ -163,23 +189,9 @@ DONE_TASKS=""
 MEASURABLE_DONE=()
 UNMEASURED_DONE=()
 
-# Valeur texte d'un champ du JSON du hook dans REPLY, vide si absent ; une clé précédée d'une barre oblique inverse
-# appartient à une chaîne échappée (contenu écrit), jamais au JSON du hook.
-read_string_field() {
-  local pattern="(^|[^\\])\"$1\":\"(([^\"\\]|\\\\.)*)\""
-  REPLY=""
-  [[ $INPUT =~ $pattern ]] && REPLY=${BASH_REMATCH[2]}
-}
-
-# Chemin du hook en barres obliques : « C:\\x » (JSON) → « C:/x ».
-read_path_field() {
-  read_string_field "$1"
-  REPLY=${REPLY//\\\\//}
-}
-
 # Plan modifié → ROOT, BRANCH, PLAN ; rend 1 pour tout autre fichier.
 resolve_plan() {
-  read_path_field file_path
+  json_path_field file_path "$INPUT"
   [[ $REPLY =~ $PLAN_PATH_PATTERN ]] || return 1
   ROOT=${BASH_REMATCH[1]}
   BRANCH=${BASH_REMATCH[2]}
@@ -193,9 +205,9 @@ resolve_time_log() {
   local lines top branch parent_log
   TIME_LOG="$ROOT/.forge/branch/$BRANCH/$TIME_LOG_NAME"
   MARK_BRANCH=""
-  read_string_field agent_id
+  json_string_field agent_id "$INPUT"
   [ -n "$REPLY" ] || return 0
-  read_path_field cwd
+  json_path_field cwd "$INPUT"
   lines=$(git -C "$REPLY" rev-parse --show-toplevel --abbrev-ref HEAD) || return 0
   top=${lines%%$'\n'*}
   branch=${lines#*$'\n'}
@@ -331,15 +343,14 @@ write_actual_times() {
   printf '%s\n' "$content" > "$PLAN"
 }
 
-# Estimation de chaque tâche, une valeur par tâche : TASK_MINUTES, TASK_LOW, TASK_HIGH (dans l'ordre) ; TOTAL_ESTIMATE
-# (« ≈ m min (b-h) ») et INDICATIVE pour l'en-tête. Un seul appel ; une liste d'une valeur ne rend que « estimate ».
+# Estimation de chaque tâche, une valeur par tâche : TASK_MINUTES, TASK_LOW, TASK_HIGH (dans l'ordre) ; INDICATIVE
+# pour un en-tête neuf. Un seul appel ; une liste d'une valeur ne rend que « estimate ».
 calibrate() {
   local result estimates pattern='\{"files":([0-9]+),"minutes":([0-9]+),"low":([0-9]+),"high":([0-9]+)\}'
   TASK_MINUTES=(); TASK_LOW=(); TASK_HIGH=(); INDICATIVE=0
   result=$(bash "$SCRIPT_DIR/time-calibrate.sh" --root "$ROOT" --files "$1") || return 1
   [[ $result == *'"indicative":true'* ]] && INDICATIVE=1
   [[ ${result#*\"estimate\":} =~ ^$pattern ]] || return 1
-  TOTAL_ESTIMATE="≈ ${BASH_REMATCH[2]} min (${BASH_REMATCH[3]}-${BASH_REMATCH[4]})"
   estimates=${result#*\"estimate\":}
   [[ $result == *'"estimates":['* ]] && estimates=${result#*\"estimates\":[}
   while [[ $estimates =~ $pattern ]]; do
@@ -351,24 +362,24 @@ calibrate() {
 }
 
 # Inventaire du plan, une case par tâche : TASK_IDS, TASK_FILE_COUNTS, TASK_IS_OPEN, TASK_IS_MISSING (fichiers sans
-# estimation) ; HAS_HEADER, HAS_OPEN, HAS_MISSING, ALL_FILES.
+# estimation) ; HAS_HEADER, HAS_OPEN, HAS_MISSING.
 read_inventory() {
   local kind id files has_estimate status
   TASK_IDS=(); TASK_FILE_COUNTS=(); TASK_IS_OPEN=(); TASK_IS_MISSING=()
-  HAS_HEADER=1; HAS_OPEN=0; HAS_MISSING=0; ALL_FILES=0
+  HAS_HEADER=1; HAS_OPEN=0; HAS_MISSING=0
   while IFS=$'\t' read -r kind id files has_estimate status; do
     [ "$kind" = "header" ] && { HAS_HEADER=$id; continue; }
-    TASK_IDS+=("$id"); TASK_FILE_COUNTS+=("$files"); ALL_FILES=$((ALL_FILES + files))
+    TASK_IDS+=("$id"); TASK_FILE_COUNTS+=("$files")
     if [ "$status" = "open" ]; then TASK_IS_OPEN+=(1); HAS_OPEN=1; else TASK_IS_OPEN+=(0); fi
     if [ "$has_estimate" = 0 ] && [ "$files" -gt 0 ]; then TASK_IS_MISSING+=(1); HAS_MISSING=1; else TASK_IS_MISSING+=(0); fi
   done < <(awk "$INVENTORY_PROGRAM" "$PLAN")
 }
 
-# Valeurs de la réécriture : NEW_ESTIMATES, HEADER_ESTIMATE, REMAINING. Un seul appel de calibration, une valeur par
+# Valeurs de la réécriture : NEW_ESTIMATES, REMAINING, INDICATIVE (en-tête absent). Un seul appel de calibration, une valeur par
 # tâche : le reste à faire additionne les tâches ouvertes, chacune avec son coût fixe de vérification.
 compute_estimates() {
   local index open_files=0 open_minutes=0 open_low=0 open_high=0
-  NEW_ESTIMATES=""; HEADER_ESTIMATE=""; REMAINING=""
+  NEW_ESTIMATES=""; REMAINING=""; INDICATIVE=0
   read_inventory
   [ "$HAS_OPEN" = 1 ] || [ "$HAS_HEADER" = 0 ] || [ "$HAS_MISSING" = 1 ] || return 0
   [ ${#TASK_IDS[@]} -gt 0 ] || return 0
@@ -383,10 +394,6 @@ compute_estimates() {
     open_low=$((open_low + TASK_LOW[index])); open_high=$((open_high + TASK_HIGH[index]))
   done
   [ "$HAS_OPEN" = 1 ] && REMAINING="$open_files"$'\t'"≈ $open_minutes min ($open_low-$open_high)"
-  if [ "$HAS_HEADER" = 0 ]; then
-    HEADER_ESTIMATE="≈ $ALL_FILES files · $TOTAL_ESTIMATE"
-    [ "$INDICATIVE" = 1 ] && HEADER_ESTIMATE+=" · indicative"
-  fi
 }
 
 # Estimations et ## Summary réécrits ; rend 0 seulement si plan.md a changé.
@@ -394,7 +401,7 @@ refresh_summary() {
   local current content
   compute_estimates
   current=$(cat "$PLAN")
-  content=$(awk -v estimates="$NEW_ESTIMATES" -v header_estimate="$HEADER_ESTIMATE" -v remaining="$REMAINING" \
+  content=$(awk -v estimates="$NEW_ESTIMATES" -v indicative="$INDICATIVE" -v remaining="$REMAINING" \
     "$SUMMARY_PROGRAM" "$PLAN" "$PLAN") || return 1
   [ -n "$content" ] && [ "$content" != "$current" ] || return 1
   printf '%s\n' "$content" > "$PLAN"

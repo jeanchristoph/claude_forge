@@ -50,10 +50,7 @@ run_installer() {
 }
 
 hook_file_name() {
-  case $INSTALLER in
-    sh) printf 'forge-precompact.sh' ;;
-    ps1) printf 'forge-precompact.ps1' ;;
-  esac
+  printf 'forge-precompact.sh'
 }
 
 seed_settings() {
@@ -132,7 +129,54 @@ test_second_install_adds_nothing_twice() {
   assert_equals 1 "$(count_occurrences '"Edit(/.forge/**)"' "$file")"
   assert_equals 1 "$(count_occurrences '"Bash(ls:*)"' "$file")"
   assert_equals 1 "$(count_occurrences 'skills/forge/**)' "$file")"
-  assert_equals 1 "$(count_occurrences 'forge-precompact' "$file")"
+  assert_equals 2 "$(count_occurrences 'forge-precompact' "$file")"
+}
+
+test_adds_state_hook_on_session_start_after_compact_or_resume() {
+  run_installer || exit 1
+  assert_contains '"matcher":"compact|resume","hooks":[{"type":"command","command":"bash ~/.claude/hooks/forge/forge-precompact.sh","shell":"bash"}]' "$(event_hooks SessionStart)"
+  assert_contains '"command":"bash ~/.claude/hooks/forge/forge-precompact.sh"' "$(event_hooks PreCompact)"
+}
+
+test_replaces_legacy_powershell_state_hook() {
+  mkdir -p "$CLAUDE_DIR/hooks/forge"
+  printf 'legacy\n' > "$CLAUDE_DIR/hooks/forge/forge-precompact.ps1"
+  printf '%s\n' '{"hooks":{"PreCompact":[{"hooks":[{"type":"command","command":"powershell -File C:/Users/u/.claude/hooks/forge/forge-precompact.ps1","shell":"powershell"}]}]}}' \
+    > "$CLAUDE_DIR/settings.json"
+  run_installer || exit 1
+  assert_not_contains 'forge-precompact.ps1' "$(settings)"
+  assert_equals 1 "$(event_hooks PreCompact | grep -o 'forge-precompact' | wc -l | tr -d ' ')"
+  [ "$INSTALLER" = sh ] && return 0
+  [ ! -e "$CLAUDE_DIR/hooks/forge/forge-precompact.ps1" ] || { echo '    legacy ps1 hook file still present'; exit 1; }
+}
+
+# Racine des scripts du skill telle que l'installeur la voit : HOME jetable en barres obliques,
+# en chemin Windows sous Git Bash (cygpath), tel quel ailleurs.
+scripts_dir() {
+  local home=$HOME_DIR
+  command -v cygpath > /dev/null 2>&1 && home=$(cygpath -m "$HOME_DIR")
+  printf '%s/.claude/skills/forge/scripts/' "$home"
+}
+
+test_allows_skill_scripts_quoted_and_unquoted() {
+  run_installer || exit 1
+  local content
+  content=$(settings)
+  assert_contains "\"Bash(bash \\\"$(scripts_dir)*)\"" "$content"
+  assert_contains "\"Bash(bash $(scripts_dir)*)\"" "$content"
+}
+
+test_purges_dead_git_branch_rule() {
+  mkdir -p "$CLAUDE_DIR"
+  printf '%s\n' '{"permissions":{"allow":["Bash(bash -c \"git branch --show-current*)","Bash(ls:*)"]}}' > "$CLAUDE_DIR/settings.json"
+  run_installer || exit 1
+  assert_not_contains 'git branch --show-current' "$(settings)"
+  assert_contains '"Bash(ls:*)"' "$(settings)"
+}
+
+test_second_install_adds_script_rules_once() {
+  run_installer && run_installer || exit 1
+  assert_equals 2 "$(count_occurrences "$(scripts_dir)" "$CLAUDE_DIR/settings.json")"
 }
 
 # Groupe de hooks d'un événement, compacté : `"matcher":"…"` éventuel puis la commande, sans espaces.
@@ -256,7 +300,12 @@ run_test() {
 run_common_tests() {
   run_test test_copies_skills_and_hook_into_home "copie les skills et le hook dans le HOME jetable"
   run_test test_adds_forge_rule_and_precompact_hook "ajoute la règle .forge et le hook PreCompact à settings.json"
+  run_test test_adds_state_hook_on_session_start_after_compact_or_resume "ajoute le hook d'état sur SessionStart, après compaction ou reprise"
+  run_test test_replaces_legacy_powershell_state_hook "remplace l'ancien hook d'état PowerShell par le hook bash"
   run_test test_keeps_unrelated_settings "garde les réglages et règles étrangers à forge"
+  run_test test_allows_skill_scripts_quoted_and_unquoted "autorise les scripts du skill, chemin cité ou non"
+  run_test test_purges_dead_git_branch_rule "purge la règle morte git branch --show-current"
+  run_test test_second_install_adds_script_rules_once "une seconde installation n'ajoute pas les règles des scripts en double"
   run_test test_second_install_adds_nothing_twice "une seconde installation n'ajoute ni règle ni hook en double"
   run_test test_adds_time_hook_to_every_measured_event "ajoute le hook de mesure, asynchrone, à chaque événement écouté, avec ses filtres"
   run_test test_second_install_adds_time_hook_once "une seconde installation n'ajoute pas le hook de mesure en double"

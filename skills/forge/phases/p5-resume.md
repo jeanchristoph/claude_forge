@@ -2,8 +2,8 @@
 
 ## Actions — dans l'ordre
 
-1. Lire `@.forge/project.md` — contexte interne, **ne pas afficher**.
-2. Lire `.forge/coding-standards.md` — contexte interne, **ne pas afficher**.
+1. `.forge/project.md` — jamais lu à la reprise : section « Contexte du code » ci-dessous.
+2. `.forge/coding-standards.md` — jamais lu à la reprise : même section.
 3. Lire `@.forge/branch/<BRANCH>/brief.md` — contexte interne, **ne pas afficher**.
 4. Reprendre `recent_log` du JSON de « Détection d'état » (`SKILL.md`).
    - Des entrées existent → afficher un résumé en tête : "**Last session :** [points clés]"
@@ -24,7 +24,7 @@
 
    Aucun lancement sans réponse : une reprise de session n'est jamais un accord pour lancer des délégués.
 9. **Au moins une tâche ouverte** → poser le choix du mode d'exécution avec `AskUserQuestion` — jamais une question en texte libre.
-   - Plan validé dans ce tour par `Validate and chain` (étape 7 de `p4-plan.md`) → aucune question : enchaîner toutes les tâches ouvertes dans l'ordre, sans arrêt ni feu vert entre elles. Mode délégué compris.
+   - Plan validé dans ce tour par `Validate and chain` — étape 7 de `p4-plan.md`, ou ajout de tâches validé ainsi (« Demande hors périmètre ») → aucune question : enchaîner toutes les tâches ouvertes dans l'ordre, sans arrêt ni feu vert entre elles. Mode délégué compris.
    - Une seule tâche ouverte → `header` : `Task`, options `Start T<n>` / `Cancel`, le titre de la tâche nommé dans la question. `Cancel` → STOP. Mode délégué `SCOPE: linked` → puce dédiée ci-dessous.
    - Plusieurs tâches ouvertes → `header` : `Mode` · deux options, dans cet ordre :
      - `Chain the tasks (recommended)` → "Work through every open task in order, one after another, without stopping between them."
@@ -34,6 +34,16 @@
    - Mode délégué `SCOPE: branch` → les mêmes questions `Mode` puis `Task` en `FORGE_QUESTION` ; puis, avant chaque tâche, un `FORGE_QUESTION` — `header` : `Task`, options `Start T<n>` / `Cancel`, la description entière de la tâche dans `content`. Aucun enchaînement sans ce feu vert, sauf `Validate and chain` (première puce).
 
    ⚠️ Aucun démarrage avant la réponse à la question — ni enchaînement, ni tâche isolée. Après `Validate and chain`, ou en mode délégué `SCOPE: linked`, la réponse est la validation du plan.
+
+---
+
+## Contexte du code
+
+**Déclencheur :** démarrage d'une tâche du plan, ou « Action directe » qui modifie un fichier du projet hors `.forge/` — le premier des deux dans le tour.
+
+**Réaction :** lire `@.forge/project.md` puis `.forge/coding-standards.md` — contexte interne, **ne pas afficher** —, avant toute autre action de la tâche. Une seule lecture par tour (« Lecture unique » de `SKILL.md`).
+
+⚠️ Reprise, consultation de l'avancement, `grave`, clôture, contenu généré → aucune lecture : ces parcours n'ont pas besoin du contexte du code.
 
 ---
 
@@ -57,7 +67,7 @@
 **Silencieuse (automatique)** — après tâche terminée ou événement notable :
 - Cocher `[x]`, ajouter note max 1 ligne, marquer `[!]` si bloqué. Coche → section « Mesure d'une tâche » ci-dessous.
   ⚠️ Coche par l'outil Edit sur la ligne de statut exacte de la tâche — jamais par `sed` ni par une expression régulière : `[ ]` y désigne un espace, et le remplacement corrompt le reste du fichier.
-- Script diffusé à part du déploiement git (section « Contenu généré » du SKILL) → ajouter l'étape dans `## Deployment` : quoi, moment d'exécution, numéros des tâches d'origine, chemin de la copie dans OUTPUT. `None` remplacé par la première étape. Étape qui exécute du SQL → section « Script de déploiement SQL » ci-dessous.
+- Script diffusé à part du déploiement git (section « Contenu généré » du SKILL) → ajouter l'étape dans `## Deployment` : quoi, moment d'exécution, numéros des tâches d'origine, chemin de la copie dans OUTPUT. `None` remplacé par la première étape. Étape qui exécute du SQL → « Script de déploiement SQL » de « Commandes — chargées à la demande » ci-dessous.
 
 **Substantielle (confirmation obligatoire)** — décrire la modification, puis poser le choix avec `AskUserQuestion` — `header` : `Plan`, options `Apply` / `Leave as is` — avant d'appliquer :
 - Ajouter/supprimer une tâche
@@ -86,27 +96,6 @@
 
 ---
 
-## Script de déploiement SQL
-
-**Déclencheur :** `## Deployment` gagne ou modifie une étape qui exécute du SQL — migration, script de reconstruction, requête d'exploitation.
-
-**Réaction — dans l'ordre :**
-1. Écrire ou réécrire sur place `.forge/branch/<BRANCH>/output/AAAAMMJJ-deployment-script.sql`, sans question — un seul fichier par branche, daté de sa création, jamais renommé.
-2. Entrée LOG : `Deployment script updated: [étapes ajoutées ou modifiées]`.
-
-**Format :**
-- En-tête en commentaire : branche, date, tableau des étapes — numéro, base visée, moment (`before` / `after deploy`), forme (`comment` / `query`), tâches d'origine.
-- Une section par étape SQL, dans l'ordre de `## Deployment`, titrée `-- STEP [n] — [base visée] — [moment] · [T7, T9]`.
-- Script versionné dans le dépôt → commentaire seul : chemin, prérequis, précautions, variantes production et développement. Jamais recopié.
-- Requête autonome (`EXEC`, job, `UPDATE` d'exploitation) → telle quelle, exécutable, suivie de sa requête de contrôle.
-- Valeur qui dépend de la date → calculée dans la requête, jamais laissée à saisir.
-- Section contenant un `USE` → placée en dernier.
-- Étape sans SQL → absente du script.
-
-⚠️ Le script se réécrit en entier à chaque déclencheur, depuis `## Deployment` : jamais d'ajout en fin de fichier qui laisserait une étape obsolète.
-
----
-
 ## Mise à jour du brief et du log
 
 Le brief est vivant. Les changements de scope sont gérés par la **Surveillance** ci-dessous.
@@ -121,37 +110,6 @@ Le brief est vivant. Les changements de scope sont gérés par la **Surveillance
 - **Choix utilisateur quand Claude a proposé plusieurs options** (ex: "Option B retenue — raison")
 
 ⚠️ `status.sh` suppose les entrées les plus récentes en haut : jamais d'entrée écrite hors de `log-entry.sh`.
-
----
-
-## Correction ou choix d'infrastructure → propagation vers CLAUDE.md
-
-### Garde
-
-Mode délégué → aucune proposition : `AskUserQuestion` est inaccessible et aucune écriture n'a lieu hors de ROOT. STOP — ne pas continuer cette section.
-
-**Déclencheur :**
-- Un choix d'infrastructure se pose (techno, lib, pattern, service)
-- L'utilisateur revient sur un choix fait instinctivement par Claude (le corrige, l'invalide)
-- L'utilisateur demande une correction de syntaxe, de structure ou de convention de code (nommage, format, organisation) sur un contenu produit par Claude
-
-⚠️ Bug fonctionnel, changement de besoin → aucun déclenchement.
-
-**Réaction — dans l'ordre :**
-1. Correction demandée → l'appliquer d'abord.
-2. Logger le choix retenu ou la correction dans LOG (règle ci-dessus).
-3. Si le cas est propre à cette branche ou à une seule occurrence (coquille isolée) → STOP — ne pas continuer cette section.
-4. Si `~/.claude/CLAUDE.md` ou le `CLAUDE.md` à la racine du projet couvre déjà le cas → STOP — ne pas continuer cette section.
-5. En tirer une règle concise et programmatique au format `Quand [cas] → [conduite]`, généralisée, sans nom de fichier ni de ticket, et l'afficher telle qu'elle serait écrite.
-6. Poser le choix avec `AskUserQuestion` — `header` : `Rule`, trois options, dans cet ordre :
-   - `Add to global CLAUDE.md` → "Add this rule to `~/.claude/CLAUDE.md`, for all your projects."
-   - `Add to project CLAUDE.md` → "Add this rule to the `CLAUDE.md` at the project root, created if absent."
-   - `Keep it local` → "Write nothing to any `CLAUDE.md`."
-7. **Sur `Add to global CLAUDE.md`** → ajouter la règle à `~/.claude/CLAUDE.md` (section existante pertinente ou nouvelle section courte).
-8. **Sur `Add to project CLAUDE.md`** → ajouter la règle au `CLAUDE.md` à la racine du projet (section existante pertinente ou nouvelle section courte), créé s'il est absent.
-9. **Sur `Keep it local`** → n'écrire dans aucun `CLAUDE.md`, ne jamais reproposer plus tard pour le même cas.
-
-⚠️ Aucune écriture dans un `CLAUDE.md` sans réponse à cette question. Sans réponse → n'écrire rien.
 
 ---
 
@@ -170,7 +128,7 @@ Mode délégué → aucune proposition : `AskUserQuestion` est inaccessible et a
 - Sinon, dans l'ordre :
   1. Formuler la tâche de vérification selon le « Gabarit — question `Plan` » ci-dessous.
   2. Poser une seule question avec `AskUserQuestion` — `header` : `Test`, champ `question` = la tâche formulée, puis une ligne vide et la phrase de question, trois options :
-     - `Add to plan` → "Add T[n] to the plan, then run it." — même suite que `Validate` dans « Demande hors périmètre ».
+     - `Add to plan` → "Add T[n] to the plan, then run it." — même suite que `Validate and chain` dans « Demande hors périmètre ».
      - `Check without a task` → "Run the check now, nothing enters the plan." — « Action directe », une ligne dans LOG.
      - `Cancel` → "Nothing is checked." — STOP.
 
@@ -201,11 +159,13 @@ Une demande complémentaire est toujours une tâche du plan — jamais de choix 
    Temps estimé : `bash <SKILL_DIR>/scripts/time-calibrate.sh --root <ROOT> --files <fichiers de la tâche>`, `estimate` au ratio du moment, écrit `**Estimated time:**` et figé à la validation.
    Si la demande change durablement le périmètre → ajouter à la même présentation l'entrée proposée pour `## Scope & rules` du brief.
 
-2. **Poser une seule question** avec `AskUserQuestion` — `header` : `Plan`, options `Validate` / `Cancel` — motif « Validation d'un contenu » de `SKILL.md` : le changement demandé arrive en texte libre, reformuler, reposer la question. Champ `question` = la tâche formulée, recopiée en dur selon le « Gabarit — question `Plan` » ci-dessous, puis une ligne vide et la phrase de question. Aucun champ `preview`. Mode délégué → `FORGE_QUESTION`, la tâche formulée entière dans `content`.
+2. **Poser une seule question** avec `AskUserQuestion` — `header` : `Plan`, options de la question `Plan` d'un plan neuf (étape 7 de `p4-plan.md`), dans cet ordre : `Validate and chain` / `Validate` / `Cancel` — motif « Validation d'un contenu » de `SKILL.md` : le changement demandé arrive en texte libre, reformuler, reposer la question. Champ `question` = la tâche formulée, recopiée en dur selon le « Gabarit — question `Plan` » ci-dessous, puis une ligne vide et la phrase de question. Aucun champ `preview`. Mode délégué → `FORGE_QUESTION`, la tâche formulée entière dans `content`.
 
    ⚠️ Le texte écrit avant `AskUserQuestion` peut être masqué à l'écran de l'utilisateur : la tâche recopiée dans `question` est la seule copie garantie visible avec la question.
 
-3. **Sur `Validate`** → appliquer la mise à jour du plan (tâche ajoutée, effort, position dans la séquence), écrire `.forge/branch/<BRANCH>/plan.md`, écrire `.forge/branch/<BRANCH>/brief.md` si `## Scope & rules` change, puis exécuter la tâche selon le mode en cours.
+3. **Sur `Validate and chain` ou `Validate`** → appliquer la mise à jour du plan (tâches ajoutées, effort, position dans la séquence), écrire `.forge/branch/<BRANCH>/plan.md`, écrire `.forge/branch/<BRANCH>/brief.md` si `## Scope & rules` change, puis :
+   - `Validate and chain` → enchaîner toutes les tâches ouvertes dans l'ordre, sans autre question — même règle qu'à l'étape 9 des « Actions ».
+   - `Validate` → rien n'est exécuté : étape 9 des « Actions », question `Mode` ou `Task` comme pour un plan neuf.
 
 4. **Sur `Cancel`** → rien n'entre au plan, la demande n'est pas traitée. STOP — ne pas continuer.
 
@@ -221,25 +181,11 @@ question: T[n] — [Titre]
           - [idée 1]
           - [idée 2]
 
-          [Ajouter cette tâche au plan et l'exécuter ?]
-option 1: [Valider] — [Ajoute T[n] au plan et l'exécute.]
-option 2: [Annuler] — [Rien n'entre au plan.]
+          [Ajouter cette tâche au plan ?]
+option 1: [Valider et enchaîner] — [Ajoute T[n] au plan et l'exécute, sans autre question.]
+option 2: [Valider] — [Ajoute T[n] au plan, puis demande comment exécuter les tâches.]
+option 3: [Annuler] — [Rien n'entre au plan.]
 ```
-
----
-
-## Renommage de branche
-
-**Déclencheur :** l'utilisateur demande de renommer la branche courante.
-
-**Réaction — dans l'ordre :**
-1. Exécuter `git branch -m <nouveau>`. Échec git → afficher l'erreur telle quelle, STOP.
-2. Déplacer `.forge/branch/<ancien>/` vers `.forge/branch/<nouveau>/`, retirer les dossiers parents devenus vides.
-3. Écrire une entrée dans LOG.
-4. `git ls-remote --heads origin <ancien>` non vide → signaler : "`<ancien>` still exists on origin — not deleted."
-5. Informer en une ligne : "On branch `<nouveau>`."
-
-⚠️ Jamais de suppression de l'ancien nom sur le distant sans demande.
 
 ---
 
@@ -263,6 +209,23 @@ Lire et exécuter intégralement le fichier de la première commande dont le dé
 - `Launch <X>, <Y>` → "Launch these branches in parallel." — les `slots` premières lançables, dans l'ordre du plan ; « Délégation — essaim de branches filles » de `commands/swarm.md`.
 - `Work on parent tasks` → "Leave the swarm as is and take the parent's own tasks." — seulement si des tâches ordinaires sont prenables ; étape 9, limitée à ces tâches.
 - `Later` → "Launch nothing now." — STOP.
+
+### Script de déploiement SQL → `commands/deployment-sql.md`
+
+**Déclencheur :** `## Deployment` gagne ou modifie une étape qui exécute du SQL — migration, script de reconstruction, requête d'exploitation.
+
+### Propagation vers CLAUDE.md → `commands/rule-propagation.md`
+
+**Déclencheur :**
+- Un choix d'infrastructure se pose (techno, lib, pattern, service)
+- L'utilisateur revient sur un choix fait instinctivement par Claude (le corrige, l'invalide)
+- L'utilisateur demande une correction de syntaxe, de structure ou de convention de code (nommage, format, organisation) sur un contenu produit par Claude
+
+⚠️ Bug fonctionnel, changement de besoin → aucun déclenchement.
+
+### Renommage de branche → `commands/branch-rename.md`
+
+**Déclencheur :** l'utilisateur demande de renommer la branche courante.
 
 ### Délégation — projet lié → `commands/delegation.md`, section du même nom
 

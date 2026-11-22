@@ -75,7 +75,7 @@ Si le dossier est vide (rien en dehors des éléments ignorés) :
 ## Après première génération — `project.md` absent
 - Écrire `.forge/project.md` avec le Write tool, sans présentation ni question.
   ⚠️ Ne jamais utiliser `mkdir` sur les chemins `.forge/` — Write tool crée les dossiers parents automatiquement.
-- Dire : "`project.md` written — say \"clean the forge\" to adjust it."
+- Dire : "`project.md` written — say \"clean the forge\" to adjust it; `/forge help` lists every command."
 - Exécuter « Contrôle — hook de mesure » ci-dessous.
 - Continuer directement à l'État 1 : lire et exécuter `phases/p1-coding-standards.md`.
 

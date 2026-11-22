@@ -10,6 +10,25 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ## [Unreleased]
 
+### Added
+
+- `/forge help` (`commands/help.md`): the cycle, every plain-word command (`engrave`, "clean the forge", "update the forge", "launch the swarm", closure, delegation) and the `.forge/` files, translated on display; `help` is reserved and never becomes a branch name. The first `project.md` written points to it.
+- State hook also on `SessionStart` (matcher `compact|resume`): objective of the brief, plan and last three LOG entries are injected again after a compaction or when a session resumes.
+- `status.sh --target <name>`: `target_exists` in the JSON, used by `/forge <argument>` instead of a separate `git rev-parse` call.
+
+### Changed
+
+- Script permissions: both installers allow the skill's scripts (`Bash(bash "<home>/.claude/skills/forge/scripts/*)`, quoted and unquoted), `SKILL.md` declares the same scripts in `allowed-tools` and fixes one call form, `bash "<SKILL_DIR>/scripts/<script>.sh" …`: outside auto mode, LOG entries, task marks and estimates no longer ask for permission. The unused rule `Bash(bash -c "git branch --show-current*)` is purged on install.
+- Resume no longer reads `project.md` and `coding-standards.md`: they are read when the first task of the turn starts, or before a direct action that changes code (section « Contexte du code » of `p5-resume.md`).
+- Rare sections load on demand from `commands/`: drafted email (`email.md`), teacher mode (`teacher.md`), SQL deployment script (`deployment-sql.md`), rule propagation to `CLAUDE.md` (`rule-propagation.md`), branch rename (`branch-rename.md`); their triggers stay in `SKILL.md` and `p5-resume.md`.
+- A new forge version is announced at the end of the status line, without a question at startup; installing is offered only on "update the forge".
+- Adding tasks during a branch offers the same choices as a new plan: validate and chain, validate (then choose how to run the tasks), cancel.
+- One state hook in bash for both platforms: the Windows installer replaces `forge-precompact.ps1`, file and `settings.json` entry included.
+
+### Removed
+
+- `hooks/ps1/forge-precompact.ps1`.
+
 ## [0.13.0] — 2026-11-22
 
 ### Added

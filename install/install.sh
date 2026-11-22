@@ -61,23 +61,30 @@ const oldForms   = names.flatMap(n => [
   'Read(' + H + '/.claude/skills/' + n + '/**)',
   'Read(' + H + '/.claude/skills/' + n + ')'
 ]);
-const legacy = ['Read(/.claude/**)', 'Edit(/.claude/**)', 'Write(/.claude/**)', 'Write(/.forge/**)'];
+const legacy = ['Read(/.claude/**)', 'Edit(/.claude/**)', 'Write(/.claude/**)', 'Write(/.forge/**)',
+                'Bash(bash -c \"git branch --show-current*)'];
 const stale = [...skillRules, ...oldForms, ...legacy];
-const projectRules = ['Read(/.forge/**)', 'Edit(/.forge/**)', 'Bash(bash -c \"git branch --show-current*)'];
+// Scripts du skill, sous les deux formes d'appel (chemin cité ou non) que SKILL.md autorise,
+// en barres obliques : node rend un HOME Windows en barres inverses sous Git Bash.
+const scripts = H.replace(/\\\\/g, '/') + '/.claude/skills/forge/scripts/';
+const scriptRules = ['Bash(bash \"' + scripts + '*)', 'Bash(bash ' + scripts + '*)'];
+const projectRules = ['Read(/.forge/**)', 'Edit(/.forge/**)', ...scriptRules];
 s.permissions.allow = s.permissions.allow
   .filter(r => !stale.includes(r) && !projectRules.includes(r))
   .concat(...skillRules, ...projectRules);
 
 s.hooks = s.hooks || {};
-s.hooks.PreCompact = s.hooks.PreCompact || [];
 
-// Retire toutes les entrées forge (bash + ps1), ajoute uniquement bash
-s.hooks.PreCompact = s.hooks.PreCompact.filter(g =>
-  !g.hooks || !g.hooks.some(h => h.command && h.command.includes('forge-precompact'))
-);
-
-const cmd = 'bash ~/.claude/hooks/forge/forge-precompact.sh';
-s.hooks.PreCompact.push({ hooks: [{ type: 'command', command: cmd, shell: 'bash' }] });
+// Hook d'état forge : avant compaction, puis après compaction ou reprise de session.
+// Retire toute entrée forge-precompact (bash ou ancienne ps1), puis ajoute l'entrée bash.
+const stateHook = { type: 'command', command: 'bash ~/.claude/hooks/forge/forge-precompact.sh', shell: 'bash' };
+const stateEvents = { PreCompact: null, SessionStart: 'compact|resume' };
+for (const [event, matcher] of Object.entries(stateEvents)) {
+  s.hooks[event] = (s.hooks[event] || []).filter(g =>
+    !g.hooks || !g.hooks.some(h => h.command && h.command.includes('forge-precompact'))
+  );
+  s.hooks[event].push(matcher ? { matcher, hooks: [stateHook] } : { hooks: [stateHook] });
+}
 
 // Hook de mesure du temps : retire toute entrée time-hook existante, puis l'ajoute à chaque événement écouté.
 // Asynchrone : Claude Code ne l'attend pas ; l'heure est prise à son démarrage, l'agrégation trie le journal.

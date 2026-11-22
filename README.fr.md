@@ -74,6 +74,7 @@ L'extension `/forge-clickup` requiert en plus le connecteur MCP ClickUp authenti
 
 ```
 /forge                  # travaille sur la branche courante (garde main/master)
+/forge help             # aide : cycle, commandes en langage naturel, fichiers .forge/
 /forge <nom-de-branche> # bascule sur <nom-de-branche>, créée depuis master/main si absente
 /forge <objectif en mots> # prend le texte comme objectif, sans question d'objectif
 /forge <code-clickup>   # avec .forge/clickup.json : lit la tâche existante (PRJ-1133 ou id brut), puis passe la main à forge-clickup
@@ -92,12 +93,18 @@ forge/
 │   ├── forge/
 │   │   ├── SKILL.md
 │   │   ├── commands/          (commandes chargées à la demande)
+│   │   │   ├── branch-rename.md       (renommage de branche)
 │   │   │   ├── closure.md             (clôture de tâche)
 │   │   │   ├── delegated-mode.md      (règles du mode délégué)
 │   │   │   ├── delegation.md          (projet lié, branche du même dépôt)
+│   │   │   ├── deployment-sql.md      (script de déploiement SQL)
+│   │   │   ├── email.md               (mail rédigé)
 │   │   │   ├── engrave.md             (livraison, synthèse metrics.json)
+│   │   │   ├── help.md                (aide, /forge help)
+│   │   │   ├── rule-propagation.md    (propagation d'une règle vers CLAUDE.md)
 │   │   │   ├── swarm.md               (essaim de branches filles : lancement, relais, fusion, reprise)
-│   │   │   └── update.md              (mise à jour du skill : proposition, contrôle manuel)
+│   │   │   ├── teacher.md             (mode professeur)
+│   │   │   └── update.md              (mise à jour du skill : contrôle manuel)
 │   │   ├── phases/
 │   │   │   ├── p0-project.md          (État 0 — Project Init)
 │   │   │   ├── p1-coding-standards.md (État 1 — Coding Standards Init)
@@ -122,10 +129,8 @@ forge/
 │   └── forge-clickup/        → extension : ouverture de tâche ClickUp
 │       └── SKILL.md
 ├── hooks/
-│   ├── bash/                 → copié dans ~/.claude/hooks/forge/ par install.sh (Unix)
-│   │   └── forge-precompact.sh
-│   └── ps1/                  → copié dans ~/.claude/hooks/forge/ par install.ps1 (Windows)
-│       └── forge-precompact.ps1
+│   └── bash/                 → copié dans ~/.claude/hooks/forge/ par les deux installeurs
+│       └── forge-precompact.sh   (hook d'état : PreCompact, SessionStart après compaction ou reprise)
 ├── install/
 │   ├── install.sh
 │   └── install.ps1
@@ -141,6 +146,7 @@ forge/
 │   └── README.md             (how to regenerate)
 ├── tests/
 │   ├── engrave.test.sh       → bash tests/engrave.test.sh, dépôts jetables uniquement
+│   ├── forge-precompact.test.sh → bash tests/forge-precompact.test.sh, dépôts jetables uniquement
 │   ├── install.test.sh       → bash tests/install.test.sh, HOME jetable uniquement
 │   ├── checks.test.sh        → bash tests/checks.test.sh, dépôts jetables uniquement
 │   ├── log-entry.test.sh     → bash tests/log-entry.test.sh, dossiers jetables uniquement
@@ -218,7 +224,7 @@ Les tâches L/XL incluent un bloc de décomposition commenté (`T1.1`, `T1.2`, �
 ### État 5 — Actif
 **Condition :** brief + plan présents
 
-Lit `coding-standards.md` et les fichiers en silence. Si `log.md` contient des entrées, affiche d'abord un récapitulatif "**Last session :**" des 10 dernières en une ligne, puis le tableau d'avancement. Propose ensuite les deux modes — enchaîner les tâches ouvertes ou en choisir une — et attend. Aucune tâche ouverte : aucun mode proposé, la question est ouverte.
+Lit le brief et le plan en silence ; `project.md` et `coding-standards.md` ne sont lus qu'au démarrage de la première tâche du tour, ou d'une modification directe du code — une reprise pour livrer, consulter ou clore ne les charge pas. Si `log.md` contient des entrées, affiche d'abord un récapitulatif "**Last session :**" des 10 dernières en une ligne, puis le tableau d'avancement. Propose ensuite les deux modes — enchaîner les tâches ouvertes ou en choisir une — et attend. Aucune tâche ouverte : aucun mode proposé, la question est ouverte.
 
 ---
 
@@ -226,13 +232,13 @@ Lit `coding-standards.md` et les fichiers en silence. Si `log.md` contient des e
 
 Créé en même temps que `project.md` (État 0), dans la langue de l'utilisateur : un titre (nom du projet) et une courte explication précisant que le fichier contient les conventions de code (structure, nommage, principes) à appliquer au moment d'écrire du code — une norme continue, pas un audit ponctuel — à compléter au fil du projet.
 
-Il est lu à chaque phase qui touche au code (Bootstrap, Plan, Actif) pour que les conventions restent appliquées tout au long du workflow.
+Il est lu à chaque phase qui touche au code — Bootstrap, Plan, et en État Actif au démarrage de la première tâche du tour — pour que les conventions restent appliquées tout au long du workflow.
 
 ---
 
 ## Détection de branche
 
-Via `bash -c "git branch --show-current 2>/dev/null"` — fonctionne sur Unix et Windows.  
+Via `scripts/status.sh`, qui lit la branche git courante et, pour `/forge <argument>`, vérifie aussi que la branche visée existe (`--target`) — fonctionne sur Unix et Windows.  
 Erreur ou résultat vide (pas de dépôt git) : demande un nom de code utilisé comme `<BRANCH>`. Sans réponse : STOP.
 
 ---
@@ -278,18 +284,23 @@ Avec une branche en argument (`/forge <nom-de-branche>`), la garde ne s'applique
       "Read(~/.claude/skills/forge/**)",
       "Read(~/.claude/skills/forge-clickup/**)",
       "Read(/.forge/**)", "Edit(/.forge/**)",
-      "Bash(git branch --show-current*)"
+      "Bash(bash \"/home/{USER}/.claude/skills/forge/scripts/*)",
+      "Bash(bash /home/{USER}/.claude/skills/forge/scripts/*)"
     ]
   },
   "hooks": {
     "PreCompact": [{
+      "hooks": [{ "type": "command", "command": "bash ~/.claude/hooks/forge/forge-precompact.sh", "shell": "bash" }]
+    }],
+    "SessionStart": [{
+      "matcher": "compact|resume",
       "hooks": [{ "type": "command", "command": "bash ~/.claude/hooks/forge/forge-precompact.sh", "shell": "bash" }]
     }]
   }
 }
 ```
 
-**Windows (`install.ps1`) :**
+**Windows (`install.ps1`) :** mêmes hooks, lancés par Git Bash ; règles de lecture en chemin POSIX, règles des scripts en chemin Windows à barres obliques.
 ```json
 {
   "permissions": {
@@ -297,27 +308,24 @@ Avec une branche en argument (`/forge <nom-de-branche>`), la garde ne s'applique
       "Read(//c/Users/{USER}/.claude/skills/forge/**)",
       "Read(//c/Users/{USER}/.claude/skills/forge-clickup/**)",
       "Read(/.forge/**)", "Edit(/.forge/**)",
-      "Bash(git branch --show-current*)"
+      "Bash(bash \"C:/Users/{USER}/.claude/skills/forge/scripts/*)",
+      "Bash(bash C:/Users/{USER}/.claude/skills/forge/scripts/*)"
     ]
-  },
-  "hooks": {
-    "PreCompact": [{
-      "hooks": [{ "type": "command", "command": "powershell -File C:\\Users\\{USER}\\.claude\\hooks\\forge\\forge-precompact.ps1", "shell": "powershell" }]
-    }]
   }
 }
 ```
 
+Les six hooks de mesure du temps s'y ajoutent (section « Mesure du temps et estimation » ci-dessous). Chaque installation retire d'abord les règles et hooks forge déjà présents, formes abandonnées comprises (`Bash(bash -c "git branch --show-current*)`, ancien hook PowerShell) : jamais de doublon.
+
+**Permissions des scripts :** le skill appelle ses scripts sous une forme unique, `bash "<dossier du skill>/scripts/<script>.sh" …`, couverte par les deux règles `Bash(…)` ci-dessus et, pour le tour qui invoque `/forge`, par le `allowed-tools` de `SKILL.md`. Hors mode auto, aucune demande de permission n'interrompt donc une entrée de LOG, une marque de tâche ou une estimation.
+
 ---
 
-## Hook PreCompact
+## Hook d'état — PreCompact et SessionStart
 
-Injecte l'état forge dans la compaction du contexte pour préserver branche, objectif et statut des tâches.
+Injecte l'état forge — objectif du brief, plan, trois dernières entrées de LOG — avant chaque compaction du contexte (`PreCompact`), puis de nouveau après une compaction ou à la reprise d'une session (`SessionStart`, `compact|resume`). Le hook lit le dossier du projet dans l'entrée JSON de Claude Code ; hors dépôt git ou sans plan, il n'écrit rien.
 
-- `install.sh` → déploie `forge-precompact.sh` dans `~/.claude/hooks/forge/`, ajoute uniquement l'entrée bash dans `settings.json`
-- `install.ps1` → déploie `forge-precompact.ps1` dans `~/.claude/hooks/forge/`, ajoute uniquement l'entrée powershell dans `settings.json`
-
-Chaque installeur retire toutes les entrées forge existantes avant d'ajouter la sienne — pas de doublon même en cas de réinstall.
+Un seul hook, en bash, pour les deux plateformes : Git Bash est déjà requis sous Windows par les scripts du skill. L'installeur Windows remplace l'ancien `forge-precompact.ps1`, fichier et entrée de `settings.json` compris.
 
 ---
 
@@ -379,8 +387,8 @@ Une **demande de vérification** — lancer des tests, contrôler un comportemen
 
 **Réaction :** une nouvelle demande est toujours une nouvelle tâche du plan — forge ne demande jamais s'il faut l'ajouter ou la traiter hors plan.
 1. Signaler : `"This request isn't in the current plan."`, puis formuler la tâche telle qu'elle entre au plan — titre, effort, fichiers, description — avec l'entrée `## Scope & rules` qu'elle implique, si le périmètre change durablement.
-2. Poser une seule question : valider, ou annuler. La tâche est recopiée en texte brut en tête de la question elle-même, sur un gabarit figé — titre, effort et description entière en puces, numérotées quand l'ordre compte ; fichiers et entrée de périmètre restent dans la réponse — : elle reste à l'écran même quand le texte au-dessus de la boîte de dialogue est masqué. Un changement de formulation passe par le champ de texte libre, comme pour toute validation de contenu.
-3. Validée → la tâche entre au plan (et au brief, si son périmètre a changé) et s'exécute selon le mode en cours. Annulée → rien n'entre au plan, la demande n'est pas traitée.
+2. Poser une seule question, avec les options de la validation d'un plan neuf : valider et enchaîner, valider, ou annuler. La tâche est recopiée en texte brut en tête de la question elle-même, sur un gabarit figé — titre, effort et description entière en puces, numérotées quand l'ordre compte ; fichiers et entrée de périmètre restent dans la réponse — : elle reste à l'écran même quand le texte au-dessus de la boîte de dialogue est masqué. Un changement de formulation passe par le champ de texte libre, comme pour toute validation de contenu.
+3. Validée → la tâche entre au plan (et au brief, si son périmètre a changé). Valider et enchaîner l'exécute aussitôt, avec les autres tâches ouvertes, sans autre question ; valider l'écrit seulement, puis demande comment exécuter les tâches, comme pour un plan neuf. Annulée → rien n'entre au plan, la demande n'est pas traitée.
 
 ---
 
@@ -410,9 +418,9 @@ Met à jour `project.md` — uniquement ce qui a changé, après validation.
 "mettre à jour la forge" / "update the forge"
 ```
 
-Au plus une fois toutes les 24 heures, `/forge` interroge le dépôt sur son dernier tag `vX.Y.Z` en arrière-plan, sans l'attendre : le démarrage coûte quelques millisecondes, hors réseau tout reste silencieux. Une version plus récente ainsi trouvée est proposée au `/forge` suivant ; sur `Mettre à jour`, forge clone ce tag dans un dossier temporaire, lance l'installeur de la plateforme et demande de relancer `/forge`. `Plus tard` écarte cette version : seule une version plus récente est proposée au démarrage.
+Au plus une fois toutes les 24 heures, `/forge` interroge le dépôt sur son dernier tag `vX.Y.Z` en arrière-plan, sans l'attendre : le démarrage coûte quelques millisecondes, hors réseau tout reste silencieux. Une version plus récente ainsi trouvée est annoncée au `/forge` suivant, en fin de ligne d'état, sans question : le travail commence sans détour.
 
-La phrase ci-dessus contrôle tout de suite, quel que soit le délai, repropose une version écartée, et signale aussi une version à jour ou un dépôt injoignable.
+La phrase ci-dessus contrôle tout de suite, quel que soit le délai, et propose l'installation : sur `Mettre à jour`, forge clone le tag dans un dossier temporaire, lance l'installeur de la plateforme et demande de relancer `/forge` ; `Plus tard` écarte cette version, qui n'est plus annoncée au démarrage — seule une version plus récente l'est. Elle signale aussi une version à jour ou un dépôt injoignable.
 
 Une installation sans `install.json` (antérieure à cette fonction, ou depuis une archive hors git) est contrôlée aussitôt et se voit proposer la dernière version. Un forge délégué ne contrôle jamais.
 

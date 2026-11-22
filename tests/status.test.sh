@@ -103,6 +103,19 @@ test_reports_no_branch_outside_git() {
 
 # ── Branche ───────────────────────────────────────────────────────────────────
 
+test_reports_existing_target_branch() {
+  git -C "$WORK" branch feature
+  assert_contains '"target_exists":true' "$(status --target feature)"
+}
+
+test_reports_missing_target_branch() {
+  assert_contains '"target_exists":false' "$(status --target absent)"
+}
+
+test_omits_target_field_without_target() {
+  assert_not_contains 'target_exists' "$(status)"
+}
+
 test_uses_current_git_branch_by_default() {
   git -C "$WORK" checkout -q -b feature
   assert_contains '"branch":"feature"' "$(status)"
@@ -343,6 +356,9 @@ run_test test_finds_resumable_branch_containing_a_slash "trouve une branche à r
 run_test test_changes_nothing_in_repository "ne modifie rien dans le dépôt"
 run_test test_rejects_missing_root "refuse une racine absente"
 run_test test_rejects_unknown_argument "refuse un argument inconnu"
+run_test test_reports_existing_target_branch "signale une branche visée existante"
+run_test test_reports_missing_target_branch "signale une branche visée absente"
+run_test test_omits_target_field_without_target "n'écrit pas target_exists sans --target"
 run_test test_writes_nothing_on_stdout_for_usage_error "n'écrit rien sur la sortie standard en erreur d'usage"
 
 echo "$PASSED passed, $FAILED failed"

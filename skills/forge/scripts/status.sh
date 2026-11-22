@@ -3,8 +3,9 @@
 #   Lecture seule : aucune écriture, aucune commande git modifiant le dépôt
 #   Rend compte en JSON sur une ligne — la mise en page revient au skill
 #   Appelé à chaque lancement : lancer un processus coûte cher sous Git Bash, d'où le travail en variables
-# Usage : status.sh [--root <dir>] [--branch <name>]
+# Usage : status.sh [--root <dir>] [--branch <name>] [--target <name>]
 #   --branch : branche à évaluer à la place de la branche git courante (nom de code hors git)
+#   --target : branche locale dont l'existence est rendue dans target_exists (argument de /forge)
 # Sortie : 0 état écrit · 1 usage, sans JSON
 
 set -u
@@ -39,6 +40,7 @@ readonly TASKS_PROGRAM='
 
 ROOT="."
 BRANCH=""
+TARGET=""
 BRANCH_DIR=""
 STATE=""
 DONE_COUNT=0
@@ -52,7 +54,7 @@ RESUMABLE_JSON=""
 
 fail_usage() {
   echo "status: $1" >&2
-  echo "usage: status.sh [--root <dir>] [--branch <name>]" >&2
+  echo "usage: status.sh [--root <dir>] [--branch <name>] [--target <name>]" >&2
   exit $EXIT_USAGE
 }
 
@@ -65,6 +67,7 @@ parse_arguments() {
     case $1 in
       --root)   require_value "$1" $#; ROOT=$2; shift 2 ;;
       --branch) require_value "$1" $#; BRANCH=$2; shift 2 ;;
+      --target) require_value "$1" $#; TARGET=$2; shift 2 ;;
       *)        fail_usage "unknown argument $1" ;;
     esac
   done
@@ -151,6 +154,12 @@ load_resumable_branches() {
   done < <(plans_with_open_tasks "$base")
 }
 
+# Champ rendu seulement sur demande : existence de la branche visée par /forge <argument>.
+target_exists_json() {
+  [ -n "$TARGET" ] || return 0
+  if branch_exists "$TARGET"; then REPLY=',"target_exists":true'; else REPLY=',"target_exists":false'; fi
+}
+
 render_status() {
   local branch_json=null state_json
   if [ -n "$BRANCH" ]; then
@@ -162,8 +171,10 @@ render_status() {
   printf '{"branch":%s,"state":%s,' "$branch_json" "$state_json"
   printf '"tasks":{"done":%s,"open":%s,"blocked":%s,"total":%s},' \
     "$DONE_COUNT" "$OPEN_COUNT" "$BLOCKED_COUNT" "$((DONE_COUNT + OPEN_COUNT + BLOCKED_COUNT))"
-  printf '"open_tasks":[%s],"recent_log":[%s],"resumable":[%s]}\n' \
-    "$OPEN_TASKS_JSON" "$RECENT_LOG_JSON" "$RESUMABLE_JSON"
+  REPLY=""
+  target_exists_json
+  printf '"open_tasks":[%s],"recent_log":[%s],"resumable":[%s]%s}\n' \
+    "$OPEN_TASKS_JSON" "$RECENT_LOG_JSON" "$RESUMABLE_JSON" "$REPLY"
 }
 
 main() {

@@ -16,18 +16,16 @@ Mode délégué → aucune proposition, aucun contrôle : `AskUserQuestion` est 
 
 ## Proposition
 
-**Déclencheur :**
-- `update_available` vrai dans le JSON de `update.sh check` à l'étape préalable de « Détection d'état » (`SKILL.md`)
-- Étape 4 du « Contrôle manuel » ci-dessus
+**Déclencheur :** étape 4 du « Contrôle manuel » ci-dessus — jamais au démarrage : une version disponible n'y est qu'annoncée dans la ligne d'état (étape 5 de « Détection d'état », `SKILL.md`).
 
 **Réaction — dans l'ordre :**
 1. Poser le choix avec `AskUserQuestion` — `header` : `Update`, question nommant `installed` (`null` → version inconnue) et `latest`, deux options :
    - `Update now` → "Install `<latest>` now, then relaunch `/forge`."
-   - `Later` → "Skip this version; only a newer one is offered at startup."
-2. Sur `Later` → exécuter `bash <SKILL_DIR>/scripts/update.sh dismiss` : cette version n'est plus proposée au démarrage, seule une version plus récente ou le « Contrôle manuel » la repropose. Revenir au déclencheur et continuer là où il s'est arrêté.
+   - `Later` → "Skip this version; only a newer one is announced at startup."
+2. Sur `Later` → exécuter `bash <SKILL_DIR>/scripts/update.sh dismiss` : cette version n'est plus annoncée au démarrage, seule une version plus récente ou le « Contrôle manuel » la repropose. STOP — ne pas continuer.
 3. Sur `Update now` → exécuter `bash <SKILL_DIR>/scripts/update.sh run`. Lire le JSON : contexte interne, jamais affiché brut.
    - Sortie `0` → "Forge updated: `<from>` → `<to>`. Relaunch `/forge` to use it." STOP — ne pas continuer : les instructions chargées dans ce tour sont celles de l'ancienne version.
-   - Sortie `2` → "Update failed: `<reason>`.", suivi de `detail` en bloc de code quand il n'est pas `null`. Revenir au déclencheur et continuer là où il s'est arrêté.
-   - Sortie `1` → afficher l'erreur telle quelle. Revenir au déclencheur et continuer là où il s'est arrêté.
+   - Sortie `2` → "Update failed: `<reason>`.", suivi de `detail` en bloc de code quand il n'est pas `null`. STOP — ne pas continuer.
+   - Sortie `1` → afficher l'erreur telle quelle. STOP — ne pas continuer.
 
 ⚠️ Une seule proposition par tour : `Later` retenu ou échec → aucune nouvelle proposition dans ce tour, même si « Détection d'état » reprend à son étape 1.

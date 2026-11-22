@@ -2,6 +2,7 @@
 name: forge
 description: "Orchestre le cycle de vie d'une branche de développement : brief validé, plan structuré, exécution suivie, délégation à des sous-agents étanches (projet lié ou branche), livraison git avec merges et release, clôture avec rapport."
 disable-model-invocation: false
+allowed-tools: Bash(bash "${CLAUDE_SKILL_DIR}/scripts/*), Bash(bash ${CLAUDE_SKILL_DIR}/scripts/*)
 ---
 
 Always respond in the user's language.
@@ -14,9 +15,11 @@ Forgeron enchanteur : sobre, précis, direct. Le code est ton métal.
 
 ## Branche de travail
 
+**Argument `help` — `/forge help`** : lire et exécuter `commands/help.md`. STOP — ni branche, ni « Détection d'état » : `help` n'est jamais un nom de branche.
+
 **Avec argument — `/forge <argument>`** : l'argument est un objectif, une branche ou un code de tâche ClickUp. Première condition remplie, dans cet ordre :
 1. Argument contenant une espace → objectif : appliquer « Question au lieu d'un objectif » ci-dessous, puis le retenir pour pré-remplir `## Objective` et appliquer **Sans argument**.
-2. Vérifier : `!bash -c "git rev-parse --verify --quiet refs/heads/<argument> >/dev/null && echo exists || echo missing"`. `exists` → `!git checkout <argument>`, puis étape 5.
+2. Vérifier : `bash <SKILL_DIR>/scripts/status.sh --root <ROOT> --target <argument>`, champ `target_exists`. `true` → `!git checkout <argument>`, puis étape 5.
 3. `.forge/clickup.json` présent → `clickup_get_task` sur l'argument :
    - Tâche trouvée → invoquer `forge-clickup` via l'outil Skill avec l'argument. STOP — `forge-clickup` repasse la main à `forge`.
    - Tâche introuvable → étape 4.
@@ -41,6 +44,7 @@ Forgeron enchanteur : sobre, précis, direct. Le code est ton métal.
 ## Chemins (substituer <BRANCH> par la valeur réelle)
 - ROOT : racine du projet — le dossier courant ; en mode délégué, le dossier transmis par le parent (worktree du projet lié ou de la branche). Tout chemin ci-dessous et toute commande git se résolvent sous ROOT.
 - SKILL_DIR : dossier du skill, donné par Claude Code à l'invocation (« Base directory for this skill ») — jamais un chemin `~/.claude` écrit en dur. Seuls les scripts du skill s'y résolvent, jamais les chemins ci-dessous.
+  ⚠️ Appel d'un script du skill → `bash "<SKILL_DIR>/scripts/<script>.sh" …` : chemin absolu en barres obliques (`C:/Users/…` sous Windows), cité, en tête de commande — jamais précédé d'un `cd` ni d'une variable. Seule forme couverte par les règles de permission installées : toute autre forme déclenche une demande de permission à chaque appel.
 - PROJECT : `.forge/project.md`
 - CODING_STANDARDS : `.forge/coding-standards.md`
 - BRIEF : `.forge/branch/<BRANCH>/brief.md`
@@ -71,14 +75,7 @@ Forgeron enchanteur : sobre, précis, direct. Le code est ton métal.
 
 **Déclencheur :** mail rédigé à la demande pour un tiers — client, partenaire, éditeur, support —, réponse client de la clôture comprise.
 
-**Réaction :** écrire le mail dans OUTPUT en deux fichiers de même nom, `AAAAMMJJ-email-<sujet-slug>` — sur le modèle de `explanation` :
-- `.txt` — texte brut : première ligne `Objet : …` dans la langue du mail, un paragraphe par ligne, jamais de tableau Markdown — un tableau devient une liste, une ligne par élément.
-- `.html` — même contenu, à coller dans Outlook : document autonome, styles en ligne uniquement (`style="…"` sur chaque élément, ni balise `<style>` ni classe), police `Calibri, Arial, sans-serif` 11pt ; tableau en `<table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse">`, ligne d'en-tête grisée, états colorés en ligne.
-- Ouvrir le `.html` dans le navigateur par défaut dès l'écriture (`start` / `open` / `xdg-open`) et rappeler en une ligne le collage : `Ctrl+A`, `Ctrl+C` dans le navigateur, `Ctrl+V` dans le mail, ligne d'objet reportée dans le champ Objet.
-- Mail retravaillé → les deux fichiers réécrits sur place. Même jour, autre mail sur le même sujet → `-2`, `-3`…
-- Jamais de secret dans un mail — mot de passe, secret client, jeton —, même cité par l'utilisateur.
-
-Contenu généré : aucune confirmation avant l'écriture, une ligne dans LOG.
+**Réaction :** lire et exécuter intégralement `commands/email.md`.
 
 ---
 
@@ -128,18 +125,7 @@ Aucun déclencheur : quand le brief ou le plan de la branche en a besoin (schém
 
 **Déclencheur :** l'utilisateur pose une question de compréhension sur un concept technique ("c'est quoi X", "explique-moi Y", "je ne comprends pas Z") — par opposition à une question de décision ou de scope.
 
-**Réaction — dans l'ordre :**
-1. Basculer en mode pédagogique : expliquer le concept clairement, avec un exemple concret lié au contexte du projet si pertinent.
-2. Déléguer l'écriture à un agent en tâche de fond (`run_in_background: true`), sans attendre son retour : chercher dans OUTPUT un fichier `*-explanation-<sujet-slug>.md` — présent → le compléter par une nouvelle section datée, nom inchangé ; absent → le créer sous `AAAAMMJJ-explanation-<sujet-slug>.md`, avec l'explication structurée pour référence ultérieure.
-3. Reprendre immédiatement le fil de la tâche en cours.
-4. À la fin de l'agent, signaler l'écriture en une ligne, sans attendre de réponse :
-   > "Explanation file written: `<AAAAMMJJ>-explanation-<sujet-slug>.md`."
-
-⚠️ BRANCH `main` ou `master` → étapes 2 et 4 ignorées : aucun fichier écrit, l'explication reste dans la réponse.
-⚠️ Aucune confirmation demandée avant l'écriture.
-⚠️ Signalement à la fin de l'agent uniquement, jamais à son lancement.
-
-**Question de suivi sur le même sujet :** lancer un nouvel agent en tâche de fond pour l'ajout, uniquement après la fin de l'agent précédent — jamais deux agents en écriture simultanée sur le même fichier.
+**Réaction :** lire et exécuter intégralement `commands/teacher.md`.
 
 ---
 
@@ -187,11 +173,11 @@ Si BRANCH est `main` ou `master`, dans l'ordre :
    - hors mode délégué, `bash <SKILL_DIR>/scripts/update.sh check` ;
    - hors mode délégué, `bash <SKILL_DIR>/scripts/checks.sh --root <ROOT> </dev/null >/dev/null 2>&1 &` — contrôles de démarrage détachés, jamais attendus ni lus, rien affiché, rien dans LOG.
 
-   Lire les JSON de `status.sh` et `update.sh` : contexte interne, jamais affichés bruts. `update_available` vrai → lire et exécuter `commands/update.md`, section « Proposition », avant de continuer.
+   Lire les JSON de `status.sh` et `update.sh` : contexte interne, jamais affichés bruts. `update_available` vrai → mention ajoutée à la ligne d'état de l'étape 5, aucune question au démarrage.
 2. `state` vaut `project_init` ou `coding_standards_init` → table ci-dessous, sans garde : `project.md` et `coding-standards.md` sont communs à toutes les branches et ne résolvent jamais `<BRANCH>`.
 3. `state` vaut `no_branch` (pas de git) → demander un nom de code (ex: `refonte-auth`), l'utiliser comme `<BRANCH>`, reprendre à l'étape 1. Sans réponse : STOP.
 4. Exécuter la « Garde de sécurité » ci-dessus. `<BRANCH>` changée → reprendre à l'étape 1.
-5. Afficher une ligne d'état, dans la langue de l'utilisateur : `<branch>` · `<state>` · `<done>/<total>` tâches, suivis du nombre de tâches bloquées s'il y en a. Sans plan → `<branch>` · `<state>`.
+5. Afficher une ligne d'état, dans la langue de l'utilisateur : `<branch>` · `<state>` · `<done>/<total>` tâches, suivis du nombre de tâches bloquées s'il y en a. Sans plan → `<branch>` · `<state>`. `update_available` vrai → ` · forge <latest> available — say "update the forge"` en fin de ligne, la commande dans la langue de l'utilisateur (« mets à jour la forge » en français).
 
 Lire la table dans l'ordre, exécuter intégralement le fichier de la ligne dont le `state` correspond, STOP — ne pas lire les lignes suivantes.
 

@@ -76,6 +76,7 @@ The `/forge-clickup` extension additionally requires the ClickUp MCP connector t
 
 ```
 /forge                  # works on the current branch (main/master guard applies)
+/forge help             # help: cycle, natural-language commands, .forge/ files
 /forge <branch-name>    # checks out <branch-name>, creating it from master/main if missing
 /forge <goal in words>  # takes the text as the goal, no goal question asked
 /forge <clickup-code>   # with .forge/clickup.json: reads the existing task (PRJ-1133 or raw id), then hands over to forge-clickup
@@ -94,12 +95,18 @@ forge/
 │   ├── forge/
 │   │   ├── SKILL.md
 │   │   ├── commands/          (commands loaded on demand)
+│   │   │   ├── branch-rename.md       (branch rename)
 │   │   │   ├── closure.md             (task closure)
 │   │   │   ├── delegated-mode.md      (delegated mode rules)
 │   │   │   ├── delegation.md          (linked project, same-repo branch)
+│   │   │   ├── deployment-sql.md      (SQL deployment script)
+│   │   │   ├── email.md               (drafted email)
 │   │   │   ├── engrave.md             (shipping, metrics.json summary)
+│   │   │   ├── help.md                (help, /forge help)
+│   │   │   ├── rule-propagation.md    (rule propagation to CLAUDE.md)
 │   │   │   ├── swarm.md               (swarm of child branches: launch, relay, merge, resume)
-│   │   │   └── update.md              (skill update: proposal, manual check)
+│   │   │   ├── teacher.md             (teacher mode)
+│   │   │   └── update.md              (skill update: manual check)
 │   │   ├── phases/
 │   │   │   ├── p0-project.md          (State 0 — Project Init)
 │   │   │   ├── p1-coding-standards.md (State 1 — Coding Standards Init)
@@ -124,10 +131,8 @@ forge/
 │   └── forge-clickup/        → extension: ClickUp task kickoff
 │       └── SKILL.md
 ├── hooks/
-│   ├── bash/                 → copied to ~/.claude/hooks/forge/ by install.sh (Unix)
-│   │   └── forge-precompact.sh
-│   └── ps1/                  → copied to ~/.claude/hooks/forge/ by install.ps1 (Windows)
-│       └── forge-precompact.ps1
+│   └── bash/                 → copied to ~/.claude/hooks/forge/ by both installers
+│       └── forge-precompact.sh   (state hook: PreCompact, SessionStart after compaction or resume)
 ├── install/
 │   ├── install.sh
 │   └── install.ps1
@@ -143,6 +148,7 @@ forge/
 │   └── README.md             (how to regenerate)
 ├── tests/
 │   ├── engrave.test.sh       → bash tests/engrave.test.sh, throwaway repositories only
+│   ├── forge-precompact.test.sh → bash tests/forge-precompact.test.sh, throwaway repositories only
 │   ├── install.test.sh       → bash tests/install.test.sh, throwaway home only
 │   ├── checks.test.sh        → bash tests/checks.test.sh, throwaway repositories only
 │   ├── log-entry.test.sh     → bash tests/log-entry.test.sh, throwaway folders only
@@ -220,7 +226,7 @@ L/XL tasks include a commented decomposition block (`T1.1`, `T1.2`, …) to fill
 ### State 5 — Active
 **Condition:** brief + plan present
 
-Reads `coding-standards.md` and files silently. If `log.md` has entries, displays a one-line "**Last session:**" recap of the last 10 first, then the progress table. Then offers the two modes — chaining the open tasks or picking one yourself — and waits. No open task: no mode is offered, the question is left open.
+Reads the brief and the plan silently; `project.md` and `coding-standards.md` are read only when the first task of the turn starts, or a direct code change — a resume to ship, review or close does not load them. If `log.md` has entries, displays a one-line "**Last session:**" recap of the last 10 first, then the progress table. Then offers the two modes — chaining the open tasks or picking one yourself — and waits. No open task: no mode is offered, the question is left open.
 
 ---
 
@@ -228,13 +234,13 @@ Reads `coding-standards.md` and files silently. If `log.md` has entries, display
 
 Created alongside `project.md` (State 0), in the user's language: a title (project name) and a short explanation stating that the file holds the coding conventions (structure, naming, principles) to apply while writing code — an ongoing standard, not a one-off audit — meant to be filled in as the project evolves.
 
-It's read at every phase that touches code (Bootstrap, Plan, Active) so conventions stay applied throughout the workflow.
+It's read at every phase that touches code — Bootstrap, Plan, and in State Active when the first task of the turn starts — so conventions stay applied throughout the workflow.
 
 ---
 
 ## Branch detection
 
-Via `bash -c "git branch --show-current 2>/dev/null"` — works on both Unix and Windows.  
+Via `scripts/status.sh`, which reads the current git branch and, for `/forge <argument>`, also checks that the target branch exists (`--target`) — works on both Unix and Windows.  
 Error or empty result (no git repo): asks for a code name used as `<BRANCH>`. No answer → STOP.
 
 ---
@@ -279,18 +285,23 @@ With a branch as argument (`/forge <branch-name>`) the guard does not apply: for
       "Read(~/.claude/skills/forge/**)",
       "Read(~/.claude/skills/forge-clickup/**)",
       "Read(/.forge/**)", "Edit(/.forge/**)",
-      "Bash(git branch --show-current*)"
+      "Bash(bash \"/home/{USER}/.claude/skills/forge/scripts/*)",
+      "Bash(bash /home/{USER}/.claude/skills/forge/scripts/*)"
     ]
   },
   "hooks": {
     "PreCompact": [{
+      "hooks": [{ "type": "command", "command": "bash ~/.claude/hooks/forge/forge-precompact.sh", "shell": "bash" }]
+    }],
+    "SessionStart": [{
+      "matcher": "compact|resume",
       "hooks": [{ "type": "command", "command": "bash ~/.claude/hooks/forge/forge-precompact.sh", "shell": "bash" }]
     }]
   }
 }
 ```
 
-**Windows (`install.ps1`):**
+**Windows (`install.ps1`):** same hooks, run by Git Bash; read rules as POSIX paths, script rules as Windows paths with forward slashes.
 ```json
 {
   "permissions": {
@@ -298,27 +309,24 @@ With a branch as argument (`/forge <branch-name>`) the guard does not apply: for
       "Read(//c/Users/{USER}/.claude/skills/forge/**)",
       "Read(//c/Users/{USER}/.claude/skills/forge-clickup/**)",
       "Read(/.forge/**)", "Edit(/.forge/**)",
-      "Bash(git branch --show-current*)"
+      "Bash(bash \"C:/Users/{USER}/.claude/skills/forge/scripts/*)",
+      "Bash(bash C:/Users/{USER}/.claude/skills/forge/scripts/*)"
     ]
-  },
-  "hooks": {
-    "PreCompact": [{
-      "hooks": [{ "type": "command", "command": "powershell -File C:\\Users\\{USER}\\.claude\\hooks\\forge\\forge-precompact.ps1", "shell": "powershell" }]
-    }]
   }
 }
 ```
 
+The six time measurement hooks are added as well (see "Time measurement and estimate" below). Each install first removes the forge rules and hooks already present, abandoned forms included (`Bash(bash -c "git branch --show-current*)`, former PowerShell hook): never a duplicate.
+
+**Script permissions:** the skill calls its scripts in a single form, `bash "<skill folder>/scripts/<script>.sh" …`, covered by the two `Bash(…)` rules above and, for the turn that invokes `/forge`, by the `allowed-tools` of `SKILL.md`. Outside auto mode, no permission prompt ever interrupts a LOG entry, a task mark or an estimate.
+
 ---
 
-## PreCompact hook
+## State hook — PreCompact and SessionStart
 
-Injects the forge state into context compaction to preserve branch, goal, and task statuses.
+Injects the forge state — brief objective, plan, last three LOG entries — before each context compaction (`PreCompact`), then again after a compaction or when a session is resumed (`SessionStart`, `compact|resume`). The hook reads the project folder from Claude Code's JSON input; outside a git repository or without a plan, it writes nothing.
 
-- `install.sh` → deploys `forge-precompact.sh` to `~/.claude/hooks/forge/`, adds only the bash entry to `settings.json`
-- `install.ps1` → deploys `forge-precompact.ps1` to `~/.claude/hooks/forge/`, adds only the powershell entry to `settings.json`
-
-Each installer removes all existing forge entries before adding its own — no duplicates even on reinstall.
+A single hook, in bash, for both platforms: Git Bash is already required on Windows by the skill's scripts. The Windows installer replaces the former `forge-precompact.ps1`, file and `settings.json` entry included.
 
 ---
 
@@ -380,8 +388,8 @@ A **check request** — run tests, verify a behaviour, reproduce a case — come
 
 **Reaction:** a new request is always a new plan task — forge never asks whether to add it or handle it off-plan.
 1. Flag it: `"This request isn't in the current plan."`, then write the task up as it would enter the plan — title, effort, files, description — together with the `## Scope & rules` entry it implies, if the scope changes durably.
-2. Ask one question only: validate, or cancel. The task is copied as plain text at the top of the question itself, on a fixed template — title, effort, and the full description as bullets, numbered when order matters; files and scope entry stay in the reply — so it stays on screen even when the text above the dialog is hidden. A change to the wording goes through the free-text field, as for any content validation.
-3. Validated → the task enters the plan (and the brief, if its scope changed) and runs under the current mode. Cancelled → nothing enters the plan and the request is not handled.
+2. Ask one question only, with the options of a new plan's validation: validate and chain, validate, or cancel. The task is copied as plain text at the top of the question itself, on a fixed template — title, effort, and the full description as bullets, numbered when order matters; files and scope entry stay in the reply — so it stays on screen even when the text above the dialog is hidden. A change to the wording goes through the free-text field, as for any content validation.
+3. Validated → the task enters the plan (and the brief, if its scope changed). Validate and chain runs it at once, along with the other open tasks, with no further question; validate only writes it, then asks how to run the tasks, as for a new plan. Cancelled → nothing enters the plan and the request is not handled.
 
 ---
 
@@ -411,9 +419,9 @@ Updates `project.md` — only what changed, after validation.
 "mettre à jour la forge" / "update the forge"
 ```
 
-At most once every 24 hours, `/forge` asks the repository for its latest `vX.Y.Z` tag in the background, without waiting: startup costs a few milliseconds, offline stays silent. A newer version found this way is offered at the next `/forge`; on `Update now`, forge clones that tag in a temporary folder, runs the platform installer and asks you to relaunch `/forge`. `Later` skips that version: only a newer one is offered at startup.
+At most once every 24 hours, `/forge` asks the repository for its latest `vX.Y.Z` tag in the background, without waiting: startup costs a few milliseconds, offline stays silent. A newer version found this way is announced at the next `/forge`, at the end of the status line, with no question: work starts straight away.
 
-The phrase above checks right away, whatever the delay, offers a skipped version again, and also says when you are up to date or when the repository is unreachable.
+The phrase above checks right away, whatever the delay, and offers the install: on `Update now`, forge clones the tag in a temporary folder, runs the platform installer and asks you to relaunch `/forge`; `Later` skips that version, which is no longer announced at startup — only a newer one is. It also says when you are up to date or when the repository is unreachable.
 
 An install without `install.json` (older than this feature, or from an archive outside git) is checked at once and offered the latest version. Delegated runs never check.
 

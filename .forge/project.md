@@ -16,24 +16,33 @@ forge/
 │   ├── forge/
 │   │   ├── SKILL.md               (machine à états : branche → garde main/master → détection d'état ; mode délégué)
 │   │   ├── commands/              (commandes chargées à la demande, déclencheurs dans p5-resume.md)
+│   │   │   ├── branch-rename.md      (Renommage de branche)
 │   │   │   ├── closure.md            (Clôture de tâche)
+│   │   │   ├── deployment-sql.md     (Script de déploiement SQL)
+│   │   │   ├── email.md              (Mail rédigé, déclencheur dans SKILL.md)
+│   │   │   ├── help.md               (Aide, /forge help, argument réservé dans SKILL.md)
 │   │   │   ├── delegated-mode.md     (règles du sous-agent délégué, condition dans SKILL.md)
 │   │   │   ├── delegation.md         (Délégation — projet lié, branche du même dépôt)
 │   │   │   ├── engrave.md            (Livraison, synthèse metrics.json)
+│   │   │   ├── rule-propagation.md   (Correction ou choix d'infrastructure → propagation vers CLAUDE.md)
 │   │   │   ├── swarm.md              (Essaim de branches filles : lancement, relais, fin, fusion, retrait, état, reprise, plan mixte)
-│   │   │   └── update.md             (Mise à jour du skill : proposition au démarrage, contrôle manuel)
+│   │   │   ├── teacher.md            (Mode professeur, déclencheur dans SKILL.md)
+│   │   │   └── update.md             (Mise à jour du skill : contrôle manuel et proposition ; au démarrage, simple mention dans la ligne d'état)
 │   │   ├── phases/
 │   │   │   ├── p0-project.md         (État 0 — Project Init)
 │   │   │   ├── p1-coding-standards.md (État 1)
 │   │   │   ├── p2-brief.md           (État 2 — Brief)
 │   │   │   ├── p4-plan.md            (État 4 — Plan)
 │   │   │   └── p5-resume.md          (État 5 — Actif)
+│   │   ├── references/
+│   │   │   └── estimation.json       (valeurs de référence de l'estimation : minutes par fichier, fourchette, coûts fixes d'une branche, seuil de branche)
 │   │   └── scripts/
 │   │       ├── checks.sh             (contrôles de démarrage, lancés détachés par SKILL.md sans attente : ligne input/ de branche dans le .gitignore)
 │   │       ├── engrave.sh            (séquence git de la livraison : preview / run, appelée par p5-resume.md)
 │   │       ├── json.sh               (rendu JSON sans jq, chargé par les scripts du skill)
 │   │       ├── log-entry.sh          (seule écriture d'une entrée LOG : horloge locale, entrée en tête de log.md, fins de ligne gardées ; règle « Entrée LOG » de SKILL.md)
 │   │       ├── status.sh             (état au lancement en JSON, lecture seule, appelé par SKILL.md ; peu de processus, Git Bash les paie cher)
+│   │       ├── task-files.sh         (fonctions awk communes, chargées par time-aggregate.sh et time-calibrate.sh : fichiers prévus d'une tâche, fichiers changés entre deux empreintes)
 │   │       ├── swarm-status.sh       (état de l'essaim en JSON : en cours, lançables, en attente, fusion simulée, tâches du parent)
 │   │       ├── time-aggregate.sh     (mesure d'une branche en JSON : journal du hook + git, lu par la synthèse metrics.json)
 │   │       ├── time-calibrate.sh     (ratios du projet et estimation d'un nombre de fichiers, en JSON ; références dans references/estimation.json)
@@ -43,8 +52,7 @@ forge/
 │   └── forge-clickup/
 │       └── SKILL.md               (guichet ClickUp : ouvre la tâche, crée la branche, passe la main à forge)
 ├── hooks/
-│   ├── bash/forge-precompact.sh   → copié vers ~/.claude/hooks/forge/ (Unix)
-│   └── ps1/forge-precompact.ps1   → copié vers ~/.claude/hooks/forge/ (Windows)
+│   └── bash/forge-precompact.sh   → copié vers ~/.claude/hooks/forge/ par les deux installeurs (PreCompact, SessionStart compact|resume)
 ├── install/
 │   ├── install.sh             (déploiement Unix, idempotent)
 │   └── install.ps1            (déploiement Windows, idempotent)
@@ -59,6 +67,7 @@ forge/
 │   └── README.md              (prérequis de régénération, WSL requis)
 ├── tests/
 │   ├── engrave.test.sh        (tests du script de livraison, dépôts jetables : bash tests/engrave.test.sh)
+│   ├── forge-precompact.test.sh (tests du hook d'état, dépôts jetables : bash tests/forge-precompact.test.sh)
 │   ├── install.test.sh        (tests des deux installeurs, HOME jetable : bash tests/install.test.sh)
 │   ├── checks.test.sh         (tests des contrôles de démarrage, dépôts jetables : bash tests/checks.test.sh)
 │   ├── log-entry.test.sh      (tests des entrées de LOG, dossiers jetables : bash tests/log-entry.test.sh)
@@ -93,8 +102,8 @@ Fichiers générés dans **chaque projet cible** par le skill (pas dans ce dép�
 ## Entry points
 - `skills/forge/SKILL.md` — point d'entrée lu par Claude Code à chaque invocation `/forge` (state machine)
 - `skills/forge-clickup/SKILL.md` — point d'entrée de `/forge-clickup`, en amont de forge
-- `install/install.ps1` / `install/install.sh` — déploient skills + hook vers `~/.claude/` et fusionnent `settings.json`
-- `hooks/ps1/forge-precompact.ps1` / `hooks/bash/forge-precompact.sh` — hook `PreCompact`, injecte l'état du plan courant dans le contexte compacté
+- `install/install.ps1` / `install/install.sh` — déploient skills + hooks vers `~/.claude/` et fusionnent `settings.json`
+- `hooks/bash/forge-precompact.sh` — hook d'état `PreCompact` et `SessionStart` (`compact|resume`), injecte objectif du brief, plan et dernières entrées LOG ; toute évolution passe par ce script et `tests/forge-precompact.test.sh`
 - `skills/forge/phases/p5-resume.md` — reprise, règles de mise à jour, surveillance, et déclencheurs des commandes de `skills/forge/commands/` : Délégation, Livraison (`grave` / `engrave`, projets liés compris) et Clôture de tâche
 - `skills/forge/scripts/status.sh` — état de la branche en JSON, lu une fois par « Détection d'état » ; toute évolution passe par ce script et `tests/status.test.sh`
 - `skills/forge/scripts/checks.sh` — contrôles de démarrage lancés détachés, jamais attendus : ajoute `/.forge/branch/*/input/` et `/.forge/branch/**/time-log.jsonl` au `.gitignore` hors main / master ; toute évolution passe par ce script et `tests/checks.test.sh`
@@ -107,14 +116,14 @@ Fichiers générés dans **chaque projet cible** par le skill (pas dans ce dép�
 - Projet lié / mode délégué : un sous-agent étanche exécute le skill dans un autre dépôt forgé — prompt `FORGE_DELEGATED` (ROOT, BRANCH, LANGUAGE), marqueur `## Origin` dans le brief, questions relayées par `FORGE_QUESTION` / `FORGE_ANSWER`, rapport final `FORGE_DONE` ; tout délégué (projet lié, même dépôt, essaim) : ligne `TIME_LOG:` (journal de mesure du parent, où le délégué écrit ses marques de tâche), règle unique « Mesure d'un délégué » de `commands/delegation.md` ; le parent n'écrit là-bas que brief et log, et livre en `git -C`
 - Questions à choix : toujours dans la langue de l'utilisateur, libellés anglais du skill = références internes ; validation d'un contenu = `Validate` / `Cancel` + texte libre expliqué, jamais d'option « à retravailler »
 - Gestion d'erreurs : scripts PowerShell en `$ErrorActionPreference = "Stop"` ; hooks silencieux (`exit 0`) si branche/plan absents
-- Idempotence : les installeurs retirent systématiquement les anciennes entrées (règles `permissions.allow`, hooks `PreCompact`) avant d'ajouter les nouvelles — jamais de doublon en settings.json
+- Idempotence : les installeurs retirent systématiquement les anciennes entrées (règles `permissions.allow` dont les formes abandonnées, hooks `PreCompact` / `SessionStart` dont l'ancien hook PowerShell, hook de mesure `time-hook.sh` sur ses six événements) avant d'ajouter les nouvelles — jamais de doublon en settings.json
 - Documentation : un fichier par langue — `README.md` (anglais) et `README.fr.md` (français), même plan de section à section. Sélecteur de langue en badges juste sous le titre, langue courante en bleu, l'autre en gris. Toute évolution de l'un est répercutée sur l'autre dans le même commit
 - Règles non négociables du skill lui-même : pas de code sans confirmation explicite, pas de mention/copyright Claude, message de commit ≤150 caractères
 
 ## Critical files
 - `skills/forge/SKILL.md` — toute modification du comportement du skill passe par ce fichier (routage d'état, mode délégué)
 - `install/install.ps1` et `install/install.sh` — logique de fusion `settings.json` à préserver lors de tout changement de permissions/hooks (idempotence critique)
-- `hooks/ps1/forge-precompact.ps1` — contrat de sortie JSON (`hookSpecificOutput.additionalContext`) attendu par Claude Code pour `PreCompact`
+- `hooks/bash/forge-precompact.sh` — contrat de sortie JSON (`hookSpecificOutput.hookEventName` = événement reçu, `additionalContext`) attendu par Claude Code pour `PreCompact` et `SessionStart`
 
 ## Tools & access
 - MCPs disponibles : claude-in-chrome, datagrip, phpstorm, webstorm (non utilisés par ce dépôt en l'état)

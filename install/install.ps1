@@ -44,7 +44,10 @@ $recordJson = ([PSCustomObject]$record | ConvertTo-Json -Compress) + "`n"
 Write-Host "Hook..."
 $hookDir = "$claudeDir\hooks\forge"
 New-Item -ItemType Directory -Path $hookDir -Force | Out-Null
-Copy-Item "$root\hooks\ps1\forge-precompact.ps1" "$hookDir\" -Force
+Copy-Item "$root\hooks\bash\forge-precompact.sh" "$hookDir\" -Force
+# Ancien hook PowerShell, remplacé par le hook bash : retiré s'il reste d'une installation précédente.
+$legacyHook = "$hookDir\forge-precompact.ps1"
+if (Test-Path $legacyHook) { Remove-Item $legacyHook -Force }
 
 # ── Settings (merge idempotent) ───────────────────────────────────────────────
 Write-Host "Settings..."
@@ -71,27 +74,34 @@ foreach ($n in $skillNames) {
     $staleRules += "Read($homeFwd/.claude/skills/$n/**)"
     $staleRules += "Read($homeDir\.claude\skills\$n)"
 }
-$projectRules = @("Read(/.forge/**)", "Edit(/.forge/**)",'Bash(bash -c "git branch --show-current*)')
+$staleRules += 'Bash(bash -c "git branch --show-current*)'
+# Scripts du skill, sous les deux formes d'appel (chemin cité ou non) que SKILL.md autorise.
+$scripts = "$homeFwd/.claude/skills/forge/scripts/"
+$projectRules = @("Read(/.forge/**)", "Edit(/.forge/**)", "Bash(bash `"$scripts*)", "Bash(bash $scripts*)")
 $s.permissions.allow = @($s.permissions.allow | Where-Object {
     $_ -notin $skillRules -and $_ -notin $staleRules -and $_ -notin $projectRules
 }) + $skillRules + $projectRules
 
-# hooks.PreCompact — retire toutes les entrées forge (bash + ps1), ajoute uniquement ps1
+# Hook d'état forge : avant compaction, puis après compaction ou reprise de session.
+# Retire toute entrée forge-precompact (bash ou ancienne ps1), puis ajoute l'entrée bash.
 if (-not ($s.PSObject.Properties.Name -contains "hooks")) {
     $s | Add-Member -NotePropertyName hooks -NotePropertyValue ([PSCustomObject]@{})
 }
-if (-not ($s.hooks.PSObject.Properties.Name -contains "PreCompact")) {
-    $s.hooks | Add-Member -NotePropertyName PreCompact -NotePropertyValue @()
-}
-
-$forgePattern = "forge-precompact"
-$s.hooks.PreCompact = @($s.hooks.PreCompact | Where-Object {
-    -not (@($_.hooks) | Where-Object { $_.command -like "*$forgePattern*" })
-})
-
-$cmd = "powershell -File $homeDir\.claude\hooks\forge\forge-precompact.ps1"
-$s.hooks.PreCompact = $s.hooks.PreCompact + [PSCustomObject]@{
-    hooks = @([PSCustomObject]@{ type = "command"; command = $cmd; shell = "powershell" })
+$stateHook = [PSCustomObject]@{ type = "command"; command = "bash ~/.claude/hooks/forge/forge-precompact.sh"; shell = "bash" }
+$stateEvents = [ordered]@{ PreCompact = $null; SessionStart = "compact|resume" }
+foreach ($stateEvent in $stateEvents.Keys) {
+    if (-not ($s.hooks.PSObject.Properties.Name -contains $stateEvent)) {
+        $s.hooks | Add-Member -NotePropertyName $stateEvent -NotePropertyValue @()
+    }
+    $groups = @($s.hooks.$stateEvent | Where-Object {
+        -not (@($_.hooks) | Where-Object { $_.command -like "*forge-precompact*" })
+    })
+    $group = if ($stateEvents[$stateEvent]) {
+        [PSCustomObject]@{ matcher = $stateEvents[$stateEvent]; hooks = @($stateHook) }
+    } else {
+        [PSCustomObject]@{ hooks = @($stateHook) }
+    }
+    $s.hooks.$stateEvent = $groups + $group
 }
 
 # Hook de mesure du temps : script bash du skill, lancé par Git Bash comme les autres scripts de forge.

@@ -50,5 +50,5 @@
      un point. Les retours à la ligne ne séparent que les paragraphes et les éléments d'une liste.
    - **Aller à l'essentiel.** Ce qui figure dans une pièce jointe ou un document remis au client n'est pas reformulé
      dans le corps du mail : on l'y annonce en une phrase. Un mail de quelques paragraphes, pas une page.
-   - **Fichiers du mail.** La réponse affichée est aussi écrite selon la section « Mail rédigé » de `SKILL.md`, intitulé `client-reply` : `AAAAMMJJ-email-client-reply.txt` et `.html`, copie exacte du brouillon. Le fichier sert tel quel, quel que soit l'outil qui a relayé le mail — ticket ClickUp, Jira ou tout autre.
+   - **Fichiers du mail.** La réponse affichée est aussi écrite selon `commands/email.md` (« Mail rédigé »), intitulé `client-reply` : `AAAAMMJJ-email-client-reply.txt` et `.html`, copie exacte du brouillon. Le fichier sert tel quel, quel que soit l'outil qui a relayé le mail — ticket ClickUp, Jira ou tout autre.
    - `Finish` → terminer.

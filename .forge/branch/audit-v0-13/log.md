@@ -1,0 +1,2 @@
+- [2026-11-22 17:47] T6-T13 implémentés (A1, A2, A3, A7, A8, A9, A12 + options d'ajout de tâches) ; 12 suites OK, 335 cas ; T13 fait avant T12 pour documenter une seule fois
+- [2026-11-22 15:22] Rapport d'audit écrit : output/20261122-audit-v0-13.md + 4 annexes

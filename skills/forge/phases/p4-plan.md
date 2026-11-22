@@ -94,7 +94,9 @@ Si BRIEF contient `## Origin` (`SCOPE: linked` — mandat) → les étapes ci-de
 ## Règle de branche
 
 **Condition :** un groupe de tâches est une branche quand les deux points ci-dessous sont vrais, vérifiés à l'écriture du plan. Groupe = tâches d'un même module ou d'une même tranche fonctionnelle (persistance, interface d'accès et écrans d'une même fonctionnalité) ; une tâche seule peut former un groupe.
-- **Durée :** fichiers du groupe (« Fichiers d'une tâche », additionnés) ≥ `branch_files` de `time-calibrate.sh` — `branch_minutes` converti en fichiers par le script, jamais recalculé par le modèle ; seuil placé au-delà du coût fixe d'une branche, environ 8 min de délégué et 5 min de fusion.
+- **Durée :**
+  - fichiers du groupe (« Fichiers d'une tâche », additionnés) ≥ `branch_files` du JSON de `time-calibrate.sh` — valeur lue telle quelle, jamais recalculée par le modèle ;
+  - `branch_files` = `branch_minutes` converti en fichiers par le script, aux minutes par fichier du moment — seuil placé au-delà du coût fixe d'une branche, environ 8 min de délégué et 5 min de fusion : un groupe plus petit perd plus de temps qu'il n'en gagne.
 - **Indépendance :** le groupe se livre et se teste seul, sans fichier partagé avec un autre groupe hors du socle des points d'extension — sinon chaque fusion finirait en conflit.
 
 ⚠️ La lettre d'effort ne sert jamais de frontière : elle dépend de l'échelle de celui qui écrit le plan.

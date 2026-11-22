@@ -1,3 +1,5 @@
+- [2026-11-22 23:55] Version 0.13.3 préparée : section CHANGELOG figée, tag v0.13.3 et release GitHub
+- [2026-11-22 23:52] p4-plan.md : critère Durée de la Règle de branche découpé en deux puces (comparaison / origin du seuil), sans changement de comportement
 - [2026-11-22 23:38] T25 : plan de branches dès un groupe, voie du parent dans le gain (time-calibrate.sh --parent, parent_minutes), ligne Parent du tableau des groupes ; 14 suites OK (410 cas)
 - [2026-11-22 23:31] T24 : branch_files dans time-calibrate.sh, tableau des groupes toujours visible, règle de branche sur les ajouts, promotion côté parent, sous-agents ordinaires en lecture ; 14 suites OK (406 cas)
 - [2026-11-22 23:24] T25 ajoutée : essaim d'une seule branche en parallèle du parent (Valider et enchaîner)

@@ -10,6 +10,8 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ## [Unreleased]
 
+## [0.13.3] — 2026-11-22
+
 ### Added
 
 - `time-calibrate.sh` reports `branch_files`: files of a group at the branch threshold (`branch_minutes` ÷ applied minutes per file, rounded up); the model no longer computes it.
@@ -416,7 +418,8 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 - Idempotent Unix and Windows installers, with `settings.json` merge and no duplicate entries on reinstall.
 - `main` / `master` guard: on a protected branch, forge asks for a ticket ID or a branch name before continuing.
 
-[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.2...HEAD
+[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.3...HEAD
+[0.13.3]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.2...v0.13.3
 [0.13.2]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.1...v0.13.2
 [0.13.1]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.0...v0.13.1
 [0.13.0]: https://github.com/jeanchristoph/claude_forge/compare/v0.12.6...v0.13.0

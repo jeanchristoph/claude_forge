@@ -49,7 +49,7 @@
 
 ## Format du tableau d'avancement
 
-`## Summary` de PLAN, recopié tel quel : `Task | Effort | Files | Estimated | Actual | Status`, puis `**Total**` (tâches mesurées seules) et `**Remaining**` (tâches ouvertes) — gabarit de `phases/p4-plan.md`, tenu à jour par le hook `scripts/plan-hook.sh` à chaque écriture du plan. Aucun appel de script, aucun recalcul.
+`## Summary` de PLAN, recopié tel quel : `Task | Effort | Files | Estimated | Actual | Status`, puis `**Total**` (tâches mesurées seules) et `**Remaining**` (tâches ouvertes) — gabarit de `phases/p4-plan.md`, tenu à jour par le hook `hooks/plan-hook.sh` à chaque écriture du plan. Aucun appel de script, aucun recalcul.
 
 ⚠️ Plan antérieur au hook, sans colonnes `Estimated` / `Actual` → tableau recopié tel quel ; la première écriture du plan les ajoute.
 
@@ -80,7 +80,7 @@
 **Déclencheur :** coche `[x]` d'une tâche du plan — dans tous les modes, enchaîné, tâche choisie ou délégué.
 
 **Réaction — dans l'ordre :**
-1. Aucune marque, aucun appel de script : le hook `scripts/plan-hook.sh` (`PostToolUse` sur `Edit|Write|MultiEdit`) voit la coche dans `plan.md`.
+1. Aucune marque, aucun appel de script : le hook `hooks/plan-hook.sh` (`PostToolUse` sur `Edit|Write|MultiEdit`) voit la coche dans `plan.md`.
 2. Le hook écrit dans le journal de mesure le début de la tâche (dernier point d'étape : coche précédente ou première écriture du plan) et sa fin, puis calcule le réel par `time-aggregate.sh --task`.
 3. Le hook écrit sous `**Estimated time:**` de la tâche, à défaut sous `**Effort:**` : `**Actual time:** ≈ <agent_minutes> min · <actual_files> files · <check_minutes> min checks`, sans la partie fichiers quand `actual_files` est `null` ; sans mesure → `**Actual time:** —`. La part de vérifications nourrit le coût fixe de vérification de l'estimation.
 
@@ -150,7 +150,7 @@ Une demande complémentaire est toujours une tâche du plan — jamais de choix 
 
 1. **Formuler** la tâche telle qu'elle entre au plan — titre, effort, temps estimé, fichiers, description — précédée de :
    > "This request isn't in the current plan."
-   Temps estimé présenté : `bash <SKILL_DIR>/scripts/time-calibrate.sh --root <ROOT> --files <fichiers de la tâche>`, `estimate` au ratio du moment. Jamais écrit par le modèle : le hook `scripts/plan-hook.sh` écrit `**Estimated time:**` à l'écriture du plan et le fige.
+   Temps estimé présenté : `bash <SKILL_DIR>/scripts/time-calibrate.sh --root <ROOT> --files <fichiers de la tâche>`, `estimate` au ratio du moment. Jamais écrit par le modèle : le hook `hooks/plan-hook.sh` écrit `**Estimated time:**` à l'écriture du plan et le fige.
    Si la demande change durablement le périmètre → ajouter à la même présentation l'entrée proposée pour `## Scope & rules` du brief.
 
 2. **Poser une seule question** avec `AskUserQuestion` — `header` : `Plan`, options de la question `Plan` d'un plan neuf (étape 7 de `p4-plan.md`), dans cet ordre : `Validate and chain` / `Validate` / `Cancel` — motif « Validation d'un contenu » de `SKILL.md` : le changement demandé arrive en texte libre, reformuler, reposer la question. Champ `question` = la tâche formulée, recopiée en dur selon le « Gabarit — question `Plan` » ci-dessous, puis une ligne vide et la phrase de question. Aucun champ `preview`. Mode délégué → `FORGE_QUESTION`, la tâche formulée entière dans `content`.

@@ -1,10 +1,10 @@
 #!/bin/bash
-# Tests du hook d'état hooks/bash/forge-precompact.sh — chaque test tourne dans un dépôt jetable
+# Tests du hook d'état skills/forge/hooks/forge-precompact.sh — chaque test tourne dans un dépôt jetable
 # sur la branche feature, jamais le dépôt courant. Le hook exige node : sans lui, les tests sont sautés.
 # Usage : bash tests/forge-precompact.test.sh
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-HOOK_SCRIPT="$REPO_ROOT/hooks/bash/forge-precompact.sh"
+HOOK_SCRIPT="$REPO_ROOT/skills/forge/hooks/forge-precompact.sh"
 PASSED=0
 FAILED=0
 SKIPPED=0

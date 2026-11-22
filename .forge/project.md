@@ -7,7 +7,7 @@
 - Framework / CMS : aucun — système de skill pour Claude Code
 - Runtime / version : Claude Code CLI (skill invoqué via `/forge`), PowerShell 5.1 / bash côté scripts
 - DB : aucune
-- Serveur / runtime : aucun — fichiers déployés localement dans `~/.claude/skills/<skill>/` et `~/.claude/hooks/forge/`
+- Serveur / runtime : aucun — fichiers déployés localement dans `~/.claude/skills/<skill>/`, hooks compris (`~/.claude/skills/forge/hooks/`)
 
 ## Key structure
 ```
@@ -36,26 +36,26 @@ forge/
 │   │   │   └── p5-resume.md          (État 5 — Actif)
 │   │   ├── references/
 │   │   │   └── estimation.json       (valeurs de référence de l'estimation : minutes par fichier, fourchette, coûts fixes d'une branche, seuil de branche)
-│   │   └── scripts/
-│   │       ├── checks.sh             (contrôles de démarrage, lancés détachés par SKILL.md sans attente : ligne input/ de branche dans le .gitignore)
-│   │       ├── engrave.sh            (séquence git de la livraison : preview / run, appelée par p5-resume.md ; run --model écrit d'abord metrics.json par metrics.sh)
-│   │       ├── metrics.sh            (synthèse de mesure : écrit metrics.json, rend la ligne estimé / réel en JSON ; livraison, clôture, fusion d'essaim)
-│   │       ├── json.sh               (rendu JSON sans jq et lecture des champs du JSON des hooks, chargé par les scripts du skill)
-│   │       ├── log-entry.sh          (seule écriture d'une entrée LOG : horloge locale, entrée en tête de log.md, fins de ligne gardées ; règle « Entrée LOG » de SKILL.md)
-│   │       ├── plan-hook.sh          (hook de coche déclaré par les installeurs, PostToolUse synchrone : marques de tâche et **Actual time:** à la coche ; état = lignes plan_checkpoint du journal)
-│   │       ├── status.sh             (état au lancement en JSON, lecture seule, appelé par SKILL.md ; peu de processus, Git Bash les paie cher)
-│   │       ├── task-files.sh         (fonctions awk communes, chargées par time-aggregate.sh, time-calibrate.sh, status.sh et plan-hook.sh : statut d'une tâche, fichiers prévus, fichiers changés entre deux empreintes)
-│   │       ├── task-marks.sh         (fonctions bash communes à time-mark.sh et plan-hook.sh : horloge, empreinte du dossier, ligne de marque)
-│   │       ├── swarm-status.sh       (état de l'essaim en JSON : en cours, lançables, en attente, fusion simulée, tâches du parent)
-│   │       ├── time-aggregate.sh     (mesure d'une branche en JSON : journal du hook + git, lu par la synthèse metrics.json)
-│   │       ├── time-calibrate.sh     (ratios du projet et estimation d'un nombre de fichiers, en JSON ; références dans references/estimation.json)
-│   │       ├── time-hook.sh          (hook de mesure déclaré par les installeurs : une ligne par événement dans time-log.jsonl)
-│   │       ├── time-mark.sh          (marques de délégué, de tokens et de fusion dans time-log.jsonl ; marques de tâche à la main, le hook de coche les pose sinon)
-│   │       └── update.sh             (mise à jour du skill : check / run en JSON, appelé avec status.sh ; contrôle réseau détaché toutes les 24 heures)
+│   │   ├── scripts/
+│   │   │   ├── checks.sh             (contrôles de démarrage, lancés détachés par SKILL.md sans attente : ligne input/ de branche dans le .gitignore)
+│   │   │   ├── engrave.sh            (séquence git de la livraison : preview / run, appelée par p5-resume.md ; run --model écrit d'abord metrics.json par metrics.sh)
+│   │   │   ├── metrics.sh            (synthèse de mesure : écrit metrics.json, rend la ligne estimé / réel en JSON ; livraison, clôture, fusion d'essaim)
+│   │   │   ├── json.sh               (rendu JSON sans jq et lecture des champs du JSON des hooks, chargé par les scripts du skill)
+│   │   │   ├── log-entry.sh          (seule écriture d'une entrée LOG : horloge locale, entrée en tête de log.md, fins de ligne gardées ; règle « Entrée LOG » de SKILL.md)
+│   │   │   ├── status.sh             (état au lancement en JSON, lecture seule, appelé par SKILL.md ; peu de processus, Git Bash les paie cher)
+│   │   │   ├── task-files.sh         (fonctions awk communes, chargées par time-aggregate.sh, time-calibrate.sh, status.sh et plan-hook.sh : statut d'une tâche, fichiers prévus, fichiers changés entre deux empreintes)
+│   │   │   ├── task-marks.sh         (fonctions bash communes à time-mark.sh et plan-hook.sh : horloge, empreinte du dossier, ligne de marque)
+│   │   │   ├── swarm-status.sh       (état de l'essaim en JSON : en cours, lançables, en attente, fusion simulée, tâches du parent)
+│   │   │   ├── time-aggregate.sh     (mesure d'une branche en JSON : journal du hook + git, lu par la synthèse metrics.json)
+│   │   │   ├── time-calibrate.sh     (ratios du projet et estimation d'un nombre de fichiers, en JSON ; références dans references/estimation.json)
+│   │   │   ├── time-mark.sh          (marques de délégué, de tokens et de fusion dans time-log.jsonl ; marques de tâche à la main, le hook de coche les pose sinon)
+│   │   │   └── update.sh             (mise à jour du skill : check / run en JSON, appelé avec status.sh ; contrôle réseau détaché toutes les 24 heures)
+│   │   └── hooks/                 (hooks déclarés dans settings.json par les installeurs, copiés avec le skill ; bibliothèques chargées par ../scripts/)
+│   │       ├── forge-precompact.sh   (hook d'état : PreCompact, SessionStart compact|resume)
+│   │       ├── plan-hook.sh          (hook de coche, PostToolUse synchrone : marques de tâche, réel, estimations, ## Summary ; état = lignes plan_checkpoint du journal)
+│   │       └── time-hook.sh          (hook de mesure : une ligne par événement dans time-log.jsonl)
 │   └── forge-clickup/
 │       └── SKILL.md               (guichet ClickUp : ouvre la tâche, crée la branche, passe la main à forge)
-├── hooks/
-│   └── bash/forge-precompact.sh   → copié vers ~/.claude/hooks/forge/ par les deux installeurs (PreCompact, SessionStart compact|resume)
 ├── install/
 │   ├── install.sh             (déploiement Unix, idempotent)
 │   └── install.ps1            (déploiement Windows, idempotent)
@@ -108,7 +108,7 @@ Fichiers générés dans **chaque projet cible** par le skill (pas dans ce dép�
 - `skills/forge/SKILL.md` — point d'entrée lu par Claude Code à chaque invocation `/forge` (state machine)
 - `skills/forge-clickup/SKILL.md` — point d'entrée de `/forge-clickup`, en amont de forge
 - `install/install.ps1` / `install/install.sh` — déploient skills + hooks vers `~/.claude/` et fusionnent `settings.json`
-- `hooks/bash/forge-precompact.sh` — hook d'état `PreCompact` et `SessionStart` (`compact|resume`), injecte objectif du brief, plan et dernières entrées LOG ; toute évolution passe par ce script et `tests/forge-precompact.test.sh`
+- `skills/forge/hooks/forge-precompact.sh` — hook d'état `PreCompact` et `SessionStart` (`compact|resume`), injecte objectif du brief, plan et dernières entrées LOG ; toute évolution passe par ce script et `tests/forge-precompact.test.sh`
 - `skills/forge/phases/p5-resume.md` — reprise, règles de mise à jour, surveillance, et déclencheurs des commandes de `skills/forge/commands/` : Délégation, Livraison (`grave` / `engrave`, projets liés compris) et Clôture de tâche
 - `skills/forge/scripts/status.sh` — état de la branche en JSON, lu une fois par « Détection d'état » ; toute évolution passe par ce script et `tests/status.test.sh`
 - `skills/forge/scripts/checks.sh` — contrôles de démarrage lancés détachés, jamais attendus : ajoute `/.forge/branch/*/input/` et `/.forge/branch/**/time-log.jsonl` au `.gitignore` hors main / master ; toute évolution passe par ce script et `tests/checks.test.sh`
@@ -121,14 +121,15 @@ Fichiers générés dans **chaque projet cible** par le skill (pas dans ce dép�
 - Projet lié / mode délégué : un sous-agent étanche exécute le skill dans un autre dépôt forgé — prompt `FORGE_DELEGATED` (ROOT, BRANCH, LANGUAGE), marqueur `## Origin` dans le brief, questions relayées par `FORGE_QUESTION` / `FORGE_ANSWER`, rapport final `FORGE_DONE` ; tout délégué (projet lié, même dépôt, essaim) : ligne `TIME_LOG:` (journal de mesure du parent, où le délégué écrit ses marques de tâche), règle unique « Mesure d'un délégué » de `commands/delegation.md` ; le parent n'écrit là-bas que brief et log, et livre en `git -C`
 - Questions à choix : toujours dans la langue de l'utilisateur, libellés anglais du skill = références internes ; validation d'un contenu = `Validate` / `Cancel` + texte libre expliqué, jamais d'option « à retravailler »
 - Gestion d'erreurs : scripts PowerShell en `$ErrorActionPreference = "Stop"` ; hooks silencieux (`exit 0`) si branche/plan absents
-- Idempotence : les installeurs retirent systématiquement les anciennes entrées (règles `permissions.allow` dont les formes abandonnées, hooks `PreCompact` / `SessionStart` dont l'ancien hook PowerShell, hook de mesure `time-hook.sh` sur ses six événements) avant d'ajouter les nouvelles — jamais de doublon en settings.json
+- Idempotence : les installeurs retirent systématiquement les anciennes entrées (règles `permissions.allow` dont les formes abandonnées, hooks `PreCompact` / `SessionStart` dont l'ancien hook PowerShell, hook de mesure `time-hook.sh` sur ses six événements, hook de coche `plan-hook.sh`, chemins et dossier `~/.claude/hooks/forge/` d'avant `skills/forge/hooks/`) avant d'ajouter les nouvelles — jamais de doublon en settings.json
+- Emplacement des hooks : un hook déclaré dans `settings.json` vit dans `skills/forge/hooks/` et charge ses bibliothèques par `../scripts/` ; `scripts/` ne contient que ce qu'appellent le modèle et les hooks
 - Documentation : un fichier par langue — `README.md` (anglais) et `README.fr.md` (français), même plan de section à section. Sélecteur de langue en badges juste sous le titre, langue courante en bleu, l'autre en gris. Toute évolution de l'un est répercutée sur l'autre dans le même commit
 - Règles non négociables du skill lui-même : pas de code sans confirmation explicite, pas de mention/copyright Claude, message de commit ≤150 caractères
 
 ## Critical files
 - `skills/forge/SKILL.md` — toute modification du comportement du skill passe par ce fichier (routage d'état, mode délégué)
 - `install/install.ps1` et `install/install.sh` — logique de fusion `settings.json` à préserver lors de tout changement de permissions/hooks (idempotence critique)
-- `hooks/bash/forge-precompact.sh` — contrat de sortie JSON (`hookSpecificOutput.hookEventName` = événement reçu, `additionalContext`) attendu par Claude Code pour `PreCompact` et `SessionStart`
+- `skills/forge/hooks/forge-precompact.sh` — contrat de sortie JSON (`hookSpecificOutput.hookEventName` = événement reçu, `additionalContext`) attendu par Claude Code pour `PreCompact` et `SessionStart`
 
 ## Tools & access
 - MCPs disponibles : claude-in-chrome, datagrip, phpstorm, webstorm (non utilisés par ce dépôt en l'état)

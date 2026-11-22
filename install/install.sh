@@ -34,11 +34,12 @@ require('fs').writeFileSync(file, JSON.stringify(record) + '\n');
   "$(git -C "$ROOT" describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null)" \
   "$(git -C "$ROOT" remote get-url origin 2>/dev/null)"
 
-echo "► Hook..."
-HOOK_DIR="$CLAUDE_DIR/hooks/forge"
-mkdir -p "$HOOK_DIR"
-cp "$ROOT/hooks/bash/forge-precompact.sh" "$HOOK_DIR/"
-chmod +x "$HOOK_DIR/forge-precompact.sh"
+# Hooks livrés dans le skill (skills/forge/hooks/), copiés avec lui : l'ancien dossier ~/.claude/hooks/forge/ des
+# installations précédentes est retiré — fichiers forge seulement, dossier supprimé s'il reste vide.
+echo "► Legacy hook folder..."
+LEGACY_HOOK_DIR="$CLAUDE_DIR/hooks/forge"
+rm -f "$LEGACY_HOOK_DIR/forge-precompact.sh" "$LEGACY_HOOK_DIR/forge-precompact.ps1"
+rmdir "$LEGACY_HOOK_DIR" 2>/dev/null || true
 
 echo "► Settings..."
 node -e "
@@ -77,7 +78,7 @@ s.hooks = s.hooks || {};
 
 // Hook d'état forge : avant compaction, puis après compaction ou reprise de session.
 // Retire toute entrée forge-precompact (bash ou ancienne ps1), puis ajoute l'entrée bash.
-const stateHook = { type: 'command', command: 'bash ~/.claude/hooks/forge/forge-precompact.sh', shell: 'bash' };
+const stateHook = { type: 'command', command: 'bash ~/.claude/skills/forge/hooks/forge-precompact.sh', shell: 'bash' };
 const stateEvents = { PreCompact: null, SessionStart: 'compact|resume' };
 for (const [event, matcher] of Object.entries(stateEvents)) {
   s.hooks[event] = (s.hooks[event] || []).filter(g =>
@@ -88,7 +89,7 @@ for (const [event, matcher] of Object.entries(stateEvents)) {
 
 // Hook de mesure du temps : retire toute entrée time-hook existante, puis l'ajoute à chaque événement écouté.
 // Asynchrone : Claude Code ne l'attend pas ; l'heure est prise à son démarrage, l'agrégation trie le journal.
-const timeHook = { type: 'command', command: 'bash ~/.claude/skills/forge/scripts/time-hook.sh', shell: 'bash', async: true };
+const timeHook = { type: 'command', command: 'bash ~/.claude/skills/forge/hooks/time-hook.sh', shell: 'bash', async: true };
 const timeEvents = {
   UserPromptSubmit: null, Stop: null, SubagentStart: null, SubagentStop: null,
   PreToolUse: 'AskUserQuestion', PostToolUse: 'AskUserQuestion|Bash'
@@ -102,7 +103,7 @@ for (const [event, matcher] of Object.entries(timeEvents)) {
 
 // Hook de coche du plan : retire toute entrée plan-hook existante, puis l'ajoute après chaque écriture de fichier.
 // Synchrone : il réécrit plan.md et renvoie au modèle le réel écrit ; hors plan forge, il sort aussitôt.
-const planHook = { type: 'command', command: 'bash ~/.claude/skills/forge/scripts/plan-hook.sh', shell: 'bash' };
+const planHook = { type: 'command', command: 'bash ~/.claude/skills/forge/hooks/plan-hook.sh', shell: 'bash' };
 s.hooks.PostToolUse = (s.hooks.PostToolUse || []).filter(g =>
   !g.hooks || !g.hooks.some(h => h.command && h.command.includes('plan-hook.sh'))
 );

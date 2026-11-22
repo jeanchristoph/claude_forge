@@ -1,7 +1,7 @@
 # Plan — audit-v0-13
 **Objective:** Auditer la 0.13.0 face à la 0.12.6 (fluidité, swarm, non-régression) et proposer des améliorations, plugin Claude Code compris.
 **Date:** 2026-11-22
-**Estimate:** ≈ 111 files · ≈ 59 min (24-86) · indicative
+**Estimate:** ≈ 134 files · ≈ 73 min (28-112) · indicative
 
 ## Tasks
 
@@ -255,6 +255,19 @@
 7. Tests : lecture partagée du JSON, groupe d'essaim à plusieurs tâches, `**Total**` des seules tâches mesurées, réel gardé face à « — », en-tête qui suit une tâche ajoutée.
 [x] plan-hook 31/31, time-calibrate 31/31 ; 14 suites OK (400 cas)
 
+### T22 — Hooks rangés dans `skills/forge/hooks/`
+**Effort:** M
+**Estimated time:** ≈ 14 min (4-26)
+**Actual time:** ≈ 8.4 min · 18 files · 6.6 min checks
+**Files:** `skills/forge/hooks/forge-precompact.sh`, `skills/forge/hooks/time-hook.sh`, `skills/forge/hooks/plan-hook.sh`, `hooks/bash/forge-precompact.sh`, `skills/forge/scripts/time-hook.sh`, `skills/forge/scripts/plan-hook.sh`, `install/install.sh`, `install/install.ps1`, `tests/install.test.sh`, `tests/forge-precompact.test.sh`, `tests/time-hook.test.sh`, `tests/plan-hook.test.sh`, `skills/forge/phases/p0-project.md`, `skills/forge/phases/p4-plan.md`, `skills/forge/phases/p5-resume.md`, `skills/forge/commands/closure.md`, `skills/forge/commands/delegated-mode.md`, `skills/forge/scripts/task-files.sh`, `skills/forge/scripts/task-marks.sh`, `README.md`, `README.fr.md`, `CHANGELOG.md`, `.forge/project.md`
+**Description:**
+1. Les trois hooks (`forge-precompact.sh`, `time-hook.sh`, `plan-hook.sh`) passent par `git mv` dans `skills/forge/hooks/` ; bibliothèques chargées par `../scripts/` ; `hooks/bash/` supprimé.
+2. Installeurs : `bash ~/.claude/skills/forge/hooks/<hook>.sh` ; anciennes entrées `settings.json` (`~/.claude/hooks/forge/forge-precompact.sh`, `scripts/time-hook.sh`, `scripts/plan-hook.sh`) et ancien dossier `~/.claude/hooks/forge/` retirés ; idempotence gardée.
+3. Règle dans `project.md` : un hook déclaré dans `settings.json` vit dans `skills/forge/hooks/`, `scripts/` ne contient que ce qu'appellent le modèle et les hooks.
+4. Instructions, commentaires, README (arborescence et bloc `settings.json`) et CHANGELOG suivent les nouveaux chemins.
+5. Tests : suites des trois hooks depuis leur nouveau chemin, installation aux nouveaux chemins, réinstallation par-dessus une 0.13.1 (anciennes entrées et ancien dossier retirés, sans doublon).
+[x] p0, delegated-mode, task-files.sh, task-marks.sh sans chemin à changer (nom seul) ; ancien dossier gardé s'il contient un fichier étranger ; 14 suites OK (402 cas)
+
 ## Risks
 - Estimation par fichiers inadaptée à un audit (1 min par tâche irréaliste : le travail est de la lecture, pas de l'écriture) — constat à intégrer à T1/T4.
 - Le rejeu à sec (T3) est une lecture d'instructions, pas une exécution réelle de `/forge` : une régression de comportement du modèle peut échapper.
@@ -286,4 +299,5 @@ None
 | T19 — Hook de mesure allégé | S | 5 | ≈ 2 min | ≈ 5.0 min · 5 files | [x] |
 | T20 — Coût fixe des vérifications par tâche dans l'estimation | M | 12 | ≈ 6 min | ≈ 12.9 min · 11 files · 8.9 min checks | [x] |
 | T21 — Corrections de fin d'audit : mesure, estimation, tableau | M | 12 | ≈ 8 min | ≈ 9.6 min · 12 files · 6.9 min checks | [x] |
-| **Total** (15/21 measured) | **5S, 8M, 2L** | **102** | **≈ 52 min** | **≈ 78.3 min** | |
+| T22 — Hooks rangés dans `skills/forge/hooks/` | M | 23 | ≈ 14 min | ≈ 8.4 min · 18 files · 6.6 min checks | [x] |
+| **Total** (16/22 measured) | **5S, 9M, 2L** | **125** | **≈ 66 min** | **≈ 86.7 min** | |

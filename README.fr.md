@@ -113,7 +113,11 @@ forge/
 │   │   │   └── p5-resume.md           (État 5 — Actif)
 │   │   ├── references/
 │   │   │   └── estimation.json        (minutes par fichier tant que le projet n'a pas ses mesures, fourchette, coûts fixes d'une branche, seuil de branche)
-│   │   └── scripts/
+│   │   ├── hooks/                (déclarés dans settings.json par les deux installeurs, copiés avec le skill)
+│   │   │   ├── forge-precompact.sh   (hook d'état : PreCompact, SessionStart après compaction ou reprise)
+│   │   │   ├── time-hook.sh           (hook de mesure : une ligne par événement dans le time-log.jsonl de la branche)
+│   │   │   └── plan-hook.sh           (hook de coche : marques de tâche, réel, estimations et tableau récapitulatif de plan.md)
+│   │   └── scripts/              (appelés par le modèle et par les hooks)
 │   │       ├── checks.sh              (contrôles de démarrage, lancés détachés : lignes input/ et time-log.jsonl dans le .gitignore)
 │   │       ├── engrave.sh             (séquence de livraison : preview / run ; run --model écrit d'abord metrics.json)
 │   │       ├── metrics.sh             (synthèse de mesure de la branche : écrit metrics.json, rend la ligne estimé / réel en JSON)
@@ -123,17 +127,12 @@ forge/
 │   │       ├── swarm-status.sh        (état de l'essaim : branches en cours, lançables, en attente, fusion simulée, en JSON)
 │   │       ├── time-aggregate.sh      (mesure d'une branche : minutes d'agent, humaines, de vérification, fichiers et lignes, en JSON)
 │   │       ├── time-calibrate.sh      (ratios du projet tirés des metrics.json, estimation d'un nombre de fichiers, en JSON)
-│   │       ├── time-hook.sh           (hook de mesure : une ligne par événement dans le time-log.jsonl de la branche)
 │   │       ├── time-mark.sh           (marques de délégué, de tokens et de fusion dans le time-log.jsonl)
-│   │       ├── plan-hook.sh           (hook de coche : marques de tâche et **Actual time:** écrits à la coche d'une tâche du plan)
 │   │       ├── task-marks.sh          (fonctions bash communes : horloge, empreinte du dossier, ligne de marque)
 │   │       ├── task-files.sh          (fonctions awk communes : statut d'une tâche, fichiers prévus d'une tâche, fichiers changés entre deux empreintes)
 │   │       └── update.sh              (mise à jour du skill : check / run, en JSON)
 │   └── forge-clickup/        → extension : ouverture de tâche ClickUp
 │       └── SKILL.md
-├── hooks/
-│   └── bash/                 → copié dans ~/.claude/hooks/forge/ par les deux installeurs
-│       └── forge-precompact.sh   (hook d'état : PreCompact, SessionStart après compaction ou reprise)
 ├── install/
 │   ├── install.sh
 │   └── install.ps1
@@ -295,11 +294,11 @@ Avec une branche en argument (`/forge <nom-de-branche>`), la garde ne s'applique
   },
   "hooks": {
     "PreCompact": [{
-      "hooks": [{ "type": "command", "command": "bash ~/.claude/hooks/forge/forge-precompact.sh", "shell": "bash" }]
+      "hooks": [{ "type": "command", "command": "bash ~/.claude/skills/forge/hooks/forge-precompact.sh", "shell": "bash" }]
     }],
     "SessionStart": [{
       "matcher": "compact|resume",
-      "hooks": [{ "type": "command", "command": "bash ~/.claude/hooks/forge/forge-precompact.sh", "shell": "bash" }]
+      "hooks": [{ "type": "command", "command": "bash ~/.claude/skills/forge/hooks/forge-precompact.sh", "shell": "bash" }]
     }]
   }
 }
@@ -336,7 +335,7 @@ Un seul hook, en bash, pour les deux plateformes : Git Bash est déjà requis so
 
 ## Mesure du temps et estimation
 
-Les deux installeurs ajoutent aussi `bash ~/.claude/skills/forge/scripts/time-hook.sh` (shell `bash`, Git Bash sous Windows, `async` : Claude Code ne l'attend jamais) à six événements : `UserPromptSubmit`, `Stop`, `SubagentStart`, `SubagentStop`, `PreToolUse` sur `AskUserQuestion`, `PostToolUse` sur `AskUserQuestion|Bash`. Hors projet forgé (aucun dossier `.forge` dans le dossier de session ni ses parents), il sort aussitôt, sans processus git. Ils ajoutent aussi `bash ~/.claude/skills/forge/scripts/plan-hook.sh` sur `PostToolUse` pour `Edit|Write|MultiEdit`, synchrone : il n'agit que sur un `.forge/branch/<branche>/plan.md` et sort aussitôt pour tout autre fichier. Les hooks déclarés dans le frontmatter d'un skill ne sont pas utilisés : ils ne voient pas les sous-agents et disparaissent à la reprise d'une session.
+Les deux installeurs ajoutent aussi `bash ~/.claude/skills/forge/hooks/time-hook.sh` (shell `bash`, Git Bash sous Windows, `async` : Claude Code ne l'attend jamais) à six événements : `UserPromptSubmit`, `Stop`, `SubagentStart`, `SubagentStop`, `PreToolUse` sur `AskUserQuestion`, `PostToolUse` sur `AskUserQuestion|Bash`. Hors projet forgé (aucun dossier `.forge` dans le dossier de session ni ses parents), il sort aussitôt, sans processus git. Ils ajoutent aussi `bash ~/.claude/skills/forge/hooks/plan-hook.sh` sur `PostToolUse` pour `Edit|Write|MultiEdit`, synchrone : il n'agit que sur un `.forge/branch/<branche>/plan.md` et sort aussitôt pour tout autre fichier. Les hooks déclarés dans le frontmatter d'un skill ne sont pas utilisés : ils ne voient pas les sous-agents et disparaissent à la reprise d'une session.
 
 - **Mesure :** le hook ajoute une ligne par événement au `.forge/branch/<branche>/time-log.jsonl` de la branche extraite dans le dossier de la session — horodatages, identifiants, durées, jamais un prompt, une commande ni une sortie d'outil. Hors projet forgé, il n'écrit rien. Les événements d'un délégué portent le dossier du parent : le parent associe chaque délégué à sa branche fille.
 - **Synthèse :** à chaque grave (`engrave.sh run --model <id>`, avant le `git add`) et à la clôture, `metrics.sh` — jamais le modèle — fait totaliser le journal et git par `time-aggregate.sh` et écrit `metrics.json` : minutes d'agent (session principale + délégués, sous-agents ordinaires compris : tout agent lancé par la session et non délégué à une autre branche compte pour sa durée, agents parallèles additionnés), minutes humaines (une absence de plus de 6 h avant un prompt ou une réponse compte zéro), un drapeau `partial` quand le journal manque le début de la branche (hook installé en cours de route : la branche est écartée du calibrage), questions, minutes de vérification, tokens des délégués, fichiers et lignes modifiés.

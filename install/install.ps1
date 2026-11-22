@@ -40,14 +40,15 @@ $record = [ordered]@{
 $recordJson = ([PSCustomObject]$record | ConvertTo-Json -Compress) + "`n"
 [IO.File]::WriteAllText("$claudeDir\skills\forge\install.json", $recordJson, (New-Object Text.UTF8Encoding $false))
 
-# ── Hook ──────────────────────────────────────────────────────────────────────
-Write-Host "Hook..."
-$hookDir = "$claudeDir\hooks\forge"
-New-Item -ItemType Directory -Path $hookDir -Force | Out-Null
-Copy-Item "$root\hooks\bash\forge-precompact.sh" "$hookDir\" -Force
-# Ancien hook PowerShell, remplacé par le hook bash : retiré s'il reste d'une installation précédente.
-$legacyHook = "$hookDir\forge-precompact.ps1"
-if (Test-Path $legacyHook) { Remove-Item $legacyHook -Force }
+# ── Ancien dossier de hooks ───────────────────────────────────────────────────
+# Hooks livrés dans le skill (skills/forge/hooks/), copiés avec lui : l'ancien dossier ~/.claude/hooks/forge/ des
+# installations précédentes est retiré — fichiers forge seulement, dossier supprimé s'il reste vide.
+Write-Host "Legacy hook folder..."
+$legacyHookDir = "$claudeDir\hooks\forge"
+foreach ($legacyHook in @("$legacyHookDir\forge-precompact.sh", "$legacyHookDir\forge-precompact.ps1")) {
+    if (Test-Path $legacyHook) { Remove-Item $legacyHook -Force }
+}
+if ((Test-Path $legacyHookDir) -and -not (Get-ChildItem $legacyHookDir -Force)) { Remove-Item $legacyHookDir -Force }
 
 # ── Settings (merge idempotent) ───────────────────────────────────────────────
 Write-Host "Settings..."
@@ -87,7 +88,7 @@ $s.permissions.allow = @($s.permissions.allow | Where-Object {
 if (-not ($s.PSObject.Properties.Name -contains "hooks")) {
     $s | Add-Member -NotePropertyName hooks -NotePropertyValue ([PSCustomObject]@{})
 }
-$stateHook = [PSCustomObject]@{ type = "command"; command = "bash ~/.claude/hooks/forge/forge-precompact.sh"; shell = "bash" }
+$stateHook = [PSCustomObject]@{ type = "command"; command = "bash ~/.claude/skills/forge/hooks/forge-precompact.sh"; shell = "bash" }
 $stateEvents = [ordered]@{ PreCompact = $null; SessionStart = "compact|resume" }
 foreach ($stateEvent in $stateEvents.Keys) {
     if (-not ($s.hooks.PSObject.Properties.Name -contains $stateEvent)) {
@@ -107,7 +108,7 @@ foreach ($stateEvent in $stateEvents.Keys) {
 # Hook de mesure du temps : script bash du skill, lancé par Git Bash comme les autres scripts de forge.
 # Retire toute entrée time-hook existante, puis l'ajoute à chaque événement écouté.
 # Asynchrone : Claude Code ne l'attend pas ; l'heure est prise à son démarrage, l'agrégation trie le journal.
-$timeHook = [PSCustomObject]@{ type = "command"; command = "bash ~/.claude/skills/forge/scripts/time-hook.sh"; shell = "bash"; async = $true }
+$timeHook = [PSCustomObject]@{ type = "command"; command = "bash ~/.claude/skills/forge/hooks/time-hook.sh"; shell = "bash"; async = $true }
 $timeEvents = [ordered]@{
     UserPromptSubmit = $null; Stop = $null; SubagentStart = $null; SubagentStop = $null
     PreToolUse = "AskUserQuestion"; PostToolUse = "AskUserQuestion|Bash"
@@ -129,7 +130,7 @@ foreach ($timeEvent in $timeEvents.Keys) {
 
 # Hook de coche du plan : retire toute entrée plan-hook existante, puis l'ajoute après chaque écriture de fichier.
 # Synchrone : il réécrit plan.md et renvoie au modèle le réel écrit ; hors plan forge, il sort aussitôt.
-$planHook = [PSCustomObject]@{ type = "command"; command = "bash ~/.claude/skills/forge/scripts/plan-hook.sh"; shell = "bash" }
+$planHook = [PSCustomObject]@{ type = "command"; command = "bash ~/.claude/skills/forge/hooks/plan-hook.sh"; shell = "bash" }
 $planGroups = @($s.hooks.PostToolUse | Where-Object {
     -not (@($_.hooks) | Where-Object { $_.command -like "*plan-hook.sh*" })
 })

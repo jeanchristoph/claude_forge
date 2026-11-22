@@ -1,3 +1,6 @@
+- [2026-11-22 22:28] Version 0.13.2 préparée : section CHANGELOG figée, tag v0.13.2 et release GitHub
+- [2026-11-22 22:03] T22 : hooks dans skills/forge/hooks/, installeurs aux nouveaux chemins avec retrait des anciens ; 14 suites OK, 402 cas
+- [2026-11-22 21:55] T22 ajoutée : hooks rangés dans skills/forge/hooks/ (option B retenue)
 - [2026-11-22 21:22] Version 0.13.1 préparée : section CHANGELOG figée, tag v0.13.1 et release GitHub
 - [2026-11-22 21:20] T21 : json.sh partagé, closure allégée, essaim avec coût des tests, Total sur tâches mesurées, réel mesuré protégé, en-tête Estimate recalculé ; 14 suites OK, 400 cas
 - [2026-11-22 21:12] T21 point 4 : Total sur les seules tâches mesurées (choix utilisateur), pas de ligne Measured

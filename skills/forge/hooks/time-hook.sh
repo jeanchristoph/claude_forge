@@ -11,7 +11,7 @@
 
 exec 2>/dev/null
 
-source "$(dirname "${BASH_SOURCE[0]}")/json.sh" || exit 0
+source "$(dirname "${BASH_SOURCE[0]}")/../scripts/json.sh" || exit 0
 
 readonly TIME_LOG_NAME="time-log.jsonl"
 readonly CHECK_PATTERN_LABEL='**Check pattern:**'

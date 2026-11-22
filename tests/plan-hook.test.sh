@@ -1,9 +1,9 @@
 #!/bin/bash
-# Tests de skills/forge/scripts/plan-hook.sh — chaque test tourne dans un dépôt jetable, jamais le dépôt courant.
+# Tests de skills/forge/hooks/plan-hook.sh — chaque test tourne dans un dépôt jetable, jamais le dépôt courant.
 # Usage : bash tests/plan-hook.test.sh
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-HOOK_SCRIPT="$REPO_ROOT/skills/forge/scripts/plan-hook.sh"
+HOOK_SCRIPT="$REPO_ROOT/skills/forge/hooks/plan-hook.sh"
 PASSED=0
 FAILED=0
 

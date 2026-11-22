@@ -1,10 +1,10 @@
 #!/bin/bash
-# Tests de skills/forge/scripts/time-hook.sh — chaque test tourne dans un dépôt jetable
+# Tests de skills/forge/hooks/time-hook.sh — chaque test tourne dans un dépôt jetable
 # sur master, jamais le dépôt courant.
 # Usage : bash tests/time-hook.test.sh
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-HOOK_SCRIPT="$REPO_ROOT/skills/forge/scripts/time-hook.sh"
+HOOK_SCRIPT="$REPO_ROOT/skills/forge/hooks/time-hook.sh"
 PASSED=0
 FAILED=0
 

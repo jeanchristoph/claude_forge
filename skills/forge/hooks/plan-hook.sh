@@ -21,7 +21,7 @@
 
 exec 2>/dev/null
 
-readonly SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
+readonly SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")/../scripts"
 source "$SCRIPT_DIR/json.sh" || exit 0
 source "$SCRIPT_DIR/task-marks.sh" || exit 0
 source "$SCRIPT_DIR/task-files.sh" || exit 0

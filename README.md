@@ -115,7 +115,11 @@ forge/
 │   │   │   └── p5-resume.md           (State 5 — Active)
 │   │   ├── references/
 │   │   │   └── estimation.json        (minutes per file until a project has its own measures, estimate range, fixed costs of a branch, branch threshold)
-│   │   └── scripts/
+│   │   ├── hooks/                (declared in settings.json by both installers, copied with the skill)
+│   │   │   ├── forge-precompact.sh   (state hook: PreCompact, SessionStart after compaction or resume)
+│   │   │   ├── time-hook.sh           (time measurement hook: one line per event in the branch time-log.jsonl)
+│   │   │   └── plan-hook.sh           (tick hook: task marks, actual time, estimates and summary table of plan.md)
+│   │   └── scripts/              (called by the model and by the hooks)
 │   │       ├── checks.sh              (startup checks, run detached: input/ and time-log.jsonl lines in .gitignore)
 │   │       ├── engrave.sh             (shipping sequence: preview / run; run --model writes metrics.json first)
 │   │       ├── metrics.sh             (branch measure summary: writes metrics.json, reports the estimated vs actual line as JSON)
@@ -125,17 +129,12 @@ forge/
 │   │       ├── swarm-status.sh        (swarm status: running, launchable, waiting branches, simulated merge, as JSON)
 │   │       ├── time-aggregate.sh      (one branch's measure: agent, human and check minutes, files and lines, as JSON)
 │   │       ├── time-calibrate.sh      (project ratios from metrics.json, estimate for a number of files, as JSON)
-│   │       ├── time-hook.sh           (time measurement hook: one line per event in the branch time-log.jsonl)
 │   │       ├── time-mark.sh           (delegate, token and merge marks in the time-log.jsonl)
-│   │       ├── plan-hook.sh           (tick hook: task marks and **Actual time:** written when a plan task is ticked)
 │   │       ├── task-marks.sh          (shared bash: clock, folder fingerprint, task mark line)
 │   │       ├── task-files.sh          (shared awk: task status, planned files of a task, files changed between two fingerprints)
 │   │       └── update.sh              (skill update: check / run, as JSON)
 │   └── forge-clickup/        → extension: ClickUp task kickoff
 │       └── SKILL.md
-├── hooks/
-│   └── bash/                 → copied to ~/.claude/hooks/forge/ by both installers
-│       └── forge-precompact.sh   (state hook: PreCompact, SessionStart after compaction or resume)
 ├── install/
 │   ├── install.sh
 │   └── install.ps1
@@ -296,11 +295,11 @@ With a branch as argument (`/forge <branch-name>`) the guard does not apply: for
   },
   "hooks": {
     "PreCompact": [{
-      "hooks": [{ "type": "command", "command": "bash ~/.claude/hooks/forge/forge-precompact.sh", "shell": "bash" }]
+      "hooks": [{ "type": "command", "command": "bash ~/.claude/skills/forge/hooks/forge-precompact.sh", "shell": "bash" }]
     }],
     "SessionStart": [{
       "matcher": "compact|resume",
-      "hooks": [{ "type": "command", "command": "bash ~/.claude/hooks/forge/forge-precompact.sh", "shell": "bash" }]
+      "hooks": [{ "type": "command", "command": "bash ~/.claude/skills/forge/hooks/forge-precompact.sh", "shell": "bash" }]
     }]
   }
 }
@@ -337,7 +336,7 @@ A single hook, in bash, for both platforms: Git Bash is already required on Wind
 
 ## Time measurement and estimate
 
-Both installers also add `bash ~/.claude/skills/forge/scripts/time-hook.sh` (shell `bash`, Git Bash on Windows, `async`: Claude Code never waits for it) to six events: `UserPromptSubmit`, `Stop`, `SubagentStart`, `SubagentStop`, `PreToolUse` on `AskUserQuestion`, `PostToolUse` on `AskUserQuestion|Bash`. Outside a forge project (no `.forge` folder in the session folder or its parents), it exits at once, without any git process. They also add `bash ~/.claude/skills/forge/scripts/plan-hook.sh` on `PostToolUse` for `Edit|Write|MultiEdit`, synchronous: it acts only on a `.forge/branch/<branch>/plan.md` and exits at once for any other file. Hooks declared in a skill's frontmatter are not used: they miss subagents and are lost when a session is resumed.
+Both installers also add `bash ~/.claude/skills/forge/hooks/time-hook.sh` (shell `bash`, Git Bash on Windows, `async`: Claude Code never waits for it) to six events: `UserPromptSubmit`, `Stop`, `SubagentStart`, `SubagentStop`, `PreToolUse` on `AskUserQuestion`, `PostToolUse` on `AskUserQuestion|Bash`. Outside a forge project (no `.forge` folder in the session folder or its parents), it exits at once, without any git process. They also add `bash ~/.claude/skills/forge/hooks/plan-hook.sh` on `PostToolUse` for `Edit|Write|MultiEdit`, synchronous: it acts only on a `.forge/branch/<branch>/plan.md` and exits at once for any other file. Hooks declared in a skill's frontmatter are not used: they miss subagents and are lost when a session is resumed.
 
 - **Measure:** the hook adds one line per event to `.forge/branch/<branch>/time-log.jsonl` of the branch checked out in the session folder — timestamps, ids, durations, never a prompt, command or tool output. Outside a forged project it writes nothing. A delegate's events carry the parent's folder: the parent maps each delegate to its child branch.
 - **Summary:** at each engrave (`engrave.sh run --model <id>`, before `git add`) and at closure, `metrics.sh` — never the model — has `time-aggregate.sh` sum the log and git and writes `metrics.json`: agent minutes (main session + delegates, ordinary subagents included: any agent started by the session and not delegated to another branch counts for its duration, parallel agents added up), human minutes (an absence of more than 6 h before a prompt or an answer counts zero), a `partial` flag when the log misses the start of the branch (hook installed late: such a branch is left out of calibration), questions, check minutes, tokens of delegates, files and lines changed.

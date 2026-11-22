@@ -10,6 +10,12 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ## [Unreleased]
 
+## [0.13.2] — 2026-11-22
+
+### Changed
+
+- Hooks live in the skill: `skills/forge/hooks/` holds `forge-precompact.sh`, `time-hook.sh` and `plan-hook.sh`, copied and updated with the skill; `settings.json` points to `~/.claude/skills/forge/hooks/<hook>.sh`. Reinstalling removes the former entries and the former `~/.claude/hooks/forge/` folder (forge files only, folder kept when it holds anything else). `scripts/` keeps what the model and the hooks call.
+
 ## [0.13.1] — 2026-11-22
 
 ### Added
@@ -399,7 +405,8 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 - Idempotent Unix and Windows installers, with `settings.json` merge and no duplicate entries on reinstall.
 - `main` / `master` guard: on a protected branch, forge asks for a ticket ID or a branch name before continuing.
 
-[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.1...HEAD
+[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.2...HEAD
+[0.13.2]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.1...v0.13.2
 [0.13.1]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.0...v0.13.1
 [0.13.0]: https://github.com/jeanchristoph/claude_forge/compare/v0.12.6...v0.13.0
 [0.12.6]: https://github.com/jeanchristoph/claude_forge/compare/v0.12.5...v0.12.6

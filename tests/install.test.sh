@@ -20,7 +20,7 @@ setup_sandbox() {
   HOME_DIR="$SANDBOX/home"
   CLAUDE_DIR="$HOME_DIR/.claude"
   mkdir -p "$SOURCE" "$HOME_DIR"
-  cp -r "$REPO_ROOT/install" "$REPO_ROOT/skills" "$REPO_ROOT/hooks" "$SOURCE/"
+  cp -r "$REPO_ROOT/install" "$REPO_ROOT/skills" "$SOURCE/"
 }
 
 teardown_sandbox() {
@@ -101,7 +101,8 @@ test_copies_skills_and_hook_into_home() {
   run_installer || exit 1
   assert_file_exists "$CLAUDE_DIR/skills/forge/SKILL.md"
   assert_file_exists "$CLAUDE_DIR/skills/forge-clickup/SKILL.md"
-  assert_file_exists "$CLAUDE_DIR/hooks/forge/$(hook_file_name)"
+  local hook
+  for hook in forge-precompact time-hook plan-hook; do assert_file_exists "$CLAUDE_DIR/skills/forge/hooks/$hook.sh"; done
 }
 
 # ── Fusion de settings.json ───────────────────────────────────────────────────
@@ -134,8 +135,8 @@ test_second_install_adds_nothing_twice() {
 
 test_adds_state_hook_on_session_start_after_compact_or_resume() {
   run_installer || exit 1
-  assert_contains '"matcher":"compact|resume","hooks":[{"type":"command","command":"bash ~/.claude/hooks/forge/forge-precompact.sh","shell":"bash"}]' "$(event_hooks SessionStart)"
-  assert_contains '"command":"bash ~/.claude/hooks/forge/forge-precompact.sh"' "$(event_hooks PreCompact)"
+  assert_contains '"matcher":"compact|resume","hooks":[{"type":"command","command":"bash ~/.claude/skills/forge/hooks/forge-precompact.sh","shell":"bash"}]' "$(event_hooks SessionStart)"
+  assert_contains '"command":"bash ~/.claude/skills/forge/hooks/forge-precompact.sh"' "$(event_hooks PreCompact)"
 }
 
 test_replaces_legacy_powershell_state_hook() {
@@ -146,7 +147,6 @@ test_replaces_legacy_powershell_state_hook() {
   run_installer || exit 1
   assert_not_contains 'forge-precompact.ps1' "$(settings)"
   assert_equals 1 "$(event_hooks PreCompact | grep -o 'forge-precompact' | wc -l | tr -d ' ')"
-  [ "$INSTALLER" = sh ] && return 0
   [ ! -e "$CLAUDE_DIR/hooks/forge/forge-precompact.ps1" ] || { echo '    legacy ps1 hook file still present'; exit 1; }
 }
 
@@ -190,7 +190,7 @@ test_adds_time_hook_to_every_measured_event() {
   run_installer || exit 1
   local event
   for event in UserPromptSubmit Stop SubagentStart SubagentStop PreToolUse PostToolUse; do
-    assert_contains 'bash ~/.claude/skills/forge/scripts/time-hook.sh' "$(event_hooks "$event")"
+    assert_contains 'bash ~/.claude/skills/forge/hooks/time-hook.sh' "$(event_hooks "$event")"
     assert_contains '"async":true' "$(event_hooks "$event")"
   done
   assert_contains '"matcher":"AskUserQuestion","hooks"' "$(event_hooks PreToolUse)"
@@ -216,13 +216,45 @@ test_adds_synchronous_plan_hook_after_file_writes() {
   run_installer || exit 1
   local post_hooks
   post_hooks=$(event_hooks PostToolUse)
-  assert_contains '"matcher":"Edit|Write|MultiEdit","hooks":[{"type":"command","command":"bash ~/.claude/skills/forge/scripts/plan-hook.sh","shell":"bash"}]' "$post_hooks"
+  assert_contains '"matcher":"Edit|Write|MultiEdit","hooks":[{"type":"command","command":"bash ~/.claude/skills/forge/hooks/plan-hook.sh","shell":"bash"}]' "$post_hooks"
   assert_contains 'time-hook.sh' "$post_hooks"
 }
 
 test_second_install_adds_plan_hook_once() {
   run_installer && run_installer || exit 1
   assert_equals 1 "$(count_occurrences 'plan-hook.sh' "$CLAUDE_DIR/settings.json")"
+}
+
+# Installation 0.13.1 : hook d'état copié dans ~/.claude/hooks/forge/, hooks de mesure et de coche sous scripts/.
+seed_install_0_13_1() {
+  mkdir -p "$CLAUDE_DIR/hooks/forge"
+  printf 'old\n' > "$CLAUDE_DIR/hooks/forge/forge-precompact.sh"
+  printf '%s\n' '{"hooks":{
+    "PreCompact":[{"hooks":[{"type":"command","command":"bash ~/.claude/hooks/forge/forge-precompact.sh","shell":"bash"}]}],
+    "Stop":[{"hooks":[{"type":"command","command":"bash ~/.claude/skills/forge/scripts/time-hook.sh","shell":"bash","async":true}]}],
+    "PostToolUse":[{"matcher":"Edit|Write|MultiEdit","hooks":[{"type":"command","command":"bash ~/.claude/skills/forge/scripts/plan-hook.sh","shell":"bash"}]}]}}' \
+    > "$CLAUDE_DIR/settings.json"
+}
+
+test_reinstall_over_0_13_1_moves_every_hook() {
+  seed_install_0_13_1
+  run_installer || exit 1
+  local file="$CLAUDE_DIR/settings.json"
+  assert_not_contains '/.claude/hooks/forge/' "$(settings)"
+  assert_not_contains 'scripts/time-hook.sh' "$(settings)"
+  assert_not_contains 'scripts/plan-hook.sh' "$(settings)"
+  assert_equals 2 "$(count_occurrences 'skills/forge/hooks/forge-precompact.sh' "$file")"
+  assert_equals 6 "$(count_occurrences 'skills/forge/hooks/time-hook.sh' "$file")"
+  assert_equals 1 "$(count_occurrences 'skills/forge/hooks/plan-hook.sh' "$file")"
+  [ ! -e "$CLAUDE_DIR/hooks/forge" ] || { echo '    legacy hook folder still present'; exit 1; }
+}
+
+test_keeps_legacy_hook_folder_holding_foreign_file() {
+  seed_install_0_13_1
+  printf 'mine\n' > "$CLAUDE_DIR/hooks/forge/my-hook.sh"
+  run_installer || exit 1
+  assert_file_exists "$CLAUDE_DIR/hooks/forge/my-hook.sh"
+  [ ! -e "$CLAUDE_DIR/hooks/forge/forge-precompact.sh" ] || { echo '    legacy forge hook still present'; exit 1; }
 }
 
 # ── install.json ──────────────────────────────────────────────────────────────
@@ -324,6 +356,8 @@ run_common_tests() {
   run_test test_second_install_adds_time_hook_once "une seconde installation n'ajoute pas le hook de mesure en double"
   run_test test_keeps_foreign_hook_of_measured_event "garde un hook étranger d'un événement écouté"
   run_test test_adds_synchronous_plan_hook_after_file_writes "ajoute le hook de coche du plan, synchrone, après chaque écriture de fichier"
+  run_test test_reinstall_over_0_13_1_moves_every_hook "réinstallation sur une 0.13.1 : hooks déplacés, anciennes entrées et ancien dossier retirés, sans doublon"
+  run_test test_keeps_legacy_hook_folder_holding_foreign_file "garde l'ancien dossier de hooks qui contient un fichier étranger à forge"
   run_test test_second_install_adds_plan_hook_once "une seconde installation n'ajoute pas le hook de coche en double"
   run_test test_records_tag_and_origin_from_git_copy "enregistre le tag et le dépôt d'origine d'une copie git"
   run_test test_records_null_version_outside_git "enregistre une version et un dépôt nuls hors dépôt git"

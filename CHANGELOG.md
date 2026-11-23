@@ -10,6 +10,8 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ## [Unreleased]
 
+## [0.13.4] — 2026-11-23
+
 ### Added
 
 - `linked-write-guard.sh` (PreToolUse) refuses any write by the parent session into a linked forged project outside ROOT, except the mandate's `brief.md` and `log.md`: out-of-plan requests on a linked project go through the plan, then delegation.
@@ -433,7 +435,8 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 - Idempotent Unix and Windows installers, with `settings.json` merge and no duplicate entries on reinstall.
 - `main` / `master` guard: on a protected branch, forge asks for a ticket ID or a branch name before continuing.
 
-[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.3...HEAD
+[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.4...HEAD
+[0.13.4]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.3...v0.13.4
 [0.13.3]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.2...v0.13.3
 [0.13.2]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.1...v0.13.2
 [0.13.1]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.0...v0.13.1

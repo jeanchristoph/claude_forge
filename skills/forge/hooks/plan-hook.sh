@@ -6,7 +6,9 @@
 #   cochées, empreinte du dossier ; jamais de fichier d'état à part
 #   Premier passage → premier point d'étape, aucune marque. Tâche ### Tn passée à [x] → task_start rétroactive
 #   (heure et empreinte du dernier point d'étape), task_done maintenant, nouveau point d'étape ; réel par
-#   time-aggregate.sh --task, écrit en **Actual time:** sous la tâche (« — » sans mesure)
+#   time-aggregate.sh --task, écrit en **Actual time:** sous la tâche : « ≈ <a> min agent (incl. <c> min checks) ·
+#   human <h> min (<n> questions) · <f> files · total ≈ <t> min » (« — » sans mesure) ; premier nombre = temps d'agent,
+#   vérifications comprises, comparable à l'estimation et lu par le calibrage avec la part « min checks »
 #   Coche retirée → point d'étape réécrit avec la liste à jour, heure et empreinte gardées
 #   Tâche-branche d'essaim (titre « — Branch ») ou déléguée à un projet lié (note « delegated to ») : aucune marque,
 #   son réel vient du skill ; sa coche déplace le point d'étape
@@ -16,6 +18,8 @@
 #   **Estimate:** ajouté s'il manque (estimation existante jamais recalculée) ; ## Summary réécrit depuis les tâches —
 #   Task | Effort | Files | Estimated | Actual | Status, titre court d'une ligne gardé, ligne **Total**, ligne
 #   **Remaining** des tâches ouvertes (retirée sans tâche ouverte) ; un seul appel time-calibrate.sh
+#   En-tête **Actual:** de la branche jamais écrit ici : metrics.sh l'écrit à la livraison et à la clôture, le hook le
+#   garde tel quel ; **Total** à 0 tâche mesurée → renvoi à **Actual:** quand la ligne existe
 #   À chaque écriture du plan, réécrit ou non : fichiers output/….sql cités sous ## Deployment et déjà écrits, script
 #   de déploiement exclu → alerte « deployment script missing » sans output/*-deployment-script.sql, « … incomplete »
 #   quand l'un d'eux n'y est pas cité (commands/deployment-sql.md)
@@ -91,7 +95,9 @@ readonly INVENTORY_PROGRAM="$TASK_STATUS_AWK$TASK_FILES_AWK"'
 #   fourchette sommées), mention indicative gardée ; absent → inséré sous **Date:**, indicatif si indicative vaut 1 ;
 #   ## Summary → table régénérée à la place de ses lignes « | », texte libre gardé ; section ajoutée en fin si absente ;
 #   **Total** calculé sur les seules tâches au réel mesuré : estimé et réel portent sur les mêmes tâches ;
-#   remaining (« fichiers<TAB>≈ m min (b-h) ») vide → pas de ligne **Remaining**. Fins de ligne du plan gardées.
+#   remaining (« fichiers<TAB>≈ m min (b-h) ») vide → pas de ligne **Remaining** ;
+#   **Actual:** gardé tel quel ; **Total** à 0 tâche mesurée renvoie à **Actual:** quand la ligne existe.
+#   Fins de ligne du plan gardées.
 readonly SUMMARY_PROGRAM="$TASK_STATUS_AWK$TASK_FILES_AWK"'
   function trim(text) { sub(/^[ \t]+/, "", text); sub(/[ \t]+$/, "", text); return text }
   function after_label(text, label) { return trim(substr(text, length(label) + 1)) }
@@ -133,7 +139,7 @@ readonly SUMMARY_PROGRAM="$TASK_STATUS_AWK$TASK_FILES_AWK"'
       emit_row(title " | " effort[id] " | " files[id] " | " estimate " | " actual " | " status[id])
     }
     if (measured) emit_row("**Total** (" measured "/" tasks " measured) | **" effort_mix() "** | **" measured_files "** | **" sprintf("≈ %g min", estimated_total) "** | **" sprintf("≈ %.1f min", actual_total) "** |")
-    else emit_row("**Total** (0/" tasks " measured) | | | — | — |")
+    else emit_row("**Total** (0/" tasks " measured) | | | — | " (has_actual_header ? "see **Actual:**" : "—") " |")
     if (remaining != "") { split(remaining, pair, "\t"); emit_row("**Remaining** | | **" pair[1] "** | **" pair[2] "** | |") }
     table_written = 1
   }
@@ -149,6 +155,7 @@ readonly SUMMARY_PROGRAM="$TASK_STATUS_AWK$TASK_FILES_AWK"'
   }
   FNR == NR && line ~ /^## / { flush_task(); in_summary = (line ~ /^## Summary/); next }
   FNR == NR && line ~ /^\*\*Estimate:\*\*/ { has_header = 1; is_indicative = (line ~ /indicative/) }
+  FNR == NR && line ~ /^\*\*Actual:\*\*/ { has_actual_header = 1 }
   FNR == NR && in_summary && line ~ /^\| *T[0-9]+/ { split(line, cells, "|"); split(trim(cells[2]), words, " "); summary_title[words[1]] = trim(cells[2]); next }
   FNR == NR && task != "" {
     if (line ~ /^\*\*Effort:\*\*/) effort[task] = after_label(line, "**Effort:**")
@@ -172,7 +179,7 @@ readonly SUMMARY_PROGRAM="$TASK_STATUS_AWK$TASK_FILES_AWK"'
     print; next
   }
   in_summary && line ~ /^\|/ { if (!table_written) emit_table(); next }
-  line ~ /^\*\*Estimate:\*\*/ && header != "" { print "**Estimate:** " header eol; next }
+  line ~ /^\*\*Estimate:\*\*/ { print (header != "" ? "**Estimate:** " header eol : $0); next }
   { print }
   line ~ /^\*\*Date:\*\*/ && !has_header && header != "" { print "**Estimate:** " header newline }
   is_task_heading(line) { current = $2 }
@@ -282,17 +289,40 @@ append_checkpoint() {
   printf '%s}\n' "$line" >> "$TIME_LOG"
 }
 
-# Réel d'une tâche dans REPLY : « ≈ <min> min · <n> files · <c> min checks », sans la partie fichiers inconnue, ou « — ».
-# La part de vérifications nourrit le coût fixe de vérification du calibrage (time-calibrate.sh).
+# Valeur brute du champ <nom> du JSON <json> dans REPLY (nombre, true, false, null) ; « null » si absent.
+json_number_field() {
+  local pattern="\"$1\":([^,}\"]+)"
+  REPLY=null
+  [[ $2 =~ $pattern ]] && REPLY=${BASH_REMATCH[1]}
+}
+
+# Somme de deux durées à une décimale (« 1.2 »), « null » comptant pour zéro, dans REPLY — sans processus.
+add_minutes() {
+  local first=${1/null/0.0} second=${2/null/0.0} tenths
+  tenths=$(( 10#${first/./} + 10#${second/./} ))
+  REPLY="$((tenths / 10)).$((tenths % 10))"
+}
+
+# Réel d'une tâche dans REPLY : « ≈ <a> min agent (incl. <c> min checks) · human <h> min (<n> questions) · <f> files ·
+# total ≈ <t> min », sans la partie fichiers inconnue, ou « — ». Premier nombre = temps d'agent, vérifications comprises,
+# comparé à l'estimation ; la part « min checks » nourrit le coût fixe de vérification du calibrage (time-calibrate.sh).
+# BUSINESS_RULE: total = agent + humain — les vérifications sont une part du temps d'agent, jamais ajoutées au total
 measure_task() {
-  local result parent_log=()
+  local result agent human questions checks files parent_log=()
   [ -n "$MARK_BRANCH" ] && parent_log=(--parent-log "$TIME_LOG")
   result=$(bash "$SCRIPT_DIR/time-aggregate.sh" --root "$ROOT" --branch "$BRANCH" "${parent_log[@]}" --task "$1")
   REPLY=$NO_MEASURE
-  [[ $result == *'"measured":true'* ]] && [[ $result =~ \"agent_minutes\":([0-9.]+) ]] || return 0
-  REPLY="≈ ${BASH_REMATCH[1]} min"
-  [[ $result =~ \"actual_files\":([0-9]+) ]] && REPLY+=" · ${BASH_REMATCH[1]} files"
-  [[ $result =~ \"check_minutes\":([0-9.]+) ]] && REPLY+=" · ${BASH_REMATCH[1]} min checks"
+  [[ $result == *'"measured":true'* ]] || return 0
+  json_number_field agent_minutes "$result"; agent=$REPLY
+  json_number_field human_minutes "$result"; human=$REPLY
+  json_number_field questions "$result"; questions=$REPLY
+  json_number_field check_minutes "$result"; checks=$REPLY
+  json_number_field actual_files "$result"; files=$REPLY
+  add_minutes "$agent" "$human"
+  local total=$REPLY
+  REPLY="≈ $agent min agent (incl. $checks min checks) · human $human min ($questions questions)"
+  [ "$files" != null ] && REPLY+=" · $files files"
+  REPLY+=" · total ≈ $total min"
 }
 
 # Marques des tâches nouvellement cochées, nouveau point d'étape, puis réel de chacune ; « tâche<TAB>réel » dans REPLY.

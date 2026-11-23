@@ -4,7 +4,7 @@
 
 **Autorisation :** la commande vaut autorisation pour cette séquence seulement — aucune confirmation avant `run`. Les questions `Linked` / `Linked branches` de l'étape 2 restent posées : elles fixent le périmètre, elles ne confirment rien.
 
-**INVARIANT :** git opère uniquement sur le dépôt courant — jamais sur un autre dépôt ouvert en parallèle. Unique exception : `<LINKED>`, pour la création du worktree par la « Délégation — projet lié » de `commands/delegation.md` et pour la livraison relayée ci-dessous — rien d'autre.
+**INVARIANT :** git opère uniquement sur le dépôt courant — jamais sur un autre dépôt ouvert en parallèle. Unique exception : `<LINKED>`, pour la création du worktree par la « Délégation — projet lié » de `commands/delegation.md`, pour la livraison relayée et pour le « Retrait du worktree lié » ci-dessous — rien d'autre.
 
 **Publication hors dépôt :** tout texte publié sur la forge distante à la suite d'une livraison — titre et notes d'une release, description d'un tag ou d'une PR — est rédigé en **anglais**, quelle que soit la langue de l'utilisateur. Le message de commit, lui, suit la langue des commits du dépôt.
 
@@ -13,7 +13,7 @@
 Mode délégué `SCOPE: branch` → `--root` vaut ROOT (le worktree) ; compte rendu de livraison recopié entier dans le `content` du bloc qui termine le tour. `SCOPE: linked` → Livraison non applicable (section « Mode délégué » de `SKILL.md`).
 
 **Réaction — dans l'ordre :**
-0. Synthèse de mesure : aucune action — `engrave.sh run --model` l'écrit avant le `git add` (« Synthèse de mesure — `metrics.json` » ci-dessous), elle part avec le commit.
+0. Synthèse de mesure : aucune action — `engrave.sh run --model` l'écrit avant le `git add`, avec la ligne `**Actual:**` de l'en-tête du plan (« Synthèse de mesure — `metrics.json` » ci-dessous) ; toutes deux partent avec le commit.
 1. Générer automatiquement le message de commit (règles COMMITS GIT : max 150 car., pas de mention Claude) — pas de confirmation sur le message lui-même.
 2. Livraison relayée — pour chaque projet lié (ci-dessous) : poser les deux questions, retenir la séquence du lié.
 3. Exécuter aussitôt le script en `run` pour le parent (« Script de livraison » ci-dessous), sans question ni affichage préalable.
@@ -21,6 +21,7 @@ Mode délégué `SCOPE: branch` → `--root` vaut ROOT (le worktree) ; compte re
    - Sortie `1` → afficher l'erreur telle quelle, aucun projet lié livré. STOP — ne pas continuer.
    - Sortie `2` → rendre compte du parent selon le « Gabarit — compte rendu de livraison » ci-dessous, erreur git telle quelle sous le tableau, aucun projet lié livré. STOP — ne pas continuer.
 4. Pour chaque projet lié retenu, dans l'ordre du plan : exécuter le script en `run` avec ses arguments. Sortie `1` → retenir l'erreur ; sortie `2` → retenir le JSON et l'erreur. Passer au projet lié suivant ; le parent, déjà livré, n'est jamais repris.
+   - Sortie `0` avec au moins une action `merge` en `done` → « Retrait du worktree lié » ci-dessous, avant le projet lié suivant.
 5. Rendre compte depuis le JSON de chaque `run`, parent puis chaque projet lié, selon le « Gabarit — compte rendu de livraison » ci-dessous.
 
 ⚠️ Aucune écriture dans LOG ni PLAN après la séquence — le compte rendu est du texte seul, le working tree reste tel que la livraison l'a laissé. Ce qui doit être journalisé l'est avant le `git add`.
@@ -35,6 +36,8 @@ Mode délégué `SCOPE: branch` → `--root` vaut ROOT (le worktree) ; compte re
 - Branche fille d'un essaim → même appel, `--event engrave`, sous `--root <WORKTREE>`, avec `--parent-log <dépôt principal>/.forge/branch/<PARENT_BRANCH>/time-log.jsonl --base <PARENT_BRANCH>` (`<PARENT_BRANCH>` : vocabulaire de `commands/swarm.md`).
 
 Compte rendu de la Livraison : une ligne sous le tableau, depuis `metrics` — `Estimated ≈ <planned_files> files · ≈ <estimated_minutes> min (<estimated_low>-<estimated_high>) · actual <actual_files> files · <agent_minutes> min` ; valeur `null` → `—` ; `partial` à `true` → ajouter ` · partial measure`. `metrics` absent (dossier de branche absent) → aucune ligne.
+
+**Temps réel de la branche :** à chaque passage, avec un journal de mesure, `scripts/metrics.sh` réécrit sans doublon la ligne `**Actual:**` de l'en-tête du plan, sous `**Estimate:**`, à défaut sous `**Date:**` — gabarit « Temps réel de la branche » de `phases/p4-plan.md`. Seul écrivain de la ligne : entre deux passages, elle garde la valeur du dernier. Sans journal → plan intact.
 
 ⚠️ `metrics.json` : un objet sur une ligne, réécrit à chaque passage, valeurs cumulées depuis le début de la branche — champs, ordre et règles de comptage fixés par `scripts/metrics.sh`. `time-log.jsonl` (événements bruts) reste local, ignoré par git ; seul `metrics.json` est versionné.
 ⚠️ Aucune heure, aucune durée estimée à la main : sans journal, les durées restent `null`.
@@ -57,6 +60,17 @@ Compte rendu de la Livraison : une ligne sous le tableau, depuis `metrics` — `
 - Script du lié : `--root <LINKED_GIT>`, `--branch <LINKED_BRANCH>`, son message, ses branches retenues.
 
 ⚠️ Le sous-agent délégué n'est jamais sollicité pour livrer : la livraison relayée est du git pur, exécuté par le parent.
+
+### Retrait du worktree lié
+
+**Déclencheur :** étape 4 de la Livraison — `run` du projet lié en sortie `0` avec au moins une action `merge` en `done` ; étape 4 de la Clôture (`commands/closure.md`), pour une fusion faite hors forge (pull request).
+
+**Réaction :** `bash <SKILL_DIR>/scripts/linked-worktree-cleanup.sh --linked <LINKED> --branch <LINKED_BRANCH>` — le script décide seul, jamais de `git worktree remove` à la main :
+- Retiré seulement si le worktree n'est pas `<LINKED>` lui-même, si son working tree est propre et si `<LINKED_BRANCH>` est fusionnée dans la branche par défaut de `<LINKED>`, locale ou `origin/<défaut>` après `fetch` ; `git worktree remove` sans `--force`, la branche gardée.
+- JSON sur une ligne : `{"worktree":<chemin|null>,"status":"removed|kept|absent","reason":<raison|null>}` — raison de `kept` : `not merged`, `uncommitted changes`, `main working tree`, `git error` ; `absent` → aucun worktree n'extrait la branche, rien à retirer.
+- Compte rendu de la Livraison : ligne `worktree: removed` ou `worktree: kept — <reason>` sous le tableau du projet lié ; `absent` → aucune ligne.
+
+⚠️ Fusion par squash ou rebase : la branche n'est pas ancêtre de la branche par défaut → `kept — not merged`, jamais forcé.
 
 ### Script de livraison
 
@@ -106,6 +120,6 @@ Gabarit figé de l'étape 5, rempli depuis le JSON de `run` — crochets à remp
 - Détail `done` : `commit` → hash en inline code suivi du message de l'appel entre guillemets ; `push` → `detail` tel quel, plage en inline code ; `merge` → `detail` tel quel ; `detail` à `null` → cellule vide.
 - Détail `skipped` → `reason`. Détail `failed` → `reason`, suivie de ` — ` et des fichiers en inline code si `detail` est non nul. Détail `not_run` → cellule vide.
 - `status` du JSON à `failed` → erreur git telle quelle sous le tableau.
-- Projet lié → une ligne `<LINKED>` seule, puis son tableau au même format. Projet lié sans rien à graver → sa ligne "`<LINKED>`: nothing to engrave." à la place du tableau. Projet lié en sortie `1` → sa ligne `<LINKED>`, puis l'erreur telle quelle.
+- Projet lié → une ligne `<LINKED>` seule, puis son tableau au même format, puis sa ligne `worktree` (« Retrait du worktree lié »). Projet lié sans rien à graver → sa ligne "`<LINKED>`: nothing to engrave." à la place du tableau. Projet lié en sortie `1` → sa ligne `<LINKED>`, puis l'erreur telle quelle.
 
 ⚠️ JSON jamais affiché brut ; compte rendu jamais complété d'une liste de fichiers — hors fichiers en conflit — ni d'un décompte de lignes, jamais remplacé par une phrase de résumé.

@@ -1,7 +1,7 @@
 # Plan — forge-guards
 **Objective:** Ajouter au skill forge deux garde-fous (script de déploiement SQL toujours écrit et complet ; session parente qui n'écrit jamais dans un projet lié), nommer la branche liée d'après la tâche déléguée sans jamais nommer le parent, et documenter le hook `linked-write-guard.sh`.
 **Date:** 2026-11-23
-**Estimate:** ≈ 27 files · ≈ 22 min (6-39) · indicative
+**Estimate:** ≈ 52 files · ≈ 41 min (11-73) · indicative
 **Origin:** T7, T8, T9, T10
 
 ## Tasks
@@ -38,6 +38,30 @@
 **Description:** Arborescence de `.forge/project.md` et des deux README : ajout de `skills/forge/hooks/linked-write-guard.sh` (écriture de la session parente dans un projet lié refusée) et de `tests/linked-write-guard.test.sh`, au même format que les hooks et tests existants.
 [x] linked-write-guard.sh et son test ajoutés aux arborescences de project.md, README.md, README.fr.md
 
+### T5 — Worktree d'un projet lié retiré automatiquement une fois sa branche fusionnée ← parent T11
+**Effort:** S
+**Estimated time:** ≈ 6 min (2-11)
+**Actual time:** —
+**Files:** `skills/forge/scripts/linked-worktree-cleanup.sh`, `tests/linked-worktree-cleanup.test.sh`, `skills/forge/commands/engrave.md`, `skills/forge/commands/closure.md`, `skills/forge/commands/delegation.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Nouveau script `linked-worktree-cleanup.sh --linked <dossier> --branch <branche>`, sortie JSON `{"worktree":…,"status":"removed|kept","reason":…}` : retire le worktree de la branche seulement si ce n'est pas `<LINKED>` lui-même, si son working tree est propre et si la branche est fusionnée dans la branche par défaut du projet lié, locale ou `origin/<défaut>` après `fetch` ; `git worktree remove` sans `--force`. Sinon gardé, raison `not merged`, `uncommitted changes`, `main working tree`, `git error`. Appel automatique dans `engrave.md` (livraison relayée, après un `run` du projet lié qui a fusionné sa branche, ligne `worktree` au compte rendu) et `closure.md` (clôture de la branche parente, chaque branche liée des notes `delegated to`, worktrees gardés listés). Consigne manuelle `git worktree remove …` retirée de `delegation.md`. Tests écrits en parallèle (`tests/linked-worktree-cleanup.test.sh`, dépôts jetables) : fusionnée et propre → retiré ; non fusionnée → `not merged` ; modifications non commitées → gardé ; dossier principal → jamais retiré ; fusion seulement distante → retiré. README fr/en, CHANGELOG `### Added` (texte du mandat).
+[x] linked-worktree-cleanup.sh (statut absent ajouté : aucun worktree pour la branche), 7 tests verts ; « Retrait du worktree lié » dans engrave.md, étape 4 de closure.md, rappel manuel retiré de delegation.md ; README fr/en, CHANGELOG
+
+### T6 — Temps réel détaillé par poste, en tête du plan et par tâche ← parent T12
+**Effort:** S
+**Estimated time:** ≈ 6 min (1-10)
+**Actual time:** —
+**Files:** `skills/forge/hooks/plan-hook.sh`, `tests/plan-hook.test.sh`, `skills/forge/phases/p4-plan.md`, `skills/forge/phases/p5-resume.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Option C retenue et précisée (agent en tête, aucun script testé touché hors du hook). En-tête `**Actual:**` sous `**Estimate:**`, écrit par `plan-hook.sh` à chaque écriture du plan depuis `time-aggregate.sh` sur la branche : `≈ <total> min · agent <a> min (dont <c> min checks) · human <h> min (<n> questions, <q> min) · fixed <f> min (delegate setup <s> min, merge <m> min) · delegates <d> min in parallel`, total = agent + humain (vérifications et fusion comprises dans le temps d'agent, mise en route dans celui des délégués, hors total) ; poste sans mesure → `—` ; ` · partial (<raison>)` ; sans journal → aucune ligne. Par tâche : `**Actual time:** ≈ <agent> min agent (dont <c> min checks) · human <h> min (<n> questions) · <f> files · total ≈ <agent + human> min`, premier nombre et motif `min checks` lus par `time-calibrate.sh` inchangé. `**Total**` du `## Summary` à 0 tâche mesurée → `see **Actual:**`. Tests en parallèle, gabarits p4/p5, README fr/en, CHANGELOG `### Added`.
+[x] En-tête **Actual:** ventilé et réel par tâche ventilé écrits par plan-hook.sh, Total renvoyant à Actual ; 8 tests ajoutés (plan-hook 44/44, time-calibrate 37, time-aggregate 84, metrics 9, status 33 verts) ; p4, p5, README fr/en, CHANGELOG
+
+### T7 — Ligne Actual de la branche calculée à la livraison, même forme que la ligne de tâche, libellés en anglais ← parent T13
+**Effort:** S
+**Estimated time:** ≈ 7 min (2-13)
+**Actual time:** —
+**Files:** `skills/forge/hooks/plan-hook.sh`, `tests/plan-hook.test.sh`, `skills/forge/scripts/engrave.sh`, `tests/engrave.test.sh`, `skills/forge/commands/engrave.md`, `skills/forge/phases/p4-plan.md`, `skills/forge/phases/p5-resume.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** `plan-hook.sh` n'écrit plus la ligne de branche `**Actual:**` (ligne existante gardée, renvoi `see **Actual:**` du `**Total**` conservé quand elle existe). `engrave.sh run` l'écrit dans `plan.md` au moment où il écrit `metrics.json`, avant le `git add` ; la clôture fait de même via `metrics.sh --event closure` ; remplacée sans doublon, sous `**Estimate:**` à défaut sous `**Date:**`. Format : `≈ <a> min agent (incl. <c> min checks) · human <h> min (<n> questions, <q> min) · fixed <f> min (delegate setup, merge) · delegates <d> min in parallel · total ≈ <a + h> min`, poste non mesuré `—`, ` · partial (<raison>)`, sans journal aucune ligne. Ligne de tâche : `dont` → `incl.`. `time-calibrate.sh` inchangé, test de lecture avec `incl.`. Tests plan-hook et engrave en parallèle ; engrave.md, p4, p5, README fr/en, CHANGELOG (entrée `### Added` de T12 réécrite, texte du mandat).
+[x] Ligne **Actual:** écrite par metrics.sh (livraison avant git add, clôture), plus par plan-hook.sh ; « incl. » ; tests plan-hook 41, metrics 19, engrave 40, time-calibrate 37 verts
+
 ## Risks
 - `p5-resume.md` et `CHANGELOG.md` sont touchés par T1 et T2 : ils sont édités l'un après l'autre, dans le même plan, sans conflit.
 - Les noms de fichiers des installeurs diffèrent du mandat (`install/install.sh`, `install/install.ps1` au lieu des lanceurs racine) : même intention, fichiers où vit la fusion de `settings.json`.
@@ -55,4 +79,7 @@ None
 | T2 — Garde-fou écriture dans un projet lié | M | 8 | ≈ 6 min | — | [x] |
 | T3 — Branche liée nommée d'après la tâche, lien tenu par le plan parent, enfant sans référence au parent ← parent T9 | M | 9 | ≈ 6 min | — | [x] |
 | T4 — Documenter le hook linked-write-guard dans la structure du projet ← parent T10 | XS | 3 | ≈ 4 min | — | [x] |
-| **Total** (0/4 measured) | | | — | — | |
+| T5 — Worktree d'un projet lié retiré automatiquement une fois sa branche fusionnée ← parent T11 | S | 8 | ≈ 6 min | — | [x] |
+| T6 — Temps réel détaillé par poste, en tête du plan et par tâche ← parent T12 | S | 7 | ≈ 6 min | — | [x] |
+| T7 — Ligne Actual de la branche calculée à la livraison, même forme que la ligne de tâche, libellés en anglais ← parent T13 | S | 10 | ≈ 7 min | — | [x] |
+| **Total** (0/7 measured) | | | — | — | |

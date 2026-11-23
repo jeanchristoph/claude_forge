@@ -1,3 +1,11 @@
+- [2026-11-23 16:13] Out of mandate: .forge/project.md (Key structure) décrit metrics.sh sans la ligne **Actual:** du plan
+- [2026-11-23 16:13] T7 : ligne **Actual:** écrite par metrics.sh (appelé par engrave.sh run avant le git add, et par la clôture) plutôt que dans engrave.sh — un seul écrivain pour la livraison, la clôture et la fusion d'essaim, sans second appel à time-aggregate.sh
+- [2026-11-23 15:58] Opened by delegation · T13
+- [2026-11-23 14:44] T6 done — en-tête **Actual:** et **Actual time:** ventilés par poste (option C : agent en tête, total = agent + humain), Total → see **Actual:** ; tests plan-hook 44/44, time-calibrate 37/37
+- [2026-11-23 13:07] Opened by delegation · T12
+- [2026-11-23 11:26] Out of mandate: .forge/project.md (Key structure, tests) sans linked-worktree-cleanup.sh ; rappel manuel git worktree remove encore présent pour la délégation vers une branche du même dépôt (delegation.md, README)
+- [2026-11-23 11:26] T5 done — linked-worktree-cleanup.sh (removed / kept / absent, jamais --force), retrait automatique après livraison relayée fusionnée et à la clôture du parent ; tests 7/7, engrave 37/37, install 47/47
+- [2026-11-23 11:20] Opened by delegation · T11
 - [2026-11-23 11:10] Out of mandate: branches locales préfixées d'un ancien parent dans ce dépôt et dossier d'admin du worktree nommé d'après l'ancienne branche
 - [2026-11-23 11:10] T4 done — linked-write-guard.sh et son test dans les arborescences de project.md et des deux README
 - [2026-11-23 11:10] T3 done — branche liée nommée par la règle de la garde, champ **Linked branch:** au plan parent, mandat sans brief parent ni **Parent:**/**Branch:**, invariant « le lié ne nomme jamais le parent », README fr/en, CHANGELOG

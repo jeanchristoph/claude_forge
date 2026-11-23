@@ -123,8 +123,9 @@ forge/
 │   │   └── scripts/              (called by the model and by the hooks)
 │   │       ├── checks.sh              (startup checks, run detached: input/ and time-log.jsonl lines in .gitignore)
 │   │       ├── engrave.sh             (shipping sequence: preview / run; run --model writes metrics.json first)
-│   │       ├── metrics.sh             (branch measure summary: writes metrics.json, reports the estimated vs actual line as JSON)
+│   │       ├── metrics.sh             (branch measure summary: writes metrics.json and the plan's **Actual:** line, reports the estimated vs actual line as JSON)
 │   │       ├── json.sh                (JSON rendering and hook JSON field reading, shared by the scripts)
+│   │       ├── linked-worktree-cleanup.sh (removes a linked worktree once its branch is merged, clean tree only, as JSON)
 │   │       ├── log-entry.sh           (log entry: timestamp read from the local clock, entry written at the top of log.md)
 │   │       ├── status.sh              (startup status: state, progress, resumable branches, as JSON)
 │   │       ├── swarm-status.sh        (swarm status: running, launchable, waiting branches, simulated merge, as JSON)
@@ -154,6 +155,7 @@ forge/
 │   ├── forge-precompact.test.sh → bash tests/forge-precompact.test.sh, throwaway repositories only
 │   ├── install.test.sh       → bash tests/install.test.sh, throwaway home only
 │   ├── checks.test.sh        → bash tests/checks.test.sh, throwaway repositories only
+│   ├── linked-worktree-cleanup.test.sh → bash tests/linked-worktree-cleanup.test.sh, throwaway repositories only
 │   ├── linked-write-guard.test.sh → bash tests/linked-write-guard.test.sh, throwaway folders only
 │   ├── log-entry.test.sh     → bash tests/log-entry.test.sh, throwaway folders only
 │   ├── status.test.sh        → bash tests/status.test.sh, throwaway repositories only
@@ -342,11 +344,12 @@ Both installers also add `bash ~/.claude/skills/forge/hooks/time-hook.sh` (shell
 
 - **Measure:** the hook adds one line per event to `.forge/branch/<branch>/time-log.jsonl` of the branch checked out in the session folder — timestamps, ids, durations, never a prompt, command or tool output. Outside a forged project it writes nothing. A delegate's events carry the parent's folder: the parent maps each delegate to its child branch.
 - **Summary:** at each engrave (`engrave.sh run --model <id>`, before `git add`) and at closure, `metrics.sh` — never the model — has `time-aggregate.sh` sum the log and git and writes `metrics.json`: agent minutes (main session + delegates, ordinary subagents included: any agent started by the session and not delegated to another branch counts for its duration, parallel agents added up), human minutes (an absence of more than 6 h before a prompt or an answer counts zero), a `partial` flag when the log misses the start of the branch (hook installed late: such a branch is left out of calibration), questions, check minutes, tokens of delegates, files and lines changed.
-- **Files per task:** each task mark carries a fingerprint of the working folder (path and content hash of every changed or new file, outside `.forge`, nothing written to the repository); a task's actual files are those that appear, change or disappear between its two marks — a file changed by three tasks counts in each — written as `**Actual time:** ≈ <min> min · <n> files`. From twenty such tasks, minutes per file and the file forecast correction come from the last forty tasks rather than from whole branches, both sides counted per task.
+- **Files per task:** each task mark carries a fingerprint of the working folder (path and content hash of every changed or new file, outside `.forge`, nothing written to the repository); a task's actual files are those that appear, change or disappear between its two marks — a file changed by three tasks counts in each — written as `**Actual time:** ≈ <min> min agent … · <n> files …`. From twenty such tasks, minutes per file and the file forecast correction come from the last forty tasks rather than from whole branches, both sides counted per task.
 - **Estimate:** each plan task counts the paths listed in its `**Files:**` (an explicit `(≈ n)` at the end of the line for a glob or files still unknown); one `time-calibrate.sh --files 3,5,8` call turns every task and the total into agent minutes with a range (`≈ 120 files · ≈ 60 min (45-78)`), from the project's last forty measured tasks once twenty are measured with their files, otherwise from `references/estimation.json` (0.5 min per file) — never from whole branches. The range comes from the 20th and 80th percentiles of actual ÷ estimated time over the last forty measured tasks, read from the branch plans (child branches of a swarm included), once twenty are measured (0.75–1.3 before); every estimate is recomputed from the latest measures. Marked *indicative* while rates or range still come from the reference values. Effort letters stay as relative size, without any duration.
 - **Written by the hook:** on every write of `plan.md`, `plan-hook.sh` estimates each task that has `**Files:**` but no `**Estimated time:**` (one `time-calibrate.sh` call), recomputes the `**Estimate:**` header (files of every task, sum of their frozen estimates), and rebuilds `## Summary` from the tasks: `Task | Effort | Files | Estimated | Actual | Status`, short titles kept, `**Total**` over the measured tasks only — estimated and actual of the same tasks —, and `**Remaining**` for the open tasks. A measured actual time is never replaced by `—`. On resume, this table is the progress table, shown as is, with no script call.
 - **Check cost per task:** every task pays its checks whatever its size — under Git Bash a full test run can cost several minutes for a one-file change. A task's estimate is `check_minutes + files × minutes per file`: `check_minutes` is the median of the `· <c> min checks` part of the actual times once twenty tasks carry it, `2` from `references/estimation.json` before; minutes per file are then taken from the actual time minus its checks. A list of tasks gets one check cost per task. Actual times written before this part existed are still read.
-- **Per task:** each task also states `**Estimated time:**`, frozen when the hook first writes it. The model sets no mark: `plan-hook.sh` sees the tick in `plan.md`, writes the task's start (last checkpoint: previous tick or first write of the plan, a `plan_checkpoint` line of the log) and its end, measures the agent minutes between both with `time-aggregate.sh --task` (question waits removed, same absence rule) and writes `**Actual time:**` with the share of check commands (`≈ 10.2 min · 9 files · 2.3 min checks`), or `—` when there is no measure (no log, hook installed late, first pass). A task picked out of order is measured from the previous tick; two tasks ticked in one edit are simultaneous. For every delegate, same repository or linked project, the hook writes the marks to the parent's log (`TIME_LOG:` line of its prompt), where its events already land; the delegate and reports each task's actual time in `FORGE_DONE`; a parent task delegated to a linked project gets the sum of its child tasks (`time-aggregate.sh --task T1,T2`, `—` as soon as one child is unmeasured); a swarm branch task takes `agent_minutes` from the branch `metrics.json`. The progress table shows Estimated and Actual side by side. An ordinary subagent counts in the task for its share inside the window; two tasks open at the same time are not measured (`—`, reason `overlapping_tasks`): no share can be attributed to either without inventing it, and their time still counts in the branch measure.
+- **Whole branch:** under `**Estimate:**` (else under `**Date:**`), `metrics.sh` writes the branch measure from `time-aggregate.sh` at engrave time — before the `git add`, so the line ships with the commit — and at closure, not on every write of the plan; between two engraves the line keeps the last value. Same shape as the task line, total last: `**Actual:** ≈ 14.0 min agent (incl. 3.0 min checks) · human 7.0 min (4 questions, 2.5 min) · fixed 2.0 min (delegate setup, merge) · delegates 0.0 min in parallel · total ≈ 21.0 min`. Total = agent + human: checks and merge are shares of agent time, delegate setup a share of delegate time; delegates run at the same time and are shown apart, outside the total. An item without a measure shows `—`, never an estimate; ` · partial (log started after the branch, 3 unmeasured tasks)` flags an incomplete measure. No measure log → no line. With no measured task, the `**Total**` row points to it (`see **Actual:**`).
+- **Per task:** each task also states `**Estimated time:**`, frozen when the hook first writes it. The model sets no mark: `plan-hook.sh` sees the tick in `plan.md`, writes the task's start (last checkpoint: previous tick or first write of the plan, a `plan_checkpoint` line of the log) and its end, measures the agent minutes between both with `time-aggregate.sh --task` (question waits removed, same absence rule) and writes `**Actual time:**` broken down by item (`≈ 10.2 min agent (incl. 2.3 min checks) · human 1.5 min (2 questions) · 9 files · total ≈ 11.7 min`: the first figure is agent time, checks included, compared with the estimate; total = agent + human, checks never added), or `—` when there is no measure (no log, hook installed late, first pass). A task picked out of order is measured from the previous tick; two tasks ticked in one edit are simultaneous. For every delegate, same repository or linked project, the hook writes the marks to the parent's log (`TIME_LOG:` line of its prompt), where its events already land; the delegate and reports each task's actual time in `FORGE_DONE`; a parent task delegated to a linked project gets the sum of its child tasks (`time-aggregate.sh --task T1,T2`, `—` as soon as one child is unmeasured); a swarm branch task takes `agent_minutes` from the branch `metrics.json`. The progress table shows Estimated and Actual side by side. An ordinary subagent counts in the task for its share inside the window; two tasks open at the same time are not measured (`—`, reason `overlapping_tasks`): no share can be attributed to either without inventing it, and their time still counts in the branch measure.
 - **Check commands:** the `**Check pattern:**` line of `project.md` (regular expression) marks the Bash commands counted as checks.
 
 ---
@@ -468,8 +471,12 @@ The worktree sits next to the linked repository, in `<linked-folder>.worktrees/<
 `my-api.worktrees/export-csv` — and is reused when it already exists. The linked repository's own folder is never touched — no checkout,
 no write — so you can keep working in it by hand while the subagent runs. A worktree only holds versioned
 files: no installed dependencies, no `.env`, no local config — a delegated task that needs them comes back
-blocked, and the linked `.forge/` must be committed. Once the linked branch is engraved, forge reminds you of
-`git -C <linked> worktree remove <path>`.
+blocked, and the linked `.forge/` must be committed. The worktree is removed automatically once the linked
+branch is merged into the linked project's default branch (`master`, then `main`, local or `origin/` after a
+fetch): after a relayed engrave that merges it, or at the parent's closure for a merge done outside forge — a
+pull request, for instance. `linked-worktree-cleanup.sh` decides alone and never forces: a worktree with
+uncommitted changes, an unmerged branch (a squash merge included) or the linked repository's own folder is kept,
+and the report says why. The linked branch itself is never deleted.
 
 Execution then happens in a **sealed forge context**: a subagent that receives only the worktree path,
 the linked branch, your language and the order to run the forge skill there. No `project.md`, no coding standards,
@@ -590,7 +597,8 @@ asked — they set the scope, they confirm nothing. A merge conflict or a reject
 with the error as is; nothing is ever forced.
 
 **INVARIANT:** git operates only on the current repo — never on another repo open in parallel. The one
-exception is a linked project: worktree creation when delegating, and the relayed shipping below.
+exception is a linked project: worktree creation when delegating, the relayed shipping below, and removing
+its worktree once its branch is merged.
 
 When the plan carries delegated tasks, engraving the parent also offers to ship each linked project that
 has uncommitted changes: first whether to ship it at all, then onto which branches — the same branches as
@@ -601,7 +609,9 @@ linked project gets its own report table under the parent's, and the same comman
 everything; a target branch missing from the linked repository is skipped, never created. Shipping runs in the
 worktree; a target branch checked out in another folder — the linked repository's own folder included — is
 skipped, the merge being done from there. The delegated
-subagent is never involved: relayed shipping is plain git, run by the parent.
+subagent is never involved: relayed shipping is plain git, run by the parent. When a linked run merged its
+branch, its worktree is then removed if the branch reached the default branch and the tree is clean; a
+`worktree` line under its table says `removed` or `kept` with the reason.
 
 Anything published on the remote forge after a delivery — release title and notes, tag or PR description — is written in **English**, whatever your language. The commit message follows the language of the repository's commits.
 
@@ -616,6 +626,10 @@ Triggered once every task is `[x]` and you've validated the tests, or as soon as
 Forge first confirms the original goal is actually solved, listing the tasks still open. Any left are
 settled one by one: done (`[x]`), dropped (`[-]`) or kept open. A blocked `[!]` task is never touched, and
 `Solved` alone checks nothing.
+
+When the plan carries tasks delegated to a linked project, each linked worktree whose branch is now merged —
+by a relayed engrave or outside forge, through a pull request — is removed, with no question; the ones kept
+are listed with their reason (`not merged`, `uncommitted changes`).
 
 If the branch has an open ClickUp task, Forge then writes a closing report for the task named by its
 `ticket.json` marker, written by `/forge-clickup`: plain text, structured and schematic, in your language — labels included, the only
@@ -667,7 +681,7 @@ the same way, as `YYYYMMDD-email-<topic>.txt` and `.html`.
 | **Remaining** | | **3** | **≈ 2 min (1-2)** | | |
 ```
 
-**Written by the hook:** `**Estimate:**`, every `**Estimated time:**`, `**Actual time:**` and the whole `## Summary` (cells copied from the tasks, blocked reason included, `**Total**` over the measured tasks, `**Remaining**` for the open tasks) are kept by `plan-hook.sh` on every write of `plan.md`; the model writes the tasks and the short title of each summary row.
+**Written by the hook:** `**Estimate:**`, every `**Estimated time:**`, `**Actual time:**` and the whole `## Summary` (cells copied from the tasks, blocked reason included, `**Total**` over the measured tasks, `**Remaining**` for the open tasks) are kept by `plan-hook.sh` on every write of `plan.md`; the model writes the tasks and the short title of each summary row. `**Actual:**` (actual time of the branch by item, under `**Estimate:**`, when a measure log exists) is written by `metrics.sh` at engrave and closure time only; the hook leaves it as is.
 
 **Statuses:** `[ ]` to do · `[x]` done · `[!]` blocked · `[-]` dropped  
 **Effort:** XS · S · M · L · XL — relative size, no duration attached; XL → split into sub-tasks, or into a branch  

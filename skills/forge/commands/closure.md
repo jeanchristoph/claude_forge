@@ -37,7 +37,12 @@
    ⚠️ La clôture ne crée jamais de tâche ClickUp, ne propose jamais d'en créer une, ne demande jamais d'identifiant.
    ⚠️ Aucun fichier d'état `report.txt` : le rapport n'existe que dans OUTPUT.
 
-4. **Réponse client** — poser le choix avec `AskUserQuestion` — `header` : `Email`, options `Draft a reply` / `Finish`.
+4. **Worktrees liés — sur `Solved`, uniquement si PLAN porte au moins une note `delegated to <LINKED_REL> @ <LINKED_BRANCH>`.** Aucune → étape entièrement silencieuse : passer à l'étape 5.
+   - Pour chaque couple `<LINKED_REL>` · `<LINKED_BRANCH>` distinct des notes, dans l'ordre du plan : « Retrait du worktree lié » de `commands/engrave.md`, `<LINKED>` résolu depuis ROOT — couvre une fusion faite hors forge (pull request).
+   - Rendre compte en une ligne par worktree : `<LINKED_REL> @ <LINKED_BRANCH>: removed` ou `kept — <reason>` ; `absent` → aucune ligne.
+   - Aucune question : le script ne retire qu'un worktree propre dont la branche est fusionnée.
+
+5. **Réponse client** — poser le choix avec `AskUserQuestion` — `header` : `Email`, options `Draft a reply` / `Finish`.
    - `Draft a reply` → attendre que l'utilisateur colle le mail auquel répondre, générer la réponse d'une équipe support technique à partir du mail reçu et des éléments de réponse de la tâche, rédigée dans la langue du mail reçu — jamais celle de l'utilisateur si elle diffère.
    - **Ton :** court, fluide, professionnel, direct et naturel. Empathique, sans être trop chaleureux. Orienté vers la résolution du problème.
    - **Ne pas répéter le client :** ni redire ce qu'il vient d'écrire, ni reformuler toute sa demande quand ce n'est pas nécessaire.

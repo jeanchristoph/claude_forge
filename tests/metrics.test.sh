@@ -116,6 +116,114 @@ test_rejects_missing_model_and_unknown_event() {
   [ ! -e "$BRANCH_DIR/metrics.json" ]
 }
 
+# ── En-tête Actual du plan ────────────────────────────────────────────────────
+
+actual_header() {
+  grep '^\*\*Actual:\*\*' "$BRANCH_DIR/plan.md"
+}
+
+open_task() {
+  sed -i 's/^\[x\]$/[ ]/' "$BRANCH_DIR/plan.md"
+}
+
+# Journal d'une branche : un tour d'agent de 6 min, dont 1 min de vérification, une question de 2 min, une attente
+# humaine de 3 min, une fusion de 2 min.
+seed_branch_log() {
+  local base=1700000000000
+  cat >> "$LOG" <<EOF
+{"ts":$base,"event":"UserPromptSubmit","session":"s1","origin":"human"}
+{"ts":$((base + 60000)),"event":"PreToolUse","session":"s1","tool":"AskUserQuestion"}
+{"ts":$((base + 180000)),"event":"PostToolUse","session":"s1","tool":"AskUserQuestion"}
+{"ts":$((base + 240000)),"event":"PostToolUse","session":"s1","tool":"Bash","duration_ms":60000,"check":true}
+{"ts":$((base + 300000)),"event":"merge_start","session":"s1","branch":"feature-a"}
+{"ts":$((base + 420000)),"event":"merge_done","session":"s1","branch":"feature-a"}
+{"ts":$((base + 480000)),"event":"Stop","session":"s1"}
+{"ts":$((base + 660000)),"event":"UserPromptSubmit","session":"s1","origin":"human"}
+{"ts":$((base + 660000)),"event":"Stop","session":"s1"}
+EOF
+}
+
+test_actual_line_gives_full_breakdown_under_estimate() {
+  seed_branch_log
+  open_task
+  metrics --event engrave >/dev/null
+  assert_equals '**Actual:** ≈ 6.0 min agent (incl. 1.0 min checks) · human 5.0 min (1 questions, 2.0 min) · fixed 2.0 min (delegate setup, merge) · delegates 0.0 min in parallel · total ≈ 11.0 min' "$(actual_header)"
+  assert_matches '^\*\*Estimate:\*\*' "$(sed -n 3p "$BRANCH_DIR/plan.md")"
+  assert_matches '^\*\*Actual:\*\*' "$(sed -n 4p "$BRANCH_DIR/plan.md")"
+}
+
+test_actual_line_shows_dash_for_unmeasured_items() {
+  : > "$LOG"
+  open_task
+  metrics --event engrave >/dev/null
+  assert_equals '**Actual:** — agent (incl. — checks) · human — (0 questions, —) · fixed — (delegate setup, merge) · delegates — in parallel · total —' "$(actual_header)"
+}
+
+test_actual_line_keeps_delegates_out_of_total() {
+  local parent_log="$SANDBOX/parent-time-log.jsonl" base=1700000000000
+  cat > "$parent_log" <<EOF
+{"event":"delegate","branch":"feature","agent_id":"a1"}
+{"ts":$base,"event":"SubagentStart","agent_id":"a1"}
+{"ts":$((base + 60000)),"event":"task_start","task":"T1","branch":"feature"}
+{"ts":$((base + 240000)),"event":"SubagentStop","agent_id":"a1"}
+EOF
+  open_task
+  metrics --event engrave --parent-log "$parent_log" >/dev/null
+  assert_matches ' · fixed 1\.0 min \(delegate setup, merge\) · delegates 4\.0 min in parallel · total ' "$(actual_header)"
+  [[ $(actual_header) != *"total ≈ 4"* ]] || { echo "    delegates counted in total"; exit 1; }
+}
+
+test_actual_line_flags_late_start_and_unmeasured_tasks() {
+  printf '{"ts":1700000000000,"event":"late_start"}\n' > "$LOG"
+  metrics --event engrave >/dev/null
+  assert_matches ' · partial \(log started after the branch, 1 unmeasured tasks\)$' "$(actual_header)"
+}
+
+test_delegated_task_is_not_counted_unmeasured() {
+  : > "$LOG"
+  sed -i 's/^\[x\]$/[x] delegated to ..\/api @ feature-x · done/' "$BRANCH_DIR/plan.md"
+  metrics --event engrave >/dev/null
+  [[ $(actual_header) != *"partial"* ]] || { echo "    $(actual_header)"; exit 1; }
+}
+
+test_no_actual_line_without_log() {
+  local before
+  before=$(cat "$BRANCH_DIR/plan.md")
+  metrics --event engrave >/dev/null
+  assert_equals "$before" "$(cat "$BRANCH_DIR/plan.md")"
+}
+
+test_actual_line_replaced_without_duplicate() {
+  : > "$LOG"
+  open_task
+  metrics --event engrave >/dev/null
+  seed_branch_log
+  metrics --event engrave >/dev/null
+  assert_equals 1 "$(grep -c '^\*\*Actual:\*\*' "$BRANCH_DIR/plan.md")"
+  assert_matches 'total ≈ 11\.0 min$' "$(actual_header)"
+}
+
+test_actual_line_goes_under_date_without_estimate() {
+  : > "$LOG"
+  sed -i '/^\*\*Estimate:\*\*/d' "$BRANCH_DIR/plan.md"
+  metrics --event engrave >/dev/null
+  assert_matches '^\*\*Actual:\*\*' "$(sed -n 3p "$BRANCH_DIR/plan.md")"
+}
+
+test_closure_writes_actual_line() {
+  : > "$LOG"
+  metrics --event closure >/dev/null
+  assert_matches '^\*\*Actual:\*\* ' "$(actual_header)"
+}
+
+test_actual_line_keeps_crlf_line_endings() {
+  : > "$LOG"
+  sed -i 's/$/\r/' "$BRANCH_DIR/plan.md"
+  metrics --event engrave >/dev/null
+  assert_matches ' · partial \(1 unmeasured tasks\)' "$(actual_header)"
+  assert_equals "$(wc -l < "$BRANCH_DIR/plan.md" | tr -d ' ')" "$(grep -c $'\r$' "$BRANCH_DIR/plan.md")"
+}
+
 # ── Exécution ─────────────────────────────────────────────────────────────────
 
 run_test() {
@@ -137,6 +245,16 @@ run_test test_closure_event_is_recorded "événement closure écrit tel quel"
 run_test test_report_carries_estimate_from_plan_header "le compte rendu porte l'estimé de l'en-tête Estimate et le réel"
 run_test test_report_estimate_is_null_without_header "sans en-tête Estimate, estimé à null"
 run_test test_rejects_missing_model_and_unknown_event "refuse un modèle absent ou un événement inconnu, rien d'écrit"
+run_test test_actual_line_gives_full_breakdown_under_estimate "ligne Actual : même forme que la ligne de tâche, total à la fin, sous Estimate"
+run_test test_actual_line_shows_dash_for_unmeasured_items "ligne Actual : poste sans mesure à « — », jamais estimé"
+run_test test_actual_line_keeps_delegates_out_of_total "ligne Actual : délégués affichés à part, hors total ; mise en route en coût fixe"
+run_test test_actual_line_flags_late_start_and_unmeasured_tasks "ligne Actual : partial pour un journal commencé après la branche et des tâches non mesurées"
+run_test test_delegated_task_is_not_counted_unmeasured "ligne Actual : tâche déléguée à un projet lié jamais comptée non mesurée"
+run_test test_no_actual_line_without_log "sans journal : plan intact, aucune ligne Actual"
+run_test test_actual_line_replaced_without_duplicate "ligne Actual remplacée sans doublon au passage suivant"
+run_test test_actual_line_goes_under_date_without_estimate "sans en-tête Estimate : ligne Actual sous Date"
+run_test test_closure_writes_actual_line "la clôture écrit aussi la ligne Actual"
+run_test test_actual_line_keeps_crlf_line_endings "garde les fins de ligne CRLF du plan"
 
 echo ""
 echo "$PASSED passed, $FAILED failed"

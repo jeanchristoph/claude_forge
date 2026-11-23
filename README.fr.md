@@ -121,8 +121,9 @@ forge/
 │   │   └── scripts/              (appelés par le modèle et par les hooks)
 │   │       ├── checks.sh              (contrôles de démarrage, lancés détachés : lignes input/ et time-log.jsonl dans le .gitignore)
 │   │       ├── engrave.sh             (séquence de livraison : preview / run ; run --model écrit d'abord metrics.json)
-│   │       ├── metrics.sh             (synthèse de mesure de la branche : écrit metrics.json, rend la ligne estimé / réel en JSON)
+│   │       ├── metrics.sh             (synthèse de mesure de la branche : écrit metrics.json et la ligne **Actual:** du plan, rend la ligne estimé / réel en JSON)
 │   │       ├── json.sh                (rendu JSON et lecture des champs du JSON des hooks, partagés par les scripts)
+│   │       ├── linked-worktree-cleanup.sh (retire un worktree lié une fois sa branche fusionnée, working tree propre seulement, en JSON)
 │   │       ├── log-entry.sh           (entrée de LOG : horodatage lu sur l'horloge locale, entrée écrite en tête de log.md)
 │   │       ├── status.sh              (état au lancement : état, avancement, branches à reprendre, en JSON)
 │   │       ├── swarm-status.sh        (état de l'essaim : branches en cours, lançables, en attente, fusion simulée, en JSON)
@@ -152,6 +153,7 @@ forge/
 │   ├── forge-precompact.test.sh → bash tests/forge-precompact.test.sh, dépôts jetables uniquement
 │   ├── install.test.sh       → bash tests/install.test.sh, HOME jetable uniquement
 │   ├── checks.test.sh        → bash tests/checks.test.sh, dépôts jetables uniquement
+│   ├── linked-worktree-cleanup.test.sh → bash tests/linked-worktree-cleanup.test.sh, dépôts jetables uniquement
 │   ├── linked-write-guard.test.sh → bash tests/linked-write-guard.test.sh, dossiers jetables uniquement
 │   ├── log-entry.test.sh     → bash tests/log-entry.test.sh, dossiers jetables uniquement
 │   ├── status.test.sh        → bash tests/status.test.sh, dépôts jetables uniquement
@@ -341,11 +343,12 @@ Les deux installeurs ajoutent aussi `bash ~/.claude/skills/forge/hooks/time-hook
 
 - **Mesure :** le hook ajoute une ligne par événement au `.forge/branch/<branche>/time-log.jsonl` de la branche extraite dans le dossier de la session — horodatages, identifiants, durées, jamais un prompt, une commande ni une sortie d'outil. Hors projet forgé, il n'écrit rien. Les événements d'un délégué portent le dossier du parent : le parent associe chaque délégué à sa branche fille.
 - **Synthèse :** à chaque grave (`engrave.sh run --model <id>`, avant le `git add`) et à la clôture, `metrics.sh` — jamais le modèle — fait totaliser le journal et git par `time-aggregate.sh` et écrit `metrics.json` : minutes d'agent (session principale + délégués, sous-agents ordinaires compris : tout agent lancé par la session et non délégué à une autre branche compte pour sa durée, agents parallèles additionnés), minutes humaines (une absence de plus de 6 h avant un prompt ou une réponse compte zéro), un drapeau `partial` quand le journal manque le début de la branche (hook installé en cours de route : la branche est écartée du calibrage), questions, minutes de vérification, tokens des délégués, fichiers et lignes modifiés.
-- **Fichiers par tâche :** chaque marque de tâche porte l'empreinte du dossier de travail (chemin et hash du contenu de chaque fichier modifié ou nouveau, hors `.forge`, rien d'écrit dans le dépôt) ; les fichiers réels d'une tâche sont ceux qui apparaissent, changent ou disparaissent entre ses deux marques — un fichier modifié par trois tâches compte dans chacune —, écrits `**Actual time:** ≈ <min> min · <n> files`. Dès vingt tâches ainsi mesurées, minutes par fichier et correction des fichiers prévus viennent des quarante dernières tâches plutôt que des branches entières, les deux côtés comptés par tâche.
+- **Fichiers par tâche :** chaque marque de tâche porte l'empreinte du dossier de travail (chemin et hash du contenu de chaque fichier modifié ou nouveau, hors `.forge`, rien d'écrit dans le dépôt) ; les fichiers réels d'une tâche sont ceux qui apparaissent, changent ou disparaissent entre ses deux marques — un fichier modifié par trois tâches compte dans chacune —, écrits `**Actual time:** ≈ <min> min agent … · <n> files …`. Dès vingt tâches ainsi mesurées, minutes par fichier et correction des fichiers prévus viennent des quarante dernières tâches plutôt que des branches entières, les deux côtés comptés par tâche.
 - **Estimation :** chaque tâche du plan compte les chemins listés dans son `**Files:**` (un `(≈ n)` explicite en fin de ligne pour un motif ou des fichiers encore inconnus) ; un seul appel `time-calibrate.sh --files 3,5,8` convertit chaque tâche et le total en minutes d'agent avec une fourchette (`≈ 120 files · ≈ 60 min (45-78)`), à partir des quarante dernières tâches mesurées du projet dès vingt mesurées avec leurs fichiers, sinon de `references/estimation.json` (0,5 min par fichier) — jamais des branches entières. La fourchette vient des 20e et 80e centiles du rapport durée réelle ÷ durée estimée des quarante dernières tâches mesurées, lues dans les plans des branches (branches filles d'un essaim comprises), dès vingt mesurées (0,75–1,3 avant) ; chaque estimation se recalcule sur les dernières mesures. Marquée *indicative* tant que ratios ou fourchette viennent des valeurs de référence. Les lettres d'effort restent une taille relative, sans durée.
 - **Écrit par le hook :** à chaque écriture de `plan.md`, `plan-hook.sh` estime chaque tâche qui a `**Files:**` sans `**Estimated time:**` (un seul appel `time-calibrate.sh`), recalcule l'en-tête `**Estimate:**` (fichiers de toutes les tâches, somme de leurs estimations figées) et reconstruit `## Summary` depuis les tâches : `Task | Effort | Files | Estimated | Actual | Status`, titres courts gardés, `**Total**` sur les seules tâches mesurées — estimé et réel des mêmes tâches —, et `**Remaining**` pour les tâches ouvertes. Un réel mesuré n'est jamais remplacé par `—`. À la reprise, ce tableau est le tableau d'avancement, affiché tel quel, sans appel de script.
 - **Coût des vérifications par tâche :** chaque tâche paie ses vérifications, quelle que soit sa taille — sous Git Bash un passage complet des tests peut coûter plusieurs minutes pour un seul fichier modifié. L'estimation d'une tâche vaut `check_minutes + fichiers × minutes par fichier` : `check_minutes` est la médiane de la part `· <c> min checks` des réels dès que vingt tâches la portent, `2` tiré de `references/estimation.json` avant ; les minutes par fichier se calculent alors sur le réel moins ses vérifications. Une liste de tâches compte un coût de vérification par tâche. Les réels écrits avant cette part restent lus.
-- **Par tâche :** chaque tâche porte aussi `**Estimated time:**`, figé à sa première écriture par le hook. Le modèle ne pose aucune marque : `plan-hook.sh` voit la coche dans `plan.md`, écrit le début de la tâche (dernier point d'étape : coche précédente ou première écriture du plan, ligne `plan_checkpoint` du journal) et sa fin, mesure les minutes d'agent entre les deux par `time-aggregate.sh --task` (attentes de question retirées, même règle d'absence) et écrit `**Actual time:**` avec la part des commandes de vérification (`≈ 10.2 min · 9 files · 2.3 min checks`), ou `—` sans mesure (pas de journal, hook installé en cours de route, premier passage). Une tâche prise hors ordre est mesurée depuis la coche précédente ; deux tâches cochées d'une même édition sont simultanées. Pour tout délégué, même dépôt ou projet lié, le hook écrit les marques dans le journal du parent (ligne `TIME_LOG:` de son prompt), où arrivent déjà ses événements ; le délégué et rend le réel de chaque tâche dans `FORGE_DONE` ; une tâche parente déléguée à un projet lié reçoit la somme de ses tâches enfant (`time-aggregate.sh --task T1,T2`, `—` dès qu'un enfant n'est pas mesuré) ; une tâche-branche d'essaim reprend `agent_minutes` du `metrics.json` de la branche. Le tableau d'avancement affiche Estimé et Réel côte à côte. Un sous-agent ordinaire compte dans la tâche pour sa part comprise dans la fenêtre ; deux tâches ouvertes en même temps ne sont pas mesurées (`—`, raison `overlapping_tasks`) : aucune part ne leur est attribuable sans l'inventer, et leur temps reste compté dans la mesure de la branche.
+- **Branche entière :** sous `**Estimate:**` (à défaut sous `**Date:**`), `metrics.sh` écrit la mesure de la branche tirée de `time-aggregate.sh` à la livraison — avant le `git add`, la ligne part avec le commit — et à la clôture, jamais à chaque écriture du plan ; entre deux livraisons, la ligne garde la dernière valeur. Même forme que la ligne de tâche, total à la fin : `**Actual:** ≈ 14.0 min agent (incl. 3.0 min checks) · human 7.0 min (4 questions, 2.5 min) · fixed 2.0 min (delegate setup, merge) · delegates 0.0 min in parallel · total ≈ 21.0 min`. Total = agent + humain : vérifications et fusion sont des parts du temps d'agent, la mise en route une part du temps des délégués ; les délégués, simultanés, sont affichés à part, hors total. Poste sans mesure → `—`, jamais une estimation ; ` · partial (log started after the branch, 3 unmeasured tasks)` signale une mesure incomplète. Sans journal de mesure → aucune ligne. Sans tâche mesurée, la ligne `**Total**` y renvoie (`see **Actual:**`).
+- **Par tâche :** chaque tâche porte aussi `**Estimated time:**`, figé à sa première écriture par le hook. Le modèle ne pose aucune marque : `plan-hook.sh` voit la coche dans `plan.md`, écrit le début de la tâche (dernier point d'étape : coche précédente ou première écriture du plan, ligne `plan_checkpoint` du journal) et sa fin, mesure les minutes d'agent entre les deux par `time-aggregate.sh --task` (attentes de question retirées, même règle d'absence) et écrit `**Actual time:**` ventilé par poste (`≈ 10.2 min agent (incl. 2.3 min checks) · human 1.5 min (2 questions) · 9 files · total ≈ 11.7 min` : le premier nombre est le temps d'agent, vérifications comprises, comparé à l'estimation ; total = agent + humain, vérifications jamais ajoutées), ou `—` sans mesure (pas de journal, hook installé en cours de route, premier passage). Une tâche prise hors ordre est mesurée depuis la coche précédente ; deux tâches cochées d'une même édition sont simultanées. Pour tout délégué, même dépôt ou projet lié, le hook écrit les marques dans le journal du parent (ligne `TIME_LOG:` de son prompt), où arrivent déjà ses événements ; le délégué et rend le réel de chaque tâche dans `FORGE_DONE` ; une tâche parente déléguée à un projet lié reçoit la somme de ses tâches enfant (`time-aggregate.sh --task T1,T2`, `—` dès qu'un enfant n'est pas mesuré) ; une tâche-branche d'essaim reprend `agent_minutes` du `metrics.json` de la branche. Le tableau d'avancement affiche Estimé et Réel côte à côte. Un sous-agent ordinaire compte dans la tâche pour sa part comprise dans la fenêtre ; deux tâches ouvertes en même temps ne sont pas mesurées (`—`, raison `overlapping_tasks`) : aucune part ne leur est attribuable sans l'inventer, et leur temps reste compté dans la mesure de la branche.
 - **Commandes de vérification :** la ligne `**Check pattern:**` de `project.md` (expression régulière) désigne les commandes Bash comptées comme vérifications.
 
 ---
@@ -468,8 +471,12 @@ Le worktree est rangé à côté du dépôt lié, dans `<dossier-lié>.worktrees
 `my-api.worktrees/export-csv` — et réutilisé s'il existe déjà. Le dossier propre du dépôt lié n'est jamais touché — ni checkout, ni écriture : tu
 peux continuer à y travailler à la main pendant que le sous-agent tourne. Un worktree ne porte que les fichiers
 versionnés : ni dépendances installées, ni `.env`, ni configuration locale — une tâche déléguée qui en a besoin
-revient bloquée, et le `.forge/` du lié doit être commité. Une fois la branche liée gravée, forge rappelle
-`git -C <lié> worktree remove <chemin>`.
+revient bloquée, et le `.forge/` du lié doit être commité. Le worktree est retiré automatiquement une fois la
+branche liée fusionnée dans la branche par défaut du projet lié (`master`, puis `main`, locale ou `origin/` après
+un fetch) : après une livraison relayée qui la fusionne, ou à la clôture du parent pour une fusion faite hors
+forge — une pull request, par exemple. `linked-worktree-cleanup.sh` décide seul et ne force jamais : un worktree
+aux modifications non commitées, une branche non fusionnée (fusion par squash comprise) ou le dossier propre du
+dépôt lié sont gardés, et le compte rendu dit pourquoi. La branche liée elle-même n'est jamais supprimée.
 
 L'exécution se fait ensuite dans un **contexte forge étanche** : un sous-agent qui ne reçoit que le chemin
 du worktree, la branche liée, ta langue et l'ordre d'y exécuter le skill forge. Aucun `project.md`, aucun
@@ -597,7 +604,8 @@ conflit de merge ou un push rejeté arrête la séquence et affiche l'erreur tel
 jamais forcé.
 
 **INVARIANT :** git opère uniquement sur le dépôt courant — jamais sur un autre dépôt ouvert en parallèle. Unique
-exception : un projet lié, pour la création du worktree à la délégation et pour la livraison relayée ci-dessous.
+exception : un projet lié, pour la création du worktree à la délégation, pour la livraison relayée ci-dessous et
+pour le retrait de son worktree une fois sa branche fusionnée.
 
 Quand le plan porte des tâches déléguées, graver le parent propose aussi de livrer chaque projet lié qui a des
 modifications non commitées : d'abord s'il faut le livrer, puis sur quelles branches — les mêmes que le parent,
@@ -607,7 +615,9 @@ ont leur propre tableau de compte rendu sous celui du parent, et la même comman
 cible absente du dépôt lié est ignorée, jamais créée. La livraison s'exécute dans le worktree ; une branche
 cible extraite dans un autre dossier — dossier propre du dépôt lié compris — est ignorée, la fusion se faisant
 depuis ce dossier-là. Le sous-agent délégué n'intervient jamais : la livraison
-relayée est du git pur, exécuté par le parent.
+relayée est du git pur, exécuté par le parent. Quand la livraison d'un projet lié a fusionné sa branche, son
+worktree est ensuite retiré si la branche a atteint la branche par défaut et que le working tree est propre ;
+une ligne `worktree` sous son tableau indique `removed` ou `kept` avec la raison.
 
 Tout ce qui est publié sur la forge distante après une livraison — titre et notes de release, description de tag ou de PR — est rédigé en **anglais**, quelle que soit ta langue. Le message de commit suit la langue des commits du dépôt.
 
@@ -623,6 +633,10 @@ que c'est terminé.
 Forge confirme d'abord que le problème initial est bien résolu, en listant les tâches encore ouvertes.
 S'il en reste, chacune est soldée : terminée (`[x]`), abandonnée (`[-]`) ou laissée ouverte. Une tâche
 bloquée `[!]` n'est jamais touchée, et `Solved` seul ne coche rien.
+
+Quand le plan porte des tâches déléguées à un projet lié, chaque worktree lié dont la branche est désormais
+fusionnée — par une livraison relayée ou hors forge, par une pull request — est retiré, sans question ; ceux qui
+restent sont listés avec leur raison (`not merged`, `uncommitted changes`).
 
 Si la branche a une tâche ClickUp ouverte, Forge rédige ensuite un rapport de clôture pour la tâche désignée
 par son marqueur `ticket.json`, écrit par `/forge-clickup` : texte brut, structuré et schématique, dans ta langue — labels
@@ -678,7 +692,7 @@ Libellés de structure en anglais, tels que le skill les écrit quelle que soit 
 | **Remaining** | | **3** | **≈ 2 min (1-2)** | | |
 ```
 
-**Écrit par le hook :** `**Estimate:**`, chaque `**Estimated time:**`, `**Actual time:**` et tout `## Summary` (cellules recopiées des tâches, raison du blocage comprise, `**Total**` des tâches mesurées, `**Remaining**` des tâches ouvertes) sont tenus par `plan-hook.sh` à chaque écriture de `plan.md` ; le modèle écrit les tâches et le titre court de chaque ligne du tableau.
+**Écrit par le hook :** `**Estimate:**`, chaque `**Estimated time:**`, `**Actual time:**` et tout `## Summary` (cellules recopiées des tâches, raison du blocage comprise, `**Total**` des tâches mesurées, `**Remaining**` des tâches ouvertes) sont tenus par `plan-hook.sh` à chaque écriture de `plan.md` ; le modèle écrit les tâches et le titre court de chaque ligne du tableau. `**Actual:**` (temps réel de la branche par poste, sous `**Estimate:**`, quand un journal de mesure existe) est écrit par `metrics.sh` à la livraison et à la clôture seulement ; le hook le garde tel quel.
 
 **Statuts :** `[ ]` à faire · `[x]` terminé · `[!]` bloqué · `[-]` abandonné  
 **Effort :** XS · S · M · L · XL — taille relative, sans durée attachée ; XL → découper en sous-tâches, ou en branche  

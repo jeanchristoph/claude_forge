@@ -407,6 +407,35 @@ test_run_with_model_commits_metrics_file() {
   [[ $(git -C "$WORK" show HEAD:.forge/branch/ship/metrics.json) == '{"event":"engrave",'*'"model":"claude-test",'* ]] || exit 1
 }
 
+committed_actual_lines() {
+  git -C "$WORK" show HEAD:.forge/branch/ship/plan.md | grep '^\*\*Actual:\*\*'
+}
+
+test_run_commits_branch_actual_line() {
+  prepare_forge_branch
+  : > "$WORK/.forge/branch/ship/time-log.jsonl"
+  engrave run --root "$WORK" --branch ship --message "ship it" --model claude-test >/dev/null
+  assert_equals 1 "$(committed_actual_lines | wc -l | tr -d ' ')"
+  [[ $(committed_actual_lines) == '**Actual:** '*' agent (incl. '*' · total '* ]] || { echo "    $(committed_actual_lines)"; exit 1; }
+}
+
+test_next_run_replaces_actual_line_without_duplicate() {
+  prepare_forge_branch
+  : > "$WORK/.forge/branch/ship/time-log.jsonl"
+  engrave run --root "$WORK" --branch ship --message "first" --model claude-test >/dev/null
+  printf '{"ts":1700000000000,"event":"late_start"}\n' > "$WORK/.forge/branch/ship/time-log.jsonl"
+  echo change > "$WORK/change.txt"
+  engrave run --root "$WORK" --branch ship --message "second" --model claude-test >/dev/null
+  assert_equals 1 "$(committed_actual_lines | wc -l | tr -d ' ')"
+  [[ $(committed_actual_lines) == *' · partial (log started after the branch)' ]] || { echo "    $(committed_actual_lines)"; exit 1; }
+}
+
+test_run_without_log_writes_no_actual_line() {
+  prepare_forge_branch
+  engrave run --root "$WORK" --branch ship --message "ship it" --model claude-test >/dev/null
+  assert_equals "" "$(committed_actual_lines)"
+}
+
 test_run_without_model_writes_no_metrics() {
   prepare_forge_branch
   local output
@@ -476,6 +505,9 @@ run_test test_rejects_wrong_current_branch "refuse de livrer si la branche coura
 run_test test_rejects_unknown_mode "refuse un mode inconnu"
 run_test test_rejects_root_outside_git_repository "refuse une racine hors dépôt git"
 run_test test_run_with_model_commits_metrics_file "avec --model, run écrit metrics.json avant le commit et le rend sous metrics"
+run_test test_run_commits_branch_actual_line "avec un journal, la ligne Actual de la branche est écrite dans le plan et part avec le commit"
+run_test test_next_run_replaces_actual_line_without_duplicate "livraison suivante : ligne Actual remplacée sans doublon, partial si la mesure est incomplète"
+run_test test_run_without_log_writes_no_actual_line "sans journal de mesure, aucune ligne Actual"
 run_test test_run_without_model_writes_no_metrics "sans --model, aucune synthèse de mesure"
 run_test test_preview_with_model_writes_nothing "l'aperçu n'écrit jamais la synthèse de mesure"
 run_test test_run_with_model_outside_forge_branch_writes_no_metrics "sans dossier de branche forge, aucune synthèse"

@@ -1,30 +1,22 @@
 ## Origin
-**Tasks:** T9, T10
+**Tasks:** T13
 
 ### Delegated tasks
 
-#### T9 — Branche liée nommée d'après la tâche, inscrite dans le plan parent ; l'enfant ne nomme jamais le parent (dépôt forge)
-**Effort:** M
-**Files:** `skills/forge/commands/delegation.md`, `skills/forge/commands/delegated-mode.md`, `skills/forge/phases/p4-plan.md`, `skills/forge/phases/p5-resume.md`, `skills/forge/commands/engrave.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
-**Description:** Constats sur une délégation réelle : le nom de branche liée `<PARENT_FOLDER>/<BRANCH>` était imposé, sans rapport avec la tâche, et la branche a dû être renommée après coup ; le mandat recopiait le brief parent en entier (client, base, adresses e-mail de particuliers) dans un projet lié public, alors que le parent est privé.
-- Nommage, même règle que forge classique : étape 3 de la « Garde de sécurité » de `SKILL.md`, l'objectif étant le titre de la tâche déléguée (ou l'objet commun des tâches d'un mandat), collision vérifiée dans le projet lié ; `delegation.md` renvoie à cette règle sans la recopier. Le préfixe `<PARENT_FOLDER>/` disparaît.
-- Lien tenu par le parent seul : nouveau champ de tâche `**Linked branch:** <LINKED_REL> @ <branche>`, sous `**Files:**`, écrit dès l'entrée de la tâche au plan (« Demande hors périmètre », plan neuf) et affiché dans le « Gabarit — question `Plan` » (`Branche liée : <branche>`) ; tâche ancienne sans ce champ → nom écrit à l'action `mark`. La délégation lit ce champ, sans le recalculer ; des tâches au même champ partagent branche et worktree (`reuse`). La note de statut `delegated to <LINKED_REL> @ <branche>` est gardée (livraison relayée).
-- L'enfant ne nomme jamais le parent : aucun nom de dossier, de branche, de ticket, de client ni de donnée du parent dans la branche liée (nom, brief, plan, log, code, CHANGELOG, commits). Exception : quand le but de la tâche ou une référence est nécessaire pour l'exécuter, cette référence est gardée, limitée au strict nécessaire et écrite dans la tâche elle-même — jamais le brief parent recopié en bloc.
-- Mandat : `## Origin` garde son rôle de marqueur du mode délégué, avec seulement `**Tasks:**` et les tâches déléguées ; plus de `**Parent:**`, plus de `**Branch:**`, plus de brief parent recopié ; l'objectif du mandat est rédigé à partir des seules tâches.
-- Règle de rédaction dans `p5-resume.md` et `p4-plan.md` : une tâche qui porte `**Linked branch:**` est écrite sans référence au parent, car elle est recopiée telle quelle dans le mandat (sauf l'exception ci-dessus).
-- Log de l'enfant : `Opened by delegation · T…` au lieu de `Opened from <PARENT_FOLDER>`. `delegated-mode.md` : le délégué ne réintroduit jamais le parent dans ce qu'il écrit, hors références fournies par la tâche.
-- Vérifier ce qui suppose l'ancien préfixe, `**Parent:**`, `**Branch:**` ou le brief recopié (`engrave.md`, `delegated-mode.md`, `swarm.md`, scripts, tests) ; adapter ce qui doit l'être, signaler le reste.
-- Nettoyage de la branche liée elle-même : ligne `**Origin:**` de son `plan.md` et entrée « Opened from … » de son `log.md` réécrites sans mention du parent — exception à « LOG jamais édité », justifiée par la confidentialité et notée dans le log. Le `brief.md` est déjà réécrit par le nouveau mandat.
-- `p4-plan.md` : champ optionnel dans le format de tâche. README français et anglais : description de la délégation vers un projet lié mise à jour. `CHANGELOG.md`, `[Unreleased]` — `### Changed` : « Linked-project delegation names the linked branch with the same rule as a regular forge branch (short kebab-case slug of the delegated task, `-2`/`-3` on collision) and records the link in the parent plan only (`**Linked branch:** <path> @ <branch>`); the linked project never names the parent — the mandate carries the delegated tasks only, no parent brief, folder, branch or client data — unless the task's goal or a reference is required to carry it out, kept to the strict minimum inside the task. »
-
-#### T10 — Documenter le nouveau hook dans la structure du projet (dépôt forge)
-**Effort:** XS
-**Files:** `.forge/project.md`, `README.md`, `README.fr.md`
-**Description:** Arborescence de `.forge/project.md` et des deux README : ajout de `skills/forge/hooks/linked-write-guard.sh` (écriture de la session parente dans un projet lié refusée) et de `tests/linked-write-guard.test.sh`, au même format que les hooks et tests existants.
+#### T13 — Ligne Actual de la branche calculée à la livraison, même forme que la ligne de tâche, libellés en anglais (dépôt forge)
+**Effort:** S
+**Files:** `skills/forge/hooks/plan-hook.sh`, `tests/plan-hook.test.sh`, `skills/forge/scripts/engrave.sh`, `tests/engrave.test.sh`, `skills/forge/commands/engrave.md`, `skills/forge/phases/p4-plan.md`, `skills/forge/phases/p5-resume.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Constat : la ligne `**Actual:**` de branche, recalculée par `plan-hook.sh` à chaque écriture du plan, fait annoncer « plan.md rewritten » presque à chaque modification et lance `time-aggregate.sh` à chaque fois ; son format diffère de la ligne de tâche ; le mot « dont » est en français dans des libellés anglais.
+- Moment du calcul : la ligne de branche n'est plus écrite par `plan-hook.sh`. `engrave.sh run` l'écrit dans `plan.md` au moment où il écrit `metrics.json`, avant le `git add` (elle part avec le commit) ; la clôture fait de même via `metrics.sh --event closure`. Entre deux livraisons, la ligne garde la valeur de la dernière livraison.
+- Format aligné sur la ligne de tâche, total à la fin : `**Actual:** ≈ <a> min agent (incl. <c> min checks) · human <h> min (<n> questions, <q> min) · fixed <f> min (delegate setup, merge) · delegates <d> min in parallel · total ≈ <a + h> min`. Poste non mesuré → `—` ; ` · partial (<raison>)` en fin de ligne si la mesure est incomplète ; sans journal de mesure, ligne absente.
+- Ligne de tâche : `(dont … checks)` devient `(incl. … checks)` ; le reste inchangé : `≈ <a> min agent (incl. <c> min checks) · human <h> min (<n> questions) · <f> files · total ≈ <a + h> min`.
+- Calibrage : `time-calibrate.sh` non modifié ; un test vérifie qu'il lit toujours le premier nombre, `<f> files` et `<c> min checks` avec `incl.`.
+- Tests : `plan-hook.test.sh` — l'écriture du plan ne touche plus la ligne `**Actual:**`, la ligne de tâche porte `incl.` ; `engrave.test.sh` — ligne écrite à la livraison et présente dans le commit, remplacée sans doublon à la livraison suivante, absente sans journal, `partial` si mesure incomplète.
+- `engrave.md` (synthèse de mesure), `p4-plan.md` (gabarit, qui écrit quoi), `p5-resume.md` (tableau d'avancement), README français et anglais. `CHANGELOG.md`, `[Unreleased]` — entrée `### Added` de T12 réécrite : « The branch's actual time — same shape as the task line, total last (agent incl. checks, human with questions, fixed costs, delegates in parallel) — is written into the plan header at engrave and closure time, not on every plan write. »
 
 
 ## Objective
-Faire nommer la branche d'un projet lié d'après la tâche déléguée, selon la règle de nommage de forge classique, avec un lien tenu par le seul plan parent, et garantir que le projet lié ne porte jamais le nom ni les données du projet parent ; documenter le hook `linked-write-guard.sh` dans la structure du projet.
+Écrire la ligne de temps réel de la branche au moment de la livraison et de la clôture plutôt qu'à chaque écriture du plan, sous la même forme que la ligne de tâche (total à la fin), avec des libellés entièrement en anglais (« incl. » au lieu de « dont »).
 
 ## Scope & rules
 - Le projet lié peut être public et le parent privé : aucune donnée du parent dans ce dépôt, sauf une référence strictement nécessaire à une tâche, écrite dans la tâche.

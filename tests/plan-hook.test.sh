@@ -118,8 +118,8 @@ test_tick_writes_retroactive_start_done_and_actual_time() {
   assert_matches '^\{"ts":1700000000000,"event":"task_start","task":"T1","files":""\}$' "$(sed -n 2p "$OWN_LOG")"
   assert_matches '^\{"ts":[0-9]{13},"event":"task_done","task":"T1","files":"a.txt\\t[0-9a-f]{12}"\}$' "$(sed -n 3p "$OWN_LOG")"
   assert_matches '"event":"plan_checkpoint","done":"T1"' "$(sed -n 4p "$OWN_LOG")"
-  assert_equals '**Actual time:** ≈ 0.0 min · 1 files · 0.0 min checks' "$(actual_line_of T1)"
-  assert_matches '"additionalContext":"forge plan-hook: .*T1 → ≈ 0.0 min · 1 files · 0.0 min checks' "$output"
+  assert_equals '**Actual time:** ≈ 0.0 min agent (incl. 0.0 min checks) · human 0.0 min (0 questions) · 1 files · total ≈ 0.0 min' "$(actual_line_of T1)"
+  assert_matches '"additionalContext":"forge plan-hook: .*T1 → ≈ 0\.0 min agent \(incl\. 0\.0 min checks\) · human 0\.0 min \(0 questions\) · 1 files · total ≈ 0\.0 min' "$output"
 }
 
 test_actual_time_goes_under_estimated_time() {
@@ -127,7 +127,7 @@ test_actual_time_goes_under_estimated_time() {
   seed_checkpoint 1700000000000 ""
   write_plan "[x]" "[ ]" "[ ]"
   run_hook "$PLAN" >/dev/null
-  assert_equals '**Actual time:** ≈ 0.0 min · 0 files · 0.0 min checks' "$(grep -A1 -F '**Estimated time:**' "$PLAN" | sed -n 2p)"
+  assert_equals '**Actual time:** ≈ 0.0 min agent (incl. 0.0 min checks) · human 0.0 min (0 questions) · 0 files · total ≈ 0.0 min' "$(grep -A1 -F '**Estimated time:**' "$PLAN" | sed -n 2p)"
 }
 
 test_actual_time_goes_under_effort_without_estimate() {
@@ -136,7 +136,7 @@ test_actual_time_goes_under_effort_without_estimate() {
   write_plan "[x]" "[x]" "[x]"
   sed -i '/^\*\*Files:\*\* `c.txt`$/d' "$PLAN"
   run_hook "$PLAN" >/dev/null
-  assert_equals '**Actual time:** ≈ 0.0 min · 0 files · 0.0 min checks' "$(awk '/^### T3/ { getline; getline; print }' "$PLAN")"
+  assert_equals '**Actual time:** ≈ 0.0 min agent (incl. 0.0 min checks) · human 0.0 min (0 questions) · 0 files · total ≈ 0.0 min' "$(awk '/^### T3/ { getline; getline; print }' "$PLAN")"
 }
 
 test_replaces_existing_actual_time() {
@@ -146,7 +146,7 @@ test_replaces_existing_actual_time() {
   sed -i 's/^\*\*Estimated time:\*\* ≈ 1 min (1-2)$/&\n**Actual time:** ≈ 9 min/' "$PLAN"
   run_hook "$PLAN" >/dev/null
   assert_equals 1 "$(awk '/^### T1/,/^### T2/' "$PLAN" | grep -c 'Actual time')"
-  assert_equals '**Actual time:** ≈ 0.0 min · 0 files · 0.0 min checks' "$(actual_line_of T1)"
+  assert_equals '**Actual time:** ≈ 0.0 min agent (incl. 0.0 min checks) · human 0.0 min (0 questions) · 0 files · total ≈ 0.0 min' "$(actual_line_of T1)"
 }
 
 test_two_ticks_at_once_are_not_measured() {
@@ -184,7 +184,7 @@ test_task_picked_out_of_order_is_measured() {
   write_plan "[x]" "[ ]" "[x]"
   run_hook "$PLAN" >/dev/null
   assert_matches '"event":"task_start","task":"T3"' "$(cat "$OWN_LOG")"
-  assert_equals '**Actual time:** ≈ 0.0 min · 0 files · 0.0 min checks' "$(actual_line_of T3)"
+  assert_equals '**Actual time:** ≈ 0.0 min agent (incl. 0.0 min checks) · human 0.0 min (0 questions) · 0 files · total ≈ 0.0 min' "$(actual_line_of T3)"
   assert_equals "" "$(actual_line_of T2)"
 }
 
@@ -195,7 +195,7 @@ test_sequential_tasks_are_not_overlapping() {
   run_hook "$PLAN" >/dev/null
   write_plan "[x]" "[x]" "[ ]"
   run_hook "$PLAN" >/dev/null
-  assert_equals '**Actual time:** ≈ 0.0 min · 0 files · 0.0 min checks' "$(actual_line_of T2)"
+  assert_equals '**Actual time:** ≈ 0.0 min agent (incl. 0.0 min checks) · human 0.0 min (0 questions) · 0 files · total ≈ 0.0 min' "$(actual_line_of T2)"
 }
 
 test_skipped_tasks_get_no_mark() {
@@ -367,7 +367,7 @@ test_summary_cells_follow_task_fields() {
   seed_checkpoint 1700000000000 ""
   write_plan "[x] fait" "[!] blocked — accès refusé | relance" "[ ]"
   run_hook "$PLAN" >/dev/null
-  assert_equals '| T1 — Première | S | 1 | ≈ 1 min | ≈ 0.0 min · 0 files · 0.0 min checks | [x] |' "$(summary_row_of T1)"
+  assert_equals '| T1 — Première | S | 1 | ≈ 1 min | ≈ 0.0 min agent (incl. 0.0 min checks) · human 0.0 min (0 questions) · 0 files · total ≈ 0.0 min | [x] |' "$(summary_row_of T1)"
   assert_equals '| T2 — Deuxième | S | 1 | ≈ 1 min | — | [!] blocked — accès refusé \| relance |' "$(summary_row_of T2)"
 }
 
@@ -411,13 +411,89 @@ test_actual_time_carries_checks_share() {
   printf '{"ts":%s,"event":"PostToolUse","session":"s1","tool":"Bash","duration_ms":12000,"check":true}\n' $((now - 30000)) >> "$OWN_LOG"
   write_plan "[x]" "[ ]" "[ ]"
   run_hook "$PLAN" >/dev/null
-  assert_equals '**Actual time:** ≈ 0.0 min · 0 files · 0.2 min checks' "$(actual_line_of T1)"
+  assert_equals '**Actual time:** ≈ 0.0 min agent (incl. 0.2 min checks) · human 0.0 min (0 questions) · 0 files · total ≈ 0.0 min' "$(actual_line_of T1)"
 }
 
 test_remaining_adds_check_cost_of_each_open_task() {
   write_new_plan
   run_hook "$PLAN" >/dev/null
   assert_matches '^\| \*\*Remaining\*\* \| \| \*\*8\*\* \| \*\*≈ 8 min \(' "$(summary_row_of '**Remaining**')"
+}
+
+# ── Réel ventilé par poste ────────────────────────────────────────────────────
+
+actual_header() {
+  grep '^\*\*Actual:\*\*' "$PLAN"
+}
+
+# Journal d'une branche : un tour d'agent de 6 min, dont 1 min de vérification, une question de 2 min.
+seed_branch_log() {
+  local base=1700000000000
+  cat >> "$OWN_LOG" <<LOG
+{"ts":$base,"event":"UserPromptSubmit","session":"s1","origin":"human"}
+{"ts":$((base + 60000)),"event":"PreToolUse","session":"s1","tool":"AskUserQuestion"}
+{"ts":$((base + 180000)),"event":"PostToolUse","session":"s1","tool":"AskUserQuestion"}
+{"ts":$((base + 240000)),"event":"PostToolUse","session":"s1","tool":"Bash","duration_ms":60000,"check":true}
+{"ts":$((base + 480000)),"event":"Stop","session":"s1"}
+LOG
+}
+
+readonly ENGRAVED_HEADER='**Actual:** ≈ 3.0 min agent (incl. — checks) · human — (— questions, —) · fixed — (delegate setup, merge) · delegates — in parallel · total ≈ 3.0 min'
+
+test_plan_write_never_adds_branch_header() {
+  : > "$OWN_LOG"
+  seed_branch_log
+  write_plan "[ ]" "[ ]" "[ ]"
+  sed -i 's/^# Plan — feature$/&\n**Date:** 2026-11-23/' "$PLAN"
+  run_hook "$PLAN" >/dev/null
+  assert_equals "" "$(actual_header)"
+}
+
+test_plan_write_keeps_engraved_branch_header() {
+  : > "$OWN_LOG"
+  seed_branch_log
+  write_plan "[ ]" "[ ]" "[ ]"
+  sed -i "s/^# Plan — feature\$/&\n**Date:** 2026-11-23\n$ENGRAVED_HEADER/" "$PLAN"
+  run_hook "$PLAN" >/dev/null
+  assert_equals "$ENGRAVED_HEADER" "$(actual_header)"
+  assert_equals 1 "$(grep -c '^\*\*Actual:\*\*' "$PLAN")"
+}
+
+test_no_header_without_log() {
+  write_plan "[x]" "[ ]" "[ ]"
+  sed -i 's/^# Plan — feature$/&\n**Date:** 2026-11-23/' "$PLAN"
+  run_hook "$PLAN" >/dev/null
+  assert_equals "" "$(actual_header)"
+  assert_equals '| **Total** (0/3 measured) | | | — | — | |' "$(summary_row_of '**Total**')"
+}
+
+test_total_row_points_to_header_when_nothing_is_measured() {
+  : > "$OWN_LOG"
+  write_plan "[ ]" "[ ]" "[ ]"
+  sed -i "s/^# Plan — feature\$/&\n**Date:** 2026-11-23\n$ENGRAVED_HEADER/" "$PLAN"
+  run_hook "$PLAN" >/dev/null
+  assert_equals '| **Total** (0/3 measured) | | | — | see **Actual:** | |' "$(summary_row_of '**Total**')"
+}
+
+test_task_actual_time_is_broken_down_and_calibration_reads_it() {
+  local now
+  now=$(( $(date +%s) * 1000 ))
+  : > "$OWN_LOG"
+  seed_checkpoint $((now - 600000)) ""
+  cat >> "$OWN_LOG" <<EOF
+{"ts":$((now - 600000)),"event":"Stop","session":"s1"}
+{"ts":$((now - 480000)),"event":"UserPromptSubmit","session":"s1","origin":"human"}
+{"ts":$((now - 420000)),"event":"PreToolUse","session":"s1","tool":"AskUserQuestion"}
+{"ts":$((now - 360000)),"event":"PostToolUse","session":"s1","tool":"AskUserQuestion"}
+{"ts":$((now - 300000)),"event":"PostToolUse","session":"s1","tool":"Bash","duration_ms":30000,"check":true}
+EOF
+  write_plan "[x]" "[ ]" "[ ]"
+  sed -i 's/^# Plan — feature$/&\n**Date:** 2026-11-23/' "$PLAN"
+  run_hook "$PLAN" >/dev/null
+  assert_matches '^\*\*Actual time:\*\* ≈ 7\.[0-9] min agent \(incl\. 0\.5 min checks\) · human 3\.0 min \(1 questions\) · 0 files · total ≈ 10\.[0-9] min$' "$(actual_line_of T1)"
+  local samples
+  samples=$(source "$REPO_ROOT/skills/forge/scripts/task-files.sh"; eval "$(sed -n '/^readonly TASK_SAMPLES_PROGRAM=/,/^  END { flush() }'"'"'$/p' "$REPO_ROOT/skills/forge/scripts/time-calibrate.sh")"; awk "$TASK_SAMPLES_PROGRAM" "$PLAN")
+  assert_matches $'^2026-11-23\t0001\t[0-9.]+\t7(\\.[0-9])?\t0\t1\t0\\.5$' "$samples"
 }
 
 # ── Script de déploiement SQL ─────────────────────────────────────────────────
@@ -526,6 +602,11 @@ run_test test_summary_section_added_when_missing "section Summary ajoutée quand
 run_test test_second_identical_write_changes_nothing "seconde écriture identique : plan intact, rien signalé"
 run_test test_actual_time_carries_checks_share "le réel porte la part de vérifications de la tâche"
 run_test test_remaining_adds_check_cost_of_each_open_task "reste à faire : coût fixe de vérification de chaque tâche ouverte"
+run_test test_plan_write_never_adds_branch_header "écriture du plan avec un journal : aucune ligne Actual de branche ajoutée"
+run_test test_plan_write_keeps_engraved_branch_header "écriture du plan : ligne Actual de la dernière livraison gardée telle quelle"
+run_test test_no_header_without_log "sans journal : aucune ligne Actual, Total inchangé"
+run_test test_total_row_points_to_header_when_nothing_is_measured "Total à 0 tâche mesurée : renvoi à la ligne Actual quand elle existe"
+run_test test_task_actual_time_is_broken_down_and_calibration_reads_it "réel par tâche ventilé avec « incl. », total = agent + humain, premier nombre, fichiers et part checks lus par le calibrage"
 run_test test_missing_deployment_script_is_reported "fichier d'étape SQL écrit sans script de déploiement : « missing » signalé"
 run_test test_missing_deployment_script_is_reported_without_plan_rewrite "« missing » encore signalé quand le plan n'est pas réécrit"
 run_test test_complete_deployment_script_reports_nothing "script de déploiement citant tous les fichiers écrits : rien signalé"

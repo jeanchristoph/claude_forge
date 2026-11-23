@@ -3,8 +3,9 @@
 #   preview → décrit la séquence en JSON sur une ligne, n'écrit rien
 #   run     → exécute la séquence, s'arrête au premier échec git, rend compte de chaque opération en JSON sur une ligne
 # Usage : engrave.sh <preview|run> --branch <BRANCH> --message <msg> [--root <dir>] [--model <id>] [target...]
-#   --model : run écrit d'abord la synthèse de mesure (metrics.sh, .forge/branch/<BRANCH>/metrics.json), qui part
-#   avec le commit ; son compte rendu est rendu sous « metrics » — sans dossier de branche forge, rien n'est écrit
+#   --model : run écrit d'abord la synthèse de mesure (metrics.sh, .forge/branch/<BRANCH>/metrics.json) et la ligne
+#   **Actual:** de l'en-tête du plan, qui partent avec le commit ; son compte rendu est rendu sous « metrics » — sans
+#   dossier de branche forge, rien n'est écrit
 # Sortie : 0 succès · 1 usage ou garde · 2 échec git (conflit, push rejeté) — le JSON de run est écrit dans les deux cas
 
 set -u

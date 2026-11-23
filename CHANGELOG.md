@@ -13,6 +13,8 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 ### Added
 
 - `linked-write-guard.sh` (PreToolUse) refuses any write by the parent session into a linked forged project outside ROOT, except the mandate's `brief.md` and `log.md`: out-of-plan requests on a linked project go through the plan, then delegation.
+- The branch's actual time — same shape as the task line, total last (agent incl. checks, human with questions, fixed costs, delegates in parallel) — is written into the plan header at engrave and closure time, not on every plan write.
+- Linked worktrees are removed automatically once their branch is merged into the linked project's default branch — after a relayed engrave that merges it, or at parent closure for a merge done outside forge (e.g. a pull request); a worktree with uncommitted changes or an unmerged branch is kept and reported.
 
 ### Changed
 

@@ -49,7 +49,7 @@
 
 ## Format du tableau d'avancement
 
-`## Summary` de PLAN, recopié tel quel : `Task | Effort | Files | Estimated | Actual | Status`, puis `**Total**` (tâches mesurées seules) et `**Remaining**` (tâches ouvertes) — gabarit de `phases/p4-plan.md`, tenu à jour par le hook `hooks/plan-hook.sh` à chaque écriture du plan. Aucun appel de script, aucun recalcul.
+`## Summary` de PLAN, recopié tel quel : `Task | Effort | Files | Estimated | Actual | Status`, puis `**Total**` (tâches mesurées seules ; aucune → `see **Actual:**` quand la ligne existe) et `**Remaining**` (tâches ouvertes) — tableau tenu à jour par le hook `hooks/plan-hook.sh` à chaque écriture du plan. Ligne `**Actual:**` de l'en-tête du plan présente → recopiée sous le tableau, telle quelle : temps réel de la branche ventilé par poste, valeur de la dernière livraison ou clôture (gabarit « Temps réel de la branche » de `phases/p4-plan.md`). Aucun appel de script, aucun recalcul.
 
 ⚠️ Plan antérieur au hook, sans colonnes `Estimated` / `Actual` → tableau recopié tel quel ; la première écriture du plan les ajoute.
 
@@ -82,7 +82,7 @@
 **Réaction — dans l'ordre :**
 1. Aucune marque, aucun appel de script : le hook `hooks/plan-hook.sh` (`PostToolUse` sur `Edit|Write|MultiEdit`) voit la coche dans `plan.md`.
 2. Le hook écrit dans le journal de mesure le début de la tâche (dernier point d'étape : coche précédente ou première écriture du plan) et sa fin, puis calcule le réel par `time-aggregate.sh --task`.
-3. Le hook écrit sous `**Estimated time:**` de la tâche, à défaut sous `**Effort:**` : `**Actual time:** ≈ <agent_minutes> min · <actual_files> files · <check_minutes> min checks`, sans la partie fichiers quand `actual_files` est `null` ; sans mesure → `**Actual time:** —`. La part de vérifications nourrit le coût fixe de vérification de l'estimation.
+3. Le hook écrit sous `**Estimated time:**` de la tâche, à défaut sous `**Effort:**` : `**Actual time:** ≈ <agent_minutes> min agent (incl. <check_minutes> min checks) · human <human_minutes> min (<questions> questions) · <actual_files> files · total ≈ <agent + human> min`, sans la partie fichiers quand `actual_files` est `null` ; sans mesure → `**Actual time:** —`. Premier nombre = temps d'agent, vérifications comprises, comparé à l'estimation ; total = agent + humain, vérifications jamais ajoutées. La part de vérifications nourrit le coût fixe de vérification de l'estimation.
 
 ⚠️ Jamais de `**Actual time:**` écrit à la main, jamais de durée estimée à la place d'une mesure absente. Hook signalé dans le contexte (`forge plan-hook: …`) → relire `plan.md` avant de l'éditer de nouveau.
 ⚠️ Tâche-branche d'un essaim (titre `— Branch <X>`) → aucune marque du hook : son réel vient de « Fusion d'une branche fille » (`commands/swarm.md`). Tâche déléguée à un projet lié (note `delegated to`) → aucune marque du hook : son réel vient du retour du délégué (« Retour — application de `FORGE_DONE` », `commands/delegation.md`).

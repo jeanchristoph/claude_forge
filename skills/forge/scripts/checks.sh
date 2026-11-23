@@ -4,8 +4,10 @@
 #               /.forge/branch/*/input/ (fichiers apportés) et /.forge/branch/**/time-log.jsonl (journal du hook de mesure) :
 #               lignes insérées dans le bloc claude/forge, ou bloc ajouté en fin de fichier (créé s'il est absent)
 #   Rien hors dépôt git, sans dossier .forge/, sur main / master ou HEAD détaché
-#   Rend compte en JSON sur une ligne — lu par les tests, ignoré au démarrage
-# Usage : checks.sh [--root <dir>]
+#   Appelé aussi par la livraison (engrave.sh), avant tout commit : les règles ne dépendent plus de la branche sur
+#   laquelle /forge a démarré ; --dry-run → missing quand une règle manque, sans rien écrire (preview)
+#   Rend compte en JSON sur une ligne — lu par les tests et la livraison, ignoré au démarrage
+# Usage : checks.sh [--root <dir>] [--dry-run]
 # Sortie : 0 contrôles faits · 1 usage, sans JSON
 
 set -u
@@ -19,9 +21,11 @@ readonly BLOCK_END="###< claude/forge ###"
 readonly RESULT_UPDATED="updated"
 readonly RESULT_UNCHANGED="unchanged"
 readonly RESULT_SKIPPED="skipped"
+readonly RESULT_MISSING="missing"
 readonly CARRIAGE_RETURN=$'\r'
 
 ROOT="."
+IS_DRY_RUN=""
 GITIGNORE_RESULT=""
 MISSING_RULES=()
 
@@ -29,7 +33,7 @@ MISSING_RULES=()
 
 fail_usage() {
   echo "checks: $1" >&2
-  echo "usage: checks.sh [--root <dir>]" >&2
+  echo "usage: checks.sh [--root <dir>] [--dry-run]" >&2
   exit $EXIT_USAGE
 }
 
@@ -37,6 +41,7 @@ parse_arguments() {
   while [ $# -gt 0 ]; do
     case $1 in
       --root) [ $# -ge 2 ] || fail_usage "$1 needs a value"; ROOT=$2; shift 2 ;;
+      --dry-run) IS_DRY_RUN=1; shift ;;
       *)      fail_usage "unknown argument $1" ;;
     esac
   done
@@ -108,6 +113,7 @@ check_gitignore() {
   if ! is_forge_working_branch; then GITIGNORE_RESULT=$RESULT_SKIPPED; return; fi
   collect_missing_rules
   if [ ${#MISSING_RULES[@]} -eq 0 ]; then GITIGNORE_RESULT=$RESULT_UNCHANGED; return; fi
+  if [ -n "$IS_DRY_RUN" ]; then GITIGNORE_RESULT=$RESULT_MISSING; return; fi
   line_ending_of "$file"
   eol=$REPLY
   if has_block_end "$file"; then insert_rule_in_block "$file" "$eol"; else append_block "$file" "$eol"; fi

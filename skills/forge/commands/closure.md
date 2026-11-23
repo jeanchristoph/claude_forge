@@ -39,7 +39,7 @@
 
 4. **Worktrees liés — sur `Solved`, uniquement si PLAN porte au moins une note `delegated to <LINKED_REL> @ <LINKED_BRANCH>`.** Aucune → étape entièrement silencieuse : passer à l'étape 5.
    - Pour chaque couple `<LINKED_REL>` · `<LINKED_BRANCH>` distinct des notes, dans l'ordre du plan : « Retrait du worktree lié » de `commands/engrave.md`, `<LINKED>` résolu depuis ROOT — couvre une fusion faite hors forge (pull request).
-   - Rendre compte en une ligne par worktree : `<LINKED_REL> @ <LINKED_BRANCH>: removed` ou `kept — <reason>` ; `absent` → aucune ligne.
+   - Rendre compte en une ligne par worktree : `<LINKED_REL> @ <LINKED_BRANCH>: removed`, ou `kept — <reason>` suivi de la commande de retrait, mêmes règles que le compte rendu de « Retrait du worktree lié » ; `absent` → aucune ligne.
    - Aucune question : le script ne retire qu'un worktree propre dont la branche est fusionnée.
 
 5. **Réponse client** — poser le choix avec `AskUserQuestion` — `header` : `Email`, options `Draft a reply` / `Finish`.

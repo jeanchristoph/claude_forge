@@ -28,10 +28,11 @@
 
 Demande hors plan qui vise le projet lié → d'abord « Demande hors périmètre » de `p5-resume.md` (tâche ajoutée au plan parent), puis cette délégation. Jamais de worktree créé ni de code écrit par le parent à la place, même pour une petite modification. Le hook `linked-write-guard.sh` refuse toute écriture de la session parente hors de ROOT dans un projet forgé, sauf ce `brief.md` et ce `log.md`.
 
-⚠️ Aucune écriture, aucune commande git avant la confirmation de l'étape 6.
+⚠️ Une seule branche liée par délégation. Tâches de plusieurs branches liées — projets différents ou branches différentes d'un même projet — → essaim (`commands/swarm.md`, unités `linked`) : jamais une suite de délégations isolées, jamais en série quand une place est libre.
+⚠️ Aucune écriture, aucune commande git avant la confirmation de l'étape 6 — sauf lancement par l'essaim, dont le choix vaut confirmation.
 
 **Réaction — dans l'ordre :**
-1. `<LINKED>/.forge/` absent → "`<LINKED>` is not forged — run `/forge` there first." STOP — ne pas continuer. Jamais d'initialisation à la place de l'utilisateur.
+1. `<LINKED>/.forge/project.md` absent de la branche par défaut → projet lié *non forgé* : aucune question, aucun arrêt — le délégué le forge dans `<LINKED_WORKTREE>` (« Projet lié non forgé » ci-dessous).
 2. `<BRANCH>` est un nom de code hors git → "Delegation needs a real branch — create one first." STOP — ne pas continuer.
 3. Constituer le mandat : tâches citées dans la demande → elles seules ; aucune citée → poser le choix avec `AskUserQuestion` en multi-sélection — `header` : `Delegate`, une option par tâche `[ ]` du plan (label `T<n> — titre`, description = son effort), quatre par question, enchaînées si besoin. Mandat vide → "Nothing to delegate." STOP — ne pas continuer.
    - `<LINKED_BRANCH>` = champ `**Linked branch:**` des tâches du mandat ; aucun champ → « Nommage de la branche liée » ci-dessus. Tâches du mandat à branches liées différentes → "T3 and T5 carry different linked branches — delegate them separately." STOP — ne pas continuer.
@@ -39,7 +40,7 @@ Demande hors plan qui vise le projet lié → d'abord « Demande hors périmètr
    - `git -C <LINKED> worktree list --porcelain` : un worktree porte `branch refs/heads/<LINKED_BRANCH>` → `<LINKED_WORKTREE>` = son chemin, action `reuse`. Ce worktree est `<LINKED>` lui-même → "`<LINKED_BRANCH>` is checked out in `<LINKED>` — switch that folder to another branch first." STOP — ne pas continuer.
    - `git -C "<LINKED>" rev-parse --verify --quiet refs/heads/<LINKED_BRANCH>` réussit → action `create from <LINKED_BRANCH>` : `git -C "<LINKED>" worktree add "<LINKED_WORKTREE>" <LINKED_BRANCH>`.
    - Sinon → action `create <LINKED_BRANCH> from <base>` : branche par défaut détectée comme dans « Branche de travail » de `SKILL.md` ; branche distante suivie → `git -C <LINKED> fetch`, `<base>` = `origin/<défaut>`, sinon `<base>` = `<défaut>` ; commande `git -C <LINKED> worktree add --no-track -b <LINKED_BRANCH> <LINKED_WORKTREE> <base>`.
-   - Action `create` et `.forge/project.md` absent du commit de départ (`git -C <LINKED> cat-file -e <départ>:.forge/project.md`) → "`.forge/` of `<LINKED>` is not committed — commit it first." STOP — ne pas continuer. Le worktree ne porte que les fichiers versionnés.
+   - Projet forgé, action `create` et `.forge/project.md` absent du commit de départ (`git -C <LINKED> cat-file -e <départ>:.forge/project.md`) → "`.forge/` of `<LINKED>` is not committed — commit it first." STOP — ne pas continuer. Le worktree ne porte que les fichiers versionnés. Projet non forgé → aucun contrôle.
 5. Afficher le tableau de délégation (format ci-dessous).
 6. Poser une confirmation unique avec `AskUserQuestion` — `header` : `Delegate`, options `Open the linked project` / `Cancel`.
 7. **Sur `Cancel`** → n'exécuter aucune action. STOP — ne pas continuer.
@@ -49,6 +50,18 @@ Demande hors plan qui vise le projet lié → d'abord « Demande hors périmètr
    - Entrée LOG de la branche liée, `--root <LINKED_WORKTREE> --branch <LINKED_BRANCH>` (`log.md` créé s'il est absent) : `Opened by delegation · T3, T5`.
    - PLAN parent : chaque tâche du mandat sans `**Linked branch:**` → champ écrit sous `**Files:**` ; sous chaque tâche du mandat, note `delegated to <LINKED_REL> @ <LINKED_BRANCH>` — statut inchangé. Entrée LOG parent : `Delegated T3, T5 to <LINKED_REL> @ <LINKED_BRANCH>`.
    - Lancer le sous-agent (prompt ci-dessous), « Mesure d'un délégué » ci-dessus appliquée, puis entrer dans la boucle de relais.
+
+### Projet lié non forgé
+
+**Déclencheur :** étape 1 de « Délégation — projet lié », `.forge/project.md` absent de la branche par défaut de `<LINKED>` (`git -C <LINKED> cat-file -e <défaut>:.forge/project.md` échoue).
+
+**Réaction :**
+- Délégation poursuivie sans question : worktree créé à l'étape 4 comme pour un projet forgé, mandat écrit à l'étape 8.
+- Le délégué forge à son démarrage, dans `<LINKED_WORKTREE>` : `project.md` puis `coding-standards.md` (« Projet lié non forgé » de `commands/delegated-mode.md`), versionnés avec `<LINKED_BRANCH>` — ils rejoignent la branche par défaut de `<LINKED>` à la fusion de `<LINKED_BRANCH>`.
+- Tableau de délégation : ligne `forge` avant la ligne `agent`.
+
+⚠️ Le parent ne forge jamais lui-même : il ne lit pas le code du projet lié et ne touche pas le working tree de `<LINKED>` (invariants ci-dessus).
+⚠️ Une seule délégation à la fois vers un même projet non forgé : chaque branche liée générerait son propre `project.md`, en conflit à la fusion. Une autre délégation en cours vers `<LINKED>` (note `delegated to <LINKED_REL>` sur une tâche `[ ]`) → réutiliser sa branche liée (`reuse`), ou attendre la fusion de cette branche : "`<LINKED>` is being forged by `<LINKED_BRANCH>` — delegate there or wait for its merge." STOP — ne pas continuer.
 
 ### Boucle de relais
 
@@ -123,6 +136,7 @@ Actions et détail associé — aucune autre :
 - `brief` → `<LINKED_WORKTREE>/.forge/branch/<LINKED_BRANCH>/brief.md` : mandat `T3, T5`
 - `log` → `<LINKED_WORKTREE>/.forge/branch/<LINKED_BRANCH>/log.md`
 - `mark` → tâches parentes annotées, une ligne
+- `forge` → projet non forgé : `project.md and coding-standards.md generated by the delegate`
 - `agent` → sous-agent délégué, une ligne
 
 ⚠️ Jamais de liste de fichiers du projet lié, jamais de décompte de lignes.

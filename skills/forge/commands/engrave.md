@@ -12,6 +12,8 @@
 
 Mode délégué `SCOPE: branch` → `--root` vaut ROOT (le worktree) ; compte rendu de livraison recopié entier dans le `content` du bloc qui termine le tour. `SCOPE: linked` → Livraison non applicable (section « Mode délégué » de `SKILL.md`).
 
+**Avant la séquence :** « Vérification complète » ci-dessous. Rouge → aucune livraison. STOP — ne pas continuer.
+
 **Réaction — dans l'ordre :**
 0. Synthèse de mesure : aucune action — `engrave.sh run --model` l'écrit avant le `git add`, avec la ligne `**Actual:**` de l'en-tête du plan (« Synthèse de mesure — `metrics.json` » ci-dessous) ; toutes deux partent avec le commit.
 1. Générer automatiquement le message de commit (règles COMMITS GIT : max 150 car., pas de mention Claude) — pas de confirmation sur le message lui-même.
@@ -25,6 +27,17 @@ Mode délégué `SCOPE: branch` → `--root` vaut ROOT (le worktree) ; compte re
 5. Rendre compte depuis le JSON de chaque `run`, parent puis chaque projet lié, selon le « Gabarit — compte rendu de livraison » ci-dessous.
 
 ⚠️ Aucune écriture dans LOG ni PLAN après la séquence — le compte rendu est du texte seul, le working tree reste tel que la livraison l'a laissé. Ce qui doit être journalisé l'est avant le `git add`.
+
+### Vérification complète
+
+**Déclencheur :** étape 0 de la Livraison, avant toute commande git — parent seulement : un projet lié livré par la livraison relayée a été vérifié par son délégué.
+
+**Réaction — dans l'ordre :**
+1. Commande = ligne `**Full check:** \`<commande>\`` de `## Tools & access` de `.forge/project.md`. Absente → la demander une fois en texte libre : "What command runs the full test suite? (`none` if there is none)", l'écrire dans `project.md` ; `none` → écrite telle quelle, aucune vérification, étape suivante.
+2. L'exécuter sous ROOT. Verte → une ligne au compte rendu, sous le tableau : `Full check: passed`.
+3. Rouge → afficher les échecs tels que la commande les rend, aucune livraison, aucune écriture. STOP — ne pas continuer.
+
+⚠️ Seul moment où la suite complète tourne : pendant une tâche, seuls les tests des fichiers modifiés (« Tests d'une tâche » de `phases/p5-resume.md`).
 
 ### Synthèse de mesure — `metrics.json`
 
@@ -63,12 +76,15 @@ Compte rendu de la Livraison : une ligne sous le tableau, depuis `metrics` — `
 
 ### Retrait du worktree lié
 
-**Déclencheur :** étape 4 de la Livraison — `run` du projet lié en sortie `0` avec au moins une action `merge` en `done` ; étape 4 de la Clôture (`commands/closure.md`), pour une fusion faite hors forge (pull request).
+**Déclencheur :** étape 4 de la Livraison — `run` du projet lié en sortie `0`, fusion faite ou non : sans fusion, le worktree est gardé et sa commande de retrait affichée ; étape 4 de la Clôture (`commands/closure.md`), pour une fusion faite hors forge (pull request).
 
-**Réaction :** `bash <SKILL_DIR>/scripts/linked-worktree-cleanup.sh --linked <LINKED> --branch <LINKED_BRANCH>` — le script décide seul, jamais de `git worktree remove` à la main :
-- Retiré seulement si le worktree n'est pas `<LINKED>` lui-même, si son working tree est propre et si `<LINKED_BRANCH>` est fusionnée dans la branche par défaut de `<LINKED>`, locale ou `origin/<défaut>` après `fetch` ; `git worktree remove` sans `--force`, la branche gardée.
+**Réaction :** `bash <SKILL_DIR>/scripts/linked-worktree-cleanup.sh --linked <LINKED> --branch <LINKED_BRANCH> --merged-into <branches cibles retenues pour le projet lié, séparées par des virgules>` — `--merged-into` omis sans branche cible et à la Clôture ; le script décide seul, jamais de `git worktree remove` à la main :
+- Retiré seulement si le worktree n'est pas `<LINKED>` lui-même, si son working tree est propre et si `<LINKED_BRANCH>` est fusionnée dans la branche par défaut de `<LINKED>` ou dans l'une des branches de `--merged-into` (une livraison limitée à `dev` compte), locale ou sur `origin` après `fetch` ; `git worktree remove` sans `--force`, la branche gardée.
 - JSON sur une ligne : `{"worktree":<chemin|null>,"status":"removed|kept|absent","reason":<raison|null>}` — raison de `kept` : `not merged`, `uncommitted changes`, `main working tree`, `git error` ; `absent` → aucun worktree n'extrait la branche, rien à retirer.
-- Compte rendu de la Livraison : ligne `worktree: removed` ou `worktree: kept — <reason>` sous le tableau du projet lié ; `absent` → aucune ligne.
+- Compte rendu de la Livraison, une ligne sous le tableau du projet lié, jamais omise pour un worktree gardé :
+  - `removed` → `worktree: removed` ;
+  - `kept` → `worktree: kept — <reason> · remove: git -C "<LINKED>" worktree remove "<worktree>"` ; raison `uncommitted changes` → ` — commit or discard the changes first` ajouté ; raison `main working tree` → sans commande, ce dossier n'est jamais retiré ;
+  - `absent` → aucune ligne.
 
 ⚠️ Fusion par squash ou rebase : la branche n'est pas ancêtre de la branche par défaut → `kept — not merged`, jamais forcé.
 
@@ -77,10 +93,11 @@ Compte rendu de la Livraison : une ligne sous le tableau, depuis `metrics` — `
 **Appel :** `bash <SKILL_DIR>/scripts/engrave.sh run --root <ROOT> --branch <BRANCH> --message "<message>" --model <identifiant du modèle de la session> [branches citées, dans l'ordre]` — autant de branches qu'en cite l'utilisateur, aucune comprise.
 
 **Le script porte la séquence entière** — ne jamais la recomposer en commandes git à la main :
-- `run` → exécute une opération git par action, dans cet ordre : `add`, `commit`, `push` de `<BRANCH>` ; pour chaque branche citée, `checkout` de la cible, `merge` de `<BRANCH>` — jamais la branche précédente de la chaîne —, `push` de la cible ; `checkout` final de retour sur `<BRANCH>` dès qu'une branche est citée. Premier échec git → arrêt, erreur git sur la sortie d'erreur ; conflit → dépôt laissé sur la cible, merge en cours.
+- `run` → exécute une opération git par action, dans cet ordre : `ignore` et `untrack` seulement quand ils ont à faire, puis `add`, `commit`, `push` de `<BRANCH>` ; pour chaque branche citée, `checkout` de la cible, `merge` de `<BRANCH>` — jamais la branche précédente de la chaîne —, `push` de la cible ; `checkout` final de retour sur `<BRANCH>` dès qu'une branche est citée. Premier échec git → arrêt, erreur git sur la sortie d'erreur ; conflit → dépôt laissé sur la cible, merge en cours.
 - JSON de `run`, écrit sur une ligne en succès comme en échec git : `{"branch":"<BRANCH>","status":"done|failed","actions":[{"step":1,"action":"add","branch":"<branche>","status":"<statut>","detail":<détail|null>,"reason":<raison|null>},…],"metrics":{…}}` — `metrics` présent avec `--model` et un dossier `.forge/branch/<BRANCH>/`.
 - Statut d'une action : `done` exécutée · `skipped` écartée avant exécution, `reason` dit pourquoi · `failed` en échec, `reason` = `conflict`, `rejected` ou `git error` · `not_run` non exécutée, la séquence s'étant arrêtée avant elle.
-- `detail` d'une action `done` : `commit` → hash court ; `push` → `<remote>: <ancien>..<nouveau>`, `<remote>: up to date` ou `<remote>: new branch` ; `merge` → `fast-forward`, `merge commit <hash court>` ou `already up to date` ; `add` / `checkout` → `null`. Action `failed` sur conflit → fichiers en conflit, séparés par `, `.
+- Fichiers locaux de forge — journal de mesure `time-log.jsonl`, fichiers apportés `.forge/branch/*/input/` — jamais commités, quelle que soit la branche de démarrage de `/forge` : `ignore` → règles forge manquantes ajoutées au `.gitignore` par `scripts/checks.sh`, `.gitignore` commité avec la livraison ; `untrack` → ces fichiers encore suivis retirés de l'index (`git rm --cached`), gardés sur disque. Projet sain → aucune des deux, séquence inchangée. L'historique déjà poussé n'est jamais réécrit.
+- `detail` d'une action `done` : `ignore` → `.gitignore` ; `untrack` → fichiers retirés, séparés par `, ` ; `commit` → hash court ; `push` → `<remote>: <ancien>..<nouveau>`, `<remote>: up to date` ou `<remote>: new branch` ; `merge` → `fast-forward`, `merge commit <hash court>` ou `already up to date` ; `add` / `checkout` → `null`. Action `failed` sur conflit → fichiers en conflit, séparés par `, `.
 - Branche citée égale à `<BRANCH>` → absente des actions. Branche absente → une seule action `merge` en `skipped`, `branch missing`, jamais créée. Branche extraite dans un autre worktree → idem, `checked out in another worktree`. Working tree propre → `add` et `commit` en `skipped`, `nothing to commit`, le `push` reste. Après un échec, une action `skipped` garde son statut et sa raison.
 - Sorties : `0` succès · `1` usage ou garde (branche courante différente de `--branch`, message vide ou au-delà de 150 caractères), sans JSON · `2` échec git, JSON écrit.
 - `preview` → même liste d'actions en JSON, statut `planned` ou `skipped`, sans rien exécuter — jamais appelé par la Livraison.

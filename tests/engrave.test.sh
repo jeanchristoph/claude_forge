@@ -458,6 +458,75 @@ test_run_with_model_outside_forge_branch_writes_no_metrics() {
   [[ $output != *'"metrics"'* ]] || exit 1
 }
 
+# ── Fichiers locaux de forge : règles .gitignore et retrait de l'index ────────
+
+committed_files() {
+  git -C "$WORK" show --name-only --format= HEAD
+}
+
+# Branche forge dont le journal et un fichier apporté ont déjà été commités, sans règle .gitignore.
+commit_local_files_by_mistake() {
+  prepare_forge_branch
+  mkdir -p "$WORK/.forge/branch/ship/input"
+  printf '{"ts":1700000000000,"event":"late_start"}\n' > "$WORK/.forge/branch/ship/time-log.jsonl"
+  printf 'audit\n' > "$WORK/.forge/branch/ship/input/audit.xlsx"
+  git -C "$WORK" add -A
+  git -C "$WORK" commit -q -m "local files committed by mistake"
+}
+
+test_run_adds_missing_ignore_rules_and_never_commits_local_files() {
+  prepare_forge_branch
+  mkdir -p "$WORK/.forge/branch/ship/input"
+  printf '{"ts":1700000000000,"event":"late_start"}\n' > "$WORK/.forge/branch/ship/time-log.jsonl"
+  printf 'audit\n' > "$WORK/.forge/branch/ship/input/audit.xlsx"
+  local output
+  output=$(engrave run --root "$WORK" --branch ship --message "ship it")
+  assert_equals '{"step":1,"action":"ignore","branch":"ship","status":"done","detail":".gitignore","reason":null}' "$(action_at_step 1 "$output")"
+  committed_files | grep -qx '.gitignore' || { echo "    .gitignore not committed"; exit 1; }
+  assert_not_contains 'time-log.jsonl' "$(committed_files)"
+  assert_not_contains 'input/' "$(committed_files)"
+}
+
+test_run_untracks_local_files_committed_by_mistake_and_keeps_them_on_disk() {
+  commit_local_files_by_mistake
+  local output
+  output=$(engrave run --root "$WORK" --branch ship --message "ship it")
+  assert_contains '"action":"untrack","branch":"ship","status":"done","detail":".forge/branch/ship/input/audit.xlsx, .forge/branch/ship/time-log.jsonl"' "$(action_at_step 2 "$output")"
+  assert_equals "" "$(git -C "$WORK" ls-files .forge/branch/ship/time-log.jsonl .forge/branch/ship/input)"
+  [ -f "$WORK/.forge/branch/ship/time-log.jsonl" ] && [ -f "$WORK/.forge/branch/ship/input/audit.xlsx" ] || { echo "    file removed from disk"; exit 1; }
+}
+
+test_journal_written_after_engrave_leaves_nothing_to_commit() {
+  commit_local_files_by_mistake
+  engrave run --root "$WORK" --branch ship --message "ship it" > /dev/null
+  printf '{"ts":1700000060000,"event":"late_start"}\n' >>"$WORK/.forge/branch/ship/time-log.jsonl"
+  assert_equals "" "$(git -C "$WORK" status --porcelain)"
+}
+
+test_healthy_forge_branch_keeps_its_sequence() {
+  prepare_forge_branch
+  engrave run --root "$WORK" --branch ship --message "first" > /dev/null
+  echo change > "$WORK/change.txt"
+  local output
+  output=$(engrave preview --root "$WORK" --branch ship --message "second")
+  assert_equals 'add:ship:planned commit:ship:planned push:ship:planned ' "$(action_sequence "$output")"
+}
+
+test_preview_lists_local_file_fixes_without_writing() {
+  commit_local_files_by_mistake
+  local output
+  output=$(engrave preview --root "$WORK" --branch ship --message "ship it")
+  assert_equals 'ignore:ship:planned untrack:ship:planned add:ship:planned commit:ship:planned push:ship:planned ' "$(action_sequence "$output")"
+  [ ! -e "$WORK/.gitignore" ] || { echo "    .gitignore written by preview"; exit 1; }
+  [ -n "$(git -C "$WORK" ls-files .forge/branch/ship/time-log.jsonl)" ] || { echo "    untracked by preview"; exit 1; }
+}
+
+test_run_with_metrics_still_commits_metrics_file_after_local_file_fixes() {
+  commit_local_files_by_mistake
+  engrave run --root "$WORK" --branch ship --message "ship it" --model claude-test > /dev/null
+  committed_files | grep -qx '.forge/branch/ship/metrics.json' || { echo "    metrics.json not committed"; exit 1; }
+}
+
 run_test() {
   local name=$1 label=$2
   setup_sandbox
@@ -511,6 +580,12 @@ run_test test_run_without_log_writes_no_actual_line "sans journal de mesure, auc
 run_test test_run_without_model_writes_no_metrics "sans --model, aucune synthèse de mesure"
 run_test test_preview_with_model_writes_nothing "l'aperçu n'écrit jamais la synthèse de mesure"
 run_test test_run_with_model_outside_forge_branch_writes_no_metrics "sans dossier de branche forge, aucune synthèse"
+run_test test_run_adds_missing_ignore_rules_and_never_commits_local_files "ajoute les règles .gitignore manquantes, sans jamais commiter journal ni input/"
+run_test test_run_untracks_local_files_committed_by_mistake_and_keeps_them_on_disk "retire de l index journal et input/ déjà commités, fichiers gardés sur disque"
+run_test test_journal_written_after_engrave_leaves_nothing_to_commit "journal écrit après la livraison : plus rien à commiter"
+run_test test_healthy_forge_branch_keeps_its_sequence "branche forge saine : séquence inchangée, sans ignore ni untrack"
+run_test test_preview_lists_local_file_fixes_without_writing "aperçu : ignore et untrack prévus, rien écrit"
+run_test test_run_with_metrics_still_commits_metrics_file_after_local_file_fixes "metrics.json toujours commité après le retrait des fichiers locaux"
 
 echo "$PASSED passed, $FAILED failed"
 [ $FAILED -eq 0 ]

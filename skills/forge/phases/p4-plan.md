@@ -30,6 +30,7 @@ Si BRIEF contient `## Origin` (`SCOPE: linked` — mandat) → les étapes ci-de
 6. Générer le plan (format ci-dessous), puis l'estimer pour la présentation en un seul appel : `bash <SKILL_DIR>/scripts/time-calibrate.sh --root <ROOT> --files <n1>,<n2>,…` — une valeur par tâche, dans l'ordre du plan : ses fichiers (« Fichiers d'une tâche » ci-dessous). Présenter chaque tâche avec son rang dans `estimates`, et le plan avec `estimate`.
    ⚠️ Jamais de `**Estimate:**`, de `**Estimated time:**` ni de colonne `Estimated` / `Actual` / ligne `**Remaining**` écrits par le modèle : le hook `hooks/plan-hook.sh` les écrit à chaque écriture de `plan.md` — temps estimé de chaque tâche sous `**Effort:**`, en-tête sous `**Date:**`, `## Summary` régénéré depuis les tâches. `**Estimated time:**` est figé à son écriture, jamais recalculé : c'est la prévision comparée au réel (`**Actual time:**`, section « Mesure d'une tâche » de `phases/p5-resume.md`). Tâche ajoutée en cours de branche → estimée par le hook au ratio du moment, figée à son tour.
    Total des fichiers du plan ≥ `branch_files` du JSON → tableau des groupes (étape 1 de « Plan de branches ») toujours affiché avant le plan, même sans groupe retenu : verdict de chaque groupe visible, ligne de gain seulement quand au moins un groupe est retenu.
+   Plan rédigé avec au moins une tâche `**Linked branch:**` → l'écrire dans le scratchpad, puis `bash <SKILL_DIR>/scripts/swarm-status.sh --root <ROOT> --branch <BRANCH> --plan <brouillon>` : unités `linked` de `launchable` comptées par le script, jamais par le modèle (« Essaim de projets liés » ci-dessous).
    Au moins un groupe de tâches remplit la « Règle de branche » ci-dessous → appliquer « Plan de branches » avant de présenter. Mode délégué → jamais de plan de branches : un sous-agent ne lance pas d'autres sous-agents ; la tâche qui le mériterait passe par la question `Promotion` (« Promotion d'une tâche » de `phases/p5-resume.md`).
    Présenter le plan.
 7. Poser le choix avec `AskUserQuestion` — `header` : `Plan`, motif « Validation d'un contenu » de `SKILL.md` : le changement demandé arrive en texte libre, itérer, reposer la question. Trois options, dans cet ordre :
@@ -39,6 +40,7 @@ Si BRIEF contient `## Origin` (`SCOPE: linked` — mandat) → les étapes ci-de
 
    Plan d'une seule tâche d'effort XS → sans l'option `Validate` : le feu vert unique vaut pour le plan et la tâche.
    Plan de branches → quatrième option, en tête : `Validate and launch the swarm` → "Validate the plan, create the child branches and launch the first ones in parallel." — description complétée de l'estimation (`≈ <swarm_minutes> min instead of ≈ <serial_minutes> min, <écart>`, étape 1 de « Plan de branches »). Option toujours proposée, perte de temps comprise : le choix revient à l'utilisateur, l'estimation sous les yeux.
+   Au moins une unité dans `launchable` du brouillon — une seule suffit : le parent est lui-même une voie parallèle, il prend ses tâches pendant que le délégué travaille → même option en tête, description : "Validate the plan and launch <n> delegate(s) in the background, in parallel with the parent: <unités, dans l'ordre du plan>." ; `Validate and chain` décrit alors "… in series, one delegate after another." Jamais d'omission : tâches liées indépendantes présentées sans cette option → plan non conforme, à reprendre avant la question.
 8. Écrire `.forge/branch/<BRANCH>/plan.md` après validation — `Validate and launch the swarm`, `Validate and chain` ou `Validate`.
 9. Si `project.md` contient uniquement `<!-- pending -->` → le compléter (stack, périmètre, conventions du plan).
 10. Continuer directement à l'État 5 : lire et exécuter `phases/p5-resume.md`.
@@ -107,6 +109,16 @@ Si BRIEF contient `## Origin` (`SCOPE: linked` — mandat) → les étapes ci-de
 - **Indépendance :** le groupe se livre et se teste seul, sans fichier partagé avec un autre groupe hors du socle des points d'extension — sinon chaque fusion finirait en conflit.
 
 ⚠️ La lettre d'effort ne sert jamais de frontière : elle dépend de l'échelle de celui qui écrit le plan.
+⚠️ Tâche `**Linked branch:**` → jamais soumise à cette règle : elle est déléguée quelle que soit sa taille, son coût fixe déjà payé ; « Essaim de projets liés » ci-dessous.
+
+## Essaim de projets liés
+
+**Déclencheur :** brouillon du plan dont `swarm-status.sh --plan` rend au moins une unité `linked`.
+
+**Réaction :**
+- Unités `linked` = délégués de l'essaim au même titre que les branches filles : N places partagées, relais, reprise et état dans `swarm.md` (`commands/swarm.md`). Jamais de ligne de gain : déléguer en parallèle ne coûte rien de plus qu'en série.
+- Tâches d'un même projet lié sur des branches liées différentes → unités distinctes, lancées en parallèle (un worktree chacune) ; même `**Linked branch:**` → une seule unité.
+- Une tâche liée n'entre jamais dans `ordinary` : le parent ne l'enchaîne jamais lui-même.
 
 ## Plan de branches
 

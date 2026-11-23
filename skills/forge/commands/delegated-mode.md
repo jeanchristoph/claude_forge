@@ -14,6 +14,7 @@
 **`SCOPE: linked` — projet lié :**
 - BRIEF porte `## Origin` : le mandat du parent — les seules tâches déléguées —, marqueur lu par les phases.
 - BRANCH = valeur de la ligne `BRANCH:` du prompt, nommée d'après la tâche déléguée. Tous les chemins `.forge/branch/<BRANCH>/` la contiennent telle quelle.
+- **Projet lié non forgé** — `state` vaut `project_init` ou `coding_standards_init` → exécuter `phases/p0-project.md` puis `phases/p1-coding-standards.md` sous ROOT, sans `FORGE_QUESTION`, puis enchaîner sur le mandat. `project.md` et `coding-standards.md` décrivent le seul projet lié et partent avec BRANCH ; listés dans `files` de `FORGE_DONE`.
 - Le délégué ne réintroduit jamais le parent dans ce qu'il écrit — ni dossier, ni branche, ni ticket, ni client, ni donnée du parent dans le plan, le log, le code, le CHANGELOG ou un rapport écrit dans ROOT : le projet lié peut être public. Seules les références écrites dans les tâches du mandat sont reprises, telles quelles.
 - Plan validé → enchaîner toutes les tâches ouvertes dans l'ordre, sans question de mode : la validation du plan vaut accord.
 - Livraison non applicable : la livraison du projet lié est proposée au parent lors de son propre « grave ».

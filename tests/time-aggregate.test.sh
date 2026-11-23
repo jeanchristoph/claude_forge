@@ -667,6 +667,22 @@ test_task_unmeasured_with_late_start() {
   assert_contains '"measured":false,"reason":"late_start"' "$(aggregate --task T1)"
 }
 
+test_task_started_after_late_start_is_measured() {
+  own_events '{"ts":0,"event":"late_start"}' \
+             '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":1000,"event":"task_start","task":"T1"}' \
+             '{"ts":61000,"event":"task_done","task":"T1"}'
+  assert_contains '"measured":true' "$(aggregate --task T1)"
+}
+
+test_task_started_before_late_start_stays_unmeasured() {
+  own_events '{"ts":0,"event":"task_start","task":"T1"}' \
+             '{"ts":1000,"event":"late_start"}' \
+             '{"ts":1000,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":61000,"event":"task_done","task":"T1"}'
+  assert_contains '"measured":false,"reason":"late_start"' "$(aggregate --task T1)"
+}
+
 test_task_unmeasured_without_log() {
   assert_contains '"measured":false,"reason":"no_log"' "$(aggregate --task T1)"
 }
@@ -919,6 +935,8 @@ run_test test_task_ignores_marks_of_other_tasks "tâche : écarte les marques de
 run_test test_task_unmeasured_without_start_mark "tâche : non mesurée sans marque de début"
 run_test test_task_unmeasured_without_done_mark "tâche : non mesurée sans marque de fin"
 run_test test_task_unmeasured_with_late_start "tâche : non mesurée sur un journal à départ tardif"
+run_test test_task_started_after_late_start_is_measured "tâche commencée après le départ tardif : mesurée"
+run_test test_task_started_before_late_start_stays_unmeasured "tâche commencée avant le départ tardif : non mesurée"
 run_test test_task_unmeasured_without_log "tâche : non mesurée sans journal"
 run_test test_task_counts_ordinary_subagent_inside_window "tâche : compte un sous-agent ordinaire dans la fenêtre"
 run_test test_task_ignores_agent_delegated_to_another_branch "tâche : écarte un agent délégué à une autre branche"

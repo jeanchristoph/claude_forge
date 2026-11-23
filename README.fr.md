@@ -119,7 +119,7 @@ forge/
 │   │   │   ├── time-hook.sh           (hook de mesure : une ligne par événement dans le time-log.jsonl de la branche)
 │   │   │   └── plan-hook.sh           (hook de coche : marques de tâche, réel, estimations et tableau récapitulatif de plan.md)
 │   │   └── scripts/              (appelés par le modèle et par les hooks)
-│   │       ├── checks.sh              (contrôles de démarrage, lancés détachés : lignes input/ et time-log.jsonl dans le .gitignore)
+│   │       ├── checks.sh              (contrôles de démarrage, lancés détachés, et repris à la livraison : lignes input/ et time-log.jsonl dans le .gitignore)
 │   │       ├── engrave.sh             (séquence de livraison : preview / run ; run --model écrit d'abord metrics.json)
 │   │       ├── metrics.sh             (synthèse de mesure de la branche : écrit metrics.json et la ligne **Actual:** du plan, rend la ligne estimé / réel en JSON)
 │   │       ├── json.sh                (rendu JSON et lecture des champs du JSON des hooks, partagés par les scripts)
@@ -192,7 +192,7 @@ Fichiers générés dans chaque projet :
         └── 20260910-user-documentation-map.md ← livrable client, nommé comme tous les autres
 ```
 
-Garde `.forge/` suivi en git, sauf les dossiers `input/` des branches et le `time-log.jsonl` du hook — le bloc `.gitignore` ci-dessous s'en charge ; forge ajoute lui-même chaque ligne manquante, par un contrôle de démarrage lancé en arrière-plan :
+Garde `.forge/` suivi en git, sauf les dossiers `input/` des branches et le `time-log.jsonl` du hook — le bloc `.gitignore` ci-dessous s'en charge ; forge ajoute lui-même chaque ligne manquante, par un contrôle de démarrage lancé en arrière-plan, et vérifie de nouveau à chaque livraison avant de commiter : règle manquante ajoutée, `.gitignore` parti avec le commit, journal ou fichier `input/` déjà suivi retiré de l'index (`git rm --cached`, gardé sur disque). Les fichiers déjà poussés restent dans l'historique, jamais réécrit :
 
 ```
 ###> claude/forge ###
@@ -350,6 +350,7 @@ Les deux installeurs ajoutent aussi `bash ~/.claude/skills/forge/hooks/time-hook
 - **Branche entière :** sous `**Estimate:**` (à défaut sous `**Date:**`), `metrics.sh` écrit la mesure de la branche tirée de `time-aggregate.sh` à la livraison — avant le `git add`, la ligne part avec le commit — et à la clôture, jamais à chaque écriture du plan ; entre deux livraisons, la ligne garde la dernière valeur. Même forme que la ligne de tâche, total à la fin : `**Actual:** ≈ 14.0 min agent (incl. 3.0 min checks) · human 7.0 min (4 questions, 2.5 min) · fixed 2.0 min (delegate setup, merge) · delegates 0.0 min in parallel · total ≈ 21.0 min`. Total = agent + humain : vérifications et fusion sont des parts du temps d'agent, la mise en route une part du temps des délégués ; les délégués, simultanés, sont affichés à part, hors total. Poste sans mesure → `—`, jamais une estimation ; ` · partial (log started after the branch, 3 unmeasured tasks)` signale une mesure incomplète. Sans journal de mesure → aucune ligne. Sans tâche mesurée, la ligne `**Total**` y renvoie (`see **Actual:**`).
 - **Par tâche :** chaque tâche porte aussi `**Estimated time:**`, figé à sa première écriture par le hook. Le modèle ne pose aucune marque : `plan-hook.sh` voit la coche dans `plan.md`, écrit le début de la tâche (dernier point d'étape : coche précédente ou première écriture du plan, ligne `plan_checkpoint` du journal) et sa fin, mesure les minutes d'agent entre les deux par `time-aggregate.sh --task` (attentes de question retirées, même règle d'absence) et écrit `**Actual time:**` ventilé par poste (`≈ 10.2 min agent (incl. 2.3 min checks) · human 1.5 min (2 questions) · 9 files · total ≈ 11.7 min` : le premier nombre est le temps d'agent, vérifications comprises, comparé à l'estimation ; total = agent + humain, vérifications jamais ajoutées), ou `—` sans mesure (pas de journal, hook installé en cours de route, premier passage). Une tâche prise hors ordre est mesurée depuis la coche précédente ; deux tâches cochées d'une même édition sont simultanées. Pour tout délégué, même dépôt ou projet lié, le hook écrit les marques dans le journal du parent (ligne `TIME_LOG:` de son prompt), où arrivent déjà ses événements ; le délégué et rend le réel de chaque tâche dans `FORGE_DONE` ; une tâche parente déléguée à un projet lié reçoit la somme de ses tâches enfant (`time-aggregate.sh --task T1,T2`, `—` dès qu'un enfant n'est pas mesuré) ; une tâche-branche d'essaim reprend `agent_minutes` du `metrics.json` de la branche. Le tableau d'avancement affiche Estimé et Réel côte à côte. Un sous-agent ordinaire compte dans la tâche pour sa part comprise dans la fenêtre ; deux tâches ouvertes en même temps ne sont pas mesurées (`—`, raison `overlapping_tasks`) : aucune part ne leur est attribuable sans l'inventer, et leur temps reste compté dans la mesure de la branche.
 - **Commandes de vérification :** la ligne `**Check pattern:**` de `project.md` (expression régulière) désigne les commandes Bash comptées comme vérifications.
+- **Tests :** après chaque tâche, seuls les tests qui couvrent ses fichiers modifiés (test du même nom, puis tests des fichiers qui les appellent) ; la suite complète tourne une fois, avant de graver — ligne `**Full check:**` de `project.md`, demandée une fois si absente —, et une suite rouge arrête la livraison avant toute commande git.
 
 ---
 
@@ -444,10 +445,11 @@ Une installation sans `install.json` (antérieure à cette fonction, ou depuis u
 "fais ça dans ../autre-projet"          → forge demande quelles tâches ouvertes déléguer
 ```
 
-Une demande qui vise un dossier hors du projet courant ouvre un **projet lié** : un dépôt déjà forgé
-(`.forge/` présent — sinon forge refuse et demande d'y lancer `/forge` d'abord ; il n'initialise jamais un
-projet de lui-même). Il faut une vraie branche côté parent : un nom de code utilisé hors git
-ne peut pas déléguer.
+Une demande qui vise un dossier hors du projet courant ouvre un **projet lié**. Un dépôt pas encore forgé
+(`.forge/project.md` absent de sa branche par défaut) l'est sans question par le délégué, dans le worktree de la
+branche liée : `project.md` et `coding-standards.md` partent avec cette branche et rejoignent la branche par défaut
+à sa fusion ; une seule délégation à la fois vers un même dépôt non forgé. Il faut une vraie branche côté parent :
+un nom de code utilisé hors git ne peut pas déléguer.
 
 Le parent prépare le terrain, rien de plus : il ouvre une **branche liée** du dépôt lié dans un worktree
 git, nommée selon la même règle qu'une branche forge ordinaire — un slug court en kebab-case tiré de la tâche
@@ -476,7 +478,10 @@ branche liée fusionnée dans la branche par défaut du projet lié (`master`, p
 un fetch) : après une livraison relayée qui la fusionne, ou à la clôture du parent pour une fusion faite hors
 forge — une pull request, par exemple. `linked-worktree-cleanup.sh` décide seul et ne force jamais : un worktree
 aux modifications non commitées, une branche non fusionnée (fusion par squash comprise) ou le dossier propre du
-dépôt lié sont gardés, et le compte rendu dit pourquoi. La branche liée elle-même n'est jamais supprimée.
+dépôt lié sont gardés, et le compte rendu dit pourquoi. La branche liée elle-même n'est jamais supprimée. Une
+fusion dans l'une des branches cibles de la livraison compte aussi (`--merged-into` : une livraison limitée à `dev`
+retire le worktree une fois la branche dans `dev`), et un worktree gardé a toujours sa ligne au compte rendu, avec la
+commande de retrait prête à copier (`worktree: kept — <reason> · remove: git -C "<lié>" worktree remove "<worktree>"`).
 
 L'exécution se fait ensuite dans un **contexte forge étanche** : un sous-agent qui ne reçoit que le chemin
 du worktree, la branche liée, ta langue et l'ordre d'y exécuter le skill forge. Aucun `project.md`, aucun
@@ -526,7 +531,17 @@ parent, puisque rien n'a été délégué. Le worktree reste en place — forge 
 
 ```
 plan avec ≥ 1 tâche-branche → « Valider et lancer l'essaim » → branches filles en parallèle du parent
+plan avec ≥ 1 branche liée   → « Valider et lancer l'essaim » → délégués liés en parallèle du parent
 ```
+
+L'essaim ne se limite pas au dépôt courant. Ses délégués sont des **unités** de deux types, lues par
+`swarm-status.sh` : `child` (tâche-branche de ce dépôt, fusionnée dans la parente par le parent) et `linked` (tâches
+ouvertes au même `**Linked branch:**`, dans un autre dépôt, jamais fusionnées par le parent, livrées par la livraison
+relayée). Les deux partagent les N places, le relais groupé, `swarm.md` (nouvelle colonne `Type`) et la reprise. Dès
+que le plan rédigé porte une unité lançable — comptée par le script sur le brouillon (`--plan`), jamais par le
+modèle —, « Valider et lancer l'essaim » passe en tête et « Valider et enchaîner » est annoncé en série ; une tâche
+liée ne passe jamais par la règle de branche (elle est déléguée quelle que soit sa taille) et n'entre jamais dans les
+tâches propres du parent. Un délégué lié terminé libère sa place, et l'unité lançable suivante part sans question.
 
 Quand au moins un groupe de tâches mérite sa propre branche — tâches d'un même module ou d'une même tranche
 fonctionnelle, ensemble ≥ 15 min d'agent, livrées et testées seules sans fichier partagé avec un autre groupe —, le

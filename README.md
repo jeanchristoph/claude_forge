@@ -121,7 +121,7 @@ forge/
 │   │   │   ├── time-hook.sh           (time measurement hook: one line per event in the branch time-log.jsonl)
 │   │   │   └── plan-hook.sh           (tick hook: task marks, actual time, estimates and summary table of plan.md)
 │   │   └── scripts/              (called by the model and by the hooks)
-│   │       ├── checks.sh              (startup checks, run detached: input/ and time-log.jsonl lines in .gitignore)
+│   │       ├── checks.sh              (startup checks, run detached, and again at engrave: input/ and time-log.jsonl lines in .gitignore)
 │   │       ├── engrave.sh             (shipping sequence: preview / run; run --model writes metrics.json first)
 │   │       ├── metrics.sh             (branch measure summary: writes metrics.json and the plan's **Actual:** line, reports the estimated vs actual line as JSON)
 │   │       ├── json.sh                (JSON rendering and hook JSON field reading, shared by the scripts)
@@ -194,7 +194,7 @@ Files generated in each project:
         └── 20260910-user-documentation-map.md ← client deliverable, named like every other file
 ```
 
-Keep `.forge/` tracked in git, except the branch `input/` folders and the hook's `time-log.jsonl` — the `.gitignore` block below does it; forge adds each missing line on its own, from a startup check run in the background:
+Keep `.forge/` tracked in git, except the branch `input/` folders and the hook's `time-log.jsonl` — the `.gitignore` block below does it; forge adds each missing line on its own, from a startup check run in the background, and checks again at every engrave before committing: a missing rule is added and the `.gitignore` ships with the commit, a journal or `input/` file already tracked is removed from the index (`git rm --cached`, kept on disk). Files already pushed stay in the history, never rewritten:
 
 ```
 ###> claude/forge ###
@@ -351,6 +351,7 @@ Both installers also add `bash ~/.claude/skills/forge/hooks/time-hook.sh` (shell
 - **Whole branch:** under `**Estimate:**` (else under `**Date:**`), `metrics.sh` writes the branch measure from `time-aggregate.sh` at engrave time — before the `git add`, so the line ships with the commit — and at closure, not on every write of the plan; between two engraves the line keeps the last value. Same shape as the task line, total last: `**Actual:** ≈ 14.0 min agent (incl. 3.0 min checks) · human 7.0 min (4 questions, 2.5 min) · fixed 2.0 min (delegate setup, merge) · delegates 0.0 min in parallel · total ≈ 21.0 min`. Total = agent + human: checks and merge are shares of agent time, delegate setup a share of delegate time; delegates run at the same time and are shown apart, outside the total. An item without a measure shows `—`, never an estimate; ` · partial (log started after the branch, 3 unmeasured tasks)` flags an incomplete measure. No measure log → no line. With no measured task, the `**Total**` row points to it (`see **Actual:**`).
 - **Per task:** each task also states `**Estimated time:**`, frozen when the hook first writes it. The model sets no mark: `plan-hook.sh` sees the tick in `plan.md`, writes the task's start (last checkpoint: previous tick or first write of the plan, a `plan_checkpoint` line of the log) and its end, measures the agent minutes between both with `time-aggregate.sh --task` (question waits removed, same absence rule) and writes `**Actual time:**` broken down by item (`≈ 10.2 min agent (incl. 2.3 min checks) · human 1.5 min (2 questions) · 9 files · total ≈ 11.7 min`: the first figure is agent time, checks included, compared with the estimate; total = agent + human, checks never added), or `—` when there is no measure (no log, hook installed late, first pass). A task picked out of order is measured from the previous tick; two tasks ticked in one edit are simultaneous. For every delegate, same repository or linked project, the hook writes the marks to the parent's log (`TIME_LOG:` line of its prompt), where its events already land; the delegate and reports each task's actual time in `FORGE_DONE`; a parent task delegated to a linked project gets the sum of its child tasks (`time-aggregate.sh --task T1,T2`, `—` as soon as one child is unmeasured); a swarm branch task takes `agent_minutes` from the branch `metrics.json`. The progress table shows Estimated and Actual side by side. An ordinary subagent counts in the task for its share inside the window; two tasks open at the same time are not measured (`—`, reason `overlapping_tasks`): no share can be attributed to either without inventing it, and their time still counts in the branch measure.
 - **Check commands:** the `**Check pattern:**` line of `project.md` (regular expression) marks the Bash commands counted as checks.
+- **Tests:** after each task, only the tests covering the files it changed (same-named test, then tests of the files calling them); the full suite runs once, before engraving — `**Full check:**` line of `project.md`, asked once when missing — and a red suite stops the engrave before any git command.
 
 ---
 
@@ -445,10 +446,11 @@ An install without `install.json` (older than this feature, or from an archive o
 "do this in ../other-project"         → forge asks which open tasks to delegate
 ```
 
-A request that targets a folder outside the current project opens a **linked project**: a repository that
-has already been forged (`.forge/` present — otherwise forge refuses and asks you to run `/forge` there
-first; it never initializes a project on its own). It needs a real branch on the parent side: a code name
-used outside git cannot delegate.
+A request that targets a folder outside the current project opens a **linked project**. A repository not yet
+forged (`.forge/project.md` missing from its default branch) is forged without a question by the delegate, in the
+linked branch's worktree: `project.md` and `coding-standards.md` ship with that branch and reach the default branch
+when it is merged; one delegation at a time to the same unforged repository. It needs a real branch on the parent
+side: a code name used outside git cannot delegate.
 
 The parent prepares the ground, and nothing else: it opens a **linked branch** of the linked repository in a
 git worktree, named with the same rule as a regular forge branch — a short kebab-case slug of the delegated task
@@ -476,7 +478,10 @@ branch is merged into the linked project's default branch (`master`, then `main`
 fetch): after a relayed engrave that merges it, or at the parent's closure for a merge done outside forge — a
 pull request, for instance. `linked-worktree-cleanup.sh` decides alone and never forces: a worktree with
 uncommitted changes, an unmerged branch (a squash merge included) or the linked repository's own folder is kept,
-and the report says why. The linked branch itself is never deleted.
+and the report says why. The linked branch itself is never deleted. A merge into one of the engrave's target
+branches counts too (`--merged-into`: an engrave limited to `dev` removes the worktree once the branch is in `dev`),
+and a kept worktree always gets a report line with its ready-to-copy removal command
+(`worktree: kept — <reason> · remove: git -C "<linked>" worktree remove "<worktree>"`).
 
 Execution then happens in a **sealed forge context**: a subagent that receives only the worktree path,
 the linked branch, your language and the order to run the forge skill there. No `project.md`, no coding standards,
@@ -526,7 +531,17 @@ the branch is engraved.
 
 ```
 plan with ≥ 1 branch task → "Validate and launch the swarm" → child branches run in parallel with the parent
+plan with ≥ 1 linked branch    → "Validate and launch the swarm" → linked delegates run in parallel with the parent
 ```
+
+The swarm is not limited to the current repository. Its delegates are **units** of two types, read by
+`swarm-status.sh`: `child` (a branch task of this repository, merged into the parent by the parent) and `linked`
+(the open tasks sharing one `**Linked branch:**`, in another repository, never merged by the parent and shipped by
+the relayed engrave). Both share the N slots, the grouped relay, `swarm.md` (new `Type` column) and the resume.
+As soon as the drafted plan holds one launchable unit — counted by the script on the draft (`--plan`), never by
+the model — "Validate and launch the swarm" comes first and "Validate and chain" is labelled as in series; linked
+tasks never go through the branch rule (they are delegated whatever their size) and never land in the parent's own
+tasks. A finished linked delegate frees its slot and the next launchable unit starts without a question.
 
 When at least one group of tasks deserves its own branch — tasks of one module or one feature slice, together
 ≥ 15 min of agent time, delivered and tested on their own without sharing files with another group — the plan

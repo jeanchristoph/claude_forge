@@ -10,6 +10,22 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ## [Unreleased]
 
+### Changed
+
+- Linked worktrees are also removed once their branch is merged into one of the relayed engrave's target branches (`linked-worktree-cleanup.sh --merged-into`, e.g. an engrave limited to `dev`), and a kept worktree always gets a report line with its ready-to-copy `git worktree remove` command — at engrave, merge or not, and at closure.
+
+- Tests scoped to the work: after each task only the tests covering its changed files run; the full suite (`**Full check:**` line of `project.md`, detected at project init or asked once) runs once before engraving, and a red suite stops the engrave before any git command.
+
+- The swarm spans repositories: open tasks sharing a `**Linked branch:**` form a `linked` unit, launched in parallel with child branches in the same N slots, relayed and resumed through `swarm.md` (new `Type` column), never merged by the parent. `swarm-status.sh` reports them (`type`, `linked`, `tasks`, `forged`) and reads a drafted plan with `--plan`; as soon as it finds one launchable unit (the parent being a parallel lane itself), the plan question puts "Validate and launch the swarm" first — no more linked tasks chained in series.
+
+- Delegating to an unforged linked project no longer stops: the delegate forges it without a question in the linked worktree (`project.md`, then `coding-standards.md`, shipped with the linked branch), then carries out the mandate; one delegation at a time to the same unforged project.
+
+### Fixed
+
+- Measure journal and branch `input/` files no longer committed when `/forge` started on `main` / `master` (the startup check skips there and never ran again once the branch was created): `engrave.sh run` adds the missing forge `.gitignore` rules (`checks.sh`, new `--dry-run`) and removes such files still tracked from the index (`git rm --cached`, kept on disk) before `add`, so the journal written after an engrave no longer shows as a change. Both actions appear only when needed; history already pushed is never rewritten.
+
+- Tasks started after a late measure journal (`late_start`) are measured again: only a task started before the journal opened stays unmeasured; the branch measure still reads ` · partial (log started after the branch)`.
+
 ## [0.13.4] — 2026-11-23
 
 ### Added

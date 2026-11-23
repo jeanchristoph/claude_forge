@@ -25,7 +25,7 @@ forge/
 │   │   │   ├── delegation.md         (Délégation — projet lié, branche du même dépôt)
 │   │   │   ├── engrave.md            (Livraison, synthèse metrics.json)
 │   │   │   ├── rule-propagation.md   (Correction ou choix d'infrastructure → propagation vers CLAUDE.md)
-│   │   │   ├── swarm.md              (Essaim de branches filles : lancement, relais, fin, fusion, retrait, état, reprise, plan mixte)
+│   │   │   ├── swarm.md              (Essaim de branches filles et de branches liées d'autres dépôts : lancement, relais, fin, fusion des seules branches filles, retrait, état, reprise, plan mixte)
 │   │   │   ├── teacher.md            (Mode professeur, déclencheur dans SKILL.md)
 │   │   │   └── update.md             (Mise à jour du skill : contrôle manuel et proposition ; au démarrage, simple mention dans la ligne d'état)
 │   │   ├── phases/
@@ -45,7 +45,7 @@ forge/
 │   │   │   ├── status.sh             (état au lancement en JSON, lecture seule, appelé par SKILL.md ; peu de processus, Git Bash les paie cher)
 │   │   │   ├── task-files.sh         (fonctions awk communes, chargées par time-aggregate.sh, time-calibrate.sh, status.sh et plan-hook.sh : statut d'une tâche, fichiers prévus, fichiers changés entre deux empreintes)
 │   │   │   ├── task-marks.sh         (fonctions bash communes à time-mark.sh et plan-hook.sh : horloge, empreinte du dossier, ligne de marque)
-│   │   │   ├── swarm-status.sh       (état de l'essaim en JSON : en cours, lançables, en attente, fusion simulée, tâches du parent)
+│   │   │   ├── swarm-status.sh       (état de l'essaim en JSON : unités child et linked en cours, lançables, en attente, fusion simulée des branches filles, projet lié forgé ou non, tâches du parent ; --plan lit un plan rédigé)
 │   │   │   ├── time-aggregate.sh     (mesure d'une branche en JSON : journal du hook + git, lu par la synthèse metrics.json)
 │   │   │   ├── time-calibrate.sh     (ratios du projet et estimation d'un nombre de fichiers, en JSON ; références dans references/estimation.json)
 │   │   │   ├── time-mark.sh          (marques de délégué, de tokens et de fusion dans time-log.jsonl ; marques de tâche à la main, le hook de coche les pose sinon)
@@ -137,3 +137,4 @@ Fichiers générés dans **chaque projet cible** par le skill (pas dans ce dép�
 - MCPs disponibles : claude-in-chrome, datagrip, phpstorm, webstorm (non utilisés par ce dépôt en l'état)
 - Documentation externe : aucune référence externe identifiée dans le dépôt
 **Check pattern:** `bash tests/|tests/\*\.test\.sh`
+**Full check:** `failed=0; for t in tests/*.test.sh; do bash "$t" || failed=1; done; [ $failed -eq 0 ]`

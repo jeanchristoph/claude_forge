@@ -115,11 +115,11 @@ test_reports_local_time_now() {
 
 test_launches_branch_whose_dependencies_are_done() {
   create_child parent-purchasing
-  assert_contains '"launchable":[{"task":"T2","branch":"parent-purchasing","exists":true,"conflict":false,"conflict_files":[]}]' "$(swarm_status)"
+  assert_contains '"launchable":[{"task":"T2","type":"child","branch":"parent-purchasing","exists":true,"conflict":false,"conflict_files":[]}]' "$(swarm_status)"
 }
 
 test_lists_branch_waiting_for_open_dependency() {
-  assert_contains '"waiting":[{"task":"T3","branch":"parent-sales","waiting_for":["parent-purchasing"]}]' "$(swarm_status)"
+  assert_contains '"waiting":[{"task":"T3","type":"child","branch":"parent-sales","waiting_for":["parent-purchasing"]}]' "$(swarm_status)"
 }
 
 test_unblocks_branch_once_dependency_is_done() {
@@ -130,7 +130,7 @@ test_unblocks_branch_once_dependency_is_done() {
 [x]'}"
   local output
   output=$(swarm_status)
-  assert_contains '"launchable":[{"task":"T3","branch":"parent-sales","exists":false' "$output"
+  assert_contains '"launchable":[{"task":"T3","type":"child","branch":"parent-sales","exists":false' "$output"
   assert_contains '"waiting":[]' "$output"
 }
 
@@ -147,7 +147,7 @@ test_reports_branch_checked_out_in_worktree_as_running_with_progress() {
   printf '# Plan\n\n## Tasks\n\n### T1 — a\n[x]\n\n### T2 — b\n[ ]\n\n### T3 — c\n[ ]\n' > "$SANDBOX/wt/.forge/branch/parent-purchasing/plan.md"
   local output
   output=$(swarm_status)
-  assert_contains '"running":[{"task":"T2","branch":"parent-purchasing","worktree":' "$output"
+  assert_contains '"running":[{"task":"T2","type":"child","branch":"parent-purchasing","worktree":' "$output"
   assert_contains '"done":1,"total":3}]' "$output"
   assert_contains '"launchable":[]' "$output"
   assert_contains '"slots":2' "$output"
@@ -313,7 +313,7 @@ test_reads_status_on_status_line_not_on_a_note() {
 **Depends on:** T1
 [ ]
 '
-  assert_contains '"waiting":[{"task":"T2","branch":"parent-a","waiting_for":["T1"]}]' "$(swarm_status)"
+  assert_contains '"waiting":[{"task":"T2","type":"child","branch":"parent-a","waiting_for":["T1"]}]' "$(swarm_status)"
 }
 
 # ── Worktrees et suite d une fusion ───────────────────────────────────────────
@@ -334,7 +334,7 @@ test_computes_next_launch_with_assumed_done_branch() {
   git -C "$WORK" worktree add -q "$SANDBOX/wt" parent-purchasing
   local output
   output=$(swarm_status --assume-done parent-purchasing)
-  assert_contains '"launchable":[{"task":"T3","branch":"parent-sales"' "$output"
+  assert_contains '"launchable":[{"task":"T3","type":"child","branch":"parent-sales"' "$output"
   assert_contains '"running":[]' "$output"
 }
 
@@ -345,6 +345,121 @@ test_rejects_parent_without_git_branch() {
   output=$(swarm_status --branch ghost 2>/dev/null)
   assert_equals "1" "$?"
   assert_equals "" "$output"
+}
+
+# ── Branches liées ────────────────────────────────────────────────────────────
+
+# Dépôt lié à côté du dépôt parent, forgé (.forge/project.md commité sur master) ou non.
+create_linked_repository() {
+  local name=$1 is_forged=$2 directory="$SANDBOX/$1"
+  git init -q "$directory"
+  git -C "$directory" config user.name "Forge Test"
+  git -C "$directory" config user.email "forge@test.local"
+  git -C "$directory" config commit.gpgsign false
+  git -C "$directory" symbolic-ref HEAD refs/heads/master
+  printf 'code\n' > "$directory/code.txt"
+  if [ "$is_forged" = "forged" ]; then mkdir -p "$directory/.forge"; printf '# Project\n' > "$directory/.forge/project.md"; fi
+  git -C "$directory" add -A
+  git -C "$directory" commit -q -m "initial"
+}
+
+# Tâche liée au format du plan : numéro, projet, branche, dépendances, ligne de statut puis lignes suivantes.
+linked_task() {
+  printf '### %s — Montée de version %s\n**Files:** `composer.json`\n**Linked branch:** ../%s @ %s\n**Depends on:** %s\n%s\n\n' "$1" "$2" "$2" "$3" "$4" "$5"
+}
+
+# Tâches passées une par argument, séparées par une ligne vide.
+write_linked_plan() {
+  local plan='# Plan — parent
+
+## Tasks' task
+  for task in "$@"; do plan+=$'\n\n'"$task"; done
+  write_plan "$plan"$'\n\n## Summary\n'
+}
+
+test_launches_linked_tasks_of_different_repositories_together() {
+  create_linked_repository api forged
+  create_linked_repository web forged
+  write_linked_plan "$(linked_task T1 api upgrade none '[ ]')" "$(linked_task T2 web upgrade none '[ ]')"
+  local output
+  output=$(swarm_status)
+  assert_contains '"launchable":[{"task":"T1","type":"linked","branch":"upgrade","linked":"../api","tasks":["T1"],"forged":true},{"task":"T2","type":"linked","branch":"upgrade","linked":"../web","tasks":["T2"],"forged":true}]' "$output"
+  assert_contains '"open_branches":2' "$output"
+  assert_contains '"ordinary":[]' "$output"
+}
+
+test_groups_tasks_sharing_a_linked_branch_into_one_unit() {
+  create_linked_repository api forged
+  write_linked_plan "$(linked_task T1 api upgrade none '[ ]')" "$(linked_task T2 api upgrade T1 '[ ]')"
+  local output
+  output=$(swarm_status)
+  assert_contains '"launchable":[{"task":"T1","type":"linked","branch":"upgrade","linked":"../api","tasks":["T1","T2"],"forged":true}]' "$output"
+  assert_contains '"open_branches":1' "$output"
+}
+
+test_linked_unit_waits_for_its_open_dependencies() {
+  create_linked_repository api forged
+  write_linked_plan "$(printf '### T1 — Socle\n**Depends on:** none\n[ ]\n\n')" "$(linked_task T2 api upgrade T1 '[ ]')"
+  assert_contains '"waiting":[{"task":"T2","type":"linked","branch":"upgrade","linked":"../api","tasks":["T2"],"waiting_for":["T1"]}]' "$(swarm_status)"
+}
+
+test_reports_delegated_linked_unit_as_running() {
+  create_linked_repository api forged
+  create_linked_repository web forged
+  write_linked_plan "$(linked_task T1 api upgrade none '[ ]
+delegated to ../api @ upgrade')" "$(linked_task T2 web upgrade none '[ ]')"
+  local output
+  output=$(swarm_status)
+  assert_contains '"running":[{"task":"T1","type":"linked","branch":"upgrade","linked":"../api","tasks":["T1"]}]' "$output"
+  assert_contains '"launchable":[{"task":"T2"' "$output"
+  assert_contains '"slots":2' "$output"
+}
+
+test_ignores_delegated_to_written_in_a_description() {
+  create_linked_repository api forged
+  write_linked_plan "$(linked_task T1 api upgrade none '[ ]' | sed 's/^\*\*Files:\*\*.*/**Description:** relire les notes delegated to du plan/')"
+  assert_contains '"launchable":[{"task":"T1","type":"linked"' "$(swarm_status)"
+}
+
+test_mixes_child_branches_and_linked_units_in_plan_order() {
+  create_linked_repository api forged
+  write_linked_plan "$(linked_task T1 api upgrade none '[ ]')" "$(printf '### T2 — Branch `parent-a` — a\n**Depends on:** none\n[ ]\n\n')"
+  local output
+  output=$(swarm_status)
+  assert_contains '"launchable":[{"task":"T1","type":"linked"' "$output"
+  assert_contains '{"task":"T2","type":"child","branch":"parent-a","exists":false' "$output"
+  assert_contains '"open_branches":2' "$output"
+}
+
+test_launches_one_unit_at_a_time_on_an_unforged_project() {
+  create_linked_repository api unforged
+  write_linked_plan "$(linked_task T1 api upgrade-php none '[ ]')" "$(linked_task T2 api upgrade-symfony none '[ ]')"
+  local output
+  output=$(swarm_status)
+  assert_contains '"launchable":[{"task":"T1","type":"linked","branch":"upgrade-php","linked":"../api","tasks":["T1"],"forged":false}]' "$output"
+  assert_contains '"waiting":[{"task":"T2","type":"linked","branch":"upgrade-symfony","linked":"../api","tasks":["T2"],"waiting_for":["upgrade-php"]}]' "$output"
+}
+
+test_unforged_project_stays_held_by_its_delegated_unit() {
+  create_linked_repository api unforged
+  write_linked_plan "$(linked_task T1 api upgrade-php none '[ ]')" "$(linked_task T2 api upgrade-symfony none '[ ]
+delegated to ../api @ upgrade-symfony')"
+  local output
+  output=$(swarm_status)
+  assert_contains '"waiting":[{"task":"T1","type":"linked","branch":"upgrade-php","linked":"../api","tasks":["T1"],"waiting_for":["upgrade-symfony"]}]' "$output"
+  assert_contains '"launchable":[]' "$output"
+}
+
+test_reports_missing_linked_project_as_invalid() {
+  write_linked_plan "$(linked_task T1 ghost upgrade none '[ ]')"
+  assert_contains '"invalid":[{"task":"T1","branch":"upgrade","dependency":"../ghost","reason":"linked_missing"}]' "$(swarm_status)"
+}
+
+test_reads_draft_plan_given_by_plan_option() {
+  create_linked_repository api forged
+  local draft="$SANDBOX/draft.md"
+  printf '# Plan — parent\n\n## Tasks\n\n%s\n' "$(linked_task T1 api upgrade none '[ ]')" > "$draft"
+  assert_contains '"launchable":[{"task":"T1","type":"linked"' "$(swarm_status --plan "$draft")"
 }
 
 # ── Usage ─────────────────────────────────────────────────────────────────────
@@ -398,6 +513,16 @@ run_test test_rejects_branch_name_refused_by_git "rejette un nom de branche refu
 run_test test_reads_status_on_status_line_not_on_a_note "lit le statut sur sa ligne, jamais sur une note"
 run_test test_reports_worktree_removed_by_hand_as_stale "signale périmé un worktree supprimé à la main"
 run_test test_computes_next_launch_with_assumed_done_branch "calcule la suite d une fusion avec une branche comptée faite"
+run_test test_launches_linked_tasks_of_different_repositories_together "rend lançables ensemble des tâches liées de dépôts différents"
+run_test test_groups_tasks_sharing_a_linked_branch_into_one_unit "réunit en une unité les tâches d une même branche liée"
+run_test test_linked_unit_waits_for_its_open_dependencies "met en attente une unité liée dont une dépendance est ouverte"
+run_test test_reports_delegated_linked_unit_as_running "rend en cours une unité liée déjà déléguée"
+run_test test_ignores_delegated_to_written_in_a_description "ignore « delegated to » écrit dans une description"
+run_test test_mixes_child_branches_and_linked_units_in_plan_order "mêle branches filles et unités liées dans l ordre du plan"
+run_test test_launches_one_unit_at_a_time_on_an_unforged_project "ne lance qu une unité à la fois sur un projet non forgé"
+run_test test_unforged_project_stays_held_by_its_delegated_unit "garde un projet non forgé à l unité déjà déléguée"
+run_test test_reports_missing_linked_project_as_invalid "signale invalide un projet lié introuvable"
+run_test test_reads_draft_plan_given_by_plan_option "lit un plan rédigé passé par --plan"
 run_test test_rejects_parent_without_git_branch "refuse une parente sans branche git"
 run_test test_rejects_branch_without_plan "refuse une branche sans plan"
 run_test test_rejects_unknown_argument "refuse un argument inconnu"

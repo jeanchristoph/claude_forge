@@ -125,6 +125,55 @@ test_reports_absent_without_worktree_for_branch() {
   assert_equals '{"worktree":null,"status":"absent","reason":null}' "$output"
 }
 
+# ── Branches cibles de la livraison (--merged-into) ───────────────────────────
+
+merge_branch_into_dev() {
+  git -C "$LINKED" branch dev master
+  git -C "$LINKED" worktree add -q "$SANDBOX/dev" dev 2>/dev/null
+  git -C "$SANDBOX/dev" -c user.email=t@e.com -c user.name=t merge -q --no-ff -m "merge into dev" "$LINKED_BRANCH"
+  git -C "$LINKED" worktree remove "$SANDBOX/dev"
+}
+
+test_removes_worktree_merged_only_into_a_target_branch() {
+  local output
+  merge_branch_into_dev
+  output=$(bash "$CLEANUP_SCRIPT" --linked "$LINKED" --branch "$LINKED_BRANCH" --merged-into dev)
+  assert_equals removed "$(field status "$output")"
+  [ -d "$WORKTREE" ] && { echo "    worktree still present"; exit 1; }
+  return 0
+}
+
+test_keeps_worktree_merged_into_dev_without_merged_into() {
+  local output
+  merge_branch_into_dev
+  output=$(cleanup)
+  assert_equals "not merged" "$(field reason "$output")"
+  assert_worktree_present
+}
+
+test_removes_worktree_merged_into_target_only_on_remote() {
+  local remote="$SANDBOX/remote.git" output
+  git init -q --bare "$remote"
+  git -C "$LINKED" remote add origin "$remote"
+  git -C "$LINKED" branch dev master
+  git -C "$LINKED" push -q origin master dev "$LINKED_BRANCH" 2>/dev/null
+  git clone -q "$remote" "$SANDBOX/elsewhere" 2>/dev/null
+  git -C "$SANDBOX/elsewhere" checkout -q dev
+  git -C "$SANDBOX/elsewhere" -c user.email=t@e.com -c user.name=t merge -q --no-ff -m "merge into dev" "origin/$LINKED_BRANCH"
+  git -C "$SANDBOX/elsewhere" push -q origin dev 2>/dev/null
+  output=$(bash "$CLEANUP_SCRIPT" --linked "$LINKED" --branch "$LINKED_BRANCH" --merged-into dev)
+  assert_equals removed "$(field status "$output")"
+}
+
+test_keeps_uncommitted_worktree_even_merged_into_target() {
+  local output
+  merge_branch_into_dev
+  printf 'draft\n' > "$WORKTREE/draft.md"
+  output=$(bash "$CLEANUP_SCRIPT" --linked "$LINKED" --branch "$LINKED_BRANCH" --merged-into dev)
+  assert_equals "uncommitted changes" "$(field reason "$output")"
+  assert_worktree_present
+}
+
 # ── Arguments ─────────────────────────────────────────────────────────────────
 
 test_rejects_missing_branch() {
@@ -150,6 +199,10 @@ run_test test_keeps_unmerged_worktree "garde le worktree d'une branche non fusio
 run_test test_keeps_worktree_with_uncommitted_changes "garde un worktree aux modifications non commitées"
 run_test test_never_removes_main_working_tree "ne retire jamais le dossier principal du projet lié"
 run_test test_reports_absent_without_worktree_for_branch "rend absent quand aucun worktree n'extrait la branche"
+run_test test_removes_worktree_merged_only_into_a_target_branch "retire le worktree fusionné dans une branche cible passée par --merged-into"
+run_test test_keeps_worktree_merged_into_dev_without_merged_into "garde un worktree fusionné dans dev sans --merged-into"
+run_test test_removes_worktree_merged_into_target_only_on_remote "retire le worktree fusionné dans la cible sur origin seulement"
+run_test test_keeps_uncommitted_worktree_even_merged_into_target "garde un worktree non commité même fusionné dans la cible"
 run_test test_rejects_missing_branch "refuse un appel sans branche"
 
 echo "$PASSED passed, $FAILED failed"

@@ -1,8 +1,8 @@
 # Essaim
 
-**Vocabulaire :** `<PARENT_BRANCH>` = BRANCH, branche qui porte le plan de branches · `<X>` = branche fille, tâche `### Tn — Branch <X>` de PLAN · `<WORKTREE>` = `<dossier-du-dépôt>.worktrees/<X>`, chaque `/` gardé comme sous-dossier ; écrit dans SWARM relatif à ROOT (`../forge.worktrees/<X>`) — « Délégation — projet lié » de `commands/delegation.md`, invariant des chemins · N = nombre de délégués en cours, `**N:**` de SWARM, 3 par défaut · SWARM = `.forge/branch/<PARENT_BRANCH>/swarm.md` · TIME_LOG = `.forge/branch/<PARENT_BRANCH>/time-log.jsonl`.
+**Vocabulaire :** `<PARENT_BRANCH>` = BRANCH, branche qui porte le plan de branches · *unité* = délégué de l'essaim, `type` du JSON de `swarm-status.sh` : `child` = branche fille `<X>`, même dépôt ; `linked` = branche liée, tâches ouvertes au même `**Linked branch:** <LINKED_REL> @ <LINKED_BRANCH>`, autre dépôt (« Délégation — projet lié » de `commands/delegation.md`) · `<X>` = branche fille, tâche `### Tn — Branch <X>` de PLAN · `<WORKTREE>` = `<dossier-du-dépôt>.worktrees/<X>`, chaque `/` gardé comme sous-dossier ; écrit dans SWARM relatif à ROOT (`../forge.worktrees/<X>`) — « Délégation — projet lié » de `commands/delegation.md`, invariant des chemins · N = nombre de délégués en cours, `**N:**` de SWARM, 3 par défaut · SWARM = `.forge/branch/<PARENT_BRANCH>/swarm.md` · TIME_LOG = `.forge/branch/<PARENT_BRANCH>/time-log.jsonl`.
 
-**INVARIANT :** le parent seul fusionne, dans `<PARENT_BRANCH>` seulement — jamais de push, jamais de fusion vers la branche par défaut : `<PARENT_BRANCH>` est livrée par la Livraison, sur décision de l'utilisateur. Le dépôt principal reste extrait sur `<PARENT_BRANCH>`.
+**INVARIANT :** unité `linked` → jamais fusionnée par le parent : sa branche est livrée par la « Livraison relayée » de `commands/engrave.md`. Unité `child` → le parent seul fusionne, dans `<PARENT_BRANCH>` seulement — jamais de push, jamais de fusion vers la branche par défaut : `<PARENT_BRANCH>` est livrée par la Livraison, sur décision de l'utilisateur. Le dépôt principal reste extrait sur `<PARENT_BRANCH>`.
 
 ⚠️ N ne change que sur demande explicite de l'utilisateur (« passe à 2 ») : écrit dans SWARM, jamais demandé.
 
@@ -18,7 +18,8 @@
    - `invalid` → une ligne par tâche : "T<n> can never start: `<dependency>` <unknown | blocked | dropped | in a dependency cycle | is not a valid branch name>." — correction du plan proposée (« Règles de mise à jour du plan » de `phases/p5-resume.md`) ;
    - `blocked` → "`<X>` is blocked." ;
    - `stale` → "`<X>`: worktree `<worktree>` removed by hand." et proposer `git worktree prune`, exécuté seulement sur accord.
-3. Retenir, dans l'ordre du plan, les `slots` premières branches de `launchable` sans conflit. Aucune → "Nothing to launch." puis « Plan mixte — travail du parent ».
+3. Retenir, dans l'ordre du plan, les `slots` premières unités de `launchable` sans conflit, `child` et `linked` confondues. Aucune → "Nothing to launch." puis « Plan mixte — travail du parent ».
+   - Unité `linked` → étapes 4 et 8 de « Délégation — projet lié » (`commands/delegation.md`) : worktree, mandat, log, marque, prompt `SCOPE: linked` ; `forged` faux → « Projet lié non forgé ». Sans la confirmation `Delegate` de son étape 6 : le choix de l'essaim vaut accord. Les étapes 4 et 5 ci-dessous ne valent que pour les unités `child`.
 4. Commande d'installation : ligne `**Install command:**` de `## Tools & access` de `project.md`. Absente et manifeste de dépendances présent (`package.json`, `composer.json`, `pyproject.toml`…) → la demander une fois en texte libre, l'écrire dans `project.md`. Aucun manifeste → aucune installation. Port de base : ligne `**Dev port:**` du même bloc, absente → aucun port attribué.
 5. Pour chaque branche retenue, dans l'ordre — premier échec git → erreur affichée telle quelle, branche écartée, suivante :
    - `exists` faux → `git branch <X> <PARENT_BRANCH>` ;
@@ -26,7 +27,7 @@
    - `<WORKTREE>/.forge/branch/<X>/brief.md` absent → l'écrire : `## Objective` = `**Brief:**` et `**Description:**` de la tâche, `## Scope & rules` = celui du brief de `<PARENT_BRANCH>` ; `log.md` vide à côté ;
    - commande d'installation exécutée dans `<WORKTREE>`, fichier de verrouillage respecté, aucune mise à jour de version ;
    - port de la branche = plus petit port libre de port de base + 1 à port de base + N, libre = absent de la colonne `Port` de SWARM ; sur `127.0.0.1` seulement, gardé jusqu'au retrait du worktree.
-6. Afficher le tableau de lancement : une ligne par action, colonnes numéro, branche, action, détail, en-têtes dans la langue de l'utilisateur. Actions — aucune autre : `branch`, `worktree`, `merge <PARENT_BRANCH>`, `brief`, `install`, `agent`.
+6. Afficher le tableau de lancement : une ligne par action, colonnes numéro, branche, action, détail, en-têtes dans la langue de l'utilisateur. Actions — aucune autre : `branch`, `worktree`, `merge <PARENT_BRANCH>`, `brief`, `install`, `agent` ; unité `linked`, branche affichée `<LINKED_REL> @ <LINKED_BRANCH>` : `worktree`, `brief` (mandat), `log`, `mark`, `forge` (projet non forgé), `agent`.
 7. Lancer tous les délégués dans le même tour, en tâche de fond (« Prompt du délégué »). Pour chacun, « Mesure d'un délégué » de `commands/delegation.md` ; son identifiant va dans la colonne `Agent` de SWARM.
 8. Réécrire SWARM (« Fichier d'état — `swarm.md` »), entrée LOG : `Swarm launched: <X>, <Y> ; waiting: <W> (<V>)`.
 9. Entrer dans la « Boucle de relais de l'essaim », et exécuter en parallèle le « Plan mixte — travail du parent ».
@@ -36,7 +37,7 @@
 
 ### Prompt du délégué
 
-Un sous-agent, type général, lancé en tâche de fond. Prompt figé — rien d'autre n'est transmis, `RESUME:` seulement à la reprise :
+Unité `linked` → « Prompt du sous-agent » de « Délégation — projet lié » (`commands/delegation.md`), tel quel. Unité `child` → un sous-agent, type général, lancé en tâche de fond. Prompt figé — rien d'autre n'est transmis, `RESUME:` seulement à la reprise :
 
 ```
 FORGE_DELEGATED
@@ -73,7 +74,8 @@ Boucle de relais de `commands/delegation.md`, avec ces règles en plus :
   2. `git -C "<WORKTREE>" status --porcelain` vide → « Retrait d'un worktree de branche fille », puis `git branch -d <X>`. Sinon → fichiers affichés, rien retiré ni supprimé sans accord.
   3. PLAN : la tâche-branche réécrite en tâche ordinaire — titre sans `Branch <X>`, `**Files:**` repris du plan fils, ses tâches dans `**Description:**` ; « Règles de mise à jour du plan » de `phases/p5-resume.md`, question `Plan`. La tâche est prise par le parent (« Plan mixte — travail du parent »). Ligne retirée de SWARM.
 - Chaque choix transmis → ligne dans `## Choices sent to delegates` de SWARM.
-- `FORGE_DONE` → « Fin d'une branche fille ».
+- `FORGE_DONE` d'une unité `child` → « Fin d'une branche fille ».
+- `FORGE_DONE` d'une unité `linked` → « Retour — application de `FORGE_DONE` » de `commands/delegation.md`, aucune fusion ; ligne retirée de SWARM ; place libérée → « Délégation — essaim de branches filles », étape 1, sans question : le choix de l'essaim vaut pour toutes ses unités.
 
 ⚠️ Relais avant tout : la notification d'un délégué (`FORGE_QUESTION`, `FORGE_DONE`) arrive entre deux appels d'outils, au milieu d'une tâche du parent comprise. Notification reçue → terminer l'action en cours, relayer aussitôt, puis reprendre la tâche du parent là où elle s'est arrêtée.
 
@@ -136,11 +138,12 @@ Réécrit par le parent à chaque événement — lancement, question, réponse,
 **Parent task:** T<m> — [titre], ou none
 **Parent mode:** chain, pick, ou none
 
-| Branch | State | Worktree | Agent | Port | Since | Last event |
-|---|---|---|---|---|---|---|
-| <X> | running · T7/19 | ../<dossier-du-dépôt>.worktrees/<X> | <identifiant du délégué> | 3001 | [now] | plan validated (chain) |
-| <Y> | waiting for merge | ../<dossier-du-dépôt>.worktrees/<Y> | <identifiant du délégué> | 3002 | [now] | FORGE_DONE |
-| <Z> | waits for <X> | — | — | — | — | — |
+| Branch | Type | State | Worktree | Agent | Port | Since | Last event |
+|---|---|---|---|---|---|---|---|
+| <X> | child | running · T7/19 | ../<dossier-du-dépôt>.worktrees/<X> | <identifiant du délégué> | 3001 | [now] | plan validated (chain) |
+| <Y> | child | waiting for merge | ../<dossier-du-dépôt>.worktrees/<Y> | <identifiant du délégué> | 3002 | [now] | FORGE_DONE |
+| <Z> | child | waits for <X> | — | — | — | — | — |
+| <LINKED_REL> @ <LINKED_BRANCH> | linked | running | <LINKED_REL>.worktrees/<LINKED_BRANCH> | <identifiant du délégué> | none | [now] | mandate written |
 
 ## Choices sent to delegates
 - <X> : [choix] ([date de now])
@@ -151,7 +154,7 @@ Réécrit par le parent à chaque événement — lancement, question, réponse,
 
 Colonne `Since` et date d'un choix → valeur `now` du JSON de `swarm-status.sh`, exécuté dans le tour avant la réécriture de SWARM (« Entrée LOG » de `SKILL.md`). `Since` change quand l'état de la branche change, gardé sinon.
 
-Colonne `Agent` : identifiant du délégué en cours, remplacé à chaque relance ; `Port` : `none` sans port de base.
+Colonne `Agent` : identifiant du délégué en cours, remplacé à chaque relance ; `Port` : `none` sans port de base, toujours `none` pour une unité `linked`.
 
 ---
 
@@ -168,7 +171,7 @@ Colonne `Agent` : identifiant du délégué en cours, remplacé à chaque relanc
    - `Relaunch <X>, <Y>` → "Their delegates are stopped: start a new delegate on each branch."
    - `Still running` → "The delegates still work in another session: relaunch nothing." — STOP.
    - `Later` → "Relaunch nothing now." — STOP.
-4. Sur `Relaunch` : un nouveau délégué par branche, ligne `RESUME:` = « a previous delegated run was stopped; plan <validated with chaining | validated | not written>. Run `git status` first, check every uncommitted or partial file (complete, project checks green), finish or redo it, then continue. » suivie des choix et notes de coordination de SWARM. « Mesure d'un délégué » de `commands/delegation.md`.
+4. Sur `Relaunch` : unité `linked` → nouveau délégué au prompt de « Délégation — projet lié », sans `RESUME:` : il reprend par la phase de reprise de son propre plan. Unité `child` → un nouveau délégué par branche, ligne `RESUME:` = « a previous delegated run was stopped; plan <validated with chaining | validated | not written>. Run `git status` first, check every uncommitted or partial file (complete, project checks green), finish or redo it, then continue. » suivie des choix et notes de coordination de SWARM. « Mesure d'un délégué » de `commands/delegation.md`.
    Même port (colonne `Port`, ligne `PORT:` du prompt), nouvel identifiant dans la colonne `Agent`.
 5. Entrée LOG parent : `Delegates relaunched after interruption: <X>, <Y>`.
 

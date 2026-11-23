@@ -34,6 +34,7 @@ Si le dossier est vide (rien en dehors des éléments ignorés) :
 ### Vérifications
 - Scripts de contrôle du projet : `scripts` de `package.json` / `composer.json`, cibles d'un `Makefile`, configuration de tests (`phpunit.xml`, `vitest.config.*`, `pytest.ini`), suites `tests/*`
 - En tirer `**Check pattern:**` : expression régulière étendue qui reconnaît chaque commande de vérification (types, lint, architecture, tests) n'importe où dans la ligne de commande — jamais ancrée par `^` : une vérification arrive souvent après un `cd … &&` ou dans une boucle —, lue par le hook de mesure pour compter le temps de vérification. Aucune commande trouvée → ligne omise.
+- En tirer `**Full check:**` : commande unique qui lance la suite complète du projet (tous les tests, lint et types compris), exécutée à la Livraison seulement (« Vérification complète » de `commands/engrave.md`). Aucune commande trouvée → ligne omise, demandée à la première Livraison.
 
 ## Format de sortie
 
@@ -68,9 +69,10 @@ Si le dossier est vide (rien en dehors des éléments ignorés) :
 - Available MCPs: ...
 - External documentation: ...
 **Check pattern:** `(npm run (lint|test|typecheck)|bash tests/)`
+**Full check:** `npm run lint && npm test`
 ```
 
-⚠️ `**Check pattern:**` : une seule ligne, motif entre accents graves, jamais d'accent grave dans le motif.
+⚠️ `**Check pattern:**` et `**Full check:**` : une seule ligne chacune, valeur entre accents graves, jamais d'accent grave dans la valeur.
 
 ## Après première génération — `project.md` absent
 - Écrire `.forge/project.md` avec le Write tool, sans présentation ni question.
@@ -92,7 +94,7 @@ Chercher `time-hook.sh` dans `~/.claude/settings.json` avec le Grep tool. Absent
 Ne pas réécrire intégralement — modifier uniquement ce qui a changé :
 - Lire l'existant `@.forge/project.md`
 - Lire `.forge/coding-standards.md`
-- Identifier les sections obsolètes ou incomplètes — ligne `**Check pattern:**` absente comprise (section « Vérifications » ci-dessus)
+- Identifier les sections obsolètes ou incomplètes — lignes `**Check pattern:**` et `**Full check:**` absentes comprises (section « Vérifications » ci-dessus)
 - Proposer les modifications à l'humain avant d'écrire
 - Conserver ce qui est toujours valide tel quel
 - Écrire `.forge/project.md` après validation explicite.

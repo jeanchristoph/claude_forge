@@ -66,6 +66,16 @@ test_keeps_crlf_line_endings() {
   assert_equals $'node_modules/\r\n###> claude/forge ###\r\n'"$INPUT_RULE"$'\r\n'"$TIME_LOG_RULE"$'\r\n###< claude/forge ###\r\nx' "$(cat "$WORK/.gitignore"; printf x)"
 }
 
+test_dry_run_reports_missing_rules_without_writing() {
+  assert_equals '{"gitignore":"missing"}' "$(bash "$CHECKS_SCRIPT" --root "$WORK" --dry-run)"
+  [ ! -e "$WORK/.gitignore" ] || { echo "    .gitignore written by --dry-run"; exit 1; }
+}
+
+test_dry_run_reports_unchanged_when_rules_exist() {
+  checks > /dev/null
+  assert_equals '{"gitignore":"unchanged"}' "$(bash "$CHECKS_SCRIPT" --root "$WORK" --dry-run)"
+}
+
 test_makes_branch_input_ignored_by_git() {
   checks > /dev/null
   git -C "$WORK" check-ignore -q .forge/branch/feature/input/export.csv || { echo "    input/ not ignored"; exit 1; }
@@ -155,6 +165,8 @@ run_test test_skips_on_main "n'écrit rien sur main"
 run_test test_skips_without_forge_folder "n'écrit rien sans dossier .forge/"
 run_test test_skips_outside_git "n'écrit rien hors dépôt git"
 run_test test_detached_launch_returns_at_once_and_writes_later "lancé détaché, rend la main et écrit ensuite"
+run_test test_dry_run_reports_missing_rules_without_writing "--dry-run signale les règles manquantes sans rien écrire"
+run_test test_dry_run_reports_unchanged_when_rules_exist "--dry-run rend unchanged quand les règles sont là"
 run_test test_rejects_unknown_argument "refuse un argument inconnu"
 
 echo "$PASSED passed, $FAILED failed"

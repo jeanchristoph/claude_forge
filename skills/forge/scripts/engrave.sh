@@ -6,6 +6,10 @@
 #   --model : run écrit d'abord la synthèse de mesure (metrics.sh, .forge/branch/<BRANCH>/metrics.json) et la ligne
 #   **Actual:** de l'en-tête du plan, qui partent avec le commit ; son compte rendu est rendu sous « metrics » — sans
 #   dossier de branche forge, rien n'est écrit
+#   ignore / untrack : actions présentes seulement quand elles ont à faire, avant add — règles .gitignore forge
+#   manquantes (checks.sh), puis journal de mesure et fichiers input/ encore suivis retirés de l'index (git rm --cached,
+#   fichiers gardés sur disque) : ces fichiers locaux ne partent jamais avec un commit, quelle que soit la branche de
+#   démarrage de /forge
 # Sortie : 0 succès · 1 usage ou garde · 2 échec git (conflit, push rejeté) — le JSON de run est écrit dans les deux cas
 
 set -u
@@ -26,6 +30,10 @@ readonly STATUS_SKIPPED="skipped"
 readonly STATUS_DONE="done"
 readonly STATUS_FAILED="failed"
 readonly STATUS_NOT_RUN="not_run"
+readonly CHECKS_SCRIPT="$(dirname "${BASH_SOURCE[0]}")/checks.sh"
+readonly GITIGNORE_FILE=".gitignore"
+# Fichiers locaux de forge, jamais versionnés : journal de mesure, fichiers apportés à une branche.
+readonly LOCAL_FILE_PATHSPECS=(':(glob).forge/branch/**/time-log.jsonl' ':(glob).forge/branch/*/input/**')
 
 MODE=""
 BRANCH=""
@@ -154,9 +162,24 @@ add_target_actions() {
   add_action push "$1" "$(push_remote "$1")" ""
 }
 
+has_missing_ignore_rules() {
+  json_string_field gitignore "$(bash "$CHECKS_SCRIPT" --root "$ROOT" --dry-run 2>/dev/null)"
+  [ "$REPLY" = "missing" ]
+}
+
+# Fichiers locaux encore suivis par git, séparés par « , ».
+tracked_local_files() {
+  git_in_root ls-files -- "${LOCAL_FILE_PATHSPECS[@]}" | paste -sd ',' - | sed 's/,/, /g'
+}
+
+# ignore / untrack ajoutées seulement quand elles ont à faire : une livraison saine garde sa séquence.
+# Le commit n'est sauté que si l'arbre est propre et qu'aucune des deux n'est prévue.
 build_actions() {
-  local commit_skip=""
-  is_tree_clean && commit_skip=$REASON_NOTHING_TO_COMMIT
+  local commit_skip="" tracked has_local_fix=""
+  if has_missing_ignore_rules; then add_action ignore "$BRANCH" "$GITIGNORE_FILE" ""; has_local_fix=1; fi
+  tracked=$(tracked_local_files)
+  if [ -n "$tracked" ]; then add_action untrack "$BRANCH" "$tracked" ""; has_local_fix=1; fi
+  is_tree_clean && [ -z "$has_local_fix" ] && commit_skip=$REASON_NOTHING_TO_COMMIT
   add_action add "$BRANCH" "" "$commit_skip"
   add_action commit "$BRANCH" "$MESSAGE" "$commit_skip"
   add_action push "$BRANCH" "$(push_remote "$BRANCH")" ""
@@ -170,6 +193,16 @@ build_actions() {
 }
 
 # ── Opérations git — stdout de git renvoyé sur stderr : stdout porte le JSON seul ──
+
+run_ignore() {
+  bash "$CHECKS_SCRIPT" --root "$ROOT" > /dev/null || return 1
+  RESULT_DETAIL=$GITIGNORE_FILE
+}
+
+run_untrack() {
+  RESULT_DETAIL=$(tracked_local_files)
+  git_in_root rm -q -r --cached --ignore-unmatch -- "${LOCAL_FILE_PATHSPECS[@]}" >&2
+}
 
 run_add() {
   git_in_root add -A >&2

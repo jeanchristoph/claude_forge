@@ -16,7 +16,7 @@
    Mode délégué `SCOPE: linked` (BRIEF contient `## Origin`) → aucune question : terminer par `FORGE_DONE` (section « Mode délégué » de `SKILL.md`). STOP.
    Mode délégué `SCOPE: branch` → la même question en `FORGE_QUESTION`, `options: none`, `content: none`.
 
-8. **Plan de branches** (au moins une tâche `### Tn — Branch <x>` ouverte) → aucune question `Mode` : exécuter `bash <SKILL_DIR>/scripts/swarm-status.sh --root <ROOT> --branch <BRANCH>`, afficher l'essaim — en cours (avec `done/total`), lançables, en attente (dépendance nommée), tâches du parent —, puis la première ligne qui s'applique :
+8. **Plan de branches** (au moins une tâche `### Tn — Branch <x>` ou `**Linked branch:**` ouverte — unités `child` et `linked` de `commands/swarm.md`) → aucune question `Mode` ; jamais de tâche liée enchaînée en série quand une place est libre : exécuter `bash <SKILL_DIR>/scripts/swarm-status.sh --root <ROOT> --branch <BRANCH>`, afficher l'essaim — en cours (avec `done/total`), lançables, en attente (dépendance nommée), tâches du parent —, puis la première ligne qui s'applique :
    - SWARM porte des branches `running` ou `waiting for merge` dont le délégué n'a pas été lancé dans cette conversation → « Reprise de l'essaim » (`commands/swarm.md`), qui pose la question `Resume`.
    - Branches lançables sans conflit → « Relance de l'essaim » ci-dessous.
    - Tâches ordinaires prenables (`ordinary` de `swarm-status.sh`, `waiting_for` vide) → étape 9, limitée à ces tâches ; `**Parent mode:**` de SWARM renseigné → aucune question `Mode`, mode repris (« Plan mixte — travail du parent » de `commands/swarm.md`).
@@ -72,6 +72,19 @@
 
 **Tâche L/XL** — avant de démarrer, décomposer en micro-étapes et écrire `plan.md` :
 `[ ] T2.1 — ...` · `[ ] T2.2 — ...`
+
+---
+
+## Tests d'une tâche
+
+**Déclencheur :** tâche du plan terminée, avant sa coche — dans tous les modes, enchaîné, tâche choisie ou délégué.
+
+**Réaction :**
+- Lancer les seuls tests qui couvrent les fichiers modifiés par la tâche : test du même nom que le fichier, puis tests des fichiers qui l'appellent (Grep de son nom).
+- Jamais la suite complète du projet pendant le développement : elle tourne une fois, à la Livraison (« Vérification complète » de `commands/engrave.md`).
+- Test rouge → corriger avant la coche ; impossible → `[!]` avec la raison.
+
+⚠️ Fichier modifié sans test qui le couvre → le signaler dans la note de la tâche, jamais la suite complète à la place.
 
 ---
 
@@ -209,6 +222,7 @@ option 1: [Valider et enchaîner] — [Ajoute T[n] au plan et l'exécute, sans a
 option 2: [Valider] — [Ajoute T[n] au plan, puis demande comment exécuter les tâches.]
 option 3: [Annuler] — [Rien n'entre au plan.]
           Tâche-branche formulée → option en tête : [Valider et lancer l'essaim] — [Ajoute T[n] au plan et lance sa branche fille.]
+          Tâche liée formulée et place libre dans l'essaim (`slots` de `swarm-status.sh`) → même option en tête : [Valider et lancer l'essaim] — [Ajoute T[n] au plan et lance son délégué en parallèle des autres.]
 ```
 
 ---
@@ -220,7 +234,7 @@ Lire et exécuter intégralement le fichier de la première commande dont le dé
 ### Essaim → `commands/swarm.md`, section du même nom que le déclencheur
 
 **Déclencheur :**
-- demande de lancer, relancer ou reprendre des branches filles du plan (« lance l'essaim », « lance les branches », « relance T3 ») → « Délégation — essaim de branches filles » ;
+- demande de lancer, relancer ou reprendre des branches filles du plan (« lance l'essaim », « lance les branches », « relance T3 »), ou de déléguer plusieurs tâches vers des projets liés ou des branches liées différents (« délègue T3, T5 et T7 ») → « Délégation — essaim de branches filles » ;
 - `FORGE_QUESTION` ou `FORGE_DONE` d'un délégué lancé par l'essaim → « Boucle de relais de l'essaim » ;
 - étape 8 de « Actions », branches `running` ou `waiting for merge` dont le délégué n'a pas été lancé dans cette conversation → « Reprise de l'essaim » ;
 - réponse `Launch` à la question « Relance de l'essaim » ci-dessous → « Délégation — essaim de branches filles ».
@@ -230,7 +244,7 @@ Lire et exécuter intégralement le fichier de la première commande dont le dé
 **Déclencheur :** étape 8 de « Actions », branches lançables sans conflit dans le JSON de `swarm-status.sh` (`slots` = places libres, N délégués au plus, `**N:**` de `swarm.md`).
 
 **Réaction :** poser le choix avec `AskUserQuestion` — `header` : `Swarm` :
-- `Launch <X>, <Y>` → "Launch these branches in parallel." — les `slots` premières lançables, dans l'ordre du plan ; « Délégation — essaim de branches filles » de `commands/swarm.md`.
+- `Launch <X>, <Y>` → "Launch these delegates in parallel." — unités `child` et `linked`, les `slots` premières lançables, dans l'ordre du plan ; « Délégation — essaim de branches filles » de `commands/swarm.md`.
 - `Work on parent tasks` → "Leave the swarm as is and take the parent's own tasks." — seulement si des tâches ordinaires sont prenables ; étape 9, limitée à ces tâches.
 - `Later` → "Launch nothing now." — STOP.
 
@@ -253,7 +267,7 @@ Lire et exécuter intégralement le fichier de la première commande dont le dé
 
 ### Délégation — projet lié → `commands/delegation.md`, section du même nom
 
-**Déclencheur :** une demande vise un dossier hors de ROOT — chemin cité explicitement ou projet nommé sans ambiguïté — avec ou sans tâches du plan citées (ex: "fais T3 et T5 dans `../autre-projet`").
+**Déclencheur :** une demande vise un dossier hors de ROOT — chemin cité explicitement ou projet nommé sans ambiguïté — avec ou sans tâches du plan citées (ex: "fais T3 et T5 dans `../autre-projet`"), une seule branche liée. Plusieurs branches liées → « Essaim » ci-dessus.
 
 ⚠️ Demande hors plan qui vise le projet lié → « Demande hors périmètre » d'abord (tâche ajoutée au plan), puis cette délégation — jamais de worktree créé ni de code écrit par le parent, même pour une petite modification.
 

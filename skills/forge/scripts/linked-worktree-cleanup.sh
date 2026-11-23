@@ -1,12 +1,14 @@
 #!/bin/bash
-# Retrait du worktree d'une branche liée une fois cette branche fusionnée dans la branche par défaut du projet lié.
+# Retrait du worktree d'une branche liée une fois cette branche fusionnée dans la branche par défaut du projet lié,
+# ou dans l'une des branches cibles de la livraison (--merged-into : une livraison limitée à dev compte).
 #   Appelé par la livraison relayée (commands/engrave.md) et par la clôture de la branche parente (commands/closure.md).
 #   Retire seulement si : worktree distinct du dossier principal du projet lié, working tree propre, branche fusionnée
-#   dans la branche par défaut (master puis main), locale ou origin/<défaut> après fetch — par git worktree remove,
+#   dans la branche par défaut (master puis main) ou une branche de --merged-into, locale ou origin/<branche> après
+#   fetch — par git worktree remove,
 #   jamais --force. Sinon le worktree est gardé, la raison dans le JSON.
 #   Aucun worktree pour la branche → status absent : rien à retirer.
 # ⚠️ Fusion par squash ou rebase (pull request) : la branche n'est pas ancêtre de la branche par défaut → gardé, not merged.
-# Usage : linked-worktree-cleanup.sh --linked <dossier du projet lié> --branch <branche liée>
+# Usage : linked-worktree-cleanup.sh --linked <dossier du projet lié> --branch <branche liée> [--merged-into <b>[,<b>…]]
 # Sortie : 0 JSON écrit sur une ligne, {"worktree":<chemin|null>,"status":"removed|kept|absent","reason":<raison|null>}
 #          · 1 usage, sans JSON
 
@@ -29,12 +31,14 @@ LINKED=""
 BRANCH=""
 WORKTREE=""
 MAIN_WORKTREE=""
+MERGED_INTO=""
+INTEGRATION_BRANCHES=()
 
 # ── Arguments ─────────────────────────────────────────────────────────────────
 
 fail_usage() {
   echo "linked-worktree-cleanup: $1" >&2
-  echo "usage: linked-worktree-cleanup.sh --linked <dir> --branch <branch>" >&2
+  echo "usage: linked-worktree-cleanup.sh --linked <dir> --branch <branch> [--merged-into <branch>[,<branch>...]]" >&2
   exit $EXIT_USAGE
 }
 
@@ -43,6 +47,7 @@ parse_arguments() {
     case $1 in
       --linked) [ $# -ge 2 ] || fail_usage "$1 needs a value"; LINKED=$2; shift 2 ;;
       --branch) [ $# -ge 2 ] || fail_usage "$1 needs a value"; BRANCH=$2; shift 2 ;;
+      --merged-into) [ $# -ge 2 ] || fail_usage "$1 needs a value"; MERGED_INTO=$2; shift 2 ;;
       *)        fail_usage "unknown argument $1" ;;
     esac
   done
@@ -110,13 +115,26 @@ is_ancestor_of() {
   has_ref "$1" && git -C "$LINKED" merge-base --is-ancestor "refs/heads/$BRANCH" "$1" 2>/dev/null
 }
 
-# Fusion locale d'abord ; sinon fetch (un échec réseau n'empêche pas de lire la référence distante connue).
+# Branches dont la fusion vaut retrait, dans INTEGRATION_BRANCHES : branche par défaut connue, puis celles de
+# --merged-into, la branche liée elle-même exclue. Sortie 1 si aucune.
+collect_integration_branches() {
+  local target
+  default_branch && INTEGRATION_BRANCHES+=("$REPLY")
+  local IFS=,
+  for target in $MERGED_INTO; do
+    [ -n "$target" ] && [ "$target" != "$BRANCH" ] && INTEGRATION_BRANCHES+=("$target")
+  done
+  [ ${#INTEGRATION_BRANCHES[@]} -gt 0 ]
+}
+
+# Fusion locale d'abord ; sinon un seul fetch (un échec réseau n'empêche pas de lire les références distantes connues).
 is_branch_merged() {
-  local default=$1
-  is_ancestor_of "refs/heads/$default" && return 0
+  local branch
+  for branch in "${INTEGRATION_BRANCHES[@]}"; do is_ancestor_of "refs/heads/$branch" && return 0; done
   has_remote || return 1
   git -C "$LINKED" fetch --quiet "$REMOTE" > /dev/null 2>&1
-  is_ancestor_of "refs/remotes/$REMOTE/$default"
+  for branch in "${INTEGRATION_BRANCHES[@]}"; do is_ancestor_of "refs/remotes/$REMOTE/$branch" && return 0; done
+  return 1
 }
 
 # ── Décision ──────────────────────────────────────────────────────────────────
@@ -130,8 +148,8 @@ main() {
   working_tree_state; state=$?
   [ $state -eq 2 ] && report "$STATUS_KEPT" "$REASON_GIT_ERROR"
   [ $state -eq 1 ] && report "$STATUS_KEPT" "$REASON_UNCOMMITTED"
-  default_branch || report "$STATUS_KEPT" "$REASON_GIT_ERROR"
-  is_branch_merged "$REPLY" || report "$STATUS_KEPT" "$REASON_NOT_MERGED"
+  collect_integration_branches || report "$STATUS_KEPT" "$REASON_GIT_ERROR"
+  is_branch_merged || report "$STATUS_KEPT" "$REASON_NOT_MERGED"
   git -C "$LINKED" worktree remove "$WORKTREE" > /dev/null 2>&1 || report "$STATUS_KEPT" "$REASON_GIT_ERROR"
   report "$STATUS_REMOVED"
 }

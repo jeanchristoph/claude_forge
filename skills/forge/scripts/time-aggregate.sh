@@ -129,6 +129,8 @@ readonly DURATIONS_PROGRAM="$AWK_HELPERS"'
 
 # Fenêtre d'une tâche : dernière marque task_start, puis la première task_done qui la suit.
 #   Marques de la session principale sans « branch » ; marques d'un délégué (journal de la parente) avec sa branche.
+#   late_start : seulement pour une tâche commencée au plus tard à l'ouverture du journal — une tâche commencée après
+#   y est entière, mesurée comme les autres.
 #   Sortie : « début fin raison fichiers », « - » pour une valeur absente ; raison late_start, missing_start,
 #   missing_done, overlapping_tasks ou ok ; fichiers « null » quand une des deux marques n'a pas d'empreinte.
 #   BUSINESS_RULE: une autre tâche de la même branche ouverte pendant la fenêtre (démarrée avant la fin, terminée après
@@ -136,7 +138,7 @@ readonly DURATIONS_PROGRAM="$AWK_HELPERS"'
 #   les deux, aucune part ne leur est attribuable sans l'inventer. La mesure de la branche, elle, compte tout.
 #   Une autre tâche redémarrée avant sa fin : le nouveau début remplace l'ancien, jamais laissé ouvert pour toujours.
 readonly TASK_WINDOW_PROGRAM="$AWK_HELPERS$TASK_FILES_AWK"'
-  field("event") == "late_start" { late = 1; next }
+  field("event") == "late_start" { late = 1; late_ts = field("ts") + 0; next }
   field("branch") != mark_branch { next }
   field("task") != task && field("event") == "task_start" {
     if (field("task") in other_open) delete other_start[other_open[field("task")]]
@@ -154,7 +156,7 @@ readonly TASK_WINDOW_PROGRAM="$AWK_HELPERS$TASK_FILES_AWK"'
     return 0
   }
   END {
-    reason = late ? "late_start" : (start == "" ? "missing_start" : (finish == "" ? "missing_done" : (overlaps() ? "overlapping_tasks" : "ok")))
+    reason = (late && (start == "" || start + 0 <= late_ts)) ? "late_start" : (start == "" ? "missing_start" : (finish == "" ? "missing_done" : (overlaps() ? "overlapping_tasks" : "ok")))
     files = (start_files == "<none>" || finish_files == "<none>" || finish == "") ? "null" : changed_files(start_files, finish_files)
     printf "%s %s %s %s\n", (start == "" ? "-" : start), (finish == "" ? "-" : finish), reason, files
   }'

@@ -1,3 +1,12 @@
+- [2026-11-23 18:11] T13 done — worktree lié retiré aussi si fusionné dans une cible de la livraison (--merged-into) ; retrait tenté après tout run lié réussi, fusion ou non, ligne kept avec commande de retrait
+- [2026-11-23 18:05] T12 done — tests des fichiers modifiés par tâche, suite complète (Full check) avant la livraison, rouge → aucune livraison
+- [2026-11-23 18:05] T11 done — late_start limité aux tâches commencées avant l'ouverture du journal ; réel visible après installation de la version publiée
+- [2026-11-23 17:58] T10 done — ignore / untrack dans engrave.sh, présents seulement quand ils ont à faire (écart à la description : pas de ligne skipped à chaque livraison) ; checks.sh --dry-run
+- [2026-11-23 17:22] project.md : swarm.md et swarm-status.sh décrits avec les unités liées et --plan
+- [2026-11-23 17:22] T9 corrigée à la demande : option essaim imposée dès 1 unité lançable (le parent est une voie parallèle), plus 2
+- [2026-11-23 17:16] Out of mandate: .forge/project.md (Key structure) décrit swarm-status.sh sans les unités liées ni --plan
+- [2026-11-23 17:16] T9 done — essaim multi-dépôts : unités linked comptées par swarm-status.sh (--plan sur le brouillon), option essaim imposée dès 2 unités lançables ; type child ajouté aux entrées des branches filles
+- [2026-11-23 17:16] T8 done — projet lié non forgé forgé par le délégué dans son worktree (p0 puis p1 sans question), une délégation à la fois par projet non forgé
 - [2026-11-23 16:13] Out of mandate: .forge/project.md (Key structure) décrit metrics.sh sans la ligne **Actual:** du plan
 - [2026-11-23 16:13] T7 : ligne **Actual:** écrite par metrics.sh (appelé par engrave.sh run avant le git add, et par la clôture) plutôt que dans engrave.sh — un seul écrivain pour la livraison, la clôture et la fusion d'essaim, sans second appel à time-aggregate.sh
 - [2026-11-23 15:58] Opened by delegation · T13

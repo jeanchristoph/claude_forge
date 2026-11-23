@@ -9,8 +9,12 @@
 #   branche, comptées comme délégués ; un agent associé à une autre branche par une ligne delegate en est écarté,
 #   son temps revenant à la mesure de cette branche ;
 #   tokens = somme des lignes {"event":"delegate_usage"} écrites par la parente à chaque retour d'un délégué
-# Usage : time-aggregate.sh --branch <name> [--root <dir>] [--parent-log <file>] [--base <ref>] [--task T<n>[,T<n>…]]
+# Usage : time-aggregate.sh --branch <name> [--root <dir>] [--parent-log <file>] [--base <ref>] [--task T<n>[,T<n>…]] [--project <dossier lié>]
 #   --parent-log : journal de la branche parente, pour une branche fille travaillée par des délégués
+#   --project    : projet lié de la branche, chemin relatif au parent (linked_project, task-marks.sh) — seuls les
+#   délégués et les marques de ce projet comptent ; deux dépôts liés sur une même branche ne se mélangent jamais.
+#   Ligne sans projet (branche fille, ancien journal) : jamais attribuée à un projet
+#   linked_delegated_minutes : délégués des projets liés lancés par la branche, affichés à part, jamais dans son agent
 #   --base       : point de départ de la branche ; défaut : master, sinon main
 #   --task       : mesure d'une seule tâche, entre ses marques task_start et task_done écrites par time-mark.sh —
 #   marques lues dans le journal de la branche, ou avec --parent-log dans celui de la parente (marques portant la branche) ;
@@ -36,6 +40,10 @@ readonly EXIT_USAGE=1
 readonly TIME_LOG_NAME="time-log.jsonl"
 # BUSINESS_RULE: au-delà de 6 h, un écart avant un prompt ou une attente de réponse est une absence, pas du temps humain
 readonly HUMAN_ABSENCE_MS=21600000
+# BUSINESS_RULE: au-delà de 60 min et jusqu'à 6 h, l'humain n'est pas resté devant l'écran : 3 min comptées, placées
+#   juste avant sa réponse — une pause à cheval sur deux tâches ne compte que dans celle de la réponse
+readonly HUMAN_PAUSE_MS=3600000
+readonly HUMAN_PAUSE_SHARE_MS=180000
 readonly EXCLUDED_PATHS=(
   ':(exclude).forge'
   ':(exclude,glob)**/package-lock.json' ':(exclude,glob)**/yarn.lock' ':(exclude,glob)**/pnpm-lock.yaml'
@@ -60,22 +68,54 @@ readonly AWK_HELPERS='
     return match(rest, /^([0-9]+|true)/) ? substr(rest, 1, RLENGTH) : ""
   }
   function minutes(ms) { return sprintf("%.1f", ms / 60000) }
-  function is_absence(ms) { return ms > absence_ms }
-  function human_share(ms) { return is_absence(ms) ? 0 : ms }'
+  # Temps humain d une attente [from, to], borné à la fenêtre de la tâche : durée réelle, 3 min (pause) ou zéro (absence).
+  function human_share(from, to,   wait) {
+    wait = to - from
+    if (wait > absence_ms) return 0
+    return inside(wait > pause_ms ? to - pause_share_ms : from, to)
+  }
+  # Question à cheval sur deux tours (retour de délégué pendant l attente) : le tour qui l a posée est déjà fermé à la
+  # question ; seule la part tombée dans le tour en cours en est retirée, jamais plus que ce tour.
+  function wait_start_in_turn(asked) {
+    return ((session in turn_start) && turn_start[session] > asked) ? turn_start[session] : asked
+  }
+  # Part de [from, to] dans la fenêtre de la tâche ; sans fenêtre (mesure de la branche), l intervalle entier.
+  function inside(from, to) {
+    if (window_end != "" && from < window_start) from = window_start
+    if (window_end != "" && to > window_end) to = window_end
+    return to > from ? to - from : 0
+  }
+  # Prompt arrivé sur un tour ouvert : l écart depuis la dernière activité est mis de côté, perdu par défaut (Échap).
+  # Question en attente : l écart est de l attente humaine, jamais mis de côté.
+  function keep_gap_before_prompt(prompt) {
+    if (session in question_start) return
+    gaps[session]++
+    gap_start[session, gaps[session]] = last_activity[session]; gap_end[session, gaps[session]] = prompt
+  }
+  # Commande terminée, commencée avant un prompt : le tour n a pas été interrompu — ses écarts sont rendus, une seule fois.
+  function crossed_gaps(event, ts,   i, command_start, total) {
+    if (event != "PostToolUse" || field("tool") == "AskUserQuestion") return 0
+    command_start = ts - field("duration_ms")
+    for (i = gaps[session]; i > 0 && gap_end[session, i] > command_start; i--) total += inside(gap_start[session, i], gap_end[session, i])
+    gaps[session] = i
+    return total + 0
+  }'
 
 # Durées en minutes, une décimale ; « null » quand aucun événement n'a été lu.
 #   Session principale, par session : tour = UserPromptSubmit → Stop, questions ouvertes retirées ;
 #   temps humain = Stop → prompt « origin: human » suivant, plus la durée des questions ;
-#   un écart ou une attente de plus de absence_ms est une absence : zéro minute humaine, question toujours comptée.
+#   un écart ou une attente de plus de pause_ms compte pause_share_ms ; de plus de absence_ms, c'est une absence :
+#   zéro minute humaine. Question toujours comptée.
 #   Un prompt « origin: agent » (retour de délégué) ouvre un tour sans compter d'attente humaine.
 #   Un prompt qui arrive sur un tour encore ouvert (message tapé pendant le travail, Échap sans Stop, retour de
-#   délégué en plein tour) ferme ce tour à son dernier événement observé avant d'ouvrir le suivant.
+#   délégué en plein tour) ferme ce tour à son dernier événement observé avant d'ouvrir le suivant ; l'écart jusqu'au
+#   prompt est rendu quand une commande commencée avant lui se termine après : le tour continuait.
 readonly DURATIONS_PROGRAM="$AWK_HELPERS"'
   FNR == 1 { file_index++; reading_parent = (has_parent_log && file_index == 1) }
-  reading_parent && field("event") == "delegate" && field("branch") == branch { delegate[field("agent_id")] = 1; next }
+  reading_parent && field("event") == "delegate" && field("branch") == branch && field("project") == project { delegate[field("agent_id")] = 1; next }
   reading_parent {
     id = field("agent_id"); event = field("event"); ts = field("ts") + 0
-    if (event == "task_start" && field("branch") == branch) { if (setup_start != "" && setup_end == "") setup_end = ts; next }
+    if (event == "task_start" && field("branch") == branch && field("project") == project) { if (setup_start != "" && setup_end == "") setup_end = ts; next }
     if (!(id in delegate)) next
     seen = 1
     if (event == "SubagentStart" && setup_start == "") setup_start = ts
@@ -85,9 +125,17 @@ readonly DURATIONS_PROGRAM="$AWK_HELPERS"'
     if (event == "delegate_usage") { tokens += field("tokens"); has_tokens = 1 }
     next
   }
-  field("event") == "delegate" && field("branch") != branch { other_branch[field("agent_id")] = 1; next }
+  field("event") == "delegate" && (field("branch") != branch || field("project") != "") {
+    other_branch[field("agent_id")] = 1
+    if (field("project") != "") linked[field("agent_id")] = 1
+    next
+  }
   field("agent_id") != "" {
     id = field("agent_id"); event = field("event"); ts = field("ts") + 0
+    if (id in linked) {
+      if (event == "SubagentStart") { agent_start[id] = ts; has_linked = 1 }
+      if (event == "SubagentStop" && (id in agent_start)) { linked_delegated += ts - agent_start[id]; delete agent_start[id] }
+    }
     if (id in other_branch) next
     seen = 1
     if (event == "SubagentStart") agent_start[id] = ts
@@ -97,18 +145,21 @@ readonly DURATIONS_PROGRAM="$AWK_HELPERS"'
   }
   {
     seen = 1; event = field("event"); session = field("session"); ts = field("ts") + 0
+    parent += crossed_gaps(event, ts)
     if (event == "UserPromptSubmit") {
-      if (field("origin") == "human" && (session in last_stop)) human += human_share(ts - last_stop[session])
-      if (session in turn_start) parent += last_activity[session] - turn_start[session] - turn_questions[session]
+      if (field("origin") == "human" && (session in last_stop)) human += human_share(last_stop[session], ts)
+      if (session in turn_start) { parent += last_activity[session] - turn_start[session] - turn_questions[session]; keep_gap_before_prompt(ts) }
       delete last_stop[session]; turn_start[session] = ts; turn_questions[session] = 0
     } else if (event == "Stop") {
       if (session in turn_start) parent += ts - turn_start[session] - turn_questions[session]
+      gaps[session] = 0
       delete turn_start[session]; last_stop[session] = ts
     } else if (event == "PreToolUse" && field("tool") == "AskUserQuestion") {
       question_start[session] = ts
     } else if (event == "PostToolUse" && field("tool") == "AskUserQuestion" && (session in question_start)) {
       wait = ts - question_start[session]; delete question_start[session]
-      questions++; question_time += human_share(wait); human += human_share(wait); turn_questions[session] += wait
+      questions++; question_time += human_share(ts - wait, ts); human += human_share(ts - wait, ts)
+      turn_questions[session] += ts - wait_start_in_turn(ts - wait)
       for (merged in merge_start) merge_questions[merged] += wait
     } else if (event == "PostToolUse" && field("check") == "true") {
       checks += field("duration_ms")
@@ -121,10 +172,11 @@ readonly DURATIONS_PROGRAM="$AWK_HELPERS"'
     last_activity[session] = ts
   }
   END {
-    if (!seen) { print "null null null 0 null null 0 null null null"; exit }
+    if (!seen) { print "null null null 0 null null 0 null null null null"; exit }
     count = 0; for (id in runs) count++
     printf "%s %s %s %d %s %s %d %s ", minutes(parent), minutes(delegated), minutes(human), questions, minutes(question_time), minutes(checks), count, (has_tokens ? tokens : "null")
-    printf "%s %s\n", (setup_end != "" ? minutes(setup_end - setup_start) : "null"), (merges ? minutes(merge_total / merges) : "null")
+    printf "%s %s ", (setup_end != "" ? minutes(setup_end - setup_start) : "null"), (merges ? minutes(merge_total / merges) : "null")
+    printf "%s\n", (has_linked ? minutes(linked_delegated) : "null")
   }'
 
 # Fenêtre d'une tâche : dernière marque task_start, puis la première task_done qui la suit.
@@ -139,7 +191,7 @@ readonly DURATIONS_PROGRAM="$AWK_HELPERS"'
 #   Une autre tâche redémarrée avant sa fin : le nouveau début remplace l'ancien, jamais laissé ouvert pour toujours.
 readonly TASK_WINDOW_PROGRAM="$AWK_HELPERS$TASK_FILES_AWK"'
   field("event") == "late_start" { late = 1; late_ts = field("ts") + 0; next }
-  field("branch") != mark_branch { next }
+  field("branch") != mark_branch || field("project") != mark_project { next }
   field("task") != task && field("event") == "task_start" {
     if (field("task") in other_open) delete other_start[other_open[field("task")]]
     other_start[++others] = field("ts") + 0; other_open[field("task")] = others; next
@@ -164,7 +216,7 @@ readonly TASK_WINDOW_PROGRAM="$AWK_HELPERS$TASK_FILES_AWK"'
 # Fichiers de toutes les tâches mesurées d'une branche : « tâche fichiers » par tâche, première task_done après la
 # dernière task_start ; tâche sans empreinte absente.
 readonly TASK_FILES_PROGRAM="$AWK_HELPERS$TASK_FILES_AWK"'
-  field("branch") != mark_branch { next }
+  field("branch") != mark_branch || field("project") != mark_project { next }
   field("event") == "task_start" { task = field("task"); start_files[task] = raw_string_field("files"); open[task] = 1; next }
   field("event") == "task_done" && (field("task") in open) {
     task = field("task"); delete open[task]
@@ -190,16 +242,11 @@ readonly PLANNED_FILES_PROGRAM="$TASK_FILES_AWK"'
 #   Vérifications : durée des commandes « check » (motif de project.md) terminées dans la fenêtre, session et agents.
 #   Sortie : « agent humain questions vérifications ».
 readonly TASK_DURATIONS_PROGRAM="$AWK_HELPERS"'
-  function inside(from, to) {
-    if (from < window_start) from = window_start
-    if (to > window_end) to = window_end
-    return to > from ? to - from : 0
-  }
   function count_check(event, ts) {
     if (event == "PostToolUse" && field("check") == "true" && ts >= window_start && ts <= window_end) checks += field("duration_ms")
   }
   FNR == 1 { file_index++; reading_parent = (has_parent_log && file_index == 1) }
-  reading_parent && field("event") == "delegate" && field("branch") == branch { delegate[field("agent_id")] = 1; next }
+  reading_parent && field("event") == "delegate" && field("branch") == branch && field("project") == project { delegate[field("agent_id")] = 1; next }
   reading_parent {
     id = field("agent_id"); event = field("event"); ts = field("ts") + 0
     if (!(id in delegate)) next
@@ -208,7 +255,7 @@ readonly TASK_DURATIONS_PROGRAM="$AWK_HELPERS"'
     count_check(event, ts)
     next
   }
-  field("event") == "delegate" && field("branch") != branch { other_branch[field("agent_id")] = 1; next }
+  field("event") == "delegate" && (field("branch") != branch || field("project") != "") { other_branch[field("agent_id")] = 1; next }
   field("agent_id") != "" {
     id = field("agent_id"); event = field("event"); ts = field("ts") + 0
     if (id in other_branch) next
@@ -220,19 +267,21 @@ readonly TASK_DURATIONS_PROGRAM="$AWK_HELPERS"'
   {
     event = field("event"); session = field("session"); ts = field("ts") + 0
     count_check(event, ts)
+    parent += crossed_gaps(event, ts)
     if (event == "UserPromptSubmit") {
-      if (field("origin") == "human" && (session in last_stop) && !is_absence(ts - last_stop[session])) human += inside(last_stop[session], ts)
-      if (session in turn_start) parent += inside(turn_start[session], last_activity[session]) - turn_questions[session]
+      if (field("origin") == "human" && (session in last_stop)) human += human_share(last_stop[session], ts)
+      if (session in turn_start) { parent += inside(turn_start[session], last_activity[session]) - turn_questions[session]; keep_gap_before_prompt(ts) }
       delete last_stop[session]; turn_start[session] = ts; turn_questions[session] = 0
     } else if (event == "Stop") {
       if (session in turn_start) parent += inside(turn_start[session], ts) - turn_questions[session]
+      gaps[session] = 0
       delete turn_start[session]; last_stop[session] = ts
     } else if (event == "PreToolUse" && field("tool") == "AskUserQuestion") {
       question_start[session] = ts
     } else if (event == "PostToolUse" && field("tool") == "AskUserQuestion" && (session in question_start)) {
       wait = inside(question_start[session], ts)
-      if (wait > 0) { questions++; turn_questions[session] += wait }
-      if (!is_absence(ts - question_start[session])) human += wait
+      if (wait > 0) { questions++; turn_questions[session] += inside(wait_start_in_turn(question_start[session]), ts) }
+      human += human_share(question_start[session], ts)
       delete question_start[session]
     }
     last_activity[session] = ts
@@ -255,12 +304,13 @@ BRANCH=""
 PARENT_LOG=""
 BASE=""
 TASK=""
+PROJECT=""
 
 # ── Arguments et gardes ───────────────────────────────────────────────────────
 
 fail_usage() {
   echo "time-aggregate: $1" >&2
-  echo "usage: time-aggregate.sh --branch <name> [--root <dir>] [--parent-log <file>] [--base <ref>] [--task T<n>[,T<n>…]]" >&2
+  echo "usage: time-aggregate.sh --branch <name> [--root <dir>] [--parent-log <file>] [--base <ref>] [--task T<n>[,T<n>…]] [--project <dir>]" >&2
   exit $EXIT_USAGE
 }
 
@@ -276,6 +326,7 @@ parse_arguments() {
       --parent-log) require_value "$1" $#; PARENT_LOG=$2; shift 2 ;;
       --base)       require_value "$1" $#; BASE=$2; shift 2 ;;
       --task)       require_value "$1" $#; TASK=$2; shift 2 ;;
+      --project)    require_value "$1" $#; PROJECT=$2; shift 2 ;;
       *)            fail_usage "unknown argument $1" ;;
     esac
   done
@@ -301,7 +352,7 @@ run_on_logs() {
   shift
   [ -n "$PARENT_LOG" ] && [ -s "$PARENT_LOG" ] && has_parent_log=1
   [ -s "$own_log" ] && has_own_log=1
-  local awk_command=(awk -v has_parent_log="$has_parent_log" -v branch="$BRANCH" -v absence_ms="$HUMAN_ABSENCE_MS" "$@" "$program")
+  local awk_command=(awk -v has_parent_log="$has_parent_log" -v branch="$BRANCH" -v project="$PROJECT" -v absence_ms="$HUMAN_ABSENCE_MS" -v pause_ms="$HUMAN_PAUSE_MS" -v pause_share_ms="$HUMAN_PAUSE_SHARE_MS" "$@" "$program")
   case "$has_parent_log$has_own_log" in
     11) REPLY=$("${awk_command[@]}" <(sort_by_time "$PARENT_LOG") <(sort_by_time "$own_log")) ;;
     10) REPLY=$("${awk_command[@]}" <(sort_by_time "$PARENT_LOG")) ;;
@@ -310,9 +361,9 @@ run_on_logs() {
 }
 
 # Sortie de DURATIONS_PROGRAM : « parent délégués humain questions attente vérifications délégués_lancés tokens
-# mise_en_route fusion ».
+# mise_en_route fusion délégués_liés ».
 read_durations() {
-  REPLY="null null null 0 null null 0 null null null"
+  REPLY="null null null 0 null null 0 null null null null"
   run_on_logs "$DURATIONS_PROGRAM"
 }
 
@@ -325,7 +376,7 @@ read_task_window() {
   [ -n "$PARENT_LOG" ] && { marks_log=$PARENT_LOG; mark_branch=$BRANCH; }
   REPLY="- - no_log"
   [ -s "$marks_log" ] || return
-  REPLY=$(sort_by_time "$marks_log" | awk -v task="$task" -v mark_branch="$mark_branch" "$TASK_WINDOW_PROGRAM")
+  REPLY=$(sort_by_time "$marks_log" | awk -v task="$task" -v mark_branch="$mark_branch" -v mark_project="$PROJECT" "$TASK_WINDOW_PROGRAM")
 }
 
 # « agent humain questions vérifications fichiers » d'une tâche dans REPLY, ou « raison » seule quand elle n'est pas mesurée.
@@ -380,7 +431,7 @@ read_task_files() {
                ($1 in planned) { actual += $2; expected += planned[$1]; count++ }
                END { if (count) printf "%d %d %d", actual, expected, count; else print "null null 0" }' \
     <(awk "$PLANNED_FILES_PROGRAM" "$plan") \
-    <(sort_by_time "$marks_log" | awk -v mark_branch="$mark_branch" "$TASK_FILES_PROGRAM"))
+    <(sort_by_time "$marks_log" | awk -v mark_branch="$mark_branch" -v mark_project="$PROJECT" "$TASK_FILES_PROGRAM"))
 }
 
 resolve_mode() {
@@ -447,14 +498,14 @@ read_volume() {
 
 render() {
   local parent=$1 delegated=$2 human=$3 questions=$4 question_time=$5 checks=$6 delegates=$7 tokens=$8
-  local setup=$9 merge=${10} task_files=${11} task_planned=${12} measured_tasks=${13}
-  local files=${14} added=${15} deleted=${16} partial=${17} mode branch_json
+  local setup=$9 merge=${10} linked_delegated=${11} task_files=${12} task_planned=${13} measured_tasks=${14}
+  local files=${15} added=${16} deleted=${17} partial=${18} mode branch_json
   resolve_mode "$parent" "$delegated"; mode=$REPLY
   json_escape "$BRANCH"; branch_json=$REPLY
   printf '{"branch":%s,"parent_minutes":%s,"delegated_minutes":%s,"human_minutes":%s,' "$branch_json" "$parent" "$delegated" "$human"
   printf '"questions":%s,"question_minutes":%s,"check_minutes":%s,"delegates":%s,"mode":%s,' "$questions" "$question_time" "$checks" "$delegates" "$mode"
   printf '"tokens":%s,"files":%s,"lines_added":%s,"lines_deleted":%s,"partial":%s,' "$tokens" "$files" "$added" "$deleted" "$partial"
-  printf '"delegate_setup_minutes":%s,"merge_minutes":%s,' "$setup" "$merge"
+  printf '"delegate_setup_minutes":%s,"merge_minutes":%s,"linked_delegated_minutes":%s,' "$setup" "$merge" "$linked_delegated"
   printf '"task_files":%s,"task_planned_files":%s,"measured_tasks":%s}\n' "$task_files" "$task_planned" "$measured_tasks"
 }
 

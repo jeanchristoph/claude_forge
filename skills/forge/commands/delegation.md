@@ -7,10 +7,11 @@
 **Réaction :**
 - `<DELEGATED_BRANCH>` = branche du délégué : `<LINKED_BRANCH>` pour un projet lié, `<X>` sinon. `<TIME_LOG>` = `.forge/branch/<BRANCH>/time-log.jsonl` sous ROOT, journal de la branche parente.
 - Prompt : ligne `TIME_LOG: <chemin absolu de <TIME_LOG>>` juste sous `SCOPE:` — le délégué y écrit ses marques de tâche (`commands/delegated-mode.md`) — chemin absolu permis dans le prompt seulement (invariant de « Délégation — projet lié »).
-- Lancement : `bash <SKILL_DIR>/scripts/time-mark.sh --time-log <chemin absolu de <TIME_LOG>> --event delegate --agent-id <identifiant> --branch <DELEGATED_BRANCH>` — identifiant tiré du retour de l'outil `Agent`.
+- Association du délégué à sa branche et à son projet lié : aucune action — le hook `plan-hook.sh` l'écrit dans <TIME_LOG> à la première écriture du `plan.md` du délégué ; deux dépôts liés sur une même branche restent séparés. Délégué arrêté avant d'écrire son plan → non associé, jamais mesuré.
 - Chaque retour : `bash <SKILL_DIR>/scripts/time-mark.sh --time-log <chemin absolu de <TIME_LOG>> --event delegate_usage --agent-id <identifiant> --tokens <subagent_tokens de la notification>`.
-- **INVARIANT :** ces lignes s'écrivent par `time-mark.sh`, jamais à la main — le script garde le format que lit `time-aggregate.sh`.
-- Synthèse et mesure par tâche de `<DELEGATED_BRANCH>` → `time-aggregate.sh --root <worktree du délégué> --branch <DELEGATED_BRANCH> --parent-log <chemin absolu de <TIME_LOG>>`, le journal parent pouvant vivre dans un autre dépôt.
+- **INVARIANT :** aucune autre ligne du modèle dans <TIME_LOG>, hors tokens ci-dessus et marques de fusion (`commands/swarm.md`), écrites par `time-mark.sh`, jamais à la main — le script garde le format que lit `time-aggregate.sh`.
+- Estimation d'une tâche déléguée : aucune action — le hook la reprend une fois du plan du délégué (« Estimation d'une tâche liée » de `phases/p4-plan.md`).
+- Réel d'une tâche déléguée : aucune action — le hook l'écrit à la coche de la tâche dans PLAN (« Mesure d'une tâche » de `phases/p5-resume.md`).
 
 ⚠️ `<TIME_LOG>` absent (hook de mesure non installé) → `time-mark.sh` n'écrit rien, ligne `TIME_LOG:` gardée dans le prompt : les marques du délégué n'écrivent alors rien non plus.
 
@@ -46,7 +47,7 @@ Demande hors plan qui vise le projet lié → d'abord « Demande hors périmètr
 7. **Sur `Cancel`** → n'exécuter aucune action. STOP — ne pas continuer.
 8. **Sur `Open the linked project`** → dans l'ordre :
    - Exécuter l'action de worktree retenue à l'étape 4 (`reuse` → rien). Échec → afficher l'erreur telle quelle, STOP.
-   - Écrire `<LINKED_WORKTREE>/.forge/branch/<LINKED_BRANCH>/brief.md` — format du mandat ci-dessous. Fichier déjà présent → le remplacer : le mandat parent fait foi.
+   - Écrire `<LINKED_WORKTREE>/.forge/branch/<LINKED_BRANCH>/brief.md` — format du mandat ci-dessous. Fichier déjà présent → le remplacer : le mandat parent fait foi. Créer à côté le dossier vide `input/`, s'il est absent (BRANCH_INPUT de la branche liée).
    - Entrée LOG de la branche liée, `--root <LINKED_WORKTREE> --branch <LINKED_BRANCH>` (`log.md` créé s'il est absent) : `Opened by delegation · T3, T5`.
    - PLAN parent : chaque tâche du mandat sans `**Linked branch:**` → champ écrit sous `**Files:**` ; sous chaque tâche du mandat, note `delegated to <LINKED_REL> @ <LINKED_BRANCH>` — statut inchangé. Entrée LOG parent : `Delegated T3, T5 to <LINKED_REL> @ <LINKED_BRANCH>`.
    - Lancer le sous-agent (prompt ci-dessous), « Mesure d'un délégué » ci-dessus appliquée, puis entrer dans la boucle de relais.
@@ -75,14 +76,15 @@ Demande hors plan qui vise le projet lié → d'abord « Demande hors périmètr
 ### Retour — application de `FORGE_DONE`
 
 Pour chaque tâche parente du mandat, dans l'ordre du plan :
-- Toutes ses tâches enfant dans `done` → cocher `[x]`, note `delegated to <LINKED_REL> @ <LINKED_BRANCH> · done` ; `**Actual time:**` tiré de `time-aggregate.sh --root <LINKED_WORKTREE> --branch <LINKED_BRANCH> --parent-log <chemin absolu de <TIME_LOG>> --task <tâches enfant, séparées par des virgules>` (somme ; un enfant non mesuré → `measured` faux), écrit comme à la coche (« Mesure d'une tâche » de `phases/p5-resume.md`, étape 3).
+- Toutes ses tâches enfant dans `done` → cocher `[x]`, note `delegated to <LINKED_REL> @ <LINKED_BRANCH> · done` ; `**Actual time:**` écrit par le hook à la coche, jamais par le modèle.
 - Au moins une dans `blocked` → marquer `[!] blocked — <raison de la première> · delegated to <LINKED_REL> @ <LINKED_BRANCH>`.
 - Absente de `done` et de `blocked` → marquer `[!] blocked — not addressed by the delegated run · delegated to <LINKED_REL> @ <LINKED_BRANCH>`.
+- `full_check` autre que `none` → ` · full check: <valeur>` en fin de chaque note ci-dessus. Note d'une autre tâche de la même branche liée, d'un retour précédent → même valeur : seule la dernière suite compte.
 
 ⚠️ La note conserve toujours `delegated to <LINKED_REL> @ <LINKED_BRANCH>` : la livraison relayée s'appuie dessus pour retrouver le projet lié et sa branche.
 - Une entrée LOG parent par tâche : `T3 delegated to <LINKED_REL> — done` / `— blocked: <raison>`.
 
-`out_of_mandate` non vide → présenter chaque besoin à l'utilisateur, puis appliquer la « Surveillance des demandes complémentaires » de `phases/p5-resume.md` à chacun. Rendre compte : tâches vertes, tâches bloquées avec leur raison, fichiers touchés dans `<LINKED_WORKTREE>`. Le worktree reste en place : il est retiré automatiquement une fois `<LINKED_BRANCH>` fusionnée (« Retrait du worktree lié » de `commands/engrave.md`).
+`out_of_mandate` non vide → présenter chaque besoin à l'utilisateur, puis appliquer la « Surveillance des demandes complémentaires » de `phases/p5-resume.md` à chacun. Rendre compte : tâches vertes, tâches bloquées avec leur raison, suite complète (`full_check`, échec compris), fichiers touchés dans `<LINKED_WORKTREE>`. Le worktree reste en place : il est retiré automatiquement une fois `<LINKED_BRANCH>` fusionnée (« Retrait du worktree lié » de `commands/engrave.md`).
 
 ⚠️ `<LINKED_WORKTREE>` ne porte que les fichiers versionnés : ni dépendances installées (`node_modules`, `vendor`), ni `.env`, ni configuration locale. Une tâche déléguée qui les exige → le sous-agent la remonte `blocked` avec sa raison.
 

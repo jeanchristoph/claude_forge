@@ -236,6 +236,198 @@ test_delegate_marks_go_to_parent_log_with_branch() {
   assert_matches '^\*\*Actual time:\*\* ≈ [0-9.]+ min' "$(actual_line_of T1)"
 }
 
+# ── Projets liés ──────────────────────────────────────────────────────────────
+
+# Dépôt lié <nom> à côté du parent, branche php85 extraite dans son worktree, plan du délégué à deux tâches.
+create_linked_project() {
+  local repository="$SANDBOX/$1" worktree="$SANDBOX/$1.worktrees/php85"
+  git init -q -b master "$repository"
+  git -C "$repository" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init
+  git -C "$repository" worktree add -q -b php85 "$worktree" master 2>/dev/null
+  mkdir -p "$worktree/.forge/branch/php85"
+  printf '# Plan\n\n## Tasks\n\n### T1 — Un ← parent T1\n**Effort:** S\n[ ]\n\n### T2 — Deux ← parent T2\n**Effort:** S\n[ ]\n' \
+    > "$worktree/.forge/branch/php85/plan.md"
+}
+
+linked_plan() {
+  printf '%s' "$SANDBOX/$1.worktrees/php85/.forge/branch/php85/plan.md"
+}
+
+# Écriture du plan lié <nom> par le délégué <agent>, lancé par la session parente.
+run_delegate_hook() {
+  run_hook "$(linked_plan "$1")" ",\"agent_id\":\"$2\""
+}
+
+# Exécution d'un délégué associé au projet <projet> : début et fin en minutes.
+seed_delegate_run() {
+  printf '{"event":"delegate","agent_id":"%s","branch":"php85","project":"%s"}\n{"ts":%s,"event":"SubagentStart","session":"s1","agent_id":"%s"}\n{"ts":%s,"event":"SubagentStop","session":"s1","agent_id":"%s"}\n' \
+    "$2" "$1" $((1700000000000 + $3 * 60000)) "$2" $((1700000000000 + $4 * 60000)) "$2" >> "$OWN_LOG"
+}
+
+# Plan parent : T1 et T2 portent le champ de branche liée <champ1>, <champ2> (vide → sans champ).
+write_parent_plan() {
+  write_plan "$1" "$2" "[ ]"
+  [ -n "$3" ] && sed -i "s|^\*\*Description:\*\* un\$|**Linked branch:** $3\n&|" "$PLAN"
+  [ -n "$4" ] && sed -i "s|^\*\*Description:\*\* deux\$|**Linked branch:** $4\n&|" "$PLAN"
+  return 0
+}
+
+test_hook_associates_delegate_to_its_linked_project_once() {
+  : > "$OWN_LOG"
+  create_linked_project api
+  run_delegate_hook api a1 >/dev/null
+  run_delegate_hook api a1 >/dev/null
+  assert_equals 1 "$(grep -cxF '{"event":"delegate","agent_id":"a1","branch":"php85","project":"../api"}' "$OWN_LOG")"
+  assert_matches '"event":"plan_checkpoint","branch":"php85","project":"\.\./api"' "$(cat "$OWN_LOG")"
+}
+
+test_hook_associates_child_branch_of_same_repository_without_project() {
+  local worktree="$SANDBOX/work.worktrees/child"
+  : > "$OWN_LOG"
+  git -C "$WORK" worktree add -q -b child "$worktree" feature 2>/dev/null
+  mkdir -p "$worktree/.forge/branch/child"
+  printf '# Plan\n\n## Tasks\n\n### T1 — Un\n**Effort:** S\n[ ]\n' > "$worktree/.forge/branch/child/plan.md"
+  run_hook "$worktree/.forge/branch/child/plan.md" ',"agent_id":"a1"' >/dev/null
+  assert_equals 1 "$(grep -cxF '{"event":"delegate","agent_id":"a1","branch":"child"}' "$OWN_LOG")"
+}
+
+test_two_linked_projects_on_same_branch_keep_their_own_checkpoint() {
+  : > "$OWN_LOG"
+  create_linked_project api
+  create_linked_project pos
+  run_delegate_hook api a1 >/dev/null
+  run_delegate_hook pos b1 >/dev/null
+  sed -i '0,/^\[ \]$/s//[x]/' "$(linked_plan api)"
+  run_delegate_hook api a1 >/dev/null
+  assert_equals 1 "$(count_events task_done "$OWN_LOG")"
+  assert_matches '"event":"task_done","task":"T1","branch":"php85","project":"\.\./api"' "$(cat "$OWN_LOG")"
+  run_delegate_hook pos b1 >/dev/null
+  assert_equals 1 "$(count_events task_done "$OWN_LOG")"
+}
+
+test_linked_task_gets_time_of_its_own_delegate_only() {
+  create_linked_project api
+  create_linked_project pos
+  seed_checkpoint 1700000000000 ""
+  seed_delegate_run ../api a1 0 12
+  seed_delegate_run ../pos b1 0 30
+  printf 'x\n' > "$SANDBOX/api.worktrees/php85/code.txt"
+  write_parent_plan "[x] fait" "[x] fait" "../api @ php85" "../pos @ php85"
+  run_hook "$PLAN" >/dev/null
+  assert_equals '**Actual time:** ≈ 12.0 min agent (incl. 0.0 min checks) · human — · 1 files · total ≈ 12.0 min' "$(actual_line_of T1)"
+  assert_equals '**Actual time:** ≈ 30.0 min agent (incl. 0.0 min checks) · human — · 0 files · total ≈ 30.0 min' "$(actual_line_of T2)"
+  assert_equals 0 "$(count_events task_start "$OWN_LOG")"
+}
+
+test_delegation_note_on_its_own_line_marks_a_linked_task() {
+  create_linked_project api
+  seed_checkpoint 1700000000000 ""
+  seed_delegate_run ../api a1 0 12
+  write_parent_plan "[x] fait" "[ ]" "" ""
+  sed -i 's|^\[x\] fait$|&\ndelegated to ../api @ php85 · done|' "$PLAN"
+  run_hook "$PLAN" >/dev/null
+  assert_matches '^\*\*Actual time:\*\* ≈ 12\.0 min agent' "$(actual_line_of T1)"
+}
+
+test_linked_task_without_measured_delegate_gets_dash_never_parent_time() {
+  create_linked_project api
+  seed_checkpoint 1700000000000 ""
+  printf '{"event":"delegate","agent_id":"old","branch":"php85"}\n{"ts":1700000000000,"event":"SubagentStart","session":"s1","agent_id":"old"}\n{"ts":1700000600000,"event":"SubagentStop","session":"s1","agent_id":"old"}\n' >> "$OWN_LOG"
+  write_parent_plan "[x] fait" "[ ]" "../api @ php85" ""
+  run_hook "$PLAN" >/dev/null
+  assert_equals '**Actual time:** —' "$(actual_line_of T1)"
+  assert_equals 0 "$(count_events task_start "$OWN_LOG")"
+}
+
+test_tasks_sharing_a_linked_branch_are_measured_by_their_child_tasks() {
+  create_linked_project api
+  seed_checkpoint 1700000000000 ""
+  seed_delegate_run ../api a1 0 30
+  printf '{"ts":%s,"event":"task_start","task":"T1","branch":"php85","project":"../api","files":""}\n{"ts":%s,"event":"task_done","task":"T1","branch":"php85","project":"../api","files":"x\\t1"}\n' \
+    1700000000000 1700000600000 >> "$OWN_LOG"
+  write_parent_plan "[x] fait" "[x] fait" "../api @ php85" "../api @ php85"
+  run_hook "$PLAN" >/dev/null
+  assert_equals '**Actual time:** ≈ 10.0 min agent (incl. 0.0 min checks) · human — · 1 files · total ≈ 10.0 min' "$(actual_line_of T1)"
+  assert_equals '**Actual time:** —' "$(actual_line_of T2)"
+}
+
+test_child_branch_task_gets_agent_minutes_of_its_merged_metrics() {
+  : > "$OWN_LOG"
+  seed_checkpoint 1700000000000 ""
+  mkdir -p "$WORK/.forge/branch/feature-two"
+  printf '{"event":"engrave","agent_minutes":17.5,"human_minutes":1.0}\n' > "$WORK/.forge/branch/feature-two/metrics.json"
+  write_plan "[ ]" "[x] fusionnée" "[x] fusionnée"
+  sed -i 's/^### T2 — Deuxième$/### T2 — Branch `feature-two` — lot/; s/^### T3 — Troisième$/### T3 — Branch `feature-three` — lot/' "$PLAN"
+  run_hook "$PLAN" >/dev/null
+  assert_equals '**Actual time:** ≈ 17.5 min' "$(actual_line_of T2)"
+  assert_equals '**Actual time:** —' "$(actual_line_of T3)"
+  assert_equals 0 "$(count_events task_start "$OWN_LOG")"
+}
+
+estimate_line_of() {
+  awk -v task="$1" '/^### T/ { current = $2 } current == task && /^\*\*Estimated time:\*\*/ { print; exit }' "$PLAN"
+}
+
+# Plan parent dont T1 vise la branche liée, sans estimation encore écrite.
+write_unestimated_linked_plan() {
+  write_parent_plan "[ ]" "[ ]" "../api @ php85" ""
+  sed -i '0,/^\*\*Estimated time:\*\*/{/^\*\*Estimated time:\*\*/d}' "$PLAN"
+}
+
+test_linked_task_estimate_is_indicative_until_its_delegate_has_a_plan() {
+  : > "$OWN_LOG"
+  write_unestimated_linked_plan
+  run_hook "$PLAN" >/dev/null
+  assert_matches '^\*\*Estimated time:\*\* ≈ [0-9]+ min \([0-9]+-[0-9]+\) · indicative$' "$(estimate_line_of T1)"
+  [[ $(estimate_line_of T3) != *indicative* ]] || { echo "    ordinary task marked indicative"; exit 1; }
+}
+
+test_linked_task_estimate_follows_its_delegate_plan_once() {
+  : > "$OWN_LOG"
+  write_unestimated_linked_plan
+  run_hook "$PLAN" >/dev/null
+  create_linked_project api
+  sed -i 's/^### T1 — Un ← parent T1$/&\n**Files:** `src` (≈ 60)/; s/^### T2 — Deux ← parent T2$/&\n**Files:** `lib` (≈ 44)/' "$(linked_plan api)"
+  run_hook "$PLAN" >/dev/null
+  local adopted
+  adopted=$(estimate_line_of T1)
+  assert_equals '**Estimated files:** 104' "$(grep '^\*\*Estimated files:\*\*' "$PLAN")"
+  [[ $adopted != *indicative* ]] || { echo "    still indicative: $adopted"; exit 1; }
+  sed -i 's/(≈ 60)/(≈ 600)/' "$(linked_plan api)"
+  run_hook "$PLAN" >/dev/null
+  assert_equals "$adopted" "$(estimate_line_of T1)"
+  assert_equals 1 "$(grep -c '^\*\*Estimated files:\*\*' "$PLAN")"
+}
+
+test_tasks_sharing_a_linked_branch_take_their_own_child_files() {
+  : > "$OWN_LOG"
+  create_linked_project api
+  sed -i 's/^### T1 — Un ← parent T1$/&\n**Files:** `src` (≈ 60)/; s/^### T2 — Deux ← parent T2$/&\n**Files:** `lib` (≈ 44)/' "$(linked_plan api)"
+  write_parent_plan "[ ]" "[ ]" "../api @ php85" "../api @ php85"
+  sed -i '/^\*\*Estimated time:\*\*/d' "$PLAN"
+  run_hook "$PLAN" >/dev/null
+  run_hook "$PLAN" >/dev/null
+  assert_equals "60 44" "$(grep '^\*\*Estimated files:\*\*' "$PLAN" | grep -o '[0-9]*' | paste -sd' ' -)"
+}
+
+test_keeps_unplanned_row_under_total() {
+  : > "$OWN_LOG"
+  write_plan "[ ]" "[ ]" "[ ]"
+  run_hook "$PLAN" >/dev/null
+  sed -i 's/^| \*\*Total\*\*.*$/&\n| **Unplanned** | | | | **≈ 4.0 min** | |/' "$PLAN"
+  sed -i 's/^\*\*Description:\*\* trois$/**Description:** trois bis/' "$PLAN"
+  run_hook "$PLAN" >/dev/null
+  assert_equals '| **Unplanned** | | | | **≈ 4.0 min** | |' "$(grep -A1 '^| \*\*Total\*\*' "$PLAN" | tail -1)"
+  assert_equals 1 "$(grep -c '^| \*\*Unplanned\*\*' "$PLAN")"
+}
+
+test_linked_task_without_log_gets_dash() {
+  create_linked_project api
+  write_parent_plan "[x] fait" "[ ]" "../api @ php85" ""
+  run_hook "$PLAN" >/dev/null
+  assert_equals '**Actual time:** —' "$(actual_line_of T1)"
+}
+
 test_ordinary_subagent_uses_own_log() {
   : > "$OWN_LOG"
   seed_checkpoint 1700000000000 ""
@@ -585,6 +777,19 @@ run_test test_sequential_tasks_are_not_overlapping "deux tâches successives : l
 run_test test_skipped_tasks_get_no_mark "tâche-branche et tâche déléguée à un projet lié : aucune marque, point d'étape déplacé"
 run_test test_keeps_crlf_line_endings "garde les fins de ligne CRLF du plan"
 run_test test_delegate_marks_go_to_parent_log_with_branch "délégué : marques dans le journal du parent, avec la branche du plan"
+run_test test_hook_associates_delegate_to_its_linked_project_once "associe une seule fois un délégué à son projet lié"
+run_test test_hook_associates_child_branch_of_same_repository_without_project "branche fille du même dépôt : association sans projet"
+run_test test_two_linked_projects_on_same_branch_keep_their_own_checkpoint "deux projets liés sur la même branche : points d'étape séparés"
+run_test test_linked_task_gets_time_of_its_own_delegate_only "tâche liée : temps et fichiers de son seul délégué"
+run_test test_delegation_note_on_its_own_line_marks_a_linked_task "note de délégation sur sa propre ligne : tâche liée"
+run_test test_linked_task_without_measured_delegate_gets_dash_never_parent_time "tâche liée sans délégué mesuré : tiret, jamais le temps du parent"
+run_test test_tasks_sharing_a_linked_branch_are_measured_by_their_child_tasks "tâches d'une même branche liée : mesurées par leurs tâches enfant"
+run_test test_child_branch_task_gets_agent_minutes_of_its_merged_metrics "tâche-branche : minutes du metrics.json de la branche fille"
+run_test test_linked_task_estimate_is_indicative_until_its_delegate_has_a_plan "tâche liée : estimation indicative avant le plan du délégué"
+run_test test_linked_task_estimate_follows_its_delegate_plan_once "tâche liée : estimation reprise du plan du délégué, une seule fois"
+run_test test_tasks_sharing_a_linked_branch_take_their_own_child_files "tâches d'une même branche liée : fichiers de leurs tâches enfant"
+run_test test_keeps_unplanned_row_under_total "ligne Unplanned gardée sous Total"
+run_test test_linked_task_without_log_gets_dash "tâche liée sans journal : tiret"
 run_test test_ordinary_subagent_uses_own_log "sous-agent ordinaire dans la même branche : journal de la branche"
 run_test test_without_log_writes_dash_for_ticked_tasks_only "sans journal : « — » pour les tâches cochées sans réel, rien d'autre"
 run_test test_windows_path_in_hook_json "lit un chemin Windows à barres obliques inverses"

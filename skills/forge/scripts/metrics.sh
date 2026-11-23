@@ -27,15 +27,16 @@ readonly ESTIMATE_PATTERN='^\*\*Estimate:\*\*.*≈ ([0-9]+) min \(([0-9]+)-([0-9
 readonly TIME_LOG_NAME="time-log.jsonl"
 readonly NO_MEASURE="—"
 
-# Nombre de tâches cochées mesurables sans réel chiffré (≈) : tâche-branche d'essaim et tâche déléguée à un projet
-# lié écartées, leur réel venant du skill.
+# Nombre de tâches cochées mesurables sans réel chiffré (≈) : tâche-branche d'essaim (réel écrit par le skill) et tâche
+# déléguée à un projet lié (linked_unit : réel de ses délégués, hors de la session) écartées.
 readonly UNMEASURED_TASKS_PROGRAM="$TASK_STATUS_AWK"'
   function flush() { if (in_task && status == "done" && !is_skipped && !is_measured) count++; in_task = 0 }
                                      { sub(/\r$/, "") }
   is_task_heading($0)                { flush(); in_task = 1; status = "open"; is_skipped = ($0 ~ / — Branch /); is_measured = 0; next }
   /^## /                             { flush(); next }
   in_task && /^\*\*Actual time:\*\*/ { is_measured = ($0 ~ /≈/) }
-  in_task && is_status_line($0)      { status = status_of($0); if ($0 ~ /delegated to/) is_skipped = 1 }
+  in_task && linked_unit($0) != ""   { is_skipped = 1 }
+  in_task && is_status_line($0)      { status = status_of($0) }
   END { flush(); print count + 0 }'
 
 # En-tête du plan : ancienne ligne **Actual:** retirée, nouvelle sous **Estimate:**, à défaut sous **Date:** ; sans
@@ -47,6 +48,24 @@ readonly ACTUAL_LINE_PROGRAM='
   (has_estimate || has_date) && line ~ /^\*\*Actual:\*\*/ { next }
   { print }
   !written && (has_estimate || has_date) && is_anchor(line) { print "**Actual:** " actual eol; written = 1 }'
+
+# Minutes d'agent des tâches mesurées par la session : réels chiffrés des tâches cochées, hors tâche-branche et tâche liée.
+readonly TASK_MINUTES_PROGRAM="$TASK_STATUS_AWK"'
+  function flush() { if (in_task && status == "done" && !is_skipped) sum += minutes; in_task = 0 }
+                                     { sub(/\r$/, "") }
+  is_task_heading($0)                { flush(); in_task = 1; status = "open"; is_skipped = ($0 ~ / — Branch /); minutes = 0; next }
+  /^## /                             { flush(); next }
+  in_task && /^\*\*Actual time:\*\*.*≈/ { if (match($0, /[0-9]+(\.[0-9]+)?/)) minutes = substr($0, RSTART, RLENGTH) + 0 }
+  in_task && linked_unit($0) != ""   { is_skipped = 1 }
+  in_task && is_status_line($0)      { status = status_of($0) }
+  END { flush(); printf "%.1f", sum }'
+
+# Ligne **Unplanned** du ## Summary remplacée, ou ajoutée sous **Total** ; sans **Total**, plan recopié tel quel.
+readonly UNPLANNED_ROW_PROGRAM='
+  { line = $0; eol = (line ~ /\r$/) ? "\r" : ""; sub(/\r$/, "", line) }
+  line ~ /^\| \*\*Unplanned\*\*/ { next }
+  { print }
+  line ~ /^\| \*\*Total\*\*/ { print "| **Unplanned** | | | | **" unplanned "** | |" eol }'
 
 ROOT="."
 BRANCH=""
@@ -132,12 +151,13 @@ partial_suffix() {
 
 # Valeur de l'en-tête **Actual:** du plan <plan> dans REPLY, même forme que la ligne de tâche, total à la fin.
 # BUSINESS_RULE: total = agent + humain — vérifications et fusion sont des parts du temps d'agent, la mise en route une
-# part du temps des délégués ; les délégués, simultanés, sont affichés à part et hors total
+# part du temps des délégués ; les délégués, simultanés, sont affichés à part et hors total — ceux des projets liés
+# compris, absents de agent_minutes de metrics.json, donc du calibrage
 build_actual_line() {
   local field line
   local -A value
   for field in parent_minutes human_minutes questions question_minutes check_minutes delegate_setup_minutes \
-    merge_minutes delegated_minutes; do
+    merge_minutes delegated_minutes linked_delegated_minutes; do
     aggregate_field "$field"; value[$field]=$REPLY
   done
   approximate_minutes "${value[parent_minutes]}"; line="$REPLY agent"
@@ -146,7 +166,8 @@ build_actual_line() {
   shown_minutes "${value[question_minutes]}"; line+=" (${value[questions]/null/$NO_MEASURE} questions, $REPLY)"
   sum_minutes "${value[delegate_setup_minutes]}" "${value[merge_minutes]}"; shown_minutes "$REPLY"
   line+=" · fixed $REPLY (delegate setup, merge)"
-  shown_minutes "${value[delegated_minutes]}"; line+=" · delegates $REPLY in parallel"
+  sum_minutes "${value[delegated_minutes]}" "${value[linked_delegated_minutes]}"; shown_minutes "$REPLY"
+  line+=" · delegates $REPLY in parallel"
   sum_minutes "${value[parent_minutes]}" "${value[human_minutes]}"; approximate_minutes "$REPLY"; line+=" · total $REPLY"
   partial_suffix "$1"
   REPLY="$line$REPLY"
@@ -154,6 +175,26 @@ build_actual_line() {
 
 has_measure_log() {
   [ -f "$ROOT/.forge/branch/$BRANCH/$TIME_LOG_NAME" ] || { [ -n "$PARENT_LOG" ] && [ -f "$PARENT_LOG" ]; }
+}
+
+# Temps d'agent hors tâche dans REPLY : agent de la branche moins les tâches mesurées, jamais négatif, « — » sans mesure.
+# BUSINESS_RULE: travail jamais mis au plan, conflits, livraison, suite complète, tâche en cours ou non mesurée
+unplanned_minutes() {
+  local planned
+  REPLY=$NO_MEASURE
+  [ "$AGENT_MINUTES" = null ] && return 0
+  planned=$(awk "$TASK_MINUTES_PROGRAM" "$1")
+  REPLY=$(awk -v agent="$AGENT_MINUTES" -v planned="$planned" 'BEGIN { rest = agent - planned; printf "≈ %.1f min", (rest > 0 ? rest : 0) }')
+}
+
+# Ligne **Unplanned** du ## Summary, écrite avec l'en-tête **Actual:** ; le hook la garde entre deux livraisons.
+write_unplanned_row() {
+  local plan="$ROOT/.forge/branch/$BRANCH/plan.md" content
+  [ -f "$plan" ] && has_measure_log || return 0
+  unplanned_minutes "$plan"
+  content=$(awk -v unplanned="$REPLY" "$UNPLANNED_ROW_PROGRAM" "$plan") || return 0
+  [ -n "$content" ] && printf '%s\n' "$content" > "$plan"
+  return 0
 }
 
 # En-tête **Actual:** du plan réécrit ; plan intact sans plan ni journal de mesure.
@@ -231,6 +272,7 @@ main() {
   metrics_file="$ROOT/.forge/branch/$BRANCH/metrics.json"
   printf '%s\n' "$REPLY" > "$metrics_file"
   write_actual_line
+  write_unplanned_row
   render_report "$metrics_file"
 }
 

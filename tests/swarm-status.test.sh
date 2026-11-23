@@ -415,6 +415,13 @@ delegated to ../api @ upgrade')" "$(linked_task T2 web upgrade none '[ ]')"
   assert_contains '"slots":2' "$output"
 }
 
+test_reads_linked_unit_from_a_note_without_field() {
+  create_linked_repository api forged
+  write_linked_plan "$(linked_task T1 api upgrade none '[ ]
+delegated to ../api @ upgrade' | sed '/^\*\*Linked branch:/d')"
+  assert_contains '"running":[{"task":"T1","type":"linked","branch":"upgrade","linked":"../api","tasks":["T1"]}]' "$(swarm_status)"
+}
+
 test_ignores_delegated_to_written_in_a_description() {
   create_linked_repository api forged
   write_linked_plan "$(linked_task T1 api upgrade none '[ ]' | sed 's/^\*\*Files:\*\*.*/**Description:** relire les notes delegated to du plan/')"
@@ -517,6 +524,7 @@ run_test test_launches_linked_tasks_of_different_repositories_together "rend lan
 run_test test_groups_tasks_sharing_a_linked_branch_into_one_unit "réunit en une unité les tâches d une même branche liée"
 run_test test_linked_unit_waits_for_its_open_dependencies "met en attente une unité liée dont une dépendance est ouverte"
 run_test test_reports_delegated_linked_unit_as_running "rend en cours une unité liée déjà déléguée"
+run_test test_reads_linked_unit_from_a_note_without_field "lit une unité liée depuis sa seule note"
 run_test test_ignores_delegated_to_written_in_a_description "ignore « delegated to » écrit dans une description"
 run_test test_mixes_child_branches_and_linked_units_in_plan_order "mêle branches filles et unités liées dans l ordre du plan"
 run_test test_launches_one_unit_at_a_time_on_an_unforged_project "ne lance qu une unité à la fois sur un projet non forgé"

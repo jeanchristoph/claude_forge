@@ -30,14 +30,16 @@ Mode délégué `SCOPE: branch` → `--root` vaut ROOT (le worktree) ; compte re
 
 ### Vérification complète
 
-**Déclencheur :** étape 0 de la Livraison, avant toute commande git — parent seulement : un projet lié livré par la livraison relayée a été vérifié par son délégué.
+**Déclencheur :** Livraison, avant la séquence et toute commande git — parent seulement : la suite d'un projet lié est lancée par son délégué, avant `FORGE_DONE` (« Suite complète du projet lié » de `commands/delegated-mode.md`).
 
 **Réaction — dans l'ordre :**
-1. Commande = ligne `**Full check:** \`<commande>\`` de `## Tools & access` de `.forge/project.md`. Absente → la demander une fois en texte libre : "What command runs the full test suite? (`none` if there is none)", l'écrire dans `project.md` ; `none` → écrite telle quelle, aucune vérification, étape suivante.
-2. L'exécuter sous ROOT. Verte → une ligne au compte rendu, sous le tableau : `Full check: passed`.
+1. Commande = ligne `**Full check:** \`<commande>\`` de `## Tools & access` de `.forge/project.md`. Absente → détecter un pipeline de tests (section « Vérifications » de `phases/p0-project.md`) : trouvé → écrire `ci` dans `project.md`, sans question ; sinon la demander une fois en texte libre : "What command runs the full test suite? (`none` if there is none)", l'écrire dans `project.md`.
+   - `none` → aucune vérification, aucune ligne au compte rendu.
+   - `ci` → rien n'est lancé en local ; ligne `Full check: left to CI` sous le tableau. Action `push` en `done` sur `master` / `main` → ligne ajoutée : `CI not awaited: <branche> was pushed before its result` — information seule, jamais bloquante.
+2. Autre valeur → l'exécuter sous ROOT. Verte → une ligne au compte rendu, sous le tableau : `Full check: passed`.
 3. Rouge → afficher les échecs tels que la commande les rend, aucune livraison, aucune écriture. STOP — ne pas continuer.
 
-⚠️ Seul moment où la suite complète tourne : pendant une tâche, seuls les tests des fichiers modifiés (« Tests d'une tâche » de `phases/p5-resume.md`).
+⚠️ Seul moment où la suite complète du dépôt courant tourne : pendant une tâche, seuls les tests des fichiers modifiés (« Tests d'une tâche » de `phases/p5-resume.md`).
 
 ### Synthèse de mesure — `metrics.json`
 
@@ -63,7 +65,7 @@ Compte rendu de la Livraison : une ligne sous le tableau, depuis `metrics` — `
 
 **Pour chaque `<LINKED>` distinct, dans l'ordre du plan :**
 - `git -C <LINKED_GIT> status --porcelain` vide → ignorer sans question. Une ligne au rendu final : "`<LINKED>`: nothing to engrave."
-- Sinon → poser le choix avec `AskUserQuestion` — `header` : `Linked`, question "Also engrave `<LINKED>` @ `<LINKED_BRANCH>`?", options `Engrave it` / `Skip`.
+- Sinon → poser le choix avec `AskUserQuestion` — `header` : `Linked`, question "Also engrave `<LINKED>` @ `<LINKED_BRANCH>`?", options `Engrave it` / `Skip`. Note du projet lié portant `full check: failed` → l'échec recopié en tête de la question : "Full check failed: <échec>." — information, jamais bloquante ; note sans `full check` (retour sans suite, ou délégation antérieure à cette règle) → rien d'ajouté.
 - **Sur `Skip`** → projet lié écarté de la séquence, sans commentaire.
 - **Sur `Engrave it`** → poser le choix des branches avec `AskUserQuestion` — `header` : `Linked branches`, options dans cet ordre :
   - `Same branches as the parent` → "[branches citées du parent, dans l'ordre]" — omise si le parent n'en cite aucune.

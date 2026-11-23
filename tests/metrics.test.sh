@@ -226,6 +226,65 @@ test_actual_line_keeps_crlf_line_endings() {
 
 # ── Exécution ─────────────────────────────────────────────────────────────────
 
+test_actual_line_counts_linked_delegates_apart_from_agent_and_total() {
+  write_turn
+  local start
+  start=$(( $(date +%s) * 1000 - 600000 ))
+  printf '{"event":"delegate","agent_id":"a","branch":"php85","project":"../api"}\n{"ts":%s,"event":"SubagentStart","session":"s1","agent_id":"a"}\n{"ts":%s,"event":"SubagentStop","session":"s1","agent_id":"a"}\n' \
+    "$start" $((start + 300000)) >> "$LOG"
+  metrics --event engrave >/dev/null
+  assert_matches '^\*\*Actual:\*\* ≈ 2\.0 min agent .* · delegates 5\.0 min in parallel · total ≈ 2\.0 min' "$(grep '^\*\*Actual:\*\*' "$BRANCH_DIR/plan.md")"
+  assert_matches '"agent_minutes":2\.0,' "$(cat "$BRANCH_DIR/metrics.json")"
+}
+
+# Plan à une tâche cochée au réel <réel>, tableau récapitulatif avec sa ligne Total.
+write_measured_plan() {
+  sed -i "s/^\*\*Effort:\*\* S\$/&\n**Actual time:** $1/" "$BRANCH_DIR/plan.md"
+  printf '\n## Summary\n| Task | Effort | Files | Estimated | Actual | Status |\n|---|---|---|---|---|---|\n| T1 | S | 2 | — | — | [x] |\n| **Total** | | | | | |\n' >> "$BRANCH_DIR/plan.md"
+}
+
+unplanned_rows() {
+  grep '^| \*\*Unplanned\*\*' "$BRANCH_DIR/plan.md"
+}
+
+test_unplanned_row_holds_agent_time_outside_measured_tasks() {
+  write_turn
+  write_measured_plan "≈ 0.5 min agent (incl. 0.0 min checks)"
+  metrics --event engrave >/dev/null
+  metrics --event engrave >/dev/null
+  assert_equals '| **Unplanned** | | | | **≈ 1.5 min** | |' "$(unplanned_rows)"
+  assert_matches '^\| \*\*Total\*\*' "$(grep -B1 '^| \*\*Unplanned\*\*' "$BRANCH_DIR/plan.md" | head -1)"
+}
+
+test_unplanned_row_is_never_negative() {
+  write_turn
+  write_measured_plan "≈ 9.0 min agent (incl. 0.0 min checks)"
+  metrics --event engrave >/dev/null
+  assert_equals '| **Unplanned** | | | | **≈ 0.0 min** | |' "$(unplanned_rows)"
+}
+
+test_unplanned_row_ignores_time_of_linked_tasks() {
+  write_turn
+  write_measured_plan "≈ 9.0 min agent (incl. 0.0 min checks)"
+  sed -i 's/^\*\*Effort:\*\* S$/&\n**Linked branch:** ..\/api @ php85/' "$BRANCH_DIR/plan.md"
+  metrics --event engrave >/dev/null
+  assert_equals '| **Unplanned** | | | | **≈ 2.0 min** | |' "$(unplanned_rows)"
+}
+
+test_unplanned_row_is_a_dash_without_measure() {
+  : > "$LOG"
+  write_measured_plan "—"
+  metrics --event engrave >/dev/null
+  assert_equals '| **Unplanned** | | | | **—** | |' "$(unplanned_rows)"
+}
+
+test_linked_branch_task_without_note_is_not_an_unmeasured_task() {
+  write_turn
+  sed -i 's/^\*\*Effort:\*\* S$/&\n**Linked branch:** ..\/api @ php85/' "$BRANCH_DIR/plan.md"
+  metrics --event engrave >/dev/null
+  case $(grep '^\*\*Actual:\*\*' "$BRANCH_DIR/plan.md") in *"unmeasured tasks"*) echo "    linked task counted"; exit 1 ;; esac
+}
+
 run_test() {
   setup_sandbox
   if ( "$1" ); then
@@ -236,6 +295,12 @@ run_test() {
   teardown_sandbox
 }
 
+run_test test_unplanned_row_holds_agent_time_outside_measured_tasks "ligne Unplanned : temps d'agent hors tâches mesurées, une seule ligne sous Total"
+run_test test_unplanned_row_is_never_negative "ligne Unplanned jamais négative"
+run_test test_unplanned_row_ignores_time_of_linked_tasks "ligne Unplanned : réel d'une tâche liée jamais retiré de la session"
+run_test test_unplanned_row_is_a_dash_without_measure "ligne Unplanned : tiret sans mesure"
+run_test test_actual_line_counts_linked_delegates_apart_from_agent_and_total "en-tête Actual : délégués liés affichés, hors agent et hors total"
+run_test test_linked_branch_task_without_note_is_not_an_unmeasured_task "tâche à branche liée sans note : jamais comptée non mesurée"
 run_test test_writes_one_line_with_fixed_field_order "écrit metrics.json sur une ligne, champs dans l'ordre figé"
 run_test test_agent_minutes_sum_parent_and_delegates "minutes d'agent : somme du parent et des délégués"
 run_test test_durations_are_null_without_log "sans journal, durées à null"

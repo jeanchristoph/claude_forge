@@ -113,9 +113,41 @@ test_does_not_count_absence_over_six_hours_as_human_time() {
   assert_contains '"human_minutes":0.0' "$output"
 }
 
-test_counts_gap_of_exactly_six_hours_as_human_time() {
+test_counts_gap_of_exactly_six_hours_as_a_three_minute_pause() {
   own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}'              '{"ts":60000,"event":"Stop","session":"s"}'              '{"ts":21660000,"event":"UserPromptSubmit","session":"s","origin":"human"}'              '{"ts":21720000,"event":"Stop","session":"s"}'
-  assert_contains '"human_minutes":360.0' "$(aggregate)"
+  assert_contains '"human_minutes":3.0' "$(aggregate)"
+}
+
+test_counts_gap_of_exactly_one_hour_as_human_time() {
+  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":60000,"event":"Stop","session":"s"}' \
+             '{"ts":3660000,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":3720000,"event":"Stop","session":"s"}'
+  assert_contains '"human_minutes":60.0' "$(aggregate)"
+}
+
+test_counts_gap_over_one_hour_as_a_three_minute_pause() {
+  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":60000,"event":"Stop","session":"s"}' \
+             '{"ts":3660001,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":3720001,"event":"Stop","session":"s"}'
+  local output
+  output=$(aggregate)
+  assert_contains '"parent_minutes":2.0' "$output"
+  assert_contains '"human_minutes":3.0' "$output"
+}
+
+test_counts_question_left_over_one_hour_as_a_three_minute_pause() {
+  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":60000,"event":"PreToolUse","session":"s","tool":"AskUserQuestion"}' \
+             '{"ts":7260000,"event":"PostToolUse","session":"s","tool":"AskUserQuestion"}' \
+             '{"ts":7320000,"event":"Stop","session":"s"}'
+  local output
+  output=$(aggregate)
+  assert_contains '"parent_minutes":2.0' "$output"
+  assert_contains '"questions":1' "$output"
+  assert_contains '"question_minutes":3.0' "$output"
+  assert_contains '"human_minutes":3.0' "$output"
 }
 
 test_does_not_count_question_left_over_six_hours_as_human_time() {
@@ -150,6 +182,52 @@ test_closes_turn_interrupted_by_escape_without_counting_the_pause() {
 test_closes_turn_interrupted_by_task_notification() {
   own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}'              '{"ts":120000,"event":"PostToolUse","session":"s","tool":"Bash","duration_ms":1000}'              '{"ts":120000,"event":"UserPromptSubmit","session":"s","origin":"agent"}'              '{"ts":180000,"event":"Stop","session":"s"}'
   assert_contains '"parent_minutes":3.0' "$(aggregate)"
+}
+
+test_keeps_turn_open_when_a_command_crosses_the_prompt() {
+  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":60000,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":240000,"event":"PostToolUse","session":"s","tool":"Bash","duration_ms":230000,"check":true}' \
+             '{"ts":300000,"event":"Stop","session":"s"}'
+  assert_contains '"parent_minutes":5.0' "$(aggregate)"
+}
+
+test_counts_each_gap_once_when_several_prompts_cross_a_command() {
+  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":60000,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":120000,"event":"UserPromptSubmit","session":"s","origin":"agent"}' \
+             '{"ts":230000,"event":"PostToolUse","session":"s","tool":"Bash","duration_ms":220000}' \
+             '{"ts":240000,"event":"PostToolUse","session":"s","tool":"Bash","duration_ms":230000}' \
+             '{"ts":300000,"event":"Stop","session":"s"}'
+  assert_contains '"parent_minutes":5.0' "$(aggregate)"
+}
+
+test_command_started_after_the_prompt_never_gives_the_gap_back() {
+  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":60000,"event":"PostToolUse","session":"s","tool":"Bash","duration_ms":1000}' \
+             '{"ts":600000,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":650000,"event":"PostToolUse","session":"s","tool":"Bash","duration_ms":40000}' \
+             '{"ts":660000,"event":"Stop","session":"s"}'
+  assert_contains '"parent_minutes":2.0' "$(aggregate)"
+}
+
+test_delegate_command_never_gives_the_gap_back() {
+  own_events '{"event":"delegate","agent_id":"x1","branch":"feature-child"}' \
+             '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":60000,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":100000,"event":"PostToolUse","session":"s","agent_id":"x1","tool":"Bash","duration_ms":90000}' \
+             '{"ts":120000,"event":"Stop","session":"s"}'
+  assert_contains '"parent_minutes":1.0' "$(aggregate)"
+}
+
+test_prompt_during_a_question_never_turns_the_wait_into_agent_time() {
+  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":60000,"event":"PreToolUse","session":"s","tool":"AskUserQuestion"}' \
+             '{"ts":120000,"event":"UserPromptSubmit","session":"s","origin":"agent"}' \
+             '{"ts":180000,"event":"PostToolUse","session":"s","tool":"AskUserQuestion","duration_ms":120000}' \
+             '{"ts":200000,"event":"PostToolUse","session":"s","tool":"Bash","duration_ms":190000}' \
+             '{"ts":240000,"event":"Stop","session":"s"}'
+  assert_contains '"parent_minutes":2.0' "$(aggregate)"
 }
 
 test_keeps_interleaved_sessions_apart() {
@@ -575,6 +653,17 @@ test_task_closes_turn_interrupted_by_prompt_at_last_activity() {
   assert_contains '"agent_minutes":1.5' "$(aggregate --task T1)"
 }
 
+# Écart commencé avant task_start : seule sa part dans la fenêtre de la tâche est rendue.
+test_task_keeps_turn_open_when_a_command_crosses_the_prompt() {
+  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":30000,"event":"task_start","task":"T1"}' \
+             '{"ts":90000,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":240000,"event":"PostToolUse","session":"s","tool":"Bash","duration_ms":230000,"check":true}' \
+             '{"ts":270000,"event":"task_done","task":"T1"}' \
+             '{"ts":300000,"event":"Stop","session":"s"}'
+  assert_contains '"agent_minutes":4.0' "$(aggregate --task T1)"
+}
+
 test_task_removes_question_inside_window_and_counts_it_as_human() {
   own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
              '{"ts":10000,"event":"task_start","task":"T1"}' \
@@ -625,6 +714,32 @@ test_task_does_not_count_absence_over_six_hours_as_human_time() {
   output=$(aggregate --task T1)
   assert_contains '"agent_minutes":2.0' "$output"
   assert_contains '"human_minutes":0.0' "$output"
+}
+
+test_task_counts_question_left_over_one_hour_as_a_three_minute_pause() {
+  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":0,"event":"task_start","task":"T1"}' \
+             '{"ts":60000,"event":"PreToolUse","session":"s","tool":"AskUserQuestion"}' \
+             '{"ts":7260000,"event":"PostToolUse","session":"s","tool":"AskUserQuestion"}' \
+             '{"ts":7320000,"event":"task_done","task":"T1"}'
+  local output
+  output=$(aggregate --task T1)
+  assert_contains '"agent_minutes":2.0' "$output"
+  assert_contains '"human_minutes":3.0' "$output"
+  assert_contains '"questions":1' "$output"
+}
+
+# Pause à cheval sur deux tâches : les 3 min vont à la tâche de la réponse, jamais aux deux.
+test_task_pause_across_two_tasks_counts_once() {
+  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":0,"event":"task_start","task":"T1"}' \
+             '{"ts":60000,"event":"Stop","session":"s"}' \
+             '{"ts":3600000,"event":"task_done","task":"T1"}' \
+             '{"ts":3600000,"event":"task_start","task":"T2"}' \
+             '{"ts":7260000,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":7320000,"event":"task_done","task":"T2"}'
+  assert_contains '"human_minutes":0.0' "$(aggregate --task T1)"
+  assert_contains '"human_minutes":3.0' "$(aggregate --task T2)"
 }
 
 test_task_keeps_last_start_mark() {
@@ -681,6 +796,83 @@ test_task_started_before_late_start_stays_unmeasured() {
              '{"ts":1000,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
              '{"ts":61000,"event":"task_done","task":"T1"}'
   assert_contains '"measured":false,"reason":"late_start"' "$(aggregate --task T1)"
+}
+
+# ── Projets liés ──────────────────────────────────────────────────────────────
+
+# Deux dépôts liés sur la même branche « feature », un délégué chacun : 2 min pour l'un, 10 min pour l'autre.
+two_linked_projects() {
+  parent_events '{"event":"delegate","agent_id":"a","branch":"feature","project":"../api"}' \
+                '{"event":"delegate","agent_id":"b","branch":"feature","project":"../pos"}' \
+                '{"ts":0,"event":"SubagentStart","agent_id":"a","session":"s"}' \
+                '{"ts":0,"event":"SubagentStart","agent_id":"b","session":"s"}' \
+                '{"ts":0,"event":"task_start","task":"T1","branch":"feature","project":"../api","files":""}' \
+                '{"ts":0,"event":"task_start","task":"T1","branch":"feature","project":"../pos","files":""}' \
+                '{"ts":60000,"event":"task_done","task":"T1","branch":"feature","project":"../api","files":"x\t1"}' \
+                '{"ts":120000,"event":"SubagentStop","agent_id":"a","session":"s"}' \
+                '{"ts":300000,"event":"task_done","task":"T1","branch":"feature","project":"../pos","files":"y\t1\nz\t1"}' \
+                '{"ts":600000,"event":"SubagentStop","agent_id":"b","session":"s"}'
+}
+
+test_counts_only_delegates_of_the_linked_project() {
+  two_linked_projects
+  assert_contains '"delegated_minutes":2.0' "$(aggregate --parent-log "$PARENT_LOG" --project ../api)"
+  assert_contains '"delegated_minutes":10.0' "$(aggregate --parent-log "$PARENT_LOG" --project ../pos)"
+}
+
+test_keeps_task_marks_of_two_linked_projects_apart() {
+  two_linked_projects
+  assert_contains '"agent_minutes":1.0,"human_minutes":0.0,"questions":0,"check_minutes":0.0,"actual_files":1,"measured":true' "$(aggregate --parent-log "$PARENT_LOG" --project ../api --task T1)"
+  assert_contains '"agent_minutes":5.0,"human_minutes":0.0,"questions":0,"check_minutes":0.0,"actual_files":2,"measured":true' "$(aggregate --parent-log "$PARENT_LOG" --project ../pos --task T1)"
+}
+
+test_old_delegate_line_without_project_is_never_given_to_a_project() {
+  parent_events '{"event":"delegate","agent_id":"a","branch":"feature"}' \
+                '{"ts":0,"event":"SubagentStart","agent_id":"a","session":"s"}' \
+                '{"ts":120000,"event":"SubagentStop","agent_id":"a","session":"s"}'
+  assert_contains '"delegated_minutes":null' "$(aggregate --parent-log "$PARENT_LOG" --project ../api)"
+  assert_contains '"delegated_minutes":2.0' "$(aggregate --parent-log "$PARENT_LOG")"
+}
+
+test_reports_linked_delegates_apart_even_on_a_branch_of_the_same_name() {
+  own_events '{"event":"delegate","agent_id":"a","branch":"feature","project":"../api"}' \
+             '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":0,"event":"SubagentStart","agent_id":"a","session":"s"}' \
+             '{"ts":60000,"event":"Stop","session":"s"}' \
+             '{"ts":120000,"event":"SubagentStop","agent_id":"a","session":"s"}'
+  local output
+  output=$(aggregate)
+  assert_contains '"parent_minutes":1.0,"delegated_minutes":0.0' "$output"
+  assert_contains '"linked_delegated_minutes":2.0' "$output"
+}
+
+test_reports_no_linked_delegate_as_null() {
+  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' '{"ts":60000,"event":"Stop","session":"s"}'
+  assert_contains '"linked_delegated_minutes":null' "$(aggregate)"
+}
+
+# Retour de délégué pendant une question : le tour qui l'a posée est fermé, la réponse arrive dans le tour suivant.
+question_across_two_turns() {
+  own_events '{"ts":0,"event":"task_start","task":"T1"}' \
+             '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":60000,"event":"PreToolUse","session":"s","tool":"AskUserQuestion"}' \
+             '{"ts":180000,"event":"UserPromptSubmit","session":"s","origin":"agent"}' \
+             '{"ts":180000,"event":"PostToolUse","session":"s","tool":"AskUserQuestion","duration_ms":120000}' \
+             '{"ts":186000,"event":"Stop","session":"s"}' \
+             '{"ts":186000,"event":"task_done","task":"T1"}'
+}
+
+test_question_across_two_turns_never_makes_a_turn_negative() {
+  question_across_two_turns
+  local output
+  output=$(aggregate)
+  assert_contains '"parent_minutes":1.1' "$output"
+  assert_contains '"human_minutes":2.0' "$output"
+}
+
+test_task_question_across_two_turns_never_makes_it_negative() {
+  question_across_two_turns
+  assert_contains '"agent_minutes":1.1,"human_minutes":2.0,"questions":1' "$(aggregate --task T1)"
 }
 
 test_task_unmeasured_without_log() {
@@ -873,12 +1065,20 @@ run_test test_removes_question_wait_from_turn_and_counts_it_as_human "retire l'a
 run_test test_counts_gap_before_human_prompt_as_human_time "compte en temps humain l'écart avant un prompt de l'utilisateur"
 run_test test_does_not_count_wait_for_delegate_as_human_time "ne compte pas en temps humain l'attente d'un délégué"
 run_test test_does_not_count_absence_over_six_hours_as_human_time "ne compte pas en temps humain une absence de plus de 6 h avant un prompt"
-run_test test_counts_gap_of_exactly_six_hours_as_human_time "compte en temps humain un écart de 6 h tout juste"
+run_test test_counts_gap_of_exactly_six_hours_as_a_three_minute_pause "compte 3 min un écart de 6 h tout juste"
+run_test test_counts_gap_of_exactly_one_hour_as_human_time "compte en entier un écart de 60 min tout juste"
+run_test test_counts_gap_over_one_hour_as_a_three_minute_pause "compte 3 min un écart de plus de 60 min"
+run_test test_counts_question_left_over_one_hour_as_a_three_minute_pause "compte 3 min une question restée plus de 60 min sans réponse"
 run_test test_does_not_count_question_left_over_six_hours_as_human_time "ne compte pas en temps humain une question restée plus de 6 h sans réponse"
 run_test test_ignores_turn_without_stop "ignore un tour resté ouvert en fin de journal"
 run_test test_closes_turn_interrupted_by_queued_prompt_at_last_activity "ferme au dernier événement un tour interrompu par un prompt en file"
 run_test test_closes_turn_interrupted_by_escape_without_counting_the_pause "ferme un tour interrompu par Échap sans compter la pause"
 run_test test_closes_turn_interrupted_by_task_notification "ferme un tour interrompu par une notification de tâche de fond"
+run_test test_keeps_turn_open_when_a_command_crosses_the_prompt "prompt pendant une commande : le tour continue"
+run_test test_counts_each_gap_once_when_several_prompts_cross_a_command "plusieurs prompts pendant une commande : chaque écart compté une fois"
+run_test test_command_started_after_the_prompt_never_gives_the_gap_back "commande commencée après le prompt : écart toujours écarté"
+run_test test_delegate_command_never_gives_the_gap_back "commande d'un délégué : écart toujours écarté"
+run_test test_prompt_during_a_question_never_turns_the_wait_into_agent_time "prompt pendant une question : attente jamais comptée en temps d'agent"
 run_test test_keeps_interleaved_sessions_apart "sépare deux sessions entrelacées"
 run_test test_sums_check_durations_of_main_session "additionne les vérifications de la session principale"
 run_test test_ignores_events_of_agent_delegated_to_another_branch "écarte les événements d'un agent délégué à une autre branche"
@@ -926,10 +1126,13 @@ run_test test_task_counts_checks_finished_inside_window "tâche : compte les vé
 run_test test_task_counts_open_turn_up_to_done_mark "tâche : compte un tour encore ouvert jusqu'à la marque de fin"
 run_test test_task_ignores_older_turn_left_without_stop "tâche : écarte un tour plus ancien resté sans Stop"
 run_test test_task_closes_turn_interrupted_by_prompt_at_last_activity "tâche : ferme au dernier événement un tour interrompu par un prompt"
+run_test test_task_keeps_turn_open_when_a_command_crosses_the_prompt "tâche : prompt pendant une commande, le tour continue"
 run_test test_task_removes_question_inside_window_and_counts_it_as_human "tâche : retire une question de la fenêtre et la compte en temps humain"
 run_test test_task_ignores_turns_and_questions_outside_window "tâche : écarte tours et questions hors de la fenêtre"
 run_test test_task_counts_gap_before_human_prompt_inside_window "tâche : compte en temps humain l'écart avant un prompt dans la fenêtre"
 run_test test_task_does_not_count_absence_over_six_hours_as_human_time "tâche : ne compte pas en temps humain une absence de plus de 6 h"
+run_test test_task_counts_question_left_over_one_hour_as_a_three_minute_pause "tâche : compte 3 min une question restée plus de 60 min sans réponse"
+run_test test_task_pause_across_two_tasks_counts_once "tâche : pause à cheval sur deux tâches comptée une seule fois"
 run_test test_task_keeps_last_start_mark "tâche : retient la dernière marque de début"
 run_test test_task_ignores_marks_of_other_tasks "tâche : écarte les marques des autres tâches"
 run_test test_task_unmeasured_without_start_mark "tâche : non mesurée sans marque de début"
@@ -937,6 +1140,13 @@ run_test test_task_unmeasured_without_done_mark "tâche : non mesurée sans marq
 run_test test_task_unmeasured_with_late_start "tâche : non mesurée sur un journal à départ tardif"
 run_test test_task_started_after_late_start_is_measured "tâche commencée après le départ tardif : mesurée"
 run_test test_task_started_before_late_start_stays_unmeasured "tâche commencée avant le départ tardif : non mesurée"
+run_test test_counts_only_delegates_of_the_linked_project "projet lié : seuls ses délégués comptent, même nom de branche ailleurs"
+run_test test_keeps_task_marks_of_two_linked_projects_apart "projet lié : marques de tâche de deux dépôts jamais mélangées"
+run_test test_old_delegate_line_without_project_is_never_given_to_a_project "ancienne ligne delegate sans projet : jamais attribuée à un projet"
+run_test test_reports_linked_delegates_apart_even_on_a_branch_of_the_same_name "délégués liés rendus à part, même nom de branche que la parente"
+run_test test_reports_no_linked_delegate_as_null "sans délégué lié : null"
+run_test test_question_across_two_turns_never_makes_a_turn_negative "question à cheval sur deux tours : aucun tour négatif"
+run_test test_task_question_across_two_turns_never_makes_it_negative "tâche : question à cheval sur deux tours, aucune durée négative"
 run_test test_task_unmeasured_without_log "tâche : non mesurée sans journal"
 run_test test_task_counts_ordinary_subagent_inside_window "tâche : compte un sous-agent ordinaire dans la fenêtre"
 run_test test_task_ignores_agent_delegated_to_another_branch "tâche : écarte un agent délégué à une autre branche"

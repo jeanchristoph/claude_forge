@@ -81,7 +81,7 @@
 
 **Réaction :**
 - Lancer les seuls tests qui couvrent les fichiers modifiés par la tâche : test du même nom que le fichier, puis tests des fichiers qui l'appellent (Grep de son nom).
-- Jamais la suite complète du projet pendant le développement : elle tourne une fois, à la Livraison (« Vérification complète » de `commands/engrave.md`).
+- Jamais la suite complète du projet pendant le développement : elle tourne une fois, à la Livraison (« Vérification complète » de `commands/engrave.md`) — pour un projet lié, à la fin du délégué (« Suite complète du projet lié » de `commands/delegated-mode.md`).
 - Test rouge → corriger avant la coche ; impossible → `[!]` avec la raison.
 
 ⚠️ Fichier modifié sans test qui le couvre → le signaler dans la note de la tâche, jamais la suite complète à la place.
@@ -98,7 +98,7 @@
 3. Le hook écrit sous `**Estimated time:**` de la tâche, à défaut sous `**Effort:**` : `**Actual time:** ≈ <agent_minutes> min agent (incl. <check_minutes> min checks) · human <human_minutes> min (<questions> questions) · <actual_files> files · total ≈ <agent + human> min`, sans la partie fichiers quand `actual_files` est `null` ; sans mesure → `**Actual time:** —`. Premier nombre = temps d'agent, vérifications comprises, comparé à l'estimation ; total = agent + humain, vérifications jamais ajoutées. La part de vérifications nourrit le coût fixe de vérification de l'estimation.
 
 ⚠️ Jamais de `**Actual time:**` écrit à la main, jamais de durée estimée à la place d'une mesure absente. Hook signalé dans le contexte (`forge plan-hook: …`) → relire `plan.md` avant de l'éditer de nouveau.
-⚠️ Tâche-branche d'un essaim (titre `— Branch <X>`) → aucune marque du hook : son réel vient de « Fusion d'une branche fille » (`commands/swarm.md`). Tâche déléguée à un projet lié (note `delegated to`) → aucune marque du hook : son réel vient du retour du délégué (« Retour — application de `FORGE_DONE` », `commands/delegation.md`).
+⚠️ Tâche-branche d'un essaim (titre `— Branch <X>`) et tâche déléguée à un projet lié (`**Linked branch:**` ou note `delegated to`) → aucune marque, jamais le temps de la session parente ; leur réel est écrit par le hook à la coche : `metrics.json` de la branche fille, ou délégués du seul projet lié (temps humain `—`, il est celui de la session parente). Sans mesure → `—`.
 ⚠️ Plusieurs tâches cochées d'un même coup → tâches simultanées, `—` pour chacune : cocher chaque tâche à sa fin, une par édition.
 
 ---

@@ -223,6 +223,14 @@ repeat_task() {
   for ((i = 0; i < count; i++)); do printf '%s ' "$task"; done
 }
 
+test_linked_branch_field_without_note_is_left_out_of_calibration() {
+  # shellcheck disable=SC2046 — liste de tâches voulue
+  write_plan_tasks feature 2026-11-01 $(repeat_task 20 10:10)
+  assert_contains '"range_source":"tasks"' "$(calibrate --files 100)"
+  sed -i '0,/^\*\*Files:\*\*/s//**Linked branch:** ..\/api @ php85\n&/' "$WORK/.forge/branch/feature/plan.md"
+  assert_contains '"range_source":"reference"' "$(calibrate --files 100)"
+}
+
 test_keeps_reference_range_below_twenty_tasks() {
   # shellcheck disable=SC2046 — liste de tâches voulue
   write_plan_tasks feature 2026-11-01 $(repeat_task 19 10:10)
@@ -415,6 +423,7 @@ run_test test_estimates_at_least_one_minute "une tâche d'un fichier : coût fix
 run_test test_estimates_each_task_of_a_list_and_their_sum "estime chaque tâche d'une liste et leur somme en un appel"
 run_test test_gives_no_list_for_a_single_value "ne rend pas de liste pour une seule valeur"
 run_test test_estimates_files_with_range "estime un nombre de fichiers avec sa fourchette"
+run_test test_linked_branch_field_without_note_is_left_out_of_calibration "branche liée sans note : écartée du calibrage"
 run_test test_keeps_reference_range_below_twenty_tasks "garde la fourchette de référence sous vingt tâches mesurées"
 run_test test_narrows_range_for_regular_tasks "resserre la fourchette sur des tâches régulières"
 run_test test_widens_range_for_dispersed_tasks "élargit la fourchette sur des tâches dispersées"

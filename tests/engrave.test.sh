@@ -527,6 +527,54 @@ test_run_with_metrics_still_commits_metrics_file_after_local_file_fixes() {
   committed_files | grep -qx '.forge/branch/ship/metrics.json' || { echo "    metrics.json not committed"; exit 1; }
 }
 
+# ── Point d'étape de la mesure après une livraison ────────────────────────────
+
+ship_log() {
+  printf '%s' "$WORK/.forge/branch/ship/time-log.jsonl"
+}
+
+last_checkpoint() {
+  grep '"event":"plan_checkpoint"' "$(ship_log)" | tail -1
+}
+
+test_run_moves_checkpoint_after_commit_when_no_task_is_in_progress() {
+  prepare_forge_branch
+  printf '{"ts":1700000000000,"event":"plan_checkpoint","done":"T1 T2","files":""}\n' > "$(ship_log)"
+  engrave run --root "$WORK" --branch ship --message "first" >/dev/null
+  printf '{"ts":1700000000000,"event":"plan_checkpoint","done":"T1 T2","files":""}\n' > "$(ship_log)"
+  engrave run --root "$WORK" --branch ship --message "second" >/dev/null
+  assert_contains '"done":"T1 T2","files":""}' "$(last_checkpoint)"
+  assert_not_contains '"ts":1700000000000,' "$(last_checkpoint)"
+}
+
+test_run_keeps_start_time_of_a_task_in_progress_and_resets_its_files() {
+  prepare_forge_branch
+  engrave run --root "$WORK" --branch ship --message "first" >/dev/null
+  printf '{"ts":1700000000000,"event":"plan_checkpoint","done":"T1","files":""}\n' > "$(ship_log)"
+  echo change > "$WORK/code.txt"
+  engrave run --root "$WORK" --branch ship --message "second" >/dev/null
+  assert_equals 2 "$(grep -c plan_checkpoint "$(ship_log)")"
+  assert_equals '{"ts":1700000000000,"event":"plan_checkpoint","done":"T1","files":""}' "$(last_checkpoint)"
+}
+
+test_run_without_checkpoint_writes_none() {
+  prepare_forge_branch
+  : > "$(ship_log)"
+  engrave run --root "$WORK" --branch ship --message "ship it" >/dev/null
+  assert_equals "" "$(cat "$(ship_log)")"
+}
+
+test_failed_run_and_preview_leave_checkpoint_untouched() {
+  prepare_forge_branch
+  engrave run --root "$WORK" --branch ship --message "first" >/dev/null
+  printf '{"ts":1700000000000,"event":"plan_checkpoint","done":"T1","files":""}\n' > "$(ship_log)"
+  engrave preview --root "$WORK" --branch ship --message "m" >/dev/null
+  push_ahead_from_another_clone ship
+  echo change > "$WORK/code.txt"
+  engrave run --root "$WORK" --branch ship --message "rejected" >/dev/null 2>&1
+  assert_equals 1 "$(grep -c plan_checkpoint "$(ship_log)")"
+}
+
 run_test() {
   local name=$1 label=$2
   setup_sandbox
@@ -580,6 +628,10 @@ run_test test_run_without_log_writes_no_actual_line "sans journal de mesure, auc
 run_test test_run_without_model_writes_no_metrics "sans --model, aucune synthèse de mesure"
 run_test test_preview_with_model_writes_nothing "l'aperçu n'écrit jamais la synthèse de mesure"
 run_test test_run_with_model_outside_forge_branch_writes_no_metrics "sans dossier de branche forge, aucune synthèse"
+run_test test_run_moves_checkpoint_after_commit_when_no_task_is_in_progress "point d'étape avancé après la livraison sans tâche en cours"
+run_test test_run_keeps_start_time_of_a_task_in_progress_and_resets_its_files "tâche en cours : heure de départ gardée, empreinte repartie"
+run_test test_run_without_checkpoint_writes_none "sans point d'étape : rien d'écrit"
+run_test test_failed_run_and_preview_leave_checkpoint_untouched "livraison en échec et aperçu : point d'étape intact"
 run_test test_run_adds_missing_ignore_rules_and_never_commits_local_files "ajoute les règles .gitignore manquantes, sans jamais commiter journal ni input/"
 run_test test_run_untracks_local_files_committed_by_mistake_and_keeps_them_on_disk "retire de l index journal et input/ déjà commités, fichiers gardés sur disque"
 run_test test_journal_written_after_engrave_leaves_nothing_to_commit "journal écrit après la livraison : plus rien à commiter"

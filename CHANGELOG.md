@@ -10,11 +10,17 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ## [Unreleased]
 
+## [0.13.5] — 2026-11-23
+
 ### Changed
+
+- Human time: a wait of more than 60 min and up to 6 h before a prompt or an answer counts 3 min instead of its full length, placed just before the answer so a pause across two tasks counts once; more than 6 h still counts zero.
+
+- Time outside tasks is visible: an `**Unplanned**` row under `**Total**`, written with the branch `**Actual:**` line at engrave and closure. A successful engrave moves the measure checkpoint after its commit, so engraving and the full suite no longer count in the next task (a task in progress keeps its start time). A linked task's estimate stays `· indicative` until its delegate has a plan, then follows that plan's files once.
 
 - Linked worktrees are also removed once their branch is merged into one of the relayed engrave's target branches (`linked-worktree-cleanup.sh --merged-into`, e.g. an engrave limited to `dev`), and a kept worktree always gets a report line with its ready-to-copy `git worktree remove` command — at engrave, merge or not, and at closure.
 
-- Tests scoped to the work: after each task only the tests covering its changed files run; the full suite (`**Full check:**` line of `project.md`, detected at project init or asked once) runs once before engraving, and a red suite stops the engrave before any git command.
+- Tests scoped to the work: after each task only the tests covering its changed files run; the full suite (`**Full check:**` line of `project.md`, detected at project init or asked once) runs once before engraving, and a red suite stops the engrave before any git command. When a CI pipeline already runs the tests on every push, `**Full check:**` is set to `ci`: nothing runs locally, and the report warns when `master` / `main` was pushed before the CI result.
 
 - The swarm spans repositories: open tasks sharing a `**Linked branch:**` form a `linked` unit, launched in parallel with child branches in the same N slots, relayed and resumed through `swarm.md` (new `Type` column), never merged by the parent. `swarm-status.sh` reports them (`type`, `linked`, `tasks`, `forged`) and reads a drafted plan with `--plan`; as soon as it finds one launchable unit (the parent being a parallel lane itself), the plan question puts "Validate and launch the swarm" first — no more linked tasks chained in series.
 
@@ -24,6 +30,10 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 - Measure journal and branch `input/` files no longer committed when `/forge` started on `main` / `master` (the startup check skips there and never ran again once the branch was created): `engrave.sh run` adds the missing forge `.gitignore` rules (`checks.sh`, new `--dry-run`) and removes such files still tracked from the index (`git rm --cached`, kept on disk) before `add`, so the journal written after an engrave no longer shows as a change. Both actions appear only when needed; history already pushed is never rewritten.
 
+- A linked project's full suite runs again: the delegate runs its `**Full check:**` once, before `FORGE_DONE` (since tests were scoped to each task, nothing ran it any more without a CI). The result goes to the new `full_check:` line, then to the parent task's note, and a failure is shown in the `Linked` question before the relayed engrave, never blocking.
+- A message received while a command runs no longer cuts the turn in the measure: when a command started before the prompt ends after it, the time lost between the last activity and the prompt is given back (branch and task); an Escape still counts no pause.
+- The empty branch `input/` folder is also created for a linked branch (with its mandate) and a swarm child branch (with its brief), not only when the brief is written in place.
+- Linked tasks get their delegate's time, not the parent session's: the plan hook recognises them by `**Linked branch:**` or the delegation note on any line, ties each delegate to its linked project in the journal (no model mark any more), and writes the actual at the tick from that project's delegates only (`time-aggregate.sh --project`) — repositories sharing a branch name no longer add up. No measure reads `—`. The branch `**Actual:**` line counts linked delegates too, outside agent time, total and calibration. A question answered after a delegate's return no longer makes a duration negative.
 - Tasks started after a late measure journal (`late_start`) are measured again: only a task started before the journal opened stays unmeasured; the branch measure still reads ` · partial (log started after the branch)`.
 
 ## [0.13.4] — 2026-11-23
@@ -451,7 +461,8 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 - Idempotent Unix and Windows installers, with `settings.json` merge and no duplicate entries on reinstall.
 - `main` / `master` guard: on a protected branch, forge asks for a ticket ID or a branch name before continuing.
 
-[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.4...HEAD
+[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.5...HEAD
+[0.13.5]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.4...v0.13.5
 [0.13.4]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.3...v0.13.4
 [0.13.3]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.2...v0.13.3
 [0.13.2]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.1...v0.13.2

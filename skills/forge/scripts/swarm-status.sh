@@ -24,6 +24,7 @@
 set -u
 
 source "$(dirname "${BASH_SOURCE[0]}")/json.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/task-files.sh"
 
 readonly EXIT_USAGE=1
 readonly DEFAULT_SWARM_SIZE=3
@@ -33,7 +34,7 @@ readonly FIELD_SEPARATOR=$'\x1f'
 
 # Une ligne par tâche, champs séparés par \x1f : numéro, statut, branche ou vide, dépendances séparées par des virgules,
 # branche liée « <dossier> @ <branche> » ou vide, 1 si déléguée sinon 0, titre.
-readonly PLAN_PROGRAM='
+readonly PLAN_PROGRAM="$TASK_STATUS_AWK"'
   function flush() {
     if (task != "") printf "%s\x1f%s\x1f%s\x1f%s\x1f%s\x1f%s\x1f%s\n", task, status, branch, depends, linked, delegated, title
     task = ""
@@ -51,10 +52,8 @@ readonly PLAN_PROGRAM='
     depends = $0; sub(/^\*\*Depends on:\*\* */, "", depends); gsub(/`/, "", depends); gsub(/ /, "", depends)
     if (depends == "none") depends = ""
   }
-  task != "" && /^\*\*Linked branch:\*\*/ {
-    linked = $0; sub(/^\*\*Linked branch:\*\* */, "", linked); gsub(/`/, "", linked); sub(/ +$/, "", linked)
-  }
-  task != "" && !/^\*\*/ && /delegated to / { delegated = 1 }
+  task != "" && linked == "" { linked = linked_unit($0) }
+  task != "" && is_delegation_note($0) { delegated = 1 }
   task != "" && !status_read && /^\[[ x!-]\]/ && !/^\[.\] T[0-9]+\.[0-9]+/ {
     mark = substr($0, 2, 1); status_read = 1
     status = (mark == "x") ? "done" : (mark == "!") ? "blocked" : (mark == "-") ? "dropped" : "open"

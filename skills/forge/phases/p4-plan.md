@@ -91,6 +91,10 @@ Si BRIEF contient `## Origin` (`SCOPE: linked` — mandat) → les étapes ci-de
 
 **Écrit à la livraison et à la clôture :** `**Actual:**` sous `**Estimate:**`, à défaut sous `**Date:**` — écrit par `scripts/metrics.sh` au moment où il écrit `metrics.json` (`engrave.sh run`, avant le `git add` : la ligne part avec le commit ; clôture par `metrics.sh --event closure`), jamais par le hook ni le modèle. Entre deux livraisons, la ligne garde la valeur de la dernière ; le hook la garde telle quelle.
 
+**Ligne `**Unplanned**` :** écrite avec `**Actual:**` par `scripts/metrics.sh`, sous `**Total**` de `## Summary` — temps d'agent de la branche moins celui des tâches mesurées : travail jamais mis au plan, conflits, livraison, tâche en cours ou non mesurée ; jamais négative, `—` sans mesure. Le hook la garde telle quelle entre deux livraisons.
+
+**Estimation d'une tâche liée :** `· indicative` tant que son délégué n'a pas de plan — le parent ne lit pas le code lié. Plan du délégué écrit → à la prochaine écriture du plan parent, le hook reprend ses fichiers prévus (`**Estimated files:**`) et refait l'estimation une seule fois, figée. Jamais écrits par le modèle.
+
 **Temps réel de la branche :** `**Actual:** ≈ [a] min agent (incl. [c] min checks) · human [h] min ([n] questions, [q] min) · fixed [f] min (delegate setup, merge) · delegates [d] min in parallel · total ≈ [a + h] min` — même forme que la ligne de tâche, total à la fin, mesure de la branche par `time-aggregate.sh`. Total = agent + humain : vérifications et fusion sont des parts du temps d'agent, la mise en route une part du temps des délégués, simultané, affiché à part et hors total. Poste sans mesure → `—`, jamais estimé. ` · partial ([raison])` quand la mesure est incomplète : `log started after the branch`, `[k] unmeasured tasks`. Sans journal de mesure → ligne absente.
 
 **Fichiers d'une tâche :** nombre de chemins listés dans `**Files:**`, tests compris. Ligne avec un motif (`src/**/*.ts`) ou des fichiers encore inconnus → nombre écrit en fin de ligne, `(≈ n)`, qui prime. Ancien plan qui porte `**Estimated files:**` → ce champ prime.

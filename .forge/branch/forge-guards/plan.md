@@ -1,8 +1,8 @@
 # Plan — forge-guards
 **Objective:** Ajouter au skill forge deux garde-fous (script de déploiement SQL toujours écrit et complet ; session parente qui n'écrit jamais dans un projet lié), nommer la branche liée d'après la tâche déléguée sans jamais nommer le parent, et documenter le hook `linked-write-guard.sh`.
 **Date:** 2026-11-23
-**Estimate:** ≈ 90 files · ≈ 73 min (18-129) · indicative
-**Actual:** ≈ 40.7 min agent (incl. 29.9 min checks) · human 56.5 min (10 questions, 19.5 min) · fixed — (delegate setup, merge) · delegates 0.0 min in parallel · total ≈ 97.2 min · partial (log started after the branch, 13 unmeasured tasks)
+**Estimate:** ≈ 141 files · ≈ 109 min (28-194) · indicative
+**Actual:** ≈ 85.6 min agent (incl. 48.0 min checks) · human 281.5 min (17 questions, 61.3 min) · fixed — (delegate setup, merge) · delegates 0.0 min in parallel · total ≈ 367.1 min · partial (log started after the branch, 13 unmeasured tasks)
 **Origin:** T7, T8, T9, T10
 
 ## Tasks
@@ -111,6 +111,67 @@
 **Description:** `linked-worktree-cleanup.sh` : option `--merged-into <branche>[,…]` — fusionnée dans la branche par défaut ou dans l'une d'elles, locale ou `origin` après `fetch` → retirée ; toujours sans `--force`, working tree propre obligatoire. `engrave.md` : livraison relayée → `--merged-into` avec les branches cibles du projet lié. Worktree gardé → une ligne toujours affichée : `worktree: kept — <reason> · remove: git -C "<LINKED>" worktree remove "<worktree>"` ; `uncommitted changes` → « commit or discard the changes first » ; `main working tree` → aucune commande. `closure.md` : même ligne à la clôture. Tests en parallèle : fusionnée dans `dev` seule + `--merged-into dev` → retiré ; sans l'option → `not merged` ; fusion sur `origin/dev` seulement → retiré ; non commité + `--merged-into` → gardé. README fr/en, CHANGELOG `### Changed`.
 [x] --merged-into dans linked-worktree-cleanup.sh (4 tests, 11/11) ; retrait appelé après tout run lié réussi, fusion ou non, ligne kept avec commande de retrait (engrave.md, closure.md) ; README fr/en, CHANGELOG
 
+### T14 — Vérification complète confiée à la CI quand le projet en a une
+**Effort:** S
+**Estimated time:** ≈ 4 min (1-8)
+**Actual time:** ≈ 7.4 min agent (incl. 7.1 min checks) · human 2.5 min (1 questions) · 21 files · total ≈ 9.9 min
+**Files:** `skills/forge/commands/engrave.md`, `skills/forge/phases/p0-project.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** `**Full check:** ci` dans `project.md` : aucune suite lancée en local à la livraison, ligne `Full check: left to CI` au compte rendu. `p0-project.md` : pipeline qui lance les tests à chaque push (`.github/workflows`, `.gitlab-ci.yml`, `Jenkinsfile`…) → `ci` écrit d'office ; pipeline sans tests ou limité aux pull requests → commande locale gardée. `engrave.md` : ligne absente → même détection avant de poser la question, posée seulement sans pipeline de tests. Garde-fou : avec `ci`, livraison qui fusionne dans `master` / `main` → ligne « CI not awaited: `master` was pushed before its result », information seule, jamais bloquante. Tests ciblés par tâche inchangés. README fr/en, CHANGELOG `### Changed`.
+[x] Valeur `ci` de **Full check:** (engrave.md, détection dans p0), avertissement sur push done de master / main ; README fr/en, CHANGELOG ; texte seul, aucun test ne couvre ces fichiers
+
+### T15 — Réel d'une tâche liée : mesuré et écrit par le hook, jamais par le modèle
+**Effort:** L
+**Estimated time:** ≈ 8 min (2-15)
+**Actual time:** ≈ 16.7 min agent (incl. 8.3 min checks) · human 2.3 min (1 questions) · 19 files · total ≈ 19.0 min
+**Files:** `skills/forge/scripts/task-files.sh`, `skills/forge/scripts/task-marks.sh`, `skills/forge/hooks/plan-hook.sh`, `tests/plan-hook.test.sh`, `skills/forge/scripts/metrics.sh`, `tests/metrics.test.sh`, `skills/forge/scripts/swarm-status.sh`, `tests/swarm-status.test.sh`, `skills/forge/scripts/time-aggregate.sh`, `tests/time-aggregate.test.sh`, `skills/forge/commands/delegation.md`, `skills/forge/commands/swarm.md`, `skills/forge/commands/delegated-mode.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** `plan-hook.sh`, premier `plan.md` écrit par un délégué : écrit lui-même l'association agent → projet lié (chemin relatif) + branche dans le journal parent ; la marque posée par le modèle n'est plus nécessaire, les anciennes restent lues. Marques de tâche et points d'étape d'un délégué rattachés à son projet : dix dépôts sur la même branche ne se mélangent plus (temps, marques, fichiers). Coche d'une tâche liée dans le plan parent : le hook lit `**Linked branch:**`, mesure les seuls délégués de ce projet (`time-aggregate.sh --project`) et écrit `**Actual time:**` ; sans mesure → `—`, jamais 0.0 ni le temps du parent. Règle unique « tâche déléguée » dans `task-files.sh`, lue par `plan-hook.sh`, `metrics.sh` et `swarm-status.sh` : `**Linked branch:**` ou note de délégation sur toute ligne hors champ. Question à cheval sur deux tours : attente déduite du tour qui l'a ouverte, jamais de durée négative. Ligne `**Actual:**` de la branche : les délégués liés comptent aussi, hors calibrage et hors total. `delegation.md`, `swarm.md`, `delegated-mode.md` : plus aucun réel ni association écrits par le modèle (tokens exceptés). Tests en parallèle : association par le hook, note sur ligne suivante, `Linked branch` sans note, plusieurs dépôts même branche, question coupée par un retour de délégué, ancien journal encore lu. README fr/en, CHANGELOG `### Fixed`.
+[x] Association, réel d'une tâche liée et d'une tâche-branche écrits par le hook ; tests plan-hook 50, time-aggregate 93, metrics 21, swarm-status 35, time-calibrate 38 ; hors liste : time-calibrate.sh et p5-resume.md alignés
+[x] T15.1 — règle partagée (task-files.sh) et projet d'un délégué (task-marks.sh)
+[x] T15.2 — time-aggregate.sh : --project, délégués liés, question à cheval
+[x] T15.3 — plan-hook.sh : association, marques par projet, réel d'une tâche liée
+[x] T15.4 — metrics.sh, swarm-status.sh, time-calibrate.sh sur la règle partagée
+[x] T15.5 — instructions, README, CHANGELOG
+
+### T16 — Temps hors tâche visible, livraison hors de la tâche suivante, estimation issue du plan du délégué
+**Effort:** M
+**Estimated time:** ≈ 8 min (2-14)
+**Actual time:** ≈ 7.3 min agent (incl. 6.2 min checks) · human 0.0 min (0 questions) · 12 files · total ≈ 7.3 min
+**Files:** `skills/forge/hooks/plan-hook.sh`, `tests/plan-hook.test.sh`, `skills/forge/scripts/engrave.sh`, `tests/engrave.test.sh`, `skills/forge/scripts/metrics.sh`, `tests/metrics.test.sh`, `skills/forge/commands/delegation.md`, `skills/forge/phases/p4-plan.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Livraison : nouveau point d'étape posé dans le journal après le commit → suite complète et livraison n'entrent plus dans la tâche suivante, ni en temps ni en fichiers. Ligne `**Unplanned**` sous `**Total**` du Summary : temps d'agent de la branche moins celui des tâches mesurées (conflits, correctifs, livraison, travail jamais mis au plan) ; jamais négative, `—` sans mesure. Plan du délégué validé → son nombre de fichiers remonte et remplace l'estimation de la tâche liée parente, gelée seulement à ce moment ; avant : estimation marquée indicative. Tests en parallèle : tâche après livraison, Unplanned avec et sans mesure, estimation liée remplacée une seule fois. `delegation.md`, `p4-plan.md`, README fr/en, CHANGELOG `### Changed`.
+[x] Point d'étape après livraison (heure gardée si tâche en cours), ligne Unplanned par metrics.sh, estimation liée reprise une fois ; tests plan-hook 54, engrave 50, metrics 25 ; task-marks.sh partagé (hors liste)
+
+### T17 — Dossier input/ créé aussi pour une branche liée ou fille
+**Effort:** S
+**Estimated time:** ≈ 4 min (1-6)
+**Actual time:** ≈ 3.7 min agent (incl. 0.0 min checks) · human 5.7 min (2 questions) · 3 files · total ≈ 9.4 min
+**Files:** `skills/forge/commands/delegation.md`, `skills/forge/commands/swarm.md`, `CHANGELOG.md`
+**Description:** `delegation.md` étape 8 : dossier vide `input/` de la branche liée créé avec le mandat, dans son worktree. `swarm.md` étape 5 : même dossier créé avec le brief d'une branche fille. `linked-write-guard` inchangé : un dossier vide n'est pas une écriture de fichier. `output/` inchangé : créé au premier fichier généré. CHANGELOG `### Fixed`.
+[x] Dossier vide `input/` créé avec le mandat (delegation.md) et avec le brief d'une branche fille (swarm.md), CHANGELOG ; texte seul, aucun test ne couvre ces fichiers
+
+### T18 — Mesure : un message reçu pendant une commande ne coupe plus le tour
+**Effort:** S
+**Estimated time:** ≈ 3 min (1-6)
+**Actual time:** ≈ 5.6 min agent (incl. 2.0 min checks) · human 157.7 min (1 questions) · 3 files · total ≈ 163.3 min
+**Files:** `skills/forge/scripts/time-aggregate.sh`, `tests/time-aggregate.test.sh`, `CHANGELOG.md`
+**Description:** Un message arrivé sur un tour ouvert ne le coupe plus quand une commande commencée avant lui (heure de fin moins `duration_ms`) se termine après : le temps entre la dernière activité et le message est rendu au tour. Plusieurs messages pendant la même commande : chaque intervalle compté une seule fois. Échap et message sans commande en cours : comportement actuel gardé, tests d'interruption existants inchangés. Même règle dans les deux calculs (branche et tâche), écrite une seule fois dans les fonctions communes ; temps des questions toujours retiré. Tests en parallèle : un message, deux messages, Échap, calcul par tâche, commande de délégué ignorée. Contrôle sur le journal réel : T8 doit passer de 5,1 à environ 6,9 min. CHANGELOG `### Fixed`. Les réels déjà écrits dans le plan ne changent pas.
+[x] Écart avant un prompt rendu quand une commande commencée avant lui se termine après ; journal réel : T8 5,1 → 6,9 min ; tests time-aggregate 99, metrics 25, plan-hook 54, time-mark 15
+
+### T19 — Projet lié : le délégué lance la suite complète une fois, avant FORGE_DONE
+**Effort:** S
+**Estimated time:** ≈ 5 min (2-9)
+**Actual time:** ≈ 0.8 min agent (incl. 0.0 min checks) · human 0.0 min (0 questions) · 8 files · total ≈ 0.8 min
+**Files:** `skills/forge/commands/delegated-mode.md`, `skills/forge/commands/delegation.md`, `skills/forge/commands/engrave.md`, `skills/forge/phases/p0-project.md`, `skills/forge/phases/p5-resume.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** `SCOPE: linked` seulement : toutes les tâches traitées → commande `**Full check:**` du projet lié lancée une fois sous ROOT, avant `FORGE_DONE` ; `ci` ou `none` → rien n'est lancé. Ligne absente → détection de `p0-project.md`, écrite dans le `project.md` du projet lié ; rien trouvé → `none` pour ce retour, aucune question. Échec causé par les tâches du mandat → corrigé, suite relancée ; impossible à corriger ou extérieur au mandat → rien n'est touché hors mandat, l'échec remonte. `FORGE_DONE` gagne une ligne `full_check:` (`passed`, `left to CI`, `none` ou `failed — <échec en une ligne>`), recopiée par le parent dans la note de la tâche. Livraison relayée : un échec noté s'affiche dans la question `Linked`, l'utilisateur décide ; jamais bloquant d'office. Textes corrigés dans `engrave.md`, `p5-resume.md`, `p0-project.md`. Branches filles du même dépôt inchangées. README fr/en, CHANGELOG `### Fixed`. Texte seul : aucun test ne couvre ces fichiers.
+[x] Suite complète du projet lié lancée une fois par le délégué, résultat `full_check` gardé dans la note et rappelé à la livraison ; suite impossible à lancer → `failed — not run` ; texte seul, aucun test ne couvre ces fichiers, non essayé avec un vrai délégué
+
+### T20 — Mesure : pause humaine de plus de 60 min comptée 3 min, de plus de 6 h comptée 0
+**Effort:** S
+**Estimated time:** ≈ 4 min (1-7)
+**Actual time:** ≈ 2.9 min agent (incl. 1.5 min checks) · human 4.0 min (2 questions) · 5 files · total ≈ 6.9 min
+**Files:** `skills/forge/scripts/time-aggregate.sh`, `tests/time-aggregate.test.sh`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Écart avant un message humain, ou attente de réponse à une question : jusqu'à 60 min inclus → durée réelle ; plus de 60 min et jusqu'à 6 h incluses → 3 min ; plus de 6 h → 0 (règle actuelle gardée). Les 3 min sont placées juste avant la réponse : une pause à cheval sur deux tâches n'est comptée qu'une fois. Question : toujours comptée dans le nombre de questions, son attente toujours retirée en entier du temps d'agent. Même règle pour la branche et pour la tâche, écrite une seule fois. Les tests « plus de 6 h → 0 » restent inchangés ; seul le test « 6 h tout juste » change de résultat (360 → 3 min). Nouveaux tests : 60 min tout juste, plus de 60 min, question, pause à cheval sur deux tâches. README fr/en, CHANGELOG `### Changed`. Les réels déjà écrits dans le plan ne changent pas.
+[x] Plus de 60 min et jusqu'à 6 h → 3 min juste avant la réponse, plus de 6 h → 0 ; tests time-aggregate 104, metrics 25, plan-hook 54, time-mark 15
+
 ## Risks
 - `p5-resume.md` et `CHANGELOG.md` sont touchés par T1 et T2 : ils sont édités l'un après l'autre, dans le même plan, sans conflit.
 - Les noms de fichiers des installeurs diffèrent du mandat (`install/install.sh`, `install/install.ps1` au lieu des lanceurs racine) : même intention, fichiers où vit la fusion de `settings.json`.
@@ -137,4 +198,11 @@ None
 | T11 — Mesure : une tâche commencée après l'ouverture du journal est mesurée malgré late_start | S | 3 | ≈ 4 min | — | [x] |
 | T12 — Tests : seuls ceux des fichiers modifiés pendant une tâche, suite complète à la livraison | S | 7 | ≈ 6 min | — | [x] |
 | T13 — Worktree lié : retiré aussi quand la branche est fusionnée dans une branche cible de la livraison, commande de retrait affichée quand il est gardé | S | 7 | ≈ 6 min | — | [x] |
-| **Total** (0/13 measured) | | | — | — | |
+| T14 — Vérification complète confiée à la CI quand le projet en a une | S | 5 | ≈ 4 min | ≈ 7.4 min agent (incl. 7.1 min checks) · human 2.5 min (1 questions) · 21 files · total ≈ 9.9 min | [x] |
+| T15 — Réel d'une tâche liée : mesuré et écrit par le hook, jamais par le modèle | L | 16 | ≈ 8 min | ≈ 16.7 min agent (incl. 8.3 min checks) · human 2.3 min (1 questions) · 19 files · total ≈ 19.0 min | [x] |
+| T16 — Temps hors tâche visible, livraison hors de la tâche suivante, estimation issue du plan du délégué | M | 11 | ≈ 8 min | ≈ 7.3 min agent (incl. 6.2 min checks) · human 0.0 min (0 questions) · 12 files · total ≈ 7.3 min | [x] |
+| T17 — Dossier input/ créé aussi pour une branche liée ou fille | S | 3 | ≈ 4 min | ≈ 3.7 min agent (incl. 0.0 min checks) · human 5.7 min (2 questions) · 3 files · total ≈ 9.4 min | [x] |
+| T18 — Mesure : un message reçu pendant une commande ne coupe plus le tour | S | 3 | ≈ 3 min | ≈ 5.6 min agent (incl. 2.0 min checks) · human 157.7 min (1 questions) · 3 files · total ≈ 163.3 min | [x] |
+| T19 — Projet lié : le délégué lance la suite complète une fois, avant FORGE_DONE | S | 8 | ≈ 5 min | ≈ 0.8 min agent (incl. 0.0 min checks) · human 0.0 min (0 questions) · 8 files · total ≈ 0.8 min | [x] |
+| T20 — Mesure : pause humaine de plus de 60 min comptée 3 min, de plus de 6 h comptée 0 | S | 5 | ≈ 4 min | ≈ 2.9 min agent (incl. 1.5 min checks) · human 4.0 min (2 questions) · 5 files · total ≈ 6.9 min | [x] |
+| **Total** (7/20 measured) | **5S, 1M, 1L** | **51** | **≈ 36 min** | **≈ 44.4 min** | |

@@ -44,12 +44,26 @@ readonly TASK_FILES_AWK='
 # Statut d'une tâche de plan : ligne [ ] / [x] / [!] / [-] sous son titre « ### Tn », micro-étapes [ ] T1.1 exclues ;
 # tâche sans ligne de statut → ouverte. Seule règle de lecture des coches, partagée par status.sh et plan-hook.sh.
 #   is_task_heading(line) · is_status_line(line) · status_of(status_line) → open, done, blocked ou dropped.
+# Tâche déléguée à un projet lié : seule règle de lecture, partagée par plan-hook.sh, metrics.sh, swarm-status.sh et
+# time-calibrate.sh — champ **Linked branch:**, ou note « delegated to <projet> @ <branche> » sur toute ligne hors champ.
+#   is_delegation_note(line) · linked_unit(line) → « <projet> @ <branche> », vide si la ligne ne désigne aucun projet lié.
 readonly TASK_STATUS_AWK='
   function is_task_heading(line) { return line ~ /^### T[0-9]+/ }
   function is_status_line(line) { return line ~ /^\[[ x!-]\]/ && line !~ /^\[.\] T[0-9]+\.[0-9]+/ }
   function status_of(line,   mark) {
     mark = substr(line, 2, 1)
     return (mark == "x") ? "done" : (mark == "!") ? "blocked" : (mark == "-") ? "dropped" : "open"
+  }
+  function is_delegation_note(line) { return line !~ /^\*\*/ && line ~ /delegated to .+ @ [^ ]/ }
+  function linked_unit(line,   at, project, branch) {
+    if (line ~ /^\*\*Linked branch:\*\*/) sub(/^\*\*Linked branch:\*\* */, "", line)
+    else if (is_delegation_note(line)) sub(/^.*delegated to /, "", line)
+    else return ""
+    gsub(/`/, "", line)
+    at = index(line, " @ ")
+    if (!at) { sub(/ +$/, "", line); return line }
+    project = substr(line, 1, at - 1); branch = substr(line, at + 3); sub(/ .*/, "", branch)
+    return project " @ " branch
   }'
 
 # Une ligne « fichier<TAB>statut<TAB>titre » par tâche, pour un ou plusieurs plans lus en un seul passage.

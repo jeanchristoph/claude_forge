@@ -1,3 +1,11 @@
+- [2026-11-23 22:42] Release 0.13.5 : CHANGELOG daté, grave master et tag v0.13.5 demandés
+- [2026-11-23 21:48] T20 done — attente humaine de plus de 60 min (jusqu'à 6 h incluses) comptée 3 min, placées juste avant la réponse ; plus de 6 h toujours 0 (demande de l'utilisateur) ; réels déjà écrits inchangés
+- [2026-11-23 21:41] T19 done — suite complète d'un projet lié lancée une fois par son délégué avant FORGE_DONE (full_check), recopiée dans la note, échec rappelé dans la question Linked ; suite impossible à lancer dans le worktree = failed — not run
+- [2026-11-23 21:41] T18 done — time-aggregate.sh : un prompt reçu pendant une commande ne coupe plus le tour (cause : T8 5,1 min au lieu de 6,9) ; attente d'une question jamais rendue ; réels déjà écrits inchangés
+- [2026-11-23 18:57] T16 done — Unplanned écrite par metrics.sh (livraison, clôture) et non à chaque écriture du plan ; point d'étape après livraison, heure gardée quand une tâche est en cours ; estimation liée reprise une fois du plan du délégué
+- [2026-11-23 18:57] T15 done — réel des tâches liées et des tâches-branches écrit par plan-hook.sh, délégués rattachés à leur projet par le hook ; hors liste : time-calibrate.sh, p5-resume.md
+- [2026-11-23 18:31] T17 done — input/ créé pour une branche liée (delegation.md) et une branche fille (swarm.md) ; T16 validée, en attente de T15 (règle tâche déléguée)
+- [2026-11-23 18:22] T14 done — Full check: ci quand un pipeline lance les tests à chaque push ; avertissement non bloquant quand master / main est poussé avant le résultat
 - [2026-11-23 18:11] T13 done — worktree lié retiré aussi si fusionné dans une cible de la livraison (--merged-into) ; retrait tenté après tout run lié réussi, fusion ou non, ligne kept avec commande de retrait
 - [2026-11-23 18:05] T12 done — tests des fichiers modifiés par tâche, suite complète (Full check) avant la livraison, rouge → aucune livraison
 - [2026-11-23 18:05] T11 done — late_start limité aux tâches commencées avant l'ouverture du journal ; réel visible après installation de la version publiée

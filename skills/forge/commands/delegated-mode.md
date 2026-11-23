@@ -7,7 +7,7 @@
 - Langue de l'utilisateur = valeur de la ligne `LANGUAGE:` du prompt — le prompt lui-même n'en est pas un indice.
 - Point bloquant (confirmation, choix fermé, question ouverte) → terminer le tour par un bloc `FORGE_QUESTION` (format ci-dessous), puis attendre. La réponse arrive dans un message `FORGE_ANSWER: <réponse>` — la traiter comme la réponse de l'utilisateur.
 - **Contenu entier dans la question :** démarrage d'une tâche ou validation d'un contenu présenté (description de la tâche, plan, objectif du brief, entrée `## Scope & rules`, rapport, tableau récapitulatif) → le champ `content:` du bloc recopie ce contenu **intégralement** — jamais un résumé, jamais un intitulé seul : le parent ne peut pas trancher sans le voir. Rien à trancher → `content: none`.
-- Mesure des tâches : aucune action — le hook `plan-hook.sh` range les marques du délégué dans le journal de la session parente (ligne `TIME_LOG:`) et écrit `**Actual time:**` à la coche (« Mesure d'une tâche » de `phases/p5-resume.md`).
+- Mesure des tâches : aucune action — le hook `plan-hook.sh` associe le délégué à sa branche et à son projet lié, range ses marques dans le journal de la session parente (ligne `TIME_LOG:`) et écrit `**Actual time:**` à la coche (« Mesure d'une tâche » de `phases/p5-resume.md`).
 - Chaque ligne `done` de `FORGE_DONE` porte le réel de la tâche, tiré de son `**Actual time:**` : ` · actual ≈ <min> min`, ou ` · actual —`.
 - Clôture de tâche non applicable : la séquence se termine par `FORGE_DONE` (format ci-dessous). Toutes les tâches du plan traitées (`[x]` ou `[!]`) → terminer le tour par ce bloc. STOP — ne pas continuer.
 
@@ -17,14 +17,15 @@
 - **Projet lié non forgé** — `state` vaut `project_init` ou `coding_standards_init` → exécuter `phases/p0-project.md` puis `phases/p1-coding-standards.md` sous ROOT, sans `FORGE_QUESTION`, puis enchaîner sur le mandat. `project.md` et `coding-standards.md` décrivent le seul projet lié et partent avec BRANCH ; listés dans `files` de `FORGE_DONE`.
 - Le délégué ne réintroduit jamais le parent dans ce qu'il écrit — ni dossier, ni branche, ni ticket, ni client, ni donnée du parent dans le plan, le log, le code, le CHANGELOG ou un rapport écrit dans ROOT : le projet lié peut être public. Seules les références écrites dans les tâches du mandat sont reprises, telles quelles.
 - Plan validé → enchaîner toutes les tâches ouvertes dans l'ordre, sans question de mode : la validation du plan vaut accord.
+- Toutes les tâches traitées, avant `FORGE_DONE` → « Suite complète du projet lié » ci-dessous.
 - Livraison non applicable : la livraison du projet lié est proposée au parent lors de son propre « grave ».
-- `FORGE_DONE` : `done` / `blocked` tracés `← parent T<n>`, `out_of_mandate` renseigné.
+- `FORGE_DONE` : `done` / `blocked` tracés `← parent T<n>`, `out_of_mandate` et `full_check` renseignés.
 
 **`SCOPE: branch` — branche du même dépôt :**
 - Pas de `## Origin`, pas de mandat : `project.md`, standards, brief, log et plan sont lus comme les phases le prescrivent.
 - **Chaque choix est relayé à l'utilisateur** par `FORGE_QUESTION` — objectif du brief, validation du plan, mode (enchaîner / choisir), feu vert avant chaque tâche. Le raccourci « plan validé vaut accord » ne s'applique pas, sauf choix explicite de `Validate and chain` à la validation du plan.
 - Livraison applicable, sous ROOT (le worktree), sans confirmation : compte rendu de livraison dans `content`.
-- `FORGE_DONE` : `done` / `blocked` sans `← parent`, `out_of_mandate: none`, compte rendu d'une ligne.
+- `FORGE_DONE` : `done` / `blocked` sans `← parent`, `out_of_mandate: none`, pas de ligne `full_check`, compte rendu d'une ligne.
 
 **`SWARM:` présent — branche fille d'un essaim** (`commands/swarm.md`), en plus des règles `SCOPE: branch` :
 - Livraison non applicable, aucune fusion dans un sens ou dans l'autre : le parent commite et fusionne (invariant de `commands/swarm.md`). `FORGE_DONE` laisse le travail non commité dans ROOT.
@@ -34,6 +35,19 @@
 - `RESUME:` autre que `none` → appliquer la consigne de reprise avant toute autre action ; plan validé avec enchaînement → aucune question `Mode`.
 - « Promotion d'une tâche » de `phases/p5-resume.md`, question en `FORGE_QUESTION` (même `header`, mêmes options, description dans `content`), avec cet écart : sur `Promote`, la tâche est retirée du plan du délégué, sa description recopiée entière dans `content` — le parent l'ajoute à son plan (« Promotion » de « Boucle de relais de l'essaim », `commands/swarm.md`).
 - Toute `FORGE_QUESTION` de choix — `header` autre que `Brief`, `Plan`, `Mode`, `Task`, `Promotion` — apporte le contexte de décision : ce que fait l'existant, ce que chaque option change pour l'utilisateur final, ce qu'il faudrait refaire si le choix s'avère mauvais.
+
+### Suite complète du projet lié
+
+**Déclencheur :** `SCOPE: linked`, toutes les tâches du plan traitées, avant `FORGE_DONE` — une fois par retour, jamais entre deux tâches.
+
+**Réaction — dans l'ordre :**
+1. Commande = ligne `**Full check:**` de `.forge/project.md` sous ROOT. Absente → la détecter (section « Vérifications » de `phases/p0-project.md`) : trouvée → l'écrire dans ce `project.md`, listé dans `files` ; rien trouvé → `none` pour ce retour, jamais écrit, aucune question.
+   - `none` → rien n'est lancé, `full_check: none`.
+   - `ci` → rien n'est lancé, `full_check: left to CI`.
+2. Autre valeur → l'exécuter sous ROOT. Verte → `full_check: passed`.
+3. Rouge → échec causé par les tâches du mandat : le corriger dans leur périmètre, relancer la suite. Échec impossible à corriger ou extérieur au mandat → rien n'est touché hors mandat, `full_check: failed — <échec en une ligne>`. Une tâche du mandat reste en cause → cette tâche passe `[!]` avec la raison.
+
+⚠️ Suite impossible à lancer (dépendances ou configuration absentes du worktree) → `full_check: failed — not run: <raison>`, jamais `passed`.
 
 ### Format `FORGE_QUESTION`
 
@@ -59,8 +73,9 @@ blocked:
 - T2 ← parent T5 — [raison]
 out_of_mandate:
 - [besoin hors mandat, une ligne]
+full_check: [passed | left to CI | none | failed — échec en une ligne]
 files:
 - `chemin/relatif/sous/ROOT`
 ```
 
-Liste vide → `none`. `SCOPE: branch` → `- T1 — [note] · actual ≈ [minutes] min`, sans `← parent`.
+Liste vide → `none`. `full_check` : `SCOPE: linked` seulement. `SCOPE: branch` → `- T1 — [note] · actual ≈ [minutes] min`, sans `← parent`.

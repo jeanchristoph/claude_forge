@@ -10,11 +10,15 @@
 #   manquantes (checks.sh), puis journal de mesure et fichiers input/ encore suivis retirés de l'index (git rm --cached,
 #   fichiers gardés sur disque) : ces fichiers locaux ne partent jamais avec un commit, quelle que soit la branche de
 #   démarrage de /forge
+#   Livraison réussie : nouveau point d'étape dans le journal de mesure, code commité — la livraison et la suite complète
+#   n'entrent pas dans la tâche suivante ; code modifié depuis la dernière coche (tâche en cours) → heure gardée, seule
+#   l'empreinte des fichiers repart. Sans journal ni point d'étape : rien
 # Sortie : 0 succès · 1 usage ou garde · 2 échec git (conflit, push rejeté) — le JSON de run est écrit dans les deux cas
 
 set -u
 
 source "$(dirname "${BASH_SOURCE[0]}")/json.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/task-marks.sh"
 
 readonly EXIT_USAGE=1
 readonly EXIT_GIT=2
@@ -41,6 +45,8 @@ MESSAGE=""
 ROOT="."
 MODEL=""
 METRICS_JSON=""
+TIME_LOG=""
+IS_TASK_IN_PROGRESS=""
 TARGETS=()
 
 # Une action = une opération git sur une branche ; les tableaux sont indexés par action.
@@ -305,6 +311,7 @@ run_actions() {
     mark_remaining_not_run $((i + 1))
     break
   done
+  write_checkpoint_after
   render_json
   [ "$SEQUENCE_STATUS" = "$STATUS_DONE" ] || exit $EXIT_GIT
 }
@@ -332,6 +339,30 @@ render_json() {
     "$(json_string "$BRANCH")" "$(json_string "$SEQUENCE_STATUS")" "$actions" "${METRICS_JSON:+,\"metrics\":$METRICS_JSON}"
 }
 
+# Empreinte du code dans REPLY, chaîne JSON ; vide hors git.
+code_snapshot() {
+  if snapshot_files "$ROOT"; then json_escape "$REPLY"; else REPLY=""; fi
+}
+
+# Point d'étape lu avant la livraison ; IS_TASK_IN_PROGRESS : code modifié depuis lui.
+read_checkpoint_before() {
+  local log="$ROOT/.forge/branch/$BRANCH/time-log.jsonl"
+  [ "$MODE" = run ] && [ -f "$log" ] && read_last_checkpoint "$log" "" "" || return 0
+  TIME_LOG=$log
+  code_snapshot
+  [ "$REPLY" = "$CHECKPOINT_FILES" ] || IS_TASK_IN_PROGRESS=1
+}
+
+write_checkpoint_after() {
+  local time
+  [ -n "$TIME_LOG" ] && [ "$SEQUENCE_STATUS" = "$STATUS_DONE" ] || return 0
+  current_time_ms || return 0
+  time=$REPLY
+  [ -n "$IS_TASK_IN_PROGRESS" ] && time=$CHECKPOINT_TS
+  code_snapshot
+  append_checkpoint "$TIME_LOG" "$time" "$CHECKPOINT_DONE" "$REPLY" "" ""
+}
+
 # Synthèse de mesure écrite avant la séquence : metrics.json part avec le commit de la livraison.
 write_metrics() {
   [ "$MODE" = run ] && [ -n "$MODEL" ] && [ -d "$ROOT/.forge/branch/$BRANCH" ] || return 0
@@ -342,6 +373,7 @@ write_metrics() {
 main() {
   parse_arguments "$@"
   validate_arguments
+  read_checkpoint_before
   write_metrics
   build_actions
   case $MODE in

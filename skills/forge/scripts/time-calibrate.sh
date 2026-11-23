@@ -61,7 +61,7 @@ readonly METRICS_PROGRAM='
 # Une ligne par tâche mesurée d'un plan : « date<TAB>rang<TAB>réel ÷ estimé<TAB>minutes réelles<TAB>fichiers réels
 # (- sans mesure)<TAB>fichiers prévus<TAB>minutes de vérification (- pour un réel antérieur à leur mesure) ». Tâche gardée quand elle porte un **Estimated time:** et un **Actual time:**
 # chiffré ; écartées : tâche-branche d'essaim et tâche déléguée à un projet lié, dont le réel additionne plusieurs tâches.
-readonly TASK_SAMPLES_PROGRAM="$TASK_FILES_AWK"'
+readonly TASK_SAMPLES_PROGRAM="$TASK_FILES_AWK$TASK_STATUS_AWK"'
   function minutes_of(line) {
     sub(/^\*\*[A-Za-z ]+:\*\* */, "", line)
     return match(line, /[0-9]+(\.[0-9]+)?/) ? substr(line, RSTART, RLENGTH) + 0 : 0
@@ -88,7 +88,7 @@ readonly TASK_SAMPLES_PROGRAM="$TASK_FILES_AWK"'
   }
   in_task && /^\*\*Estimated files:\*\*/ { estimated_files_line = $0 }
   in_task && /^\*\*Files:\*\*/ { files_line = $0 }
-  in_task && /delegated to / { is_aggregate = 1 }
+  in_task && linked_unit($0) != "" { is_aggregate = 1 }
   END { flush() }'
 
 # Calibrage par tâche sur les échantillons triés du plus récent au plus ancien, « - » pour une valeur absente :

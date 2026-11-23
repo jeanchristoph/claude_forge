@@ -34,7 +34,9 @@ Si le dossier est vide (rien en dehors des éléments ignorés) :
 ### Vérifications
 - Scripts de contrôle du projet : `scripts` de `package.json` / `composer.json`, cibles d'un `Makefile`, configuration de tests (`phpunit.xml`, `vitest.config.*`, `pytest.ini`), suites `tests/*`
 - En tirer `**Check pattern:**` : expression régulière étendue qui reconnaît chaque commande de vérification (types, lint, architecture, tests) n'importe où dans la ligne de commande — jamais ancrée par `^` : une vérification arrive souvent après un `cd … &&` ou dans une boucle —, lue par le hook de mesure pour compter le temps de vérification. Aucune commande trouvée → ligne omise.
-- En tirer `**Full check:**` : commande unique qui lance la suite complète du projet (tous les tests, lint et types compris), exécutée à la Livraison seulement (« Vérification complète » de `commands/engrave.md`). Aucune commande trouvée → ligne omise, demandée à la première Livraison.
+- En tirer `**Full check:**` : commande unique qui lance la suite complète du projet (tous les tests, lint et types compris), exécutée à la Livraison (« Vérification complète » de `commands/engrave.md`) ou, pour un projet lié, à la fin du délégué (« Suite complète du projet lié » de `commands/delegated-mode.md`). Aucune commande trouvée → ligne omise, demandée à la première Livraison.
+  - Pipeline d'intégration continue (`.github/workflows/*`, `.gitlab-ci.yml`, `Jenkinsfile`, `azure-pipelines.yml`, `bitbucket-pipelines.yml`…) qui lance les tests à chaque push de toute branche → valeur `ci`, écrite sans question : la suite complète n'est pas relancée en local.
+  - Pipeline sans tests, ou déclenché seulement par une pull request ou sur certaines branches → commande locale gardée.
 
 ## Format de sortie
 

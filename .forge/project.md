@@ -52,6 +52,7 @@ forge/
 │   │   │   └── update.sh             (mise à jour du skill : check / run en JSON, appelé avec status.sh ; contrôle réseau détaché toutes les 24 heures)
 │   │   └── hooks/                 (hooks déclarés dans settings.json par les installeurs, copiés avec le skill ; bibliothèques chargées par ../scripts/)
 │   │       ├── forge-precompact.sh   (hook d'état : PreCompact, SessionStart compact|resume)
+│   │       ├── linked-write-guard.sh (garde d'écriture, PreToolUse sur Edit|Write|MultiEdit|NotebookEdit : écriture de la session parente dans un projet lié refusée, hors brief.md et log.md du mandat)
 │   │       ├── plan-hook.sh          (hook de coche, PostToolUse synchrone : marques de tâche, réel, estimations, ## Summary ; état = lignes plan_checkpoint du journal)
 │   │       └── time-hook.sh          (hook de mesure : une ligne par événement dans time-log.jsonl)
 │   └── forge-clickup/
@@ -73,6 +74,7 @@ forge/
 │   ├── forge-precompact.test.sh (tests du hook d'état, dépôts jetables : bash tests/forge-precompact.test.sh)
 │   ├── install.test.sh        (tests des deux installeurs, HOME jetable : bash tests/install.test.sh)
 │   ├── checks.test.sh         (tests des contrôles de démarrage, dépôts jetables : bash tests/checks.test.sh)
+│   ├── linked-write-guard.test.sh (tests de la garde d'écriture dans un projet lié, dossiers jetables : bash tests/linked-write-guard.test.sh)
 │   ├── log-entry.test.sh      (tests des entrées de LOG, dossiers jetables : bash tests/log-entry.test.sh)
 │   ├── metrics.test.sh        (tests de la synthèse de mesure, dépôts jetables : bash tests/metrics.test.sh)
 │   ├── plan-hook.test.sh      (tests du hook de coche, dépôts jetables : bash tests/plan-hook.test.sh)

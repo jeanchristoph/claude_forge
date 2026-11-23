@@ -1,0 +1,9 @@
+- [2026-11-23 11:10] Out of mandate: branches locales préfixées d'un ancien parent dans ce dépôt et dossier d'admin du worktree nommé d'après l'ancienne branche
+- [2026-11-23 11:10] T4 done — linked-write-guard.sh et son test dans les arborescences de project.md et des deux README
+- [2026-11-23 11:10] T3 done — branche liée nommée par la règle de la garde, champ **Linked branch:** au plan parent, mandat sans brief parent ni **Parent:**/**Branch:**, invariant « le lié ne nomme jamais le parent », README fr/en, CHANGELOG
+- [2026-11-23 11:08] Entrée d'ouverture T7, T8 et ligne **Origin:** du plan réécrites sans nom du parent — exception à « LOG jamais édité », pour la confidentialité (T9)
+- [2026-11-23 11:02] Opened by delegation · T9, T10
+- [2026-11-23 10:51] Out of mandate: .forge/project.md (Key structure, tests) et arbre des hooks du README sans linked-write-guard.sh
+- [2026-11-23 10:51] T2 done — linked-write-guard.sh (PreToolUse, comparaison de dossiers par -ef), install.sh / install.ps1 au lieu des lanceurs racine ; tests 7/7, install 47/47
+- [2026-11-23 10:51] T1 done — plan-hook.sh check_deployment_script (missing / incomplete), deployment-sql.md Format, p5 trigger, README, CHANGELOG ; plan-hook.test.sh 36/36
+- [2026-11-23 10:34] Opened by delegation · T7, T8

@@ -136,6 +136,14 @@ $planGroups = @($s.hooks.PostToolUse | Where-Object {
 })
 $s.hooks.PostToolUse = $planGroups + [PSCustomObject]@{ matcher = "Edit|Write|MultiEdit"; hooks = @($planHook) }
 
+# Garde d'écriture dans un projet lié : retire toute entrée linked-write-guard existante, puis l'ajoute avant chaque
+# écriture de fichier. Synchrone : il refuse l'écriture de la session parente dans un autre projet forgé.
+$guardHook = [PSCustomObject]@{ type = "command"; command = "bash ~/.claude/skills/forge/hooks/linked-write-guard.sh"; shell = "bash" }
+$guardGroups = @($s.hooks.PreToolUse | Where-Object {
+    -not (@($_.hooks) | Where-Object { $_.command -like "*linked-write-guard.sh*" })
+})
+$s.hooks.PreToolUse = $guardGroups + [PSCustomObject]@{ matcher = "Edit|Write|MultiEdit|NotebookEdit"; hooks = @($guardHook) }
+
 # Sans BOM : install.sh et les autres lecteurs JSON le refusent.
 [IO.File]::WriteAllText($sp, ($s | ConvertTo-Json -Depth 10), (New-Object Text.UTF8Encoding $false))
 Write-Host "Done."

@@ -420,6 +420,69 @@ test_remaining_adds_check_cost_of_each_open_task() {
   assert_matches '^\| \*\*Remaining\*\* \| \| \*\*8\*\* \| \*\*≈ 8 min \(' "$(summary_row_of '**Remaining**')"
 }
 
+# ── Script de déploiement SQL ─────────────────────────────────────────────────
+
+# Plan dont ## Deployment cite deux fichiers d'étape et le script de déploiement lui-même.
+write_deployment_plan() {
+  write_plan "[ ]" "[ ]" "[ ]"
+  cat >> "$PLAN" <<'EOF'
+
+## Deployment
+- [ ] Réparation — before deploy · T1 — `output/20261123-repair.sql`
+- [ ] Procédure — after deploy · T2 — `output/20261123-procedure.sql`
+- [ ] Script de déploiement — `output/20261123-deployment-script.sql`
+EOF
+}
+
+write_output() {
+  mkdir -p "$BRANCH_DIR/output"
+  printf '%s\n' "${2:-SELECT 1;}" > "$BRANCH_DIR/output/$1"
+}
+
+test_missing_deployment_script_is_reported() {
+  write_deployment_plan
+  write_output 20261123-repair.sql
+  assert_matches 'deployment script missing — SQL step files written: output/20261123-repair\.sql — apply commands/deployment-sql\.md now\.' "$(run_hook "$PLAN")"
+}
+
+test_missing_deployment_script_is_reported_without_plan_rewrite() {
+  write_deployment_plan
+  write_output 20261123-repair.sql
+  run_hook "$PLAN" >/dev/null
+  local output
+  output=$(run_hook "$PLAN")
+  assert_matches 'deployment script missing' "$output"
+  [[ $output == *"plan.md rewritten"* ]] && { echo "    unexpected rewrite report"; exit 1; }
+  return 0
+}
+
+test_complete_deployment_script_reports_nothing() {
+  write_deployment_plan
+  write_output 20261123-repair.sql
+  write_output 20261123-procedure.sql
+  write_output 20261123-deployment-script.sql $'-- STEP 1 — output/20261123-repair.sql\n-- STEP 2 — output/20261123-procedure.sql'
+  run_hook "$PLAN" >/dev/null
+  assert_equals "" "$(run_hook "$PLAN")"
+}
+
+test_unwritten_step_file_reports_nothing() {
+  write_deployment_plan
+  run_hook "$PLAN" >/dev/null
+  assert_equals "" "$(run_hook "$PLAN")"
+}
+
+test_incomplete_deployment_script_names_only_unreferenced_file() {
+  write_deployment_plan
+  write_output 20261123-repair.sql
+  write_output 20261123-procedure.sql
+  write_output 20261123-deployment-script.sql '-- STEP 1 — output/20261123-repair.sql'
+  local output
+  output=$(run_hook "$PLAN")
+  assert_matches 'deployment script incomplete — SQL step files not referenced: output/20261123-procedure\.sql — apply' "$output"
+  [[ $output == *"not referenced: output/20261123-repair.sql"* ]] && { echo "    referenced file reported"; exit 1; }
+  return 0
+}
+
 # ── Exécution ─────────────────────────────────────────────────────────────────
 
 run_test() {
@@ -463,6 +526,11 @@ run_test test_summary_section_added_when_missing "section Summary ajoutée quand
 run_test test_second_identical_write_changes_nothing "seconde écriture identique : plan intact, rien signalé"
 run_test test_actual_time_carries_checks_share "le réel porte la part de vérifications de la tâche"
 run_test test_remaining_adds_check_cost_of_each_open_task "reste à faire : coût fixe de vérification de chaque tâche ouverte"
+run_test test_missing_deployment_script_is_reported "fichier d'étape SQL écrit sans script de déploiement : « missing » signalé"
+run_test test_missing_deployment_script_is_reported_without_plan_rewrite "« missing » encore signalé quand le plan n'est pas réécrit"
+run_test test_complete_deployment_script_reports_nothing "script de déploiement citant tous les fichiers écrits : rien signalé"
+run_test test_unwritten_step_file_reports_nothing "fichier d'étape pas encore écrit : rien signalé"
+run_test test_incomplete_deployment_script_names_only_unreferenced_file "« incomplete » avec le seul fichier d'étape non cité"
 
 echo ""
 echo "$PASSED passed, $FAILED failed"

@@ -53,7 +53,7 @@ Compte rendu de la Livraison : une ligne sous le tableau, depuis `metrics` — `
   - `Same branches as the parent` → "[branches citées du parent, dans l'ordre]" — omise si le parent n'en cite aucune.
   - `<LINKED_BRANCH> only` → "Commit and push `<LINKED_BRANCH>`, no merge."
   - `Other branches` → "I'll ask you which ones." — puis demander en texte libre, dans l'ordre voulu.
-- Message de commit du lié : généré depuis les tâches du mandat cochées `[x]` avec sa note `delegated to <LINKED_REL>` — jamais depuis le code de `<LINKED>`, que le parent ne lit pas. Langue : celle des commits de `<LINKED>` (`git -C <LINKED> log -5 --format=%s`).
+- Message de commit du lié : généré depuis les tâches du mandat cochées `[x]` avec sa note `delegated to <LINKED_REL>` — jamais depuis le code de `<LINKED>`, que le parent ne lit pas. Aucun nom de dossier, de branche, de ticket ni de client du parent (invariant de « Délégation — projet lié » de `commands/delegation.md`). Langue : celle des commits de `<LINKED>` (`git -C <LINKED> log -5 --format=%s`).
 - Script du lié : `--root <LINKED_GIT>`, `--branch <LINKED_BRANCH>`, son message, ses branches retenues.
 
 ⚠️ Le sous-agent délégué n'est jamais sollicité pour livrer : la livraison relayée est du git pur, exécuté par le parent.

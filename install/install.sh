@@ -109,6 +109,14 @@ s.hooks.PostToolUse = (s.hooks.PostToolUse || []).filter(g =>
 );
 s.hooks.PostToolUse.push({ matcher: 'Edit|Write|MultiEdit', hooks: [planHook] });
 
+// Garde d'écriture dans un projet lié : retire toute entrée linked-write-guard existante, puis l'ajoute avant chaque
+// écriture de fichier. Synchrone : il refuse l'écriture de la session parente dans un autre projet forgé.
+const guardHook = { type: 'command', command: 'bash ~/.claude/skills/forge/hooks/linked-write-guard.sh', shell: 'bash' };
+s.hooks.PreToolUse = (s.hooks.PreToolUse || []).filter(g =>
+  !g.hooks || !g.hooks.some(h => h.command && h.command.includes('linked-write-guard.sh'))
+);
+s.hooks.PreToolUse.push({ matcher: 'Edit|Write|MultiEdit|NotebookEdit', hooks: [guardHook] });
+
 fs.writeFileSync(sp, JSON.stringify(s, null, 2));
 console.log('Settings OK.');
 " "${SKILL_NAMES[@]}"

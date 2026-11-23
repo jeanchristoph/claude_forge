@@ -177,6 +177,7 @@ Une demande complémentaire est toujours une tâche du plan — jamais de choix 
    > "This request isn't in the current plan."
    Temps estimé présenté : `bash <SKILL_DIR>/scripts/time-calibrate.sh --root <ROOT> --files <fichiers de la tâche>`, `estimate` au ratio du moment. Jamais écrit par le modèle : le hook `hooks/plan-hook.sh` écrit `**Estimated time:**` à l'écriture du plan et le fige.
    Si la demande change durablement le périmètre → ajouter à la même présentation l'entrée proposée pour `## Scope & rules` du brief.
+   Tâche qui vise un projet lié → champ `**Linked branch:**` et rédaction sans référence au parent, selon « Branche liée » de `phases/p4-plan.md`.
    Tâches formulées qui remplissent la « Règle de branche » de `phases/p4-plan.md` et plan qui remplit alors le déclencheur de son « Plan de branches », tâches-branches déjà au plan comprises → les présenter en tâche-branche (« Format d'une tâche-branche »), tableau des groupes en tête. Mode délégué → jamais : « Promotion d'une tâche » ci-dessous.
 
 2. **Poser une seule question** avec `AskUserQuestion` — `header` : `Plan`, options de la question `Plan` d'un plan neuf (étape 7 de `p4-plan.md`), dans cet ordre : `Validate and chain` / `Validate` / `Cancel`, précédées de `Validate and launch the swarm` quand une tâche-branche est formulée — motif « Validation d'un contenu » de `SKILL.md` : le changement demandé arrive en texte libre, reformuler, reposer la question. Champ `question` = la tâche formulée, recopiée en dur selon le « Gabarit — question `Plan` » ci-dessous, puis une ligne vide et la phrase de question. Aucun champ `preview`. Mode délégué → `FORGE_QUESTION`, la tâche formulée entière dans `content`.
@@ -198,6 +199,7 @@ Gabarit figé du champ `question` de l'étape 2 — crochets à remplir, rien d'
 header:   Plan
 question: T[n] — [Titre]
           Effort : [S|M|L|XL] · [n] fichiers · ≈ [minutes] min ([bas]-[haut])
+          Branche liée : [branche]   ← tâche qui porte `**Linked branch:**` seulement
           Description :
           - [idée 1]
           - [idée 2]
@@ -234,7 +236,7 @@ Lire et exécuter intégralement le fichier de la première commande dont le dé
 
 ### Script de déploiement SQL → `commands/deployment-sql.md`
 
-**Déclencheur :** `## Deployment` gagne ou modifie une étape qui exécute du SQL — migration, script de reconstruction, requête d'exploitation.
+**Déclencheur :** `## Deployment` gagne ou modifie une étape qui exécute du SQL — migration, script de reconstruction, requête d'exploitation —, ou le fichier SQL d'une étape déjà listée est écrit. Message `forge plan-hook: deployment script missing` ou `… incomplete` → même réaction, sans attendre.
 
 ### Propagation vers CLAUDE.md → `commands/rule-propagation.md`
 
@@ -252,6 +254,8 @@ Lire et exécuter intégralement le fichier de la première commande dont le dé
 ### Délégation — projet lié → `commands/delegation.md`, section du même nom
 
 **Déclencheur :** une demande vise un dossier hors de ROOT — chemin cité explicitement ou projet nommé sans ambiguïté — avec ou sans tâches du plan citées (ex: "fais T3 et T5 dans `../autre-projet`").
+
+⚠️ Demande hors plan qui vise le projet lié → « Demande hors périmètre » d'abord (tâche ajoutée au plan), puis cette délégation — jamais de worktree créé ni de code écrit par le parent, même pour une petite modification.
 
 ### Délégation — branche du même dépôt → `commands/delegation.md`, section du même nom
 

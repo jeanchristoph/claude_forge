@@ -8,7 +8,7 @@ En mode délégué (section « Mode délégué » de `SKILL.md`), quelle que soi
 
 Si BRIEF contient `## Origin` (`SCOPE: linked` — mandat) → les étapes ci-dessous s'appliquent avec ces règles :
 - Source unique du plan : `### Delegated tasks` du brief. `## Objective` et `## Scope & rules` cadrent, ils ne génèrent aucune tâche.
-- En-tête supplémentaire, sous `**Date:**` : `**Origin:** <parent> · <BRANCH> · T3, T5` — valeurs reprises de `## Origin`.
+- En-tête supplémentaire, sous `**Date:**` : `**Origin:** T3, T5` — valeur reprise de `**Tasks:**` de `## Origin`, sans nom de parent ni de branche.
 - Titre de tâche : `### T1 — [Titre] ← parent T3`. Une tâche parente peut donner plusieurs tâches enfant ; chaque tâche enfant pointe une seule tâche parente.
 - Aucune tâche hors mandat. Besoin hors périmètre découvert à la rédaction → entrée LOG `Out of mandate: [besoin]`, jamais une tâche ; remonté dans `FORGE_DONE`.
 
@@ -62,6 +62,8 @@ Si BRIEF contient `## Origin` (`SCOPE: linked` — mandat) → les étapes ci-de
 ### T1 — [Titre court et précis]
 **Effort:** XS/S/M/L/XL
 **Files:** `chemin/vers/fichier`, `chemin/vers/test`
+<!-- Tâche qui vise un projet lié seulement — « Branche liée » ci-dessous -->
+**Linked branch:** [chemin relatif du projet lié] @ [branche]
 **Description:** [Ce qui doit être fait, comment, avec quels patterns]
 [ ]
 
@@ -86,6 +88,7 @@ Si BRIEF contient `## Origin` (`SCOPE: linked` — mandat) → les étapes ci-de
 **Écrit par le hook :** `**Estimate:**` sous `**Date:**`, recalculé à chaque écriture (fichiers de toutes les tâches, somme de leurs estimations figées), `**Estimated time:**` sous `**Effort:**`, `**Actual time:**` à la coche, et `## Summary` entier — colonnes `Estimated` et `Actual` recopiées des tâches, `Status` recopié de la ligne de statut (raison d'un `[!]` comprise), ligne `**Total**` sur les seules tâches au réel mesuré (estimé et réel des mêmes tâches), ligne `**Remaining**` (tâches ouvertes). Le modèle n'écrit que la ligne de chaque tâche avec son titre court ; le hook garde ce titre, ajoute la ligne d'une tâche absente et réécrit tout le reste.
 
 **Fichiers d'une tâche :** nombre de chemins listés dans `**Files:**`, tests compris. Ligne avec un motif (`src/**/*.ts`) ou des fichiers encore inconnus → nombre écrit en fin de ligne, `(≈ n)`, qui prime. Ancien plan qui porte `**Estimated files:**` → ce champ prime.
+**Branche liée :** tâche qui vise un projet lié (dossier hors de ROOT, « Délégation — projet lié » de `commands/delegation.md`) → champ `**Linked branch:** <LINKED_REL> @ <branche>` écrit sous `**Files:**` dès l'entrée de la tâche au plan, nom selon « Nommage de la branche liée » de `commands/delegation.md`. La tâche est recopiée telle quelle dans le mandat : titre et description rédigés sans référence au parent — ni dossier, ni branche, ni ticket, ni client, ni donnée —, sauf la référence nécessaire pour l'exécuter, limitée au strict nécessaire (invariant de `commands/delegation.md`).
 **Effort :** XS · S · M · L · XL — taille relative des tâches, sans durée attachée ; XL → découper en sous-tâches, ou en branche si la tâche remplit la « Règle de branche ».
 **Estimate :** ordre de grandeur de durée d'agent, jamais un délai engageant ; le temps de réponse de l'utilisateur n'y est jamais compté.
 

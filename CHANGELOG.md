@@ -10,6 +10,19 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ## [Unreleased]
 
+### Added
+
+- `linked-write-guard.sh` (PreToolUse) refuses any write by the parent session into a linked forged project outside ROOT, except the mandate's `brief.md` and `log.md`: out-of-plan requests on a linked project go through the plan, then delegation.
+
+### Changed
+
+- The SQL deployment script is a summary to run top to bottom: one `-- STEP` per step, either the path of the script to run (purpose, timing, check, rollback) or a short standalone query with its check query — never a copied script.
+- Linked-project delegation names the linked branch with the same rule as a regular forge branch (short kebab-case slug of the delegated task, `-2`/`-3` on collision) and records the link in the parent plan only (`**Linked branch:** <path> @ <branch>`); the linked project never names the parent — the mandate carries the delegated tasks only, no parent brief, folder, branch or client data — unless the task's goal or a reference is required to carry it out, kept to the strict minimum inside the task.
+
+### Fixed
+
+- Deployment script no longer forgotten when the SQL file of a step already planned in `## Deployment` is written later: `plan-hook.sh` reports `deployment script missing` / `incomplete` on every plan write until the script references every written step file.
+
 ## [0.13.3] — 2026-11-22
 
 ### Added

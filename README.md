@@ -35,7 +35,7 @@ The result: fewer surprises, implementations that stay within the defined scope,
 - **Last session summary** — on resume, if `log.md` has entries, a one-line recap of the last 10 is displayed before the progress table.
 - **L/XL task decomposition** — large tasks are broken into micro-steps in `plan.md` before implementation starts.
 - **Deployment steps in the plan** — anything to run by hand outside the git deployment — an SQL migration, a configuration setting, an operating procedure — is listed in the `## Deployment` section of `plan.md` with its timing, the tasks it comes from and its copy under `output/`, filled in as soon as the script is written.
-- **Generated SQL deployment script** — every SQL step of `## Deployment` is gathered, with no question asked, into a single `output/YYYYMMDD-deployment-script.sql` per branch, rewritten in place: one `-- STEP` section per step, a versioned script referenced in a comment, a standalone query ready to run with its check query, date-dependent values computed in SQL, any `USE` section last.
+- **Generated SQL deployment script** — every SQL step of `## Deployment` is listed, with no question asked, in a single `output/YYYYMMDD-deployment-script.sql` per branch, rewritten in place, to run in order: one `-- STEP` section per step — the path of the script to run with its timing, check and rollback, or a short standalone query written in full with its check query — never the content of a script copied in.
 - **Out-of-scope detection** — a request outside the current plan becomes a plan task: forge writes it up and you validate the wording, nothing more.
 - **Branch, goal or ClickUp code as argument** — `/forge <branch-name>` checks out that branch, creating it from the up-to-date default branch (`master`, else `main`) if it does not exist — never from the current branch. A goal in words skips the goal question; with `.forge/clickup.json`, a task code (`PRJ-1133` or raw id) opens the existing task.
 - **Question instead of a goal** — on any branch, a question about the project that calls for no action ("where does the user set X?"), given as argument or in answer to the goal question, gets a read-only answer: no branch, no brief, nothing written.
@@ -117,6 +117,7 @@ forge/
 │   │   │   └── estimation.json        (minutes per file until a project has its own measures, estimate range, fixed costs of a branch, branch threshold)
 │   │   ├── hooks/                (declared in settings.json by both installers, copied with the skill)
 │   │   │   ├── forge-precompact.sh   (state hook: PreCompact, SessionStart after compaction or resume)
+│   │   │   ├── linked-write-guard.sh  (write guard, PreToolUse: the parent session never writes into a linked project, except the mandate's brief.md and log.md)
 │   │   │   ├── time-hook.sh           (time measurement hook: one line per event in the branch time-log.jsonl)
 │   │   │   └── plan-hook.sh           (tick hook: task marks, actual time, estimates and summary table of plan.md)
 │   │   └── scripts/              (called by the model and by the hooks)
@@ -153,6 +154,7 @@ forge/
 │   ├── forge-precompact.test.sh → bash tests/forge-precompact.test.sh, throwaway repositories only
 │   ├── install.test.sh       → bash tests/install.test.sh, throwaway home only
 │   ├── checks.test.sh        → bash tests/checks.test.sh, throwaway repositories only
+│   ├── linked-write-guard.test.sh → bash tests/linked-write-guard.test.sh, throwaway folders only
 │   ├── log-entry.test.sh     → bash tests/log-entry.test.sh, throwaway folders only
 │   ├── status.test.sh        → bash tests/status.test.sh, throwaway repositories only
 │   ├── swarm-status.test.sh  → bash tests/swarm-status.test.sh, throwaway repositories only
@@ -445,25 +447,32 @@ has already been forged (`.forge/` present — otherwise forge refuses and asks 
 first; it never initializes a project on its own). It needs a real branch on the parent side: a code name
 used outside git cannot delegate.
 
-The parent prepares the ground, and nothing else: it opens the branch **`<parent>/<BRANCH>`** of the
-linked repository in a git worktree — the parent folder name as prefix, the parent branch unchanged on the right: `forge/linked-project`,
-`forge/CU-123` — created from its up-to-date `master`/`main` when missing. In the linked repository the branch
-says where it comes from at a glance, groups under `git branch --list 'forge/*'`, and never collides with the
-linked project's own branches, ticket IDs included; the bare parent name is never used. It then writes the
-linked brief — the parent brief copied verbatim, preceded by an `## Origin` block naming the parent project (its folder name, never a path), the
-parent branch and the **mandate**: the delegated tasks copied in full — and opens the linked `log.md`. The
-parent's own plan is annotated (`delegated to <path relative to the parent root> @ <parent>/<BRANCH>`, e.g. `../my-api`) and its log records the hand-over. A recap table lists these
-actions; nothing runs before you confirm once.
+The parent prepares the ground, and nothing else: it opens a **linked branch** of the linked repository in a
+git worktree, named with the same rule as a regular forge branch — a short kebab-case slug of the delegated task
+(or of the common subject of the delegated tasks), `-2`, `-3` on collision in the linked repository — created
+from its up-to-date `master`/`main` when missing. The link lives in the parent plan only: a task aimed at a linked
+project carries `**Linked branch:** <path relative to the parent root> @ <branch>` (e.g. `../my-api @ export-csv`)
+from the moment it enters the plan, shown in the `Plan` question; tasks sharing that field share the branch and
+its worktree. The parent then writes the linked brief — an `## Origin` block holding the **mandate** only (the
+delegated tasks copied in full), and an objective written from those tasks — and opens the linked `log.md`
+(`Opened by delegation · T3, T5`). The parent's own plan is annotated (`delegated to ../my-api @ export-csv`)
+and its log records the hand-over. A recap table lists these actions; nothing runs before you confirm once.
 
-The worktree sits next to the linked repository, in `<linked-folder>.worktrees/<parent>/<BRANCH>` — the branch
-becomes the path, e.g. `my-api.worktrees/forge/CU-123` — and is reused when it already exists. The linked repository's own folder is never touched — no checkout,
+**The linked project never names the parent.** It may be public while the parent is private: no parent folder,
+branch, ticket, client or data ends up in the linked branch — name, brief, plan, log, code, CHANGELOG, commits.
+Tasks aimed at a linked project are written that way in the parent plan, since they are copied as is. The only
+exception is a reference the task cannot be carried out without, kept to the strict minimum inside the task —
+never the parent brief.
+
+The worktree sits next to the linked repository, in `<linked-folder>.worktrees/<branch>` — e.g.
+`my-api.worktrees/export-csv` — and is reused when it already exists. The linked repository's own folder is never touched — no checkout,
 no write — so you can keep working in it by hand while the subagent runs. A worktree only holds versioned
 files: no installed dependencies, no `.env`, no local config — a delegated task that needs them comes back
 blocked, and the linked `.forge/` must be committed. Once the linked branch is engraved, forge reminds you of
 `git -C <linked> worktree remove <path>`.
 
 Execution then happens in a **sealed forge context**: a subagent that receives only the worktree path,
-`<parent>/<BRANCH>`, your language and the order to run the forge skill there. No `project.md`, no coding standards,
+the linked branch, your language and the order to run the forge skill there. No `project.md`, no coding standards,
 no plan, no log cross the wall in either direction. The linked plan is derived from the mandate alone —
 every task carries its lineage (`T1 — … ← parent T3`), and a need outside the mandate is never turned into
 a task: it is reported back. Once the plan is validated the subagent chains every task without asking
@@ -585,8 +594,9 @@ exception is a linked project: worktree creation when delegating, and the relaye
 
 When the plan carries delegated tasks, engraving the parent also offers to ship each linked project that
 has uncommitted changes: first whether to ship it at all, then onto which branches — the same branches as
-the parent, `<parent>/<BRANCH>` only (commit and push, no merge), or a list of your own. Its commit message is
-generated from the delegated tasks marked done, never from its code, which the parent does not read. The
+the parent, the linked branch only (commit and push, no merge), or a list of your own. Its commit message is
+generated from the delegated tasks marked done, never from its code, which the parent does not read, and never
+names the parent. The
 linked project gets its own report table under the parent's, and the same command ships
 everything; a target branch missing from the linked repository is skipped, never created. Shipping runs in the
 worktree; a target branch checked out in another folder — the linked repository's own folder included — is

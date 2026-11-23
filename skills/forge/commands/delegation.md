@@ -16,11 +16,17 @@
 
 ## Délégation — projet lié
 
-**Vocabulaire :** projet *parent* = ROOT de la session · projet *lié* = `<LINKED>`, chemin absolu du dossier visé · *mandat* = les tâches parentes déléguées · *branche liée* = `<LINKED_BRANCH>` = `<PARENT_FOLDER>/<BRANCH>`, `<PARENT_FOLDER>` étant le nom du dossier ROOT (`forge/linked-project`, `forge/CU-123`) — jamais le nom nu de `<BRANCH>` : le préfixe dit d'où vient la délégation, la partie droite reste identique pour la correspondance. · `<LINKED_WORKTREE>` = chemin absolu du worktree de `<LINKED_BRANCH>`, rangé à côté de `<LINKED>` : `<LINKED>.worktrees/<LINKED_BRANCH>`, chaque `/` de la branche gardé comme sous-dossier (`../my-api.worktrees/forge/CU-123` depuis ROOT). · `<LINKED_REL>` = chemin de `<LINKED>` relatif à ROOT (`../my-api`).
+**Vocabulaire :** projet *parent* = ROOT de la session · projet *lié* = `<LINKED>`, chemin absolu du dossier visé · *mandat* = les tâches parentes déléguées · *branche liée* = `<LINKED_BRANCH>`, lue dans le champ `**Linked branch:** <LINKED_REL> @ <LINKED_BRANCH>` des tâches du mandat, jamais recalculée quand il est présent · `<LINKED_WORKTREE>` = chemin absolu du worktree de `<LINKED_BRANCH>`, rangé à côté de `<LINKED>` : `<LINKED>.worktrees/<LINKED_BRANCH>` (`../my-api.worktrees/export-csv` depuis ROOT). · `<LINKED_REL>` = chemin de `<LINKED>` relatif à ROOT (`../my-api`).
 
-**INVARIANT :** jamais de chemin absolu dans un fichier écrit — brief, log, plan : le parent s'y nomme `<PARENT_FOLDER>`, le projet lié `<LINKED_REL>`. Un chemin absolu ne vit que dans les commandes et le prompt du sous-agent.
+**Nommage de la branche liée :** règle de l'étape 3 de la « Garde de sécurité » de `SKILL.md`, l'objectif étant le titre de la tâche déléguée, ou l'objet commun des tâches qui partagent la branche ; collision vérifiée dans `<LINKED>` (`git -C "<LINKED>" show-ref --verify --quiet refs/heads/<slug>`). Nom écrit dans `**Linked branch:**` dès l'entrée de la tâche au plan (« Branche liée » de `phases/p4-plan.md`) ; tâche sans ce champ → nom calculé ici, écrit à l'action `mark`. Tâches au même champ → même branche, même worktree (`reuse`).
+
+**INVARIANT :** jamais de chemin absolu dans un fichier écrit — brief, log, plan : le projet lié s'y nomme `<LINKED_REL>`. Un chemin absolu ne vit que dans les commandes et le prompt du sous-agent.
+
+**INVARIANT :** le projet lié ne nomme jamais le parent — ni dossier, ni branche, ni ticket, ni client, ni donnée du parent dans la branche liée : nom de branche, brief, plan, log, code, CHANGELOG, commits. Le projet lié peut être public quand le parent est privé. Exception : une référence nécessaire pour exécuter la tâche (son but, un identifiant cité) est gardée, limitée au strict nécessaire et écrite dans la tâche elle-même — jamais le brief parent recopié.
 
 **INVARIANT :** le working tree de `<LINKED>` n'est jamais touché — ni checkout, ni écriture : le projet lié se travaille dans `<LINKED_WORKTREE>`, l'utilisateur garde `<LINKED>` pour lui. Le parent n'écrit dans `<LINKED_WORKTREE>` que `.forge/branch/<LINKED_BRANCH>/brief.md` et `.forge/branch/<LINKED_BRANCH>/log.md` — jamais de code, jamais de plan. Le parent ne lit jamais le code du projet lié.
+
+Demande hors plan qui vise le projet lié → d'abord « Demande hors périmètre » de `p5-resume.md` (tâche ajoutée au plan parent), puis cette délégation. Jamais de worktree créé ni de code écrit par le parent à la place, même pour une petite modification. Le hook `linked-write-guard.sh` refuse toute écriture de la session parente hors de ROOT dans un projet forgé, sauf ce `brief.md` et ce `log.md`.
 
 ⚠️ Aucune écriture, aucune commande git avant la confirmation de l'étape 6.
 
@@ -28,7 +34,8 @@
 1. `<LINKED>/.forge/` absent → "`<LINKED>` is not forged — run `/forge` there first." STOP — ne pas continuer. Jamais d'initialisation à la place de l'utilisateur.
 2. `<BRANCH>` est un nom de code hors git → "Delegation needs a real branch — create one first." STOP — ne pas continuer.
 3. Constituer le mandat : tâches citées dans la demande → elles seules ; aucune citée → poser le choix avec `AskUserQuestion` en multi-sélection — `header` : `Delegate`, une option par tâche `[ ]` du plan (label `T<n> — titre`, description = son effort), quatre par question, enchaînées si besoin. Mandat vide → "Nothing to delegate." STOP — ne pas continuer.
-4. Retenir l'action de worktree, première condition remplie — jamais `<BRANCH>` nue dans `<LINKED>` :
+   - `<LINKED_BRANCH>` = champ `**Linked branch:**` des tâches du mandat ; aucun champ → « Nommage de la branche liée » ci-dessus. Tâches du mandat à branches liées différentes → "T3 and T5 carry different linked branches — delegate them separately." STOP — ne pas continuer.
+4. Retenir l'action de worktree, première condition remplie :
    - `git -C <LINKED> worktree list --porcelain` : un worktree porte `branch refs/heads/<LINKED_BRANCH>` → `<LINKED_WORKTREE>` = son chemin, action `reuse`. Ce worktree est `<LINKED>` lui-même → "`<LINKED_BRANCH>` is checked out in `<LINKED>` — switch that folder to another branch first." STOP — ne pas continuer.
    - `git -C "<LINKED>" rev-parse --verify --quiet refs/heads/<LINKED_BRANCH>` réussit → action `create from <LINKED_BRANCH>` : `git -C "<LINKED>" worktree add "<LINKED_WORKTREE>" <LINKED_BRANCH>`.
    - Sinon → action `create <LINKED_BRANCH> from <base>` : branche par défaut détectée comme dans « Branche de travail » de `SKILL.md` ; branche distante suivie → `git -C <LINKED> fetch`, `<base>` = `origin/<défaut>`, sinon `<base>` = `<défaut>` ; commande `git -C <LINKED> worktree add --no-track -b <LINKED_BRANCH> <LINKED_WORKTREE> <base>`.
@@ -39,8 +46,8 @@
 8. **Sur `Open the linked project`** → dans l'ordre :
    - Exécuter l'action de worktree retenue à l'étape 4 (`reuse` → rien). Échec → afficher l'erreur telle quelle, STOP.
    - Écrire `<LINKED_WORKTREE>/.forge/branch/<LINKED_BRANCH>/brief.md` — format du mandat ci-dessous. Fichier déjà présent → le remplacer : le mandat parent fait foi.
-   - Entrée LOG de la branche liée, `--root <LINKED_WORKTREE> --branch <LINKED_BRANCH>` (`log.md` créé s'il est absent) : `Opened from <PARENT_FOLDER> · T3, T5`.
-   - PLAN parent : sous chaque tâche du mandat, note `delegated to <LINKED_REL> @ <LINKED_BRANCH>` — statut inchangé. Entrée LOG parent : `Delegated T3, T5 to <LINKED_REL> @ <LINKED_BRANCH>`.
+   - Entrée LOG de la branche liée, `--root <LINKED_WORKTREE> --branch <LINKED_BRANCH>` (`log.md` créé s'il est absent) : `Opened by delegation · T3, T5`.
+   - PLAN parent : chaque tâche du mandat sans `**Linked branch:**` → champ écrit sous `**Files:**` ; sous chaque tâche du mandat, note `delegated to <LINKED_REL> @ <LINKED_BRANCH>` — statut inchangé. Entrée LOG parent : `Delegated T3, T5 to <LINKED_REL> @ <LINKED_BRANCH>`.
    - Lancer le sous-agent (prompt ci-dessous), « Mesure d'un délégué » ci-dessus appliquée, puis entrer dans la boucle de relais.
 
 ### Boucle de relais
@@ -70,12 +77,10 @@ Pour chaque tâche parente du mandat, dans l'ordre du plan :
 
 ### Format du mandat — `brief.md` du projet lié
 
-Brief parent recopié à l'identique, précédé de `## Origin`. Libellés en anglais, tels quels ; contenu des tâches recopié intégralement depuis PLAN parent, sans reformulation. `**Branch:**` porte la branche parente `<BRANCH>` — la branche liée se lit dans le chemin du fichier.
+`## Origin` porte les seules tâches déléguées — marqueur du mode délégué. Libellés en anglais, tels quels ; `**Effort:**`, `**Files:**` et `**Description:**` des tâches recopiés intégralement depuis PLAN parent, sans reformulation : elles sont rédigées sans référence au parent (« Branche liée » de `phases/p4-plan.md`). Jamais le brief parent, jamais `**Linked branch:**`. `## Objective` et `## Scope & rules` rédigés à partir des seules tâches déléguées (invariant ci-dessus).
 
 ```markdown
 ## Origin
-**Parent:** <PARENT_FOLDER>
-**Branch:** <BRANCH>
 **Tasks:** T3, T5
 
 ### Delegated tasks
@@ -86,10 +91,10 @@ Brief parent recopié à l'identique, précédé de `## Origin`. Libellés en an
 **Description:** [description parent, intégrale]
 
 ## Objective
-[brief parent, inchangé]
+[objectif des tâches déléguées, en 1 phrase]
 
 ## Scope & rules
-[brief parent, inchangé]
+- [règle nécessaire aux tâches déléguées]
 ```
 
 ### Prompt du sous-agent

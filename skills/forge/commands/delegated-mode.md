@@ -12,8 +12,9 @@
 - Clôture de tâche non applicable : la séquence se termine par `FORGE_DONE` (format ci-dessous). Toutes les tâches du plan traitées (`[x]` ou `[!]`) → terminer le tour par ce bloc. STOP — ne pas continuer.
 
 **`SCOPE: linked` — projet lié :**
-- BRIEF porte `## Origin` : le mandat du parent, marqueur lu par les phases.
-- BRANCH = valeur de la ligne `BRANCH:` du prompt, de la forme `<parent>/<branche parente>` (`forge/linked-project`, `forge/CU-123`) : le préfixe nomme le dossier du parent, la partie droite est sa branche telle quelle. Tous les chemins `.forge/branch/<BRANCH>/` la contiennent telle quelle, slash compris — jamais le nom nu de la branche parente.
+- BRIEF porte `## Origin` : le mandat du parent — les seules tâches déléguées —, marqueur lu par les phases.
+- BRANCH = valeur de la ligne `BRANCH:` du prompt, nommée d'après la tâche déléguée. Tous les chemins `.forge/branch/<BRANCH>/` la contiennent telle quelle.
+- Le délégué ne réintroduit jamais le parent dans ce qu'il écrit — ni dossier, ni branche, ni ticket, ni client, ni donnée du parent dans le plan, le log, le code, le CHANGELOG ou un rapport écrit dans ROOT : le projet lié peut être public. Seules les références écrites dans les tâches du mandat sont reprises, telles quelles.
 - Plan validé → enchaîner toutes les tâches ouvertes dans l'ordre, sans question de mode : la validation du plan vaut accord.
 - Livraison non applicable : la livraison du projet lié est proposée au parent lors de son propre « grave ».
 - `FORGE_DONE` : `done` / `blocked` tracés `← parent T<n>`, `out_of_mandate` renseigné.

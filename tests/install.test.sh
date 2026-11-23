@@ -102,7 +102,7 @@ test_copies_skills_and_hook_into_home() {
   assert_file_exists "$CLAUDE_DIR/skills/forge/SKILL.md"
   assert_file_exists "$CLAUDE_DIR/skills/forge-clickup/SKILL.md"
   local hook
-  for hook in forge-precompact time-hook plan-hook; do assert_file_exists "$CLAUDE_DIR/skills/forge/hooks/$hook.sh"; done
+  for hook in forge-precompact time-hook plan-hook linked-write-guard; do assert_file_exists "$CLAUDE_DIR/skills/forge/hooks/$hook.sh"; done
 }
 
 # ── Fusion de settings.json ───────────────────────────────────────────────────
@@ -218,6 +218,19 @@ test_adds_synchronous_plan_hook_after_file_writes() {
   post_hooks=$(event_hooks PostToolUse)
   assert_contains '"matcher":"Edit|Write|MultiEdit","hooks":[{"type":"command","command":"bash ~/.claude/skills/forge/hooks/plan-hook.sh","shell":"bash"}]' "$post_hooks"
   assert_contains 'time-hook.sh' "$post_hooks"
+}
+
+test_adds_synchronous_linked_write_guard_before_file_writes() {
+  run_installer || exit 1
+  local pre_hooks
+  pre_hooks=$(event_hooks PreToolUse)
+  assert_contains '"matcher":"Edit|Write|MultiEdit|NotebookEdit","hooks":[{"type":"command","command":"bash ~/.claude/skills/forge/hooks/linked-write-guard.sh","shell":"bash"}]' "$pre_hooks"
+  assert_contains 'time-hook.sh' "$pre_hooks"
+}
+
+test_second_install_adds_linked_write_guard_once() {
+  run_installer && run_installer || exit 1
+  assert_equals 1 "$(count_occurrences 'linked-write-guard.sh' "$CLAUDE_DIR/settings.json")"
 }
 
 test_second_install_adds_plan_hook_once() {
@@ -359,6 +372,8 @@ run_common_tests() {
   run_test test_reinstall_over_0_13_1_moves_every_hook "réinstallation sur une 0.13.1 : hooks déplacés, anciennes entrées et ancien dossier retirés, sans doublon"
   run_test test_keeps_legacy_hook_folder_holding_foreign_file "garde l'ancien dossier de hooks qui contient un fichier étranger à forge"
   run_test test_second_install_adds_plan_hook_once "une seconde installation n'ajoute pas le hook de coche en double"
+  run_test test_adds_synchronous_linked_write_guard_before_file_writes "ajoute la garde d'écriture dans un projet lié, synchrone, avant chaque écriture de fichier"
+  run_test test_second_install_adds_linked_write_guard_once "une seconde installation n'ajoute pas la garde d'écriture en double"
   run_test test_records_tag_and_origin_from_git_copy "enregistre le tag et le dépôt d'origine d'une copie git"
   run_test test_records_null_version_outside_git "enregistre une version et un dépôt nuls hors dépôt git"
   run_test test_install_record_is_read_by_update_check "update.sh check lit l'install.json produit"

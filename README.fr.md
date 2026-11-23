@@ -33,7 +33,7 @@ Le résultat : moins de mauvaises surprises, des implémentations qui restent da
 - **Résumé "Last session"** — à la reprise, si `log.md` contient des entrées, un récapitulatif des 10 dernières en une ligne est affiché avant le tableau d'avancement.
 - **Décomposition des tâches L/XL** — les grandes tâches sont découpées en micro-étapes dans `plan.md` avant de démarrer l'implémentation.
 - **Étapes de mise en production dans le plan** — tout ce qui se joue à la main hors du déploiement git — migration SQL, réglage de configuration, procédure d'exploitation — est listé dans la section `## Deployment` de `plan.md` avec son moment, ses tâches d'origine et sa copie dans `output/`, renseigné dès que le script est écrit.
-- **Script SQL de déploiement généré** — toutes les étapes SQL de `## Deployment` sont regroupées, sans question, dans un seul `output/AAAAMMJJ-deployment-script.sql` par branche, réécrit sur place : une section `-- STEP` par étape, un script versionné référencé en commentaire, une requête autonome prête à exécuter avec sa requête de contrôle, les valeurs datées calculées en SQL, toute section `USE` en dernier.
+- **Script SQL de déploiement généré** — toutes les étapes SQL de `## Deployment` sont listées, sans question, dans un seul `output/AAAAMMJJ-deployment-script.sql` par branche, réécrit sur place, à dérouler dans l'ordre : une section `-- STEP` par étape — le chemin du script à exécuter avec son moment, son contrôle et son retour arrière, ou une petite requête autonome écrite en clair avec sa requête de contrôle — jamais le contenu d'un script recopié.
 - **Détection hors périmètre** — une demande hors du plan courant devient une tâche du plan : forge la formule, tu valides la formulation, rien de plus.
 - **Branche, objectif ou code ClickUp en argument** — `/forge <nom-de-branche>` bascule sur cette branche, créée depuis la branche par défaut à jour (`master`, sinon `main`) si elle n'existe pas — jamais depuis la branche courante. Un objectif en mots évite la question d'objectif ; avec `.forge/clickup.json`, un code de tâche (`PRJ-1133` ou id brut) ouvre la tâche existante.
 - **Question au lieu d'un objectif** — sur toute branche, une question sur le projet qui n'appelle aucune action (« où l'utilisateur règle-t-il X ? »), donnée en argument ou en réponse à la question d'objectif, reçoit une réponse en lecture seule : aucune branche, aucun brief, rien d'écrit.
@@ -115,6 +115,7 @@ forge/
 │   │   │   └── estimation.json        (minutes par fichier tant que le projet n'a pas ses mesures, fourchette, coûts fixes d'une branche, seuil de branche)
 │   │   ├── hooks/                (déclarés dans settings.json par les deux installeurs, copiés avec le skill)
 │   │   │   ├── forge-precompact.sh   (hook d'état : PreCompact, SessionStart après compaction ou reprise)
+│   │   │   ├── linked-write-guard.sh  (garde d'écriture, PreToolUse : la session parente n'écrit jamais dans un projet lié, hors brief.md et log.md du mandat)
 │   │   │   ├── time-hook.sh           (hook de mesure : une ligne par événement dans le time-log.jsonl de la branche)
 │   │   │   └── plan-hook.sh           (hook de coche : marques de tâche, réel, estimations et tableau récapitulatif de plan.md)
 │   │   └── scripts/              (appelés par le modèle et par les hooks)
@@ -151,6 +152,7 @@ forge/
 │   ├── forge-precompact.test.sh → bash tests/forge-precompact.test.sh, dépôts jetables uniquement
 │   ├── install.test.sh       → bash tests/install.test.sh, HOME jetable uniquement
 │   ├── checks.test.sh        → bash tests/checks.test.sh, dépôts jetables uniquement
+│   ├── linked-write-guard.test.sh → bash tests/linked-write-guard.test.sh, dossiers jetables uniquement
 │   ├── log-entry.test.sh     → bash tests/log-entry.test.sh, dossiers jetables uniquement
 │   ├── status.test.sh        → bash tests/status.test.sh, dépôts jetables uniquement
 │   ├── swarm-status.test.sh  → bash tests/swarm-status.test.sh, dépôts jetables uniquement
@@ -444,26 +446,33 @@ Une demande qui vise un dossier hors du projet courant ouvre un **projet lié** 
 projet de lui-même). Il faut une vraie branche côté parent : un nom de code utilisé hors git
 ne peut pas déléguer.
 
-Le parent prépare le terrain, rien de plus : il ouvre la branche **`<parent>/<BRANCH>`** du dépôt
-lié dans un worktree git — le nom du dossier parent en préfixe, la branche parente inchangée à droite : `forge/linked-project`,
-`forge/CU-123` — créée depuis son `master`/`main` à jour si elle manque. Dans le dépôt lié, la branche dit
-d'un coup d'œil d'où elle vient, se regroupe sous `git branch --list 'forge/*'` et n'entre jamais en collision
-avec les branches propres du projet lié, identifiants de ticket compris ; le nom nu de la branche parente
-n'est jamais utilisé. Il écrit ensuite le brief lié — le brief parent recopié à l'identique, précédé d'un
-bloc `## Origin` portant le nom du projet parent (nom de son dossier, jamais un chemin), la branche parente et le **mandat** : les tâches déléguées
-recopiées intégralement — et ouvre le `log.md` lié. Le plan du parent est annoté
-(`delegated to <chemin relatif à la racine du parent> @ <parent>/<BRANCH>`, ex. `../my-api`) et son log enregistre le passage de relais. Un tableau récapitulatif
+Le parent prépare le terrain, rien de plus : il ouvre une **branche liée** du dépôt lié dans un worktree
+git, nommée selon la même règle qu'une branche forge ordinaire — un slug court en kebab-case tiré de la tâche
+déléguée (ou de l'objet commun des tâches déléguées), `-2`, `-3` en cas de collision dans le dépôt lié —
+créée depuis son `master`/`main` à jour si elle manque. Le lien n'existe que dans le plan parent : une tâche
+qui vise un projet lié porte `**Linked branch:** <chemin relatif à la racine du parent> @ <branche>`
+(ex. `../my-api @ export-csv`) dès son entrée au plan, affiché dans la question `Plan` ; des tâches au même
+champ partagent la branche et son worktree. Le parent écrit ensuite le brief lié — un bloc `## Origin` qui ne
+porte que le **mandat** (les tâches déléguées recopiées intégralement) et un objectif rédigé à partir de ces
+seules tâches — et ouvre le `log.md` lié (`Opened by delegation · T3, T5`). Le plan du parent est annoté
+(`delegated to ../my-api @ export-csv`) et son log enregistre le passage de relais. Un tableau récapitulatif
 liste ces actions ; rien ne s'exécute avant une confirmation unique.
 
-Le worktree est rangé à côté du dépôt lié, dans `<dossier-lié>.worktrees/<parent>/<BRANCH>` — la branche devient
-le chemin, par exemple `my-api.worktrees/forge/CU-123` — et réutilisé s'il existe déjà. Le dossier propre du dépôt lié n'est jamais touché — ni checkout, ni écriture : tu
+**Le projet lié ne nomme jamais le parent.** Il peut être public quand le parent est privé : aucun dossier,
+branche, ticket, client ni donnée du parent n'entre dans la branche liée — nom, brief, plan, log, code,
+CHANGELOG, commits. Les tâches qui visent un projet lié sont rédigées ainsi dans le plan parent, puisqu'elles
+sont recopiées telles quelles. Seule exception : une référence sans laquelle la tâche ne peut pas s'exécuter,
+limitée au strict nécessaire et écrite dans la tâche — jamais le brief parent.
+
+Le worktree est rangé à côté du dépôt lié, dans `<dossier-lié>.worktrees/<branche>` — par exemple
+`my-api.worktrees/export-csv` — et réutilisé s'il existe déjà. Le dossier propre du dépôt lié n'est jamais touché — ni checkout, ni écriture : tu
 peux continuer à y travailler à la main pendant que le sous-agent tourne. Un worktree ne porte que les fichiers
 versionnés : ni dépendances installées, ni `.env`, ni configuration locale — une tâche déléguée qui en a besoin
 revient bloquée, et le `.forge/` du lié doit être commité. Une fois la branche liée gravée, forge rappelle
 `git -C <lié> worktree remove <chemin>`.
 
 L'exécution se fait ensuite dans un **contexte forge étanche** : un sous-agent qui ne reçoit que le chemin
-du worktree, `<parent>/<BRANCH>`, ta langue et l'ordre d'y exécuter le skill forge. Aucun `project.md`, aucun
+du worktree, la branche liée, ta langue et l'ordre d'y exécuter le skill forge. Aucun `project.md`, aucun
 standard, aucun plan, aucun log ne traverse la cloison, dans un sens comme dans l'autre. Le plan lié est
 dérivé du seul mandat — chaque tâche porte sa filiation (`T1 — … ← parent T3`), et un besoin hors mandat
 ne devient jamais une tâche : il est remonté. Une fois le plan validé, le sous-agent enchaîne toutes les
@@ -592,8 +601,8 @@ exception : un projet lié, pour la création du worktree à la délégation et 
 
 Quand le plan porte des tâches déléguées, graver le parent propose aussi de livrer chaque projet lié qui a des
 modifications non commitées : d'abord s'il faut le livrer, puis sur quelles branches — les mêmes que le parent,
-`<parent>/<BRANCH>` seule (commit et push, aucun merge), ou une liste de ton choix. Son message de commit est généré
-depuis les tâches déléguées cochées, jamais depuis son code, que le parent ne lit pas. Les actions du projet lié
+la branche liée seule (commit et push, aucun merge), ou une liste de ton choix. Son message de commit est généré
+depuis les tâches déléguées cochées, jamais depuis son code, que le parent ne lit pas, et ne nomme jamais le parent. Les actions du projet lié
 ont leur propre tableau de compte rendu sous celui du parent, et la même commande livre tout ; une branche
 cible absente du dépôt lié est ignorée, jamais créée. La livraison s'exécute dans le worktree ; une branche
 cible extraite dans un autre dossier — dossier propre du dépôt lié compris — est ignorée, la fusion se faisant

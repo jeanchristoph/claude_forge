@@ -16,8 +16,11 @@
 #   **Estimate:** ajouté s'il manque (estimation existante jamais recalculée) ; ## Summary réécrit depuis les tâches —
 #   Task | Effort | Files | Estimated | Actual | Status, titre court d'une ligne gardé, ligne **Total**, ligne
 #   **Remaining** des tâches ouvertes (retirée sans tâche ouverte) ; un seul appel time-calibrate.sh
+#   À chaque écriture du plan, réécrit ou non : fichiers output/….sql cités sous ## Deployment et déjà écrits, script
+#   de déploiement exclu → alerte « deployment script missing » sans output/*-deployment-script.sql, « … incomplete »
+#   quand l'un d'eux n'y est pas cité (commands/deployment-sql.md)
 # Entrée : JSON du hook sur l'entrée standard
-# Sortie : additionalContext quand plan.md est réécrit ; sortie 0 dans tous les cas
+# Sortie : additionalContext quand plan.md est réécrit ou qu'une alerte de déploiement existe ; sortie 0 dans tous les cas
 
 exec 2>/dev/null
 
@@ -177,6 +180,19 @@ readonly SUMMARY_PROGRAM="$TASK_STATUS_AWK$TASK_FILES_AWK"'
   END {
     if (in_summary && !table_written) emit_table()
     if (!has_summary) { print newline; print "## Summary" newline; emit_table() }
+  }'
+
+# Chemins output/….sql cités sous ## Deployment, un par ligne, sans doublon ; script de déploiement exclu.
+readonly DEPLOYMENT_SQL_PROGRAM='
+                  { sub(/\r$/, "") }
+  /^## /          { in_deployment = ($0 ~ /^## Deployment/); next }
+  !in_deployment  { next }
+  {
+    rest = $0
+    while (match(rest, /output\/[^` \t)]+\.sql/)) {
+      path = substr(rest, RSTART, RLENGTH); rest = substr(rest, RSTART + RLENGTH)
+      if (path !~ /-deployment-script\.sql$/ && !(path in seen)) { seen[path] = 1; print path }
+    }
   }'
 
 INPUT=""
@@ -407,12 +423,48 @@ refresh_summary() {
   printf '%s\n' "$content" > "$PLAN"
 }
 
+# Liste « a, b » des arguments.
+join_paths() {
+  REPLY=$(printf '%s, ' "$@")
+  REPLY=${REPLY%, }
+}
+
+# Alerte du script de déploiement SQL dans REPLY, vide sans alerte : fichiers d'étape de ## Deployment déjà écrits,
+# absents de tout output/*-deployment-script.sql de la branche, ou ce script absent.
+check_deployment_script() {
+  local branch_dir="$ROOT/.forge/branch/$BRANCH" path written=() scripts=() unreferenced=()
+  REPLY=""
+  while IFS= read -r path; do
+    [ -f "$branch_dir/$path" ] && written+=("$path")
+  done < <(awk "$DEPLOYMENT_SQL_PROGRAM" "$PLAN")
+  [ ${#written[@]} -gt 0 ] || return 0
+  scripts=("$branch_dir"/output/*-deployment-script.sql)
+  if [ ! -f "${scripts[0]}" ]; then
+    join_paths "${written[@]}"
+    REPLY="forge plan-hook: deployment script missing — SQL step files written: $REPLY — apply commands/deployment-sql.md now."
+    return 0
+  fi
+  for path in "${written[@]}"; do
+    grep -qF -- "$path" "${scripts[@]}" || unreferenced+=("$path")
+  done
+  [ ${#unreferenced[@]} -gt 0 ] || return 0
+  join_paths "${unreferenced[@]}"
+  REPLY="forge plan-hook: deployment script incomplete — SQL step files not referenced: $REPLY — apply commands/deployment-sql.md now."
+}
+
+# Compte rendu au modèle : réécriture du plan (is_rewritten = 1) avec ses réels, puis alerte de déploiement ;
+# rien sans l'un ni l'autre.
 report_to_model() {
-  local summary=${1//$'\t'/ → } message="forge plan-hook: plan.md rewritten ($PLAN)"
-  summary=${summary%$'\n'}
-  summary=${summary//$'\n'/ ; }
-  [ -n "$summary" ] && message+=" — **Actual time:** $summary"
-  message+=" — ## Summary, estimates and remaining work kept up to date by the hook. Read plan.md again before editing it."
+  local summary=${1//$'\t'/ → } is_rewritten=$2 warning=$3 message=""
+  if [ "$is_rewritten" = 1 ]; then
+    summary=${summary%$'\n'}
+    summary=${summary//$'\n'/ ; }
+    message="forge plan-hook: plan.md rewritten ($PLAN)"
+    [ -n "$summary" ] && message+=" — **Actual time:** $summary"
+    message+=" — ## Summary, estimates and remaining work kept up to date by the hook. Read plan.md again before editing it."
+  fi
+  [ -n "$warning" ] && message+="${message:+$'\n'}$warning"
+  [ -n "$message" ] || return 0
   json_escape "$message"
   printf '{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":%s}}\n' "$REPLY"
 }
@@ -431,8 +483,8 @@ main() {
   updates=$REPLY
   [ -n "$updates" ] && write_actual_times "$updates" && is_rewritten=1
   refresh_summary && is_rewritten=1
-  [ "$is_rewritten" = 1 ] || exit 0
-  report_to_model "$updates"
+  check_deployment_script
+  report_to_model "$updates" "$is_rewritten" "$REPLY"
 }
 
 main

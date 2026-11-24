@@ -557,6 +557,16 @@ test_run_keeps_start_time_of_a_task_in_progress_and_resets_its_files() {
   assert_equals '{"ts":1700000000000,"event":"plan_checkpoint","done":"T1","files":""}' "$(last_checkpoint)"
 }
 
+test_run_moves_checkpoint_when_everything_was_already_committed() {
+  prepare_forge_branch
+  engrave run --root "$WORK" --branch ship --message "first" >/dev/null
+  printf '{"ts":1700000000000,"event":"plan_checkpoint","done":"T1","files":"old.txt\tabc123"}
+' > "$(ship_log)"
+  engrave run --root "$WORK" --branch ship --message "second" >/dev/null
+  assert_contains '"done":"T1","files":""}' "$(last_checkpoint)"
+  assert_not_contains '"ts":1700000000000,' "$(last_checkpoint)"
+}
+
 test_run_without_checkpoint_writes_none() {
   prepare_forge_branch
   : > "$(ship_log)"
@@ -630,6 +640,7 @@ run_test test_preview_with_model_writes_nothing "l'aperçu n'écrit jamais la sy
 run_test test_run_with_model_outside_forge_branch_writes_no_metrics "sans dossier de branche forge, aucune synthèse"
 run_test test_run_moves_checkpoint_after_commit_when_no_task_is_in_progress "point d'étape avancé après la livraison sans tâche en cours"
 run_test test_run_keeps_start_time_of_a_task_in_progress_and_resets_its_files "tâche en cours : heure de départ gardée, empreinte repartie"
+run_test test_run_moves_checkpoint_when_everything_was_already_committed "tout déjà commité : point d'étape avancé, même avec une empreinte ancienne"
 run_test test_run_without_checkpoint_writes_none "sans point d'étape : rien d'écrit"
 run_test test_failed_run_and_preview_leave_checkpoint_untouched "livraison en échec et aperçu : point d'étape intact"
 run_test test_run_adds_missing_ignore_rules_and_never_commits_local_files "ajoute les règles .gitignore manquantes, sans jamais commiter journal ni input/"

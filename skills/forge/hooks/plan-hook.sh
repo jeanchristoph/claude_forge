@@ -9,15 +9,15 @@
 #   time-aggregate.sh --task, écrit en **Actual time:** sous la tâche : « ≈ <a> min agent (incl. <c> min checks) ·
 #   human <h> min (<n> questions) · <f> files · total ≈ <t> min » (« — » sans mesure) ; premier nombre = temps d'agent,
 #   vérifications comprises, comparable à l'estimation et lu par le calibrage avec la part « min checks »
+#   Tâche ajoutée au plan (ouverte, avec **Files:**, encore sans **Estimated time:**) sans tâche en cours → point d'étape
+#   avancé : la formulation d'une tâche n'entre pas dans son réel. Code modifié depuis le dernier point d'étape → gardé
 #   Coche retirée → point d'étape réécrit avec la liste à jour, heure et empreinte gardées
-#   Estimation d'une tâche liée : « · indicative » tant que le plan de son délégué n'existe pas ; dès qu'il existe, à une
-#   écriture du plan parent, ses fichiers prévus remplacent ceux de la tâche (**Estimated files:**) et l'estimation est
-#   refaite une seule fois, figée
-#   Tâche-branche d'essaim (titre « — Branch ») : aucune marque ; à sa coche, réel = agent_minutes du metrics.json de la
-#   branche fille, arrivé avec sa fusion, « — » sans lui
-#   Tâche déléguée à un projet lié (linked_unit, task-files.sh) : aucune marque, jamais le temps de la session parente ;
-#   à sa coche, réel des seuls délégués de ce projet — toute l'unité quand une seule tâche la porte, sinon ses tâches
-#   enfant (« ← parent Tn » du plan lié) ; « — » sans mesure. Temps humain « — » : il est celui de la session parente
+#   Tâche-branche d'essaim (titre « — Branch ») et tâche déléguée à un projet lié (linked_unit, task-files.sh) : aucune
+#   marque, jamais le temps de la session parente ; estimation et réel = somme des tâches de leur plan (celui du worktree
+#   de leur branche, ou de la branche fille fusionnée), limitée aux tâches enfant (« ← parent Tn ») quand plusieurs tâches
+#   parentes partagent la branche liée ; réel « — » sans plan ou avec une tâche faite non mesurée
+#   Leur estimation : « · indicative » sur les fichiers déclarés tant que ce plan n'est pas écrit et estimé ; puis somme
+#   de ses tâches, une seule fois, figée ; ses fichiers prévus remplacent les leurs (**Estimated files:**)
 #   Délégué (agent_id) dont le cwd mène au journal d'une autre branche : marques dans ce journal, avec la branche du plan
 #   et, hors du dépôt parent, son projet lié ; première écriture de son plan → ligne {"event":"delegate"} qui associe
 #   l'agent à cette branche et à ce projet, sans le modèle
@@ -58,15 +58,6 @@ readonly PLAN_TASKS_PROGRAM="$TASK_STATUS_AWK"'
   task != "" && is_status_line($0) { status = status_of($0) }
   END { flush() }'
 
-# Tâches d un plan lié qui répondent à la tâche parente « parent » : numéros séparés par des virgules.
-readonly CHILD_TASKS_PROGRAM="$TASK_STATUS_AWK"'
-  { sub(/\r$/, "") }
-  is_task_heading($0) && match($0, /← parent T[0-9]+/) {
-    traced = substr($0, RSTART, RLENGTH); sub(/^.* /, "", traced)
-    if (traced == parent) list = list (list == "" ? "" : ",") $2
-  }
-  END { print list }'
-
 # Réécrit **Actual time:** des tâches de « updates » (« tâche<TAB>valeur » par ligne) — un réel déjà mesuré (≈) n'est
 # jamais remplacé par « — » (deux coches d'une même modification, simultanées pour la mesure) : ancienne ligne retirée,
 # nouvelle sous **Estimated time:**, à défaut sous **Effort:**, à défaut sous le titre ; fins de ligne gardées.
@@ -91,49 +82,92 @@ readonly ACTUAL_TIME_PROGRAM='
   !(FNR in drop) { print }
   FNR in inserted_after { print "**Actual time:** " value[inserted_after[FNR]] (($0 ~ /\r$/) ? "\r" : "") }'
 
-# Fichiers prévus d un plan lié : ceux des tâches qui répondent à « parent », toutes quand parent est vide.
-readonly LINKED_FILES_PROGRAM="$TASK_STATUS_AWK$TASK_FILES_AWK"'
-  function flush() { if (is_counted) total += planned_files_from(estimated_files_line, files_line); is_counted = 0 }
+# Somme des tâches du plan d une unité déléguée (branche fille ou liée) : celles qui répondent à « parent », toutes quand
+# parent est vide. Une ligne « fichiers|estimation|réel » : estimation « ≈ m min (b-h) », vide tant qu une tâche à
+# fichiers n est pas estimée ; réel au format d une tâche classique, vide sans tâche faite ou avec une tâche faite sans
+# mesure ventilée — une tâche qui en regroupe d autres vaut la somme de ses tâches, rien d autre.
+readonly UNIT_TASKS_PROGRAM="$TASK_STATUS_AWK$TASK_FILES_AWK"'
+  function number_after(text, label,   rest) {
+    if (!match(text, label)) return 0
+    rest = substr(text, RSTART + RLENGTH)
+    return match(rest, /[0-9]+(\.[0-9]+)?/) ? substr(rest, RSTART, RLENGTH) + 0 : 0
+  }
+  function add_estimate(text,   bounds) {
+    if (!match(text, /\([0-9]+-[0-9]+\)/)) return 0
+    split(substr(text, RSTART + 1, RLENGTH - 2), bounds, "-")
+    minutes += number_after(text, "≈"); low += bounds[1]; high += bounds[2]
+    return 1
+  }
+  function add_actual(text) {
+    if (text !~ /≈ [0-9.]+ min agent \(incl\. [0-9.]+ min checks\) · human [0-9.]+ min \([0-9]+ questions\)/) return 0
+    agent += number_after(text, "≈"); checks += number_after(text, "incl"); human += number_after(text, "human")
+    questions += number_after(text, "human [0-9.]+ min")
+    if (text ~ /· [0-9]+ files/) actual_files += number_after(text, "questions[)]"); else has_unknown_files = 1
+    return 1
+  }
+  function flush(   planned) {
+    if (is_counted && status != "dropped") {
+      planned = planned_files_from(estimated_files_line, files_line); files += planned
+      if (add_estimate(estimated_line)) estimated++
+      else if (planned > 0) is_estimate_missing = 1
+      if (status == "done") { done++; if (!add_actual(actual_line)) is_measure_missing = 1 }
+    }
+    is_counted = 0
+  }
   { sub(/\r$/, "") }
   is_task_heading($0) {
-    flush(); estimated_files_line = ""; files_line = ""; traced = ""
+    flush(); status = "open"; estimated_files_line = files_line = estimated_line = actual_line = ""; traced = ""
     if (match($0, /← parent T[0-9]+/)) { traced = substr($0, RSTART, RLENGTH); sub(/^.* /, "", traced) }
     is_counted = (parent == "" || traced == parent); next
   }
   /^## / { flush(); next }
   /^\*\*Estimated files:\*\*/ { estimated_files_line = $0 }
   /^\*\*Files:\*\*/ { files_line = $0 }
-  END { flush(); print total + 0 }'
+  /^\*\*Estimated time:\*\*/ { estimated_line = $0 }
+  /^\*\*Actual time:\*\*/ { actual_line = $0 }
+  is_status_line($0) { status = status_of($0) }
+  END {
+    flush()
+    if (estimated && !is_estimate_missing) estimate = sprintf("≈ %d min (%d-%d)", minutes, low, high)
+    if (done && !is_measure_missing) {
+      actual = sprintf("≈ %.1f min agent (incl. %.1f min checks) · human %.1f min (%d questions)", agent, checks, human, questions)
+      if (!has_unknown_files) actual = actual sprintf(" · %d files", actual_files)
+      actual = actual sprintf(" · total ≈ %.1f min", agent + human)
+    }
+    printf "%d|%s|%s\n", files, estimate, actual
+  }'
 
-# Estimation indicative de la tâche « task » retirée, fichiers du plan lié écrits à sa place : le plan est réestimé ensuite.
+# Estimation indicative de la tâche « task » remplacée par « estimate », ses fichiers par « files » (0 → gardés).
 readonly ADOPT_ESTIMATE_PROGRAM='
   { line = $0; eol = (line ~ /\r$/) ? "\r" : ""; sub(/\r$/, "", line) }
   line ~ /^### T[0-9]+/ { split(line, words, " "); is_target = (words[2] == task) }
   line ~ /^## / { is_target = 0 }
-  is_target && line ~ /^\*\*Estimated (time|files):\*\*/ { next }
+  is_target && line ~ /^\*\*Estimated time:\*\*/ { print "**Estimated time:** " estimate eol; next }
+  is_target && files > 0 && line ~ /^\*\*Estimated files:\*\*/ { next }
   { print }
-  is_target && line ~ /^\*\*Files:\*\*/ { print "**Estimated files:** " files eol }'
+  is_target && files > 0 && line ~ /^\*\*Files:\*\*/ { print "**Estimated files:** " files eol }'
 
-# Tâches liées à l estimation encore indicative, une par ligne.
+# Tâches à l estimation encore indicative, une par ligne.
 readonly INDICATIVE_TASKS_PROGRAM="$TASK_STATUS_AWK"'
   { sub(/\r$/, "") }
   is_task_heading($0) { task = $2; next }
   /^## / { task = "" }
   task != "" && /^\*\*Estimated time:\*\*.* · indicative$/ { print task }'
 
-# Inventaire du plan pour l'estimation : « task<TAB>id<TAB>fichiers<TAB>estimée 0/1<TAB>statut » par tâche ### Tn,
+# Inventaire du plan pour l'estimation : « task<TAB>id<TAB>fichiers<TAB>estimée 0/1<TAB>statut<TAB>minutes basse haute »
+# par tâche ### Tn, les trois nombres tirés de l'estimation écrite,
 # puis « header<TAB>0/1 » (en-tête **Estimate:** présent).
 readonly INVENTORY_PROGRAM="$TASK_STATUS_AWK$TASK_FILES_AWK"'
   function flush() {
-    if (task != "") printf "task\t%s\t%d\t%d\t%s\n", task, planned_files_from(estimated_files_line, files_line), has_estimate, status
+    if (task != "") printf "task\t%s\t%d\t%d\t%s\t%s\n", task, planned_files_from(estimated_files_line, files_line), has_estimate, status, bounds
     task = ""
   }
                                    { sub(/\r$/, "") }
   /^\*\*Estimate:\*\*/             { has_header = 1 }
-  is_task_heading($0)              { flush(); task = $2; status = "open"; has_estimate = 0; estimated_files_line = ""; files_line = ""; next }
+  is_task_heading($0)              { flush(); task = $2; status = "open"; has_estimate = 0; bounds = ""; estimated_files_line = ""; files_line = ""; next }
   /^## /                           { flush(); next }
   task == ""                       { next }
-  /^\*\*Estimated time:\*\*/       { has_estimate = 1 }
+  /^\*\*Estimated time:\*\*/       { has_estimate = 1; if (match($0, /[0-9]+ min \([0-9]+-[0-9]+\)/)) { bounds = substr($0, RSTART, RLENGTH); gsub(/[^0-9]+/, " ", bounds) } }
   /^\*\*Estimated files:\*\*/      { estimated_files_line = $0 }
   /^\*\*Files:\*\*/                { files_line = $0 }
   is_status_line($0)               { status = status_of($0) }
@@ -265,10 +299,14 @@ MARK_PROJECT=""
 AGENT_ID=""
 declare -A LINKED_UNITS=()
 declare -A CHILD_BRANCHES=()
-ADOPTED_TASKS=""
+UNIT_FILES=0
+UNIT_ESTIMATE=""
+UNIT_ACTUAL=""
 DONE_TASKS=""
 MEASURABLE_DONE=()
 UNMEASURED_DONE=()
+HAD_CHECKPOINT=0
+HAS_ADDED_TASK=0
 
 # Plan modifié → ROOT, BRANCH, PLAN ; rend 1 pour tout autre fichier.
 resolve_plan() {
@@ -387,49 +425,25 @@ count_unit_tasks() {
   for task in "${!LINKED_UNITS[@]}"; do [ "${LINKED_UNITS[$task]}" = "$1" ] && REPLY=$((REPLY + 1)); done
 }
 
-# Réel d'une tâche liée dans REPLY : délégués de son projet seulement, jamais la session parente ; « — » sans mesure.
-# Fichiers absents sans worktree : rien à compter, jamais zéro.
-measure_linked_task() {
-  local unit=${LINKED_UNITS[$1]} directory branch worktree options result agent checks files=null children
-  REPLY=$NO_MEASURE
-  [[ $unit == *" @ "* ]] || return 0
-  directory=${unit% @ *}; branch=${unit##* @ }
-  [[ $directory == /* || $directory == [A-Za-z]:* ]] || directory="$ROOT/$directory"
-  linked_project "$directory" "$ROOT"
-  [ -n "$REPLY" ] || { REPLY=$NO_MEASURE; return 0; }
-  options=(--branch "$branch" --parent-log "$TIME_LOG" --project "$REPLY")
-  worktree_of_branch "$directory" "$branch"; worktree=$REPLY
-  options+=(--root "${worktree:-$directory}")
-  REPLY=$NO_MEASURE
-  count_unit_tasks "$unit"
-  if [ "$REPLY" -gt 1 ]; then
-    REPLY=$NO_MEASURE
-    children=$(awk -v parent="$1" "$CHILD_TASKS_PROGRAM" "$worktree/.forge/branch/$branch/plan.md")
-    [ -n "$worktree" ] && [ -n "$children" ] || return 0
-    result=$(bash "$SCRIPT_DIR/time-aggregate.sh" "${options[@]}" --task "$children")
-    [[ $result == *'"measured":true'* ]] || return 0
-    json_number_field agent_minutes "$result"; agent=$REPLY
-    json_number_field actual_files "$result"; files=$REPLY
-  else
-    result=$(bash "$SCRIPT_DIR/time-aggregate.sh" "${options[@]}")
-    json_number_field delegates "$result"
-    [ "$REPLY" != null ] && [ "$REPLY" != 0 ] || { REPLY=$NO_MEASURE; return 0; }
-    json_number_field delegated_minutes "$result"; agent=$REPLY
-    if [ -n "$worktree" ]; then json_number_field files "$result"; files=$REPLY; fi
+# Tâches du plan de l'unité déléguée de <tâche>, additionnées : UNIT_FILES, UNIT_ESTIMATE, UNIT_ACTUAL, vides sans plan.
+# Branche liée partagée par plusieurs tâches parentes → seules les tâches enfant de <tâche> ; sinon toutes.
+read_unit() {
+  local parent="" plan
+  UNIT_FILES=0; UNIT_ESTIMATE=""; UNIT_ACTUAL=""
+  unit_plan_of "$1"
+  plan=$REPLY
+  [ -n "$plan" ] || return 0
+  if [ -n "${LINKED_UNITS[$1]:-}" ]; then
+    count_unit_tasks "${LINKED_UNITS[$1]}"
+    [ "$REPLY" -gt 1 ] && parent=$1
   fi
-  json_number_field check_minutes "$result"; checks=$REPLY
-  REPLY="≈ $agent min agent (incl. $checks min checks) · human $NO_MEASURE"
-  [ "$files" != null ] && REPLY+=" · $files files"
-  REPLY+=" · total ≈ $agent min"
+  IFS='|' read -r UNIT_FILES UNIT_ESTIMATE UNIT_ACTUAL < <(awk -v parent="$parent" "$UNIT_TASKS_PROGRAM" "$plan")
 }
 
-# Réel d'une tâche-branche dans REPLY : minutes d'agent de sa branche fille, lues dans le metrics.json fusionné avec elle.
-measure_child_branch() {
-  local metrics="$ROOT/.forge/branch/${CHILD_BRANCHES[$1]}/metrics.json"
-  REPLY=$NO_MEASURE
-  [ -n "${CHILD_BRANCHES[$1]}" ] && [ -f "$metrics" ] || return 0
-  json_number_field agent_minutes "$(cat "$metrics")"
-  if [ "$REPLY" = null ]; then REPLY=$NO_MEASURE; else REPLY="≈ $REPLY min"; fi
+# Réel d'une tâche-branche ou liée dans REPLY : somme des réels de ses tâches, « — » sans mesure complète.
+measure_unit_task() {
+  read_unit "$1"
+  REPLY=${UNIT_ACTUAL:-$NO_MEASURE}
 }
 
 # Marques des tâches nouvellement cochées, nouveau point d'étape, puis réel de chacune ; « tâche<TAB>réel » dans REPLY.
@@ -457,7 +471,7 @@ mark_new_tasks() {
 
 # Coches comparées au dernier point d'étape ; « tâche<TAB>réel » des tâches à écrire dans REPLY, vide sinon.
 measure_ticks() {
-  local task new_tasks=() linked_tasks=() child_tasks=() has_new_tick=0 updates
+  local task new_tasks=() unit_tasks=() has_new_tick=0 updates
   REPLY=""
   if ! read_last_checkpoint "$TIME_LOG" "$MARK_BRANCH" "$MARK_PROJECT"; then
     current_time_ms || return 0
@@ -467,13 +481,13 @@ measure_ticks() {
     REPLY=""
     return 0
   fi
+  HAD_CHECKPOINT=1
   [ "$DONE_TASKS" = "$CHECKPOINT_DONE" ] && return 0
   for task in $DONE_TASKS; do
     is_in_list "$task" "$CHECKPOINT_DONE" && continue
     has_new_tick=1
     is_in_list "$task" "${MEASURABLE_DONE[*]}" && new_tasks+=("$task")
-    [ -n "${LINKED_UNITS[$task]:-}" ] && linked_tasks+=("$task")
-    [ -n "${CHILD_BRANCHES[$task]:-}" ] && child_tasks+=("$task")
+    is_unit_task "$task" && unit_tasks+=("$task")
   done
   if [ "$has_new_tick" = 0 ]; then
     append_checkpoint "$TIME_LOG" "$CHECKPOINT_TS" "$DONE_TASKS" "$CHECKPOINT_FILES" "$MARK_BRANCH" "$MARK_PROJECT"
@@ -481,15 +495,23 @@ measure_ticks() {
   fi
   mark_new_tasks "${new_tasks[@]}" || { REPLY=""; return 0; }
   updates=$REPLY
-  for task in "${linked_tasks[@]}"; do
-    measure_linked_task "$task"
-    updates+="$task"$'\t'"$REPLY"$'\n'
-  done
-  for task in "${child_tasks[@]}"; do
-    measure_child_branch "$task"
+  for task in "${unit_tasks[@]}"; do
+    measure_unit_task "$task"
     updates+="$task"$'\t'"$REPLY"$'\n'
   done
   REPLY=$updates
+}
+
+# Point d'étape avancé à l'entrée d'une tâche au plan, sans tâche en cours ; déjà écrit par une coche ou un premier
+# passage de la même écriture → rien.
+restart_for_added_task() {
+  local now files_json=""
+  [ "$HAD_CHECKPOINT" = 1 ] && [ "$HAS_ADDED_TASK" = 1 ] && [ "$DONE_TASKS" = "$CHECKPOINT_DONE" ] || return 0
+  snapshot_files "$ROOT" && { json_escape "$REPLY"; files_json=$REPLY; }
+  is_code_untouched "$files_json" || return 0
+  current_time_ms || return 0
+  now=$REPLY
+  append_checkpoint "$TIME_LOG" "$now" "$DONE_TASKS" "$files_json" "$MARK_BRANCH" "$MARK_PROJECT"
 }
 
 # Sans journal : « — » pour chaque tâche cochée mesurable qui n'a pas encore de réel.
@@ -508,31 +530,38 @@ write_actual_times() {
   printf '%s\n' "$content" > "$PLAN"
 }
 
-# Plan du délégué d'une tâche liée dans REPLY, vide sans worktree ni plan.
-linked_plan_of() {
-  local unit=${LINKED_UNITS[$1]} directory branch
-  directory=${unit% @ *}; branch=${unit##* @ }
-  [[ $directory == /* || $directory == [A-Za-z]:* ]] || directory="$ROOT/$directory"
+# Plan de l'unité déléguée de <tâche> dans REPLY, vide sans plan : worktree qui extrait sa branche ; à défaut, pour une
+# branche fille fusionnée, son dossier dans le dépôt parent.
+unit_plan_of() {
+  local directory=$ROOT branch=${CHILD_BRANCHES[$1]:-} unit=${LINKED_UNITS[$1]:-} candidate
+  if [ -n "$unit" ]; then
+    directory=${unit% @ *}; branch=${unit##* @ }
+    [[ $directory == /* || $directory == [A-Za-z]:* ]] || directory="$ROOT/$directory"
+  fi
+  REPLY=""
+  [ -n "$branch" ] || return 0
   worktree_of_branch "$directory" "$branch"
-  [ -n "$REPLY" ] || return 0
-  REPLY="$REPLY/.forge/branch/$branch/plan.md"
-  [ -f "$REPLY" ] || REPLY=""
+  for candidate in "$REPLY" "${CHILD_BRANCHES[$1]:+$ROOT}"; do
+    REPLY="$candidate/.forge/branch/$branch/plan.md"
+    [ -n "$candidate" ] && [ -f "$REPLY" ] && return 0
+  done
+  REPLY=""
 }
 
-# Estimations indicatives des tâches liées dont le délégué a écrit son plan : fichiers repris de ce plan, une fois.
-adopt_linked_estimates() {
-  local task plan files parent content
+# Tâche qui en regroupe d'autres : tâche-branche ou tâche liée.
+is_unit_task() {
+  [ -n "${LINKED_UNITS[$1]:-}${CHILD_BRANCHES[$1]:-}" ]
+}
+
+# Estimations indicatives des tâches-branches et liées dont le plan est écrit : somme de ses tâches, une seule fois.
+adopt_unit_estimates() {
+  local task content
   while IFS= read -r task; do
-    [ -n "${LINKED_UNITS[$task]:-}" ] || continue
-    linked_plan_of "$task"; plan=$REPLY
-    [ -n "$plan" ] || continue
-    count_unit_tasks "${LINKED_UNITS[$task]}"
-    parent=""; [ "$REPLY" -gt 1 ] && parent=$task
-    files=$(awk -v parent="$parent" "$LINKED_FILES_PROGRAM" "$plan")
-    [ "${files:-0}" -gt 0 ] || continue
-    content=$(awk -v task="$task" -v files="$files" "$ADOPT_ESTIMATE_PROGRAM" "$PLAN")
+    is_unit_task "$task" || continue
+    read_unit "$task"
+    [ -n "$UNIT_ESTIMATE" ] || continue
+    content=$(awk -v task="$task" -v files="$UNIT_FILES" -v estimate="$UNIT_ESTIMATE" "$ADOPT_ESTIMATE_PROGRAM" "$PLAN")
     [ -n "$content" ] && printf '%s\n' "$content" > "$PLAN"
-    ADOPTED_TASKS+=" $task"
   done < <(awk "$INDICATIVE_TASKS_PROGRAM" "$PLAN")
 }
 
@@ -557,21 +586,26 @@ calibrate() {
 # Inventaire du plan, une case par tâche : TASK_IDS, TASK_FILE_COUNTS, TASK_IS_OPEN, TASK_IS_MISSING (fichiers sans
 # estimation) ; HAS_HEADER, HAS_OPEN, HAS_MISSING.
 read_inventory() {
-  local kind id files has_estimate status
-  TASK_IDS=(); TASK_FILE_COUNTS=(); TASK_IS_OPEN=(); TASK_IS_MISSING=()
-  HAS_HEADER=1; HAS_OPEN=0; HAS_MISSING=0
-  while IFS=$'\t' read -r kind id files has_estimate status; do
+  local kind id files has_estimate status bounds
+  TASK_IDS=(); TASK_FILE_COUNTS=(); TASK_IS_OPEN=(); TASK_IS_MISSING=(); TASK_BOUNDS=()
+  HAS_HEADER=1; HAS_OPEN=0; HAS_MISSING=0; HAS_ADDED_TASK=0
+  while IFS=$'\t' read -r kind id files has_estimate status bounds; do
     [ "$kind" = "header" ] && { HAS_HEADER=$id; continue; }
-    TASK_IDS+=("$id"); TASK_FILE_COUNTS+=("$files")
+    TASK_IDS+=("$id"); TASK_FILE_COUNTS+=("$files"); TASK_BOUNDS+=("$bounds")
     if [ "$status" = "open" ]; then TASK_IS_OPEN+=(1); HAS_OPEN=1; else TASK_IS_OPEN+=(0); fi
-    if [ "$has_estimate" = 0 ] && [ "$files" -gt 0 ]; then TASK_IS_MISSING+=(1); HAS_MISSING=1; else TASK_IS_MISSING+=(0); fi
+    if [ "$has_estimate" = 0 ] && [ "$files" -gt 0 ]; then
+      TASK_IS_MISSING+=(1); HAS_MISSING=1
+      [ "$status" = "open" ] && HAS_ADDED_TASK=1
+    else
+      TASK_IS_MISSING+=(0)
+    fi
   done < <(awk "$INVENTORY_PROGRAM" "$PLAN")
 }
 
 # Valeurs de la réécriture : NEW_ESTIMATES, REMAINING, INDICATIVE (en-tête absent). Un seul appel de calibration, une valeur par
 # tâche : le reste à faire additionne les tâches ouvertes, chacune avec son coût fixe de vérification.
 compute_estimates() {
-  local index estimate open_files=0 open_minutes=0 open_low=0 open_high=0
+  local index estimate minutes low high open_files=0 open_minutes=0 open_low=0 open_high=0
   NEW_ESTIMATES=""; REMAINING=""; INDICATIVE=0
   read_inventory
   [ "$HAS_OPEN" = 1 ] || [ "$HAS_HEADER" = 0 ] || [ "$HAS_MISSING" = 1 ] || return 0
@@ -580,13 +614,16 @@ compute_estimates() {
   for index in "${!TASK_IDS[@]}"; do
     if [ "${TASK_IS_MISSING[index]}" = 1 ]; then
       estimate="≈ ${TASK_MINUTES[index]} min (${TASK_LOW[index]}-${TASK_HIGH[index]})"
-      [ -n "${LINKED_UNITS[${TASK_IDS[index]}]:-}" ] && ! is_in_list "${TASK_IDS[index]}" "$ADOPTED_TASKS" && estimate+=" · indicative"
+      is_unit_task "${TASK_IDS[index]}" && estimate+=" · indicative"
       NEW_ESTIMATES+="${TASK_IDS[index]}"$'\t'"$estimate"$'\n'
     fi
     [ "${TASK_IS_OPEN[index]}" = 1 ] || continue
+    minutes=${TASK_MINUTES[index]}; low=${TASK_LOW[index]}; high=${TASK_HIGH[index]}
+    # BUSINESS_RULE: tâche qui en regroupe d'autres = somme de ses tâches, son estimation écrite, jamais un recalcul sur ses fichiers
+    is_unit_task "${TASK_IDS[index]}" && [ -n "${TASK_BOUNDS[index]}" ] && read -r minutes low high <<< "${TASK_BOUNDS[index]}"
     open_files=$((open_files + TASK_FILE_COUNTS[index]))
-    open_minutes=$((open_minutes + TASK_MINUTES[index]))
-    open_low=$((open_low + TASK_LOW[index])); open_high=$((open_high + TASK_HIGH[index]))
+    open_minutes=$((open_minutes + minutes))
+    open_low=$((open_low + low)); open_high=$((open_high + high))
   done
   [ "$HAS_OPEN" = 1 ] && REMAINING="$open_files"$'\t'"≈ $open_minutes min ($open_low-$open_high)"
 }
@@ -595,7 +632,7 @@ compute_estimates() {
 refresh_summary() {
   local current content
   current=$(cat "$PLAN")
-  adopt_linked_estimates
+  adopt_unit_estimates
   compute_estimates
   content=$(awk -v estimates="$NEW_ESTIMATES" -v indicative="$INDICATIVE" -v remaining="$REMAINING" \
     "$SUMMARY_PROGRAM" "$PLAN" "$PLAN") || return 1
@@ -664,6 +701,7 @@ main() {
   updates=$REPLY
   [ -n "$updates" ] && write_actual_times "$updates" && is_rewritten=1
   refresh_summary && is_rewritten=1
+  restart_for_added_task
   check_deployment_script
   report_to_model "$updates" "$is_rewritten" "$REPLY"
 }

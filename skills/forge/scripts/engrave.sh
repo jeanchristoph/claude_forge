@@ -11,7 +11,7 @@
 #   fichiers gardés sur disque) : ces fichiers locaux ne partent jamais avec un commit, quelle que soit la branche de
 #   démarrage de /forge
 #   Livraison réussie : nouveau point d'étape dans le journal de mesure, code commité — la livraison n'entre pas
-#   dans la tâche suivante ; code modifié depuis la dernière coche (tâche en cours) → heure gardée, seule
+#   dans la tâche suivante ; code non commité et modifié depuis la dernière coche (tâche en cours) → heure gardée, seule
 #   l'empreinte des fichiers repart. Sans journal ni point d'étape : rien
 # Sortie : 0 succès · 1 usage ou garde · 2 échec git (conflit, push rejeté) — le JSON de run est écrit dans les deux cas
 
@@ -344,13 +344,13 @@ code_snapshot() {
   if snapshot_files "$ROOT"; then json_escape "$REPLY"; else REPLY=""; fi
 }
 
-# Point d'étape lu avant la livraison ; IS_TASK_IN_PROGRESS : code modifié depuis lui.
+# Point d'étape lu avant la livraison ; IS_TASK_IN_PROGRESS : code non commité, modifié depuis lui.
 read_checkpoint_before() {
   local log="$ROOT/.forge/branch/$BRANCH/time-log.jsonl"
   [ "$MODE" = run ] && [ -f "$log" ] && read_last_checkpoint "$log" "" "" || return 0
   TIME_LOG=$log
   code_snapshot
-  [ "$REPLY" = "$CHECKPOINT_FILES" ] || IS_TASK_IN_PROGRESS=1
+  is_code_untouched "$REPLY" || IS_TASK_IN_PROGRESS=1
 }
 
 write_checkpoint_after() {

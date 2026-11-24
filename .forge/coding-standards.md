@@ -38,6 +38,9 @@ Conventions de formulation pour les fichiers d'instructions du skill (`skill/SKI
 - Règle, mesure ou calcul → énoncé pour l'unité générique, la tâche, et appliqué tel quel à chacune de ses formes : tâche ordinaire de la session principale, tâche d'une branche fille d'essaim, tâche d'un projet lié. Une variante propre à une forme n'existe que si sa raison est écrite à côté (`BUSINESS_RULE:` ou `⚠️`) — jamais par défaut, jamais en silence.
 - Valeur comparée à une autre (prévu / réel, estimé / mesuré) → comptée de la même façon des deux côtés : même unité, même granularité. Jamais une somme par tâche face à un comptage unique par branche.
 - Agrégat de plusieurs unités (tâche-branche d'essaim, tâche déléguée à un projet lié) → jamais compté comme une unité de plus dans un calcul fondé sur les unités : ses unités y entrent une par une.
+- Une tâche : estimation = vérifications + fichiers × minutes par fichier ; réel = travail entre son départ et sa coche, vérifications comprises. La confection du plan n'y entre jamais.
+- Une tâche qui en regroupe d'autres (tâche-branche, tâche liée) : estimation et réel = somme de ses tâches, vérifications comprises, rien d'autre.
+- Lancement, fusion et confection du plan : ni estimés, ni mesurés à part.
 
 ## Tests
 

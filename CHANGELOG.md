@@ -10,8 +10,19 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ## [Unreleased]
 
+### Changed
+
+- One time rule for every task: a branch task and a linked task are the sum of their plan's tasks — estimate (marked `· indicative` until that plan is written, then taken once) and actual time, checks included, in the same shape as any task. The delegate's whole time, plan writing and launch included, no longer enters their actual time.
+- A task's clock starts when it enters the plan (writing the task goes to `**Unplanned**`), unless uncommitted code is in progress.
+- Check time per task starts at 0 instead of 2 min: the median of the measured checks is added once twenty tasks carry it.
+
+### Fixed
+
+- Engraving when everything was already committed left the measure checkpoint behind, so the next task absorbed the time since the previous tick.
+
 ### Removed
 
+- Fixed costs of a branch: launch and merge are neither estimated nor measured any more — `delegate_minutes`, `merge_minutes`, `delegate_setup_minutes`, the `merge_start` / `merge_done` marks, the `fixed` part of `**Actual:**` and the swarm gain's fixed cost are gone. The launch measure counted the waits for answers. The 15 min branch threshold stays, on agent work alone; older `metrics.json` are still read.
 - Test rules no longer live in the skill: no scoped tests imposed after a task, no full suite before engraving (`**Full check:**` line, CI detection and report lines included), no full suite run by a linked project's delegate (`full_check` dropped from `FORGE_DONE`, the parent note and the `Linked` question). What to run and when belongs to the project's `coding-standards.md` or `project.md`. An existing `**Full check:**` line is left as is and has no effect; `**Check pattern:**`, used for measurement only, stays.
 
 ## [0.13.5] — 2026-11-23

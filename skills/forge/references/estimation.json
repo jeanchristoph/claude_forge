@@ -2,8 +2,6 @@
   "minutes_per_file": 0.5,
   "range_low": 0.75,
   "range_high": 1.3,
-  "delegate_minutes": 8,
-  "merge_minutes": 5,
-  "check_minutes": 2,
+  "check_minutes": 0,
   "branch_minutes": 15
 }

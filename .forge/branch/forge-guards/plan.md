@@ -1,8 +1,8 @@
 # Plan — forge-guards
 **Objective:** Ajouter au skill forge deux garde-fous (script de déploiement SQL toujours écrit et complet ; session parente qui n'écrit jamais dans un projet lié), nommer la branche liée d'après la tâche déléguée sans jamais nommer le parent, et documenter le hook `linked-write-guard.sh`.
 **Date:** 2026-11-23
-**Estimate:** ≈ 154 files · ≈ 116 min (30-207) · indicative
-**Actual:** ≈ 112.4 min agent (incl. 58.5 min checks) · human 277.1 min (20 questions, 147.5 min) · fixed — (delegate setup, merge) · delegates 0.0 min in parallel · total ≈ 389.5 min · partial (log started after the branch, 13 unmeasured tasks)
+**Estimate:** ≈ 191 files · ≈ 137 min (35-250) · indicative
+**Actual:** ≈ 153.2 min agent (incl. 81.8 min checks) · human 316.0 min (26 questions, 176.4 min) · fixed — (delegate setup, merge) · delegates 0.0 min in parallel · total ≈ 469.2 min · partial (log started after the branch, 13 unmeasured tasks)
 **Origin:** T7, T8, T9, T10
 
 ## Tasks
@@ -180,6 +180,38 @@
 **Description:** Livraison : « Vérification complète » retirée de `engrave.md`, avec la détection de CI, la question sur la commande et les lignes du compte rendu ; `grave` ne lance plus aucun test. Tâche : « Tests d'une tâche » retirée de `p5-resume.md` ; le skill applique les règles du projet, lues au démarrage d'une tâche. Projet lié : « Suite complète du projet lié » retirée de `delegated-mode.md`, ainsi que `full_check` du `FORGE_DONE`, de la note parente et de la question `Linked`. Essaim : à la fusion avec conflit, « vérification complète verte » devient « vérifications demandées par le projet vertes ». `p0-project.md` : `**Full check:**` n'est plus détectée, demandée ni écrite ; une ligne existante reste, sans effet ; `**Check pattern:**` gardée (mesure seule). README fr/en alignés, commentaires de `engrave.sh` et `metrics.sh` mis à jour, CHANGELOG `### Removed` sous `[Unreleased]`, entrées publiées inchangées. Dépôt forge : section `## Tests` dans `.forge/coding-standards.md`, ligne `**Full check:**` de `.forge/project.md` remplacée par une puce « Suite complète des tests (à la demande) ».
 [x] Règles de tests retirées du skill, écrites dans coding-standards.md et project.md du dépôt forge ; tests engrave 50, metrics 25 ; fichiers .md du skill sans test qui les couvre
 
+### T22 — Tâche-branche et tâche liée : estimation et réel = somme de leurs tâches
+**Effort:** M
+**Estimated time:** ≈ 5 min (1-11)
+**Actual time:** ≈ 11.7 min agent (incl. 4.3 min checks) · human 34.0 min (6 questions) · 9 files · total ≈ 45.7 min
+**Files:** `skills/forge/hooks/plan-hook.sh`, `tests/plan-hook.test.sh`, `skills/forge/phases/p4-plan.md`, `skills/forge/phases/p5-resume.md`, `skills/forge/commands/swarm.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`, `.forge/coding-standards.md`
+**Description:** Réel à la coche = somme des réels des tâches du plan de la branche fille ou liée, vérifications comprises, même format qu'une tâche classique ; une tâche faite mais non mesurée → `—` ; le temps total du délégué n'est plus utilisé. Estimation avant le plan de la branche : calcul classique sur les fichiers déclarés, `· indicative` ; plan écrit → somme des estimations de ses tâches, une seule fois, puis figée, même mécanisme pour les deux formes. Estimation déjà écrite sans `· indicative` → inchangée. Règle ajoutée à « Règles et mesures universelles » de `.forge/coding-standards.md` : une tâche = vérifications + fichiers × minutes par fichier, réel entre son départ et sa coche, vérifications comprises, plan jamais compris ; une tâche qui en regroupe d'autres = somme de ses tâches, vérifications comprises, rien d'autre ; lancement, fusion et confection du plan ni estimés, ni mesurés à part.
+[x] Estimation et réel des tâches-branches et liées = somme des tâches de leur plan ; reste à faire compté à leur estimation écrite ; tests plan-hook 60 ; `delegation.md` touché aussi (nom de la règle) ; textes .md sans test
+
+### T23 — Départ d'une tâche : plan et livraison n'y entrent plus
+**Effort:** S
+**Estimated time:** ≈ 5 min (1-9)
+**Actual time:** ≈ 17.8 min agent (incl. 16.2 min checks) · human 0.0 min (0 questions) · 8 files · total ≈ 17.8 min
+**Files:** `skills/forge/hooks/plan-hook.sh`, `skills/forge/scripts/engrave.sh`, `tests/plan-hook.test.sh`, `tests/engrave.test.sh`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Tâche ajoutée au plan sans code modifié depuis le dernier point d'étape → le point d'étape avance à cette écriture, la formulation va dans `**Unplanned**` ; code déjà modifié → heure gardée. Livraison : aucun code non commité → le point d'étape avance, même quand l'empreinte diffère du dernier point d'étape. Limite : une tâche en cours qui n'a encore rien modifié perd son temps d'exploration si une autre entre au plan à ce moment-là.
+[x] Point d'étape avancé à l'entrée d'une tâche et à la livraison sans code non commité ; règle commune `is_code_untouched` dans `task-marks.sh` (hors liste) ; tests plan-hook 63, engrave 51, time-mark 15 ; le réel comprend un chronométrage de la suite demandé par l'utilisateur
+
+### T24 — Coûts fixes retirés partout, mesure de lancement et de fusion arrêtée
+**Effort:** M
+**Estimated time:** ≈ 7 min (2-15)
+**Actual time:** ≈ 7.4 min agent (incl. 0.0 min checks) · human 0.0 min (0 questions) · 15 files · total ≈ 7.4 min
+**Files:** `skills/forge/commands/swarm.md`, `skills/forge/phases/p4-plan.md`, `skills/forge/references/estimation.json`, `skills/forge/scripts/metrics.sh`, `skills/forge/scripts/time-aggregate.sh`, `skills/forge/scripts/time-calibrate.sh`, `skills/forge/scripts/time-mark.sh`, `tests/metrics.test.sh`, `tests/time-aggregate.test.sh`, `tests/time-calibrate.test.sh`, `tests/time-mark.test.sh`, `README.md`, `README.fr.md`, `CHANGELOG.md`, `.forge/project.md`
+**Description:** Retirés : `delegate_minutes`, `merge_minutes`, `delegate_setup_minutes`, marques `merge_start` / `merge_done`, partie `fixed` de `**Actual:**`, coût fixe du gain de l'essaim, avec leurs tests. Toutes les autres mesures continuent (agent, vérifications, humain, questions, fichiers, `**Actual:**`, `**Unplanned**`). Gain de l'essaim gardé, sur le travail seul. Seuil d'une branche inchangé à 15 min de travail d'agent, justification réécrite. Anciens `metrics.json` lisibles, champs ignorés.
+[x] Coûts fixes retirés (référence, mesure, marques, affichage, gain de l'essaim) ; `time-calibrate.sh` ne lit plus aucun `metrics.json` ; seuil 15 min gardé ; tests metrics 25, time-aggregate 100, time-calibrate 34, time-mark 14, plan-hook 63, engrave 51
+
+### T25 — Vérifications : départ à 0
+**Effort:** S
+**Estimated time:** ≈ 4 min (1-8)
+**Actual time:** ≈ 3.4 min agent (incl. 2.7 min checks) · human 0.0 min (0 questions) · 7 files · total ≈ 3.4 min
+**Files:** `skills/forge/references/estimation.json`, `skills/forge/scripts/time-calibrate.sh`, `tests/time-calibrate.test.sh`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** `check_minutes` de référence : 2 → 0 ; dès 20 tâches mesurées, la médiane des vérifications s'ajoute et suit les mesures. Estimations déjà figées inchangées.
+[x] `check_minutes` de référence à 0, médiane ajoutée dès 20 tâches mesurées ; tests time-calibrate 34, plan-hook 63
+
 ## Risks
 - `p5-resume.md` et `CHANGELOG.md` sont touchés par T1 et T2 : ils sont édités l'un après l'autre, dans le même plan, sans conflit.
 - Les noms de fichiers des installeurs diffèrent du mandat (`install/install.sh`, `install/install.ps1` au lieu des lanceurs racine) : même intention, fichiers où vit la fusion de `settings.json`.
@@ -214,5 +246,9 @@ None
 | T19 — Projet lié : le délégué lance la suite complète une fois, avant FORGE_DONE | S | 8 | ≈ 5 min | ≈ 0.8 min agent (incl. 0.0 min checks) · human 0.0 min (0 questions) · 8 files · total ≈ 0.8 min | [x] |
 | T20 — Mesure : pause humaine de plus de 60 min comptée 3 min, de plus de 6 h comptée 0 | S | 5 | ≈ 4 min | ≈ 2.9 min agent (incl. 1.5 min checks) · human 4.0 min (2 questions) · 5 files · total ≈ 6.9 min | [x] |
 | T21 — Règles de tests retirées du skill, portées par les fichiers du projet | M | 13 | ≈ 7 min | ≈ 17.9 min agent (incl. 10.5 min checks) · human 165.5 min (3 questions) · 11 files · total ≈ 183.4 min | [x] |
-| **Total** (8/21 measured) | **5S, 2M, 1L** | **64** | **≈ 43 min** | **≈ 62.3 min** | |
-| **Unplanned** | | | | **≈ 50.1 min** | |
+| T22 — Tâche-branche et tâche liée : estimation et réel = somme de leurs tâches | M | 9 | ≈ 5 min | ≈ 11.7 min agent (incl. 4.3 min checks) · human 34.0 min (6 questions) · 9 files · total ≈ 45.7 min | [x] |
+| T23 — Départ d'une tâche : plan et livraison n'y entrent plus | S | 7 | ≈ 5 min | ≈ 17.8 min agent (incl. 16.2 min checks) · human 0.0 min (0 questions) · 8 files · total ≈ 17.8 min | [x] |
+| T24 — Coûts fixes retirés partout, mesure de lancement et de fusion arrêtée | M | 15 | ≈ 7 min | ≈ 7.4 min agent (incl. 0.0 min checks) · human 0.0 min (0 questions) · 15 files · total ≈ 7.4 min | [x] |
+| T25 — Vérifications : départ à 0 | S | 6 | ≈ 4 min | ≈ 3.4 min agent (incl. 2.7 min checks) · human 0.0 min (0 questions) · 7 files · total ≈ 3.4 min | [x] |
+| **Total** (12/25 measured) | **7S, 4M, 1L** | **101** | **≈ 64 min** | **≈ 102.6 min** | |
+| **Unplanned** | | | | **≈ 50.6 min** | |

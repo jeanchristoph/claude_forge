@@ -1,3 +1,8 @@
+- [2026-11-24 13:20] T25 done — vérifications estimées à partir de 0, médiane des mesures dès 20 tâches
+- [2026-11-24 13:17] T24 done — coûts fixes de branche retirés partout, mesure de lancement et de fusion arrêtée ; seuil de branche gardé à 15 min de travail d'agent
+- [2026-11-24 13:09] T23 done — l'entrée d'une tâche au plan et la livraison sans code non commité avancent le point d'étape (is_code_untouched, task-marks.sh)
+- [2026-11-24 12:52] T22 done — tâche-branche et tâche liée = somme des tâches de leur plan (estimation reprise une fois, réel à la coche) ; règle dans coding-standards.md
+- [2026-11-24 12:43] T22 à T25 ajoutées, enchaînées — calcul de temps universel : tâche groupée = somme de ses tâches, plan hors tâche, coûts fixes retirés, vérifications à partir de 0 (choix de l'utilisateur ; seuil de branche gardé à 15 min de travail d'agent)
 - [2026-11-24 12:02] T21 done — règles de tests retirées du skill (engrave, p5-resume, délégué lié, p0) ; celles du dépôt forge dans coding-standards.md et project.md
 - [2026-11-24 11:59] T21 ajoutée, enchaînée — règles de tests retirées du skill, portées par project.md / coding-standards.md (demande de l'utilisateur ; revient sur T12, T14, T19)
 - [2026-11-23 22:42] Release 0.13.5 : CHANGELOG daté, grave master et tag v0.13.5 demandés

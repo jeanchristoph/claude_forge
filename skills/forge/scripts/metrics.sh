@@ -10,7 +10,7 @@
 #   l'en-tête **Estimate:** du plan (null sans en-tête) — la mise en page revient au skill
 #   Avec un journal de mesure (celui de la branche, ou --parent-log) : en-tête **Actual:** du plan réécrit sans doublon,
 #   sous **Estimate:**, à défaut sous **Date:** — « ≈ <a> min agent (incl. <c> min checks) · human <h> min (<n>
-#   questions, <q> min) · fixed <f> min (delegate setup, merge) · delegates <d> min in parallel · total ≈ <a + h> min »,
+#   questions, <q> min) · delegates <d> min in parallel · total ≈ <a + h> min »,
 #   poste sans mesure « — », « · partial (…) » quand la mesure est incomplète ; sans journal, plan intact. Seul
 #   écrivain de la ligne : elle part avec le commit de la livraison et garde sa valeur jusqu'à la suivante
 # Usage : metrics.sh --branch <name> --event engrave|closure --model <id> [--root <dir>] [--parent-log <file>] [--base <ref>]
@@ -150,22 +150,19 @@ partial_suffix() {
 }
 
 # Valeur de l'en-tête **Actual:** du plan <plan> dans REPLY, même forme que la ligne de tâche, total à la fin.
-# BUSINESS_RULE: total = agent + humain — vérifications et fusion sont des parts du temps d'agent, la mise en route une
-# part du temps des délégués ; les délégués, simultanés, sont affichés à part et hors total — ceux des projets liés
-# compris, absents de agent_minutes de metrics.json, donc du calibrage
+# BUSINESS_RULE: total = agent + humain — les vérifications sont une part du temps d'agent ; les délégués, simultanés,
+# sont affichés à part et hors total — ceux des projets liés compris, absents de agent_minutes de metrics.json
 build_actual_line() {
   local field line
   local -A value
-  for field in parent_minutes human_minutes questions question_minutes check_minutes delegate_setup_minutes \
-    merge_minutes delegated_minutes linked_delegated_minutes; do
+  for field in parent_minutes human_minutes questions question_minutes check_minutes delegated_minutes \
+    linked_delegated_minutes; do
     aggregate_field "$field"; value[$field]=$REPLY
   done
   approximate_minutes "${value[parent_minutes]}"; line="$REPLY agent"
   shown_minutes "${value[check_minutes]}"; line+=" (incl. $REPLY checks)"
   shown_minutes "${value[human_minutes]}"; line+=" · human $REPLY"
   shown_minutes "${value[question_minutes]}"; line+=" (${value[questions]/null/$NO_MEASURE} questions, $REPLY)"
-  sum_minutes "${value[delegate_setup_minutes]}" "${value[merge_minutes]}"; shown_minutes "$REPLY"
-  line+=" · fixed $REPLY (delegate setup, merge)"
   sum_minutes "${value[delegated_minutes]}" "${value[linked_delegated_minutes]}"; shown_minutes "$REPLY"
   line+=" · delegates $REPLY in parallel"
   sum_minutes "${value[parent_minutes]}" "${value[human_minutes]}"; approximate_minutes "$REPLY"; line+=" · total $REPLY"
@@ -232,7 +229,7 @@ build_metrics_line() {
   aggregate_field files; line+=",\"branch_files\":$REPLY"
   for field in lines_added lines_deleted; do aggregate_field "$field"; line+=",\"$field\":$REPLY"; done
   line+=",\"agent_minutes\":$AGENT_MINUTES"
-  for field in human_minutes questions check_minutes tokens partial delegate_setup_minutes merge_minutes; do
+  for field in human_minutes questions check_minutes tokens partial; do
     aggregate_field "$field"; line+=",\"$field\":$REPLY"
   done
   REPLY="$line}"

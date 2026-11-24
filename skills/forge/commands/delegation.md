@@ -10,7 +10,7 @@
 - Association du délégué à sa branche et à son projet lié : aucune action — le hook `plan-hook.sh` l'écrit dans <TIME_LOG> à la première écriture du `plan.md` du délégué ; deux dépôts liés sur une même branche restent séparés. Délégué arrêté avant d'écrire son plan → non associé, jamais mesuré.
 - Chaque retour : `bash <SKILL_DIR>/scripts/time-mark.sh --time-log <chemin absolu de <TIME_LOG>> --event delegate_usage --agent-id <identifiant> --tokens <subagent_tokens de la notification>`.
 - **INVARIANT :** aucune autre ligne du modèle dans <TIME_LOG>, hors tokens ci-dessus et marques de fusion (`commands/swarm.md`), écrites par `time-mark.sh`, jamais à la main — le script garde le format que lit `time-aggregate.sh`.
-- Estimation d'une tâche déléguée : aucune action — le hook la reprend une fois du plan du délégué (« Estimation d'une tâche liée » de `phases/p4-plan.md`).
+- Estimation d'une tâche déléguée : aucune action — le hook la reprend une fois du plan du délégué (« Estimation d'une tâche qui en regroupe d'autres » de `phases/p4-plan.md`).
 - Réel d'une tâche déléguée : aucune action — le hook l'écrit à la coche de la tâche dans PLAN (« Mesure d'une tâche » de `phases/p5-resume.md`).
 
 ⚠️ `<TIME_LOG>` absent (hook de mesure non installé) → `time-mark.sh` n'écrit rien, ligne `TIME_LOG:` gardée dans le prompt : les marques du délégué n'écrivent alors rien non plus.

@@ -501,53 +501,14 @@ test_changes_nothing_in_repository() {
   assert_equals "$before" "$(git -C "$WORK" status --porcelain)"
 }
 
-# ── Coûts fixes d'une branche ─────────────────────────────────────────────────
+# ── Ancien journal ────────────────────────────────────────────────────────────
 
-test_measures_delegate_setup_until_first_task_mark() {
-  parent_events '{"event":"delegate","agent_id":"a1","branch":"feature"}' \
-                '{"ts":0,"event":"SubagentStart","session":"p","agent_id":"a1"}' \
-                '{"ts":360000,"event":"task_start","task":"T1","branch":"feature"}' \
-                '{"ts":600000,"event":"task_start","task":"T2","branch":"feature"}' \
-                '{"ts":900000,"event":"SubagentStop","session":"p","agent_id":"a1"}'
-  assert_contains '"delegate_setup_minutes":6.0' "$(aggregate --parent-log "$PARENT_LOG")"
-}
-
-test_counts_setup_of_first_run_only_after_relaunch() {
-  parent_events '{"event":"delegate","agent_id":"a1","branch":"feature"}' \
-                '{"event":"delegate","agent_id":"a2","branch":"feature"}' \
-                '{"ts":0,"event":"SubagentStart","session":"p","agent_id":"a1"}' \
-                '{"ts":240000,"event":"task_start","task":"T1","branch":"feature"}' \
-                '{"ts":300000,"event":"SubagentStop","session":"p","agent_id":"a1"}' \
-                '{"ts":900000,"event":"SubagentStart","session":"p","agent_id":"a2"}' \
-                '{"ts":1200000,"event":"task_start","task":"T2","branch":"feature"}'
-  assert_contains '"delegate_setup_minutes":4.0' "$(aggregate --parent-log "$PARENT_LOG")"
-}
-
-test_ignores_task_marks_of_other_branches_for_setup() {
-  parent_events '{"event":"delegate","agent_id":"a1","branch":"feature"}' \
-                '{"ts":0,"event":"SubagentStart","session":"p","agent_id":"a1"}' \
-                '{"ts":60000,"event":"task_start","task":"T1","branch":"other"}' \
-                '{"ts":180000,"event":"task_start","task":"T1","branch":"feature"}'
-  assert_contains '"delegate_setup_minutes":3.0' "$(aggregate --parent-log "$PARENT_LOG")"
-}
-
-test_averages_merges_without_question_waits() {
+test_old_merge_marks_change_nothing() {
   own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
-             '{"ts":0,"event":"merge_start","branch":"feature-a"}' \
-             '{"ts":60000,"event":"PreToolUse","session":"s","tool":"AskUserQuestion"}' \
-             '{"ts":180000,"event":"PostToolUse","session":"s","tool":"AskUserQuestion"}' \
-             '{"ts":420000,"event":"merge_done","branch":"feature-a"}' \
-             '{"ts":500000,"event":"merge_start","branch":"feature-b"}' \
-             '{"ts":680000,"event":"merge_done","branch":"feature-b"}' \
-             '{"ts":700000,"event":"Stop","session":"s"}'
-  assert_contains '"merge_minutes":4.0' "$(aggregate)"
-}
-
-test_returns_null_fixed_costs_without_marks() {
-  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
-             '{"ts":0,"event":"merge_start","branch":"feature-a"}' \
-             '{"ts":60000,"event":"Stop","session":"s"}'
-  assert_contains '"delegate_setup_minutes":null,"merge_minutes":null,' "$(aggregate)"
+             '{"ts":60000,"event":"merge_start","branch":"feature-a"}' \
+             '{"ts":120000,"event":"merge_done","branch":"feature-a"}' \
+             '{"ts":300000,"event":"Stop","session":"s"}'
+  assert_contains '"parent_minutes":5.0' "$(aggregate)"
 }
 
 # ── Fichiers par tâche ────────────────────────────────────────────────────────
@@ -1110,11 +1071,7 @@ run_test test_marks_no_partial_without_log "ne marque rien de partiel sans journ
 run_test test_rejects_missing_branch "refuse l'absence de branche"
 run_test test_rejects_unknown_argument "refuse un argument inconnu"
 run_test test_changes_nothing_in_repository "ne modifie rien dans le dépôt"
-run_test test_measures_delegate_setup_until_first_task_mark "mesure la mise en route d'un délégué jusqu'à sa première marque de tâche"
-run_test test_counts_setup_of_first_run_only_after_relaunch "ne compte que la mise en route de la première exécution après une relance"
-run_test test_ignores_task_marks_of_other_branches_for_setup "écarte les marques de tâche des autres branches pour la mise en route"
-run_test test_averages_merges_without_question_waits "fait la moyenne des fusions, attentes de question retirées"
-run_test test_returns_null_fixed_costs_without_marks "rend des coûts fixes nuls sans marques complètes"
+run_test test_old_merge_marks_change_nothing "ancien journal : les marques de fusion ne changent aucune durée"
 run_test test_counts_a_file_in_every_task_that_changes_it "compte un fichier dans chaque tâche qui le modifie"
 run_test test_ignores_file_left_unchanged_during_the_task "écarte un fichier resté inchangé pendant la tâche"
 run_test test_counts_deleted_tracked_file_but_not_temporary_one "compte un fichier suivi supprimé, pas un fichier créé puis supprimé"

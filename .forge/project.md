@@ -35,7 +35,7 @@ forge/
 │   │   │   ├── p4-plan.md            (État 4 — Plan)
 │   │   │   └── p5-resume.md          (État 5 — Actif)
 │   │   ├── references/
-│   │   │   └── estimation.json       (valeurs de référence de l'estimation : minutes par fichier, fourchette, coûts fixes d'une branche, seuil de branche)
+│   │   │   └── estimation.json       (valeurs de référence de l'estimation : minutes par fichier, fourchette, seuil de branche)
 │   │   ├── scripts/
 │   │   │   ├── checks.sh             (contrôles de démarrage, lancés détachés par SKILL.md sans attente : ligne input/ de branche dans le .gitignore)
 │   │   │   ├── engrave.sh            (séquence git de la livraison : preview / run, appelée par p5-resume.md ; run --model écrit d'abord metrics.json par metrics.sh)
@@ -48,7 +48,7 @@ forge/
 │   │   │   ├── swarm-status.sh       (état de l'essaim en JSON : unités child et linked en cours, lançables, en attente, fusion simulée des branches filles, projet lié forgé ou non, tâches du parent ; --plan lit un plan rédigé)
 │   │   │   ├── time-aggregate.sh     (mesure d'une branche en JSON : journal du hook + git, lu par la synthèse metrics.json)
 │   │   │   ├── time-calibrate.sh     (ratios du projet et estimation d'un nombre de fichiers, en JSON ; références dans references/estimation.json)
-│   │   │   ├── time-mark.sh          (marques de délégué, de tokens et de fusion dans time-log.jsonl ; marques de tâche à la main, le hook de coche les pose sinon)
+│   │   │   ├── time-mark.sh          (marques de délégué et de tokens dans time-log.jsonl ; marques de tâche à la main, le hook de coche les pose sinon)
 │   │   │   └── update.sh             (mise à jour du skill : check / run en JSON, appelé avec status.sh ; contrôle réseau détaché toutes les 24 heures)
 │   │   └── hooks/                 (hooks déclarés dans settings.json par les installeurs, copiés avec le skill ; bibliothèques chargées par ../scripts/)
 │   │       ├── forge-precompact.sh   (hook d'état : PreCompact, SessionStart compact|resume)

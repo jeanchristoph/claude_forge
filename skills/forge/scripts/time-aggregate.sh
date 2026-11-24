@@ -20,15 +20,11 @@
 #   marques lues dans le journal de la branche, ou avec --parent-log dans celui de la parente (marques portant la branche) ;
 #   plusieurs tâches séparées par des virgules → somme, non mesurée dès qu'une ne l'est pas ;
 #   sortie propre à la tâche, sans volume ni mode ; check_minutes = vérifications terminées dans sa fenêtre
-#   delegate_setup_minutes : mise en route d'une branche fille — premier SubagentStart d'un délégué associé → première
-#   marque task_start de la branche dans le journal de la parente (exécution relancée non comptée) ; null sans mesure
-#   merge_minutes : durée moyenne d'une fusion de branche fille, marques merge_start → merge_done du journal de la
-#   branche (posées par le parent), attentes de question retirées ; null sans fusion mesurée
 #   Fichiers par tâche : empreintes des marques task_start et task_done (time-mark.sh) ; un fichier touché par
 #   plusieurs tâches compte dans chacune. --task → actual_files ; branche → task_files (somme des tâches mesurées),
 #   task_planned_files (leurs fichiers prévus, lus dans plan.md), measured_tasks ; files reste le comptage unique de git
 #   partial : mesure incomplète — journal ouvert par une ligne late_start, ou premier commit propre à la branche
-#   antérieur au premier événement du journal ; le calibrage écarte une telle branche
+#   antérieur au premier événement du journal
 # Sortie : 0 JSON écrit · 1 usage, sans JSON
 
 set -u
@@ -115,10 +111,9 @@ readonly DURATIONS_PROGRAM="$AWK_HELPERS"'
   reading_parent && field("event") == "delegate" && field("branch") == branch && field("project") == project { delegate[field("agent_id")] = 1; next }
   reading_parent {
     id = field("agent_id"); event = field("event"); ts = field("ts") + 0
-    if (event == "task_start" && field("branch") == branch && field("project") == project) { if (setup_start != "" && setup_end == "") setup_end = ts; next }
+    if (event == "task_start" && field("branch") == branch && field("project") == project) next
     if (!(id in delegate)) next
     seen = 1
-    if (event == "SubagentStart" && setup_start == "") setup_start = ts
     if (event == "SubagentStart") agent_start[id] = ts
     if (event == "SubagentStop" && (id in agent_start)) { delegated += ts - agent_start[id]; delete agent_start[id]; runs[id] = 1 }
     if (event == "PostToolUse" && field("check") == "true") checks += field("duration_ms")
@@ -160,22 +155,15 @@ readonly DURATIONS_PROGRAM="$AWK_HELPERS"'
       wait = ts - question_start[session]; delete question_start[session]
       questions++; question_time += human_share(ts - wait, ts); human += human_share(ts - wait, ts)
       turn_questions[session] += ts - wait_start_in_turn(ts - wait)
-      for (merged in merge_start) merge_questions[merged] += wait
     } else if (event == "PostToolUse" && field("check") == "true") {
       checks += field("duration_ms")
-    } else if (event == "merge_start") {
-      merged = field("branch"); merge_start[merged] = ts; merge_questions[merged] = 0
-    } else if (event == "merge_done" && (field("branch") in merge_start)) {
-      merged = field("branch"); merge_total += ts - merge_start[merged] - merge_questions[merged]; merges++
-      delete merge_start[merged]
     }
     last_activity[session] = ts
   }
   END {
-    if (!seen) { print "null null null 0 null null 0 null null null null"; exit }
+    if (!seen) { print "null null null 0 null null 0 null null"; exit }
     count = 0; for (id in runs) count++
     printf "%s %s %s %d %s %s %d %s ", minutes(parent), minutes(delegated), minutes(human), questions, minutes(question_time), minutes(checks), count, (has_tokens ? tokens : "null")
-    printf "%s %s ", (setup_end != "" ? minutes(setup_end - setup_start) : "null"), (merges ? minutes(merge_total / merges) : "null")
     printf "%s\n", (has_linked ? minutes(linked_delegated) : "null")
   }'
 
@@ -363,7 +351,7 @@ run_on_logs() {
 # Sortie de DURATIONS_PROGRAM : « parent délégués humain questions attente vérifications délégués_lancés tokens
 # mise_en_route fusion délégués_liés ».
 read_durations() {
-  REPLY="null null null 0 null null 0 null null null null"
+  REPLY="null null null 0 null null 0 null null"
   run_on_logs "$DURATIONS_PROGRAM"
 }
 
@@ -498,14 +486,14 @@ read_volume() {
 
 render() {
   local parent=$1 delegated=$2 human=$3 questions=$4 question_time=$5 checks=$6 delegates=$7 tokens=$8
-  local setup=$9 merge=${10} linked_delegated=${11} task_files=${12} task_planned=${13} measured_tasks=${14}
-  local files=${15} added=${16} deleted=${17} partial=${18} mode branch_json
+  local linked_delegated=$9 task_files=${10} task_planned=${11} measured_tasks=${12}
+  local files=${13} added=${14} deleted=${15} partial=${16} mode branch_json
   resolve_mode "$parent" "$delegated"; mode=$REPLY
   json_escape "$BRANCH"; branch_json=$REPLY
   printf '{"branch":%s,"parent_minutes":%s,"delegated_minutes":%s,"human_minutes":%s,' "$branch_json" "$parent" "$delegated" "$human"
   printf '"questions":%s,"question_minutes":%s,"check_minutes":%s,"delegates":%s,"mode":%s,' "$questions" "$question_time" "$checks" "$delegates" "$mode"
   printf '"tokens":%s,"files":%s,"lines_added":%s,"lines_deleted":%s,"partial":%s,' "$tokens" "$files" "$added" "$deleted" "$partial"
-  printf '"delegate_setup_minutes":%s,"merge_minutes":%s,"linked_delegated_minutes":%s,' "$setup" "$merge" "$linked_delegated"
+  printf '"linked_delegated_minutes":%s,' "$linked_delegated"
   printf '"task_files":%s,"task_planned_files":%s,"measured_tasks":%s}\n' "$task_files" "$task_planned" "$measured_tasks"
 }
 

@@ -7,7 +7,7 @@ METRICS_SCRIPT="$REPO_ROOT/skills/forge/scripts/metrics.sh"
 PASSED=0
 FAILED=0
 
-readonly FIELD_ORDER="event,date,branch,mode,model,planned_files,actual_files,branch_files,lines_added,lines_deleted,agent_minutes,human_minutes,questions,check_minutes,tokens,partial,delegate_setup_minutes,merge_minutes"
+readonly FIELD_ORDER="event,date,branch,mode,model,planned_files,actual_files,branch_files,lines_added,lines_deleted,agent_minutes,human_minutes,questions,check_minutes,tokens,partial"
 
 # ── Bac à sable ───────────────────────────────────────────────────────────────
 
@@ -127,7 +127,7 @@ open_task() {
 }
 
 # Journal d'une branche : un tour d'agent de 6 min, dont 1 min de vérification, une question de 2 min, une attente
-# humaine de 3 min, une fusion de 2 min.
+# humaine de 3 min.
 seed_branch_log() {
   local base=1700000000000
   cat >> "$LOG" <<EOF
@@ -135,8 +135,6 @@ seed_branch_log() {
 {"ts":$((base + 60000)),"event":"PreToolUse","session":"s1","tool":"AskUserQuestion"}
 {"ts":$((base + 180000)),"event":"PostToolUse","session":"s1","tool":"AskUserQuestion"}
 {"ts":$((base + 240000)),"event":"PostToolUse","session":"s1","tool":"Bash","duration_ms":60000,"check":true}
-{"ts":$((base + 300000)),"event":"merge_start","session":"s1","branch":"feature-a"}
-{"ts":$((base + 420000)),"event":"merge_done","session":"s1","branch":"feature-a"}
 {"ts":$((base + 480000)),"event":"Stop","session":"s1"}
 {"ts":$((base + 660000)),"event":"UserPromptSubmit","session":"s1","origin":"human"}
 {"ts":$((base + 660000)),"event":"Stop","session":"s1"}
@@ -147,7 +145,7 @@ test_actual_line_gives_full_breakdown_under_estimate() {
   seed_branch_log
   open_task
   metrics --event engrave >/dev/null
-  assert_equals '**Actual:** ≈ 6.0 min agent (incl. 1.0 min checks) · human 5.0 min (1 questions, 2.0 min) · fixed 2.0 min (delegate setup, merge) · delegates 0.0 min in parallel · total ≈ 11.0 min' "$(actual_header)"
+  assert_equals '**Actual:** ≈ 6.0 min agent (incl. 1.0 min checks) · human 5.0 min (1 questions, 2.0 min) · delegates 0.0 min in parallel · total ≈ 11.0 min' "$(actual_header)"
   assert_matches '^\*\*Estimate:\*\*' "$(sed -n 3p "$BRANCH_DIR/plan.md")"
   assert_matches '^\*\*Actual:\*\*' "$(sed -n 4p "$BRANCH_DIR/plan.md")"
 }
@@ -156,7 +154,7 @@ test_actual_line_shows_dash_for_unmeasured_items() {
   : > "$LOG"
   open_task
   metrics --event engrave >/dev/null
-  assert_equals '**Actual:** — agent (incl. — checks) · human — (0 questions, —) · fixed — (delegate setup, merge) · delegates — in parallel · total —' "$(actual_header)"
+  assert_equals '**Actual:** — agent (incl. — checks) · human — (0 questions, —) · delegates — in parallel · total —' "$(actual_header)"
 }
 
 test_actual_line_keeps_delegates_out_of_total() {
@@ -169,7 +167,7 @@ test_actual_line_keeps_delegates_out_of_total() {
 EOF
   open_task
   metrics --event engrave --parent-log "$parent_log" >/dev/null
-  assert_matches ' · fixed 1\.0 min \(delegate setup, merge\) · delegates 4\.0 min in parallel · total ' "$(actual_header)"
+  assert_matches ' · delegates 4\.0 min in parallel · total ' "$(actual_header)"
   [[ $(actual_header) != *"total ≈ 4"* ]] || { echo "    delegates counted in total"; exit 1; }
 }
 

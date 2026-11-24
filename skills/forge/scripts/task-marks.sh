@@ -125,6 +125,12 @@ read_last_checkpoint() {
   return 0
 }
 
+# Aucune tâche en cours : rien de non commité, ou code identique au dernier point d'étape lu (CHECKPOINT_FILES).
+# Usage : is_code_untouched <empreinte en chaîne JSON, vide hors git>
+is_code_untouched() {
+  [ -z "$1" ] || [ "$1" = '""' ] || [ "$1" = "$CHECKPOINT_FILES" ]
+}
+
 # Usage : append_checkpoint <journal> <ts> <tâches cochées> <empreinte en chaîne JSON, vide → absente> <branche> <projet lié>
 append_checkpoint() {
   local files=""

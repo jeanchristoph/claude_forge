@@ -56,78 +56,49 @@ test_uses_reference_values_without_measure() {
   assert_contains '"file_error":null,"apply_file_error":false' "$output"
 }
 
-test_returns_fixed_costs_and_branch_threshold() {
+test_returns_check_cost_and_branch_threshold() {
   local output
   output=$(calibrate)
-  assert_contains '"delegate_minutes":8,"merge_minutes":5,"fixed_costs_source":"reference"' "$output"
-  assert_contains '"fixed_costs_source":"reference","check_minutes":2.0,"check_source":"reference","branch_minutes":15,"branch_files":30}' "$output"
-  case $output in *range_low*|*range_high*) echo "    range bounds copied"; exit 1 ;; esac
-}
-
-# ── Coûts fixes mesurés ───────────────────────────────────────────────────────
-
-# Synthèse portant les coûts fixes mesurés : nom, date, mise en route du délégué, durée moyenne d'une fusion.
-write_fixed_costs() {
-  mkdir -p "$WORK/.forge/branch/$1"
-  printf '{"event":"engrave","date":"%s","branch":"%s","mode":"delegated","planned_files":null,"actual_files":null,"agent_minutes":null,"tokens":null,"partial":false,"delegate_setup_minutes":%s,"merge_minutes":%s}\n' \
-    "$2" "$1" "$3" "$4" > "$WORK/.forge/branch/$1/metrics.json"
-}
-
-test_takes_fixed_costs_from_measured_branches() {
-  write_fixed_costs child-a 2026-11-01 4.0 null
-  write_fixed_costs child-b 2026-11-02 6.0 null
-  write_fixed_costs child-c 2026-11-03 12.0 null
-  write_fixed_costs parent 2026-11-04 null 3.0
-  local output
-  output=$(calibrate --groups 60,60,60)
-  assert_contains '"delegate_minutes":6,"merge_minutes":3,"fixed_costs_source":"project"' "$output"
-  assert_contains '"swarm_minutes":47,"fixed_minutes":27' "$output"
-}
-
-test_keeps_reference_merge_cost_without_merge_measure() {
-  write_fixed_costs child-a 2026-11-01 10.0 null
-  assert_contains '"delegate_minutes":10,"merge_minutes":5,"fixed_costs_source":"project"' "$(calibrate)"
+  assert_contains '"check_minutes":0.0,"check_source":"reference","branch_minutes":15,"branch_files":30}' "$output"
+  case $output in *range_low*|*delegate_minutes*|*merge_minutes*|*fixed*) echo "    unexpected field"; exit 1 ;; esac
 }
 
 # ── Gain d'un essaim ──────────────────────────────────────────────────────────
 
-# 3 × 60 fichiers = 3 × 30 min : en parallèle 30 + 8 sur chaque délégué, puis 3 fusions de 5 min.
+# 3 × 60 fichiers = 3 × 30 min, une par délégué.
 test_computes_swarm_gain_for_branches_spread_over_slots() {
-  assert_contains '"swarm":{"branches":3,"slots":3,"serial_minutes":96,"swarm_minutes":55,"fixed_minutes":39}' \
+  assert_contains '"swarm":{"branches":3,"slots":3,"serial_minutes":90,"swarm_minutes":30}' \
     "$(calibrate --groups 60,60,60)"
-}
-
-# 2 × 30 fichiers = 2 × (2 + 15) min : les coûts fixes mangent le parallélisme.
-test_shows_no_gain_for_two_short_branches() {
-  assert_contains '"serial_minutes":34,"swarm_minutes":35' "$(calibrate --groups 30,30)"
 }
 
 # Plus de branches que de délégués : la plus longue d'abord, chacune au délégué le moins chargé.
 test_queues_branches_beyond_available_slots() {
-  assert_contains '"branches":3,"slots":2,"serial_minutes":66,"swarm_minutes":75' "$(calibrate --groups 40,40,40 --slots 2)"
+  assert_contains '"branches":3,"slots":2,"serial_minutes":60,"swarm_minutes":40' "$(calibrate --groups 40,40,40 --slots 2)"
 }
 
-# Groupe de 30 fichiers en 4 tâches : 4 × 2 + 15 = 23 min, contre 17 min pour une seule tâche.
+# Vérifications mesurées à 1 min par tâche, 5 min par fichier prévu : 4 × 1 + 150, puis 1 + 150.
 test_counts_check_cost_of_each_task_of_a_group() {
-  assert_contains '"serial_minutes":40,' "$(calibrate --groups 30/4,30)"
+  # shellcheck disable=SC2046
+  write_plan_tasks feature 2026-11-01 $(repeat_task 20 10:6/3/1)
+  assert_contains '"serial_minutes":305,' "$(calibrate --groups 30/4,30)"
 }
 
-# Une branche seule : 17 min + 8 de délégué + 5 de fusion = 30 min contre 17 en série, aucune voie pour compenser.
-test_shows_loss_for_single_branch_without_parent_work() {
+# Une branche seule : 15 min dans les deux cas, rien à paralléliser.
+test_shows_no_gain_for_single_branch_without_parent_work() {
   local output
   output=$(calibrate --groups 30)
-  assert_contains '"branches":1,"slots":3,"serial_minutes":17,"swarm_minutes":30,"fixed_minutes":13}' "$output"
+  assert_contains '"branches":1,"slots":3,"serial_minutes":15,"swarm_minutes":15}' "$output"
 }
 
-# Une branche (17 min) et 20 fichiers du parent en 3 tâches (16 min) : série 33, essaim max(25, 16) + 5 = 30.
+# Une branche (15 min) et 20 fichiers du parent en 3 tâches (10 min) : série 25, essaim max(15, 10) = 15.
 test_counts_parent_work_as_parallel_lane_for_single_branch() {
-  assert_contains '"serial_minutes":33,"swarm_minutes":30,"fixed_minutes":13,"parent_minutes":16}' \
+  assert_contains '"serial_minutes":25,"swarm_minutes":15,"parent_minutes":10}' \
     "$(calibrate --groups 30 --parent 20/3)"
 }
 
-# Deux branches de 32 min (+ 8 chacune) et un parent de 48 min : la voie du parent fixe la durée, 48 + 2 × 5 = 58.
+# Deux branches de 30 min et un parent de 40 min : la voie du parent fixe la durée.
 test_lets_longest_parent_lane_set_swarm_time() {
-  assert_contains '"branches":2,"slots":3,"serial_minutes":112,"swarm_minutes":58,"fixed_minutes":26,"parent_minutes":48}' \
+  assert_contains '"branches":2,"slots":3,"serial_minutes":100,"swarm_minutes":40,"parent_minutes":40}' \
     "$(calibrate --groups 60,60 --parent 80/4)"
 }
 
@@ -150,14 +121,14 @@ test_rejects_malformed_groups_or_slots() {
 }
 
 test_estimates_at_least_one_minute() {
-  assert_contains '"estimate":{"files":1,"minutes":2,"low":2,"high":3}' "$(calibrate --files 1)"
+  assert_contains '"estimate":{"files":1,"minutes":1,"low":1,"high":1}' "$(calibrate --files 1)"
 }
 
 test_estimates_each_task_of_a_list_and_their_sum() {
   local output
   output=$(calibrate --files 3,5,8)
-  assert_contains '"estimate":{"files":16,"minutes":14,"low":10,"high":18}' "$output"
-  assert_contains '"estimates":[{"files":3,"minutes":4,"low":3,"high":5},{"files":5,"minutes":4,"low":3,"high":6},{"files":8,"minutes":6,"low":4,"high":8}]' "$output"
+  assert_contains '"estimate":{"files":16,"minutes":8,"low":6,"high":10}' "$output"
+  assert_contains '"estimates":[{"files":3,"minutes":2,"low":1,"high":2},{"files":5,"minutes":2,"low":2,"high":3},{"files":8,"minutes":4,"low":3,"high":5}]' "$output"
 }
 
 test_gives_no_list_for_a_single_value() {
@@ -165,7 +136,7 @@ test_gives_no_list_for_a_single_value() {
 }
 
 test_estimates_files_with_range() {
-  assert_contains '"estimate":{"files":120,"minutes":62,"low":46,"high":81}' "$(calibrate --files 120)"
+  assert_contains '"estimate":{"files":120,"minutes":60,"low":45,"high":78}' "$(calibrate --files 120)"
 }
 
 # ── Ratios du projet ──────────────────────────────────────────────────────────
@@ -237,7 +208,7 @@ test_keeps_reference_range_below_twenty_tasks() {
   local output
   output=$(calibrate --files 100)
   assert_contains '"range_source":"reference"' "$output"
-  assert_contains '"estimate":{"files":100,"minutes":52,"low":39,"high":68}' "$output"
+  assert_contains '"estimate":{"files":100,"minutes":50,"low":38,"high":65}' "$output"
 }
 
 # Vingt tâches exactement à leur estimation : la fourchette se resserre sur elle.
@@ -247,14 +218,14 @@ test_narrows_range_for_regular_tasks() {
   local output
   output=$(calibrate --files 100)
   assert_contains '"range_source":"tasks"' "$output"
-  assert_contains '"estimate":{"files":100,"minutes":52,"low":52,"high":52}' "$output"
+  assert_contains '"estimate":{"files":100,"minutes":50,"low":50,"high":50}' "$output"
 }
 
 # Écarts réels ÷ estimés de 0,4 à 2 : centiles 20 et 80 à 0,76 et 1,28.
 test_widens_range_for_dispersed_tasks() {
   write_plan_tasks feature 2026-11-01 10:4 10:4 10:6 10:6 10:8 10:8 10:9 10:9 10:10 10:10 \
     10:10 10:10 10:11 10:11 10:12 10:12 10:16 10:16 10:20 10:20
-  assert_contains '"estimate":{"files":100,"minutes":52,"low":40,"high":67}' "$(calibrate --files 100)"
+  assert_contains '"estimate":{"files":100,"minutes":50,"low":38,"high":64}' "$(calibrate --files 100)"
 }
 
 test_ignores_unmeasured_branch_and_delegated_tasks() {
@@ -268,7 +239,7 @@ test_keeps_forty_most_recent_tasks() {
   write_plan_tasks old 2026-11-01 $(repeat_task 40 10:20)
   # shellcheck disable=SC2046
   write_plan_tasks new 2026-11-02 $(repeat_task 40 10:10)
-  assert_contains '"estimate":{"files":100,"minutes":52,"low":52,"high":52}' "$(calibrate --files 100)"
+  assert_contains '"estimate":{"files":100,"minutes":50,"low":50,"high":50}' "$(calibrate --files 100)"
 }
 
 test_counts_tasks_of_child_branch_plans() {
@@ -288,7 +259,7 @@ test_takes_rates_from_tasks_with_their_files() {
   output=$(calibrate --files 2)
   assert_contains '"minutes_per_file":2.00,"file_error":3.00,"apply_file_error":true' "$output"
   assert_contains '"source":"tasks"' "$output"
-  assert_contains '"estimate":{"files":2,"minutes":14' "$output"
+  assert_contains '"estimate":{"files":2,"minutes":12' "$output"
 }
 
 # 2 min par fichier × erreur 3 appliquée = 6 min par fichier : 15 ÷ 6 = 2,5 → 3 fichiers, arrondi au-dessus.
@@ -337,12 +308,6 @@ test_is_indicative_while_rates_come_from_reference() {
   assert_contains '"source":"reference","range_source":"tasks"' "$output"
 }
 
-test_ignores_partial_branch_for_fixed_costs() {
-  write_fixed_costs child-a 2026-11-01 20.0 null
-  sed -i 's/"partial":false/"partial":true/' "$WORK/.forge/branch/child-a/metrics.json"
-  assert_contains '"delegate_minutes":8,' "$(calibrate)"
-}
-
 # ── Usage ─────────────────────────────────────────────────────────────────────
 
 test_rejects_non_numeric_files() {
@@ -380,14 +345,16 @@ test_takes_check_cost_from_tasks_and_rate_without_checks() {
 test_keeps_reference_check_cost_below_twenty_tasks() {
   # shellcheck disable=SC2046
   write_plan_tasks feature 2026-11-01 $(repeat_task 19 10:6/3/1)
-  assert_contains '"check_minutes":2.0,"check_source":"reference"' "$(calibrate)"
+  assert_contains '"check_minutes":0.0,"check_source":"reference"' "$(calibrate)"
 }
 
 test_list_estimate_counts_check_cost_once_per_task() {
   local output
+  # shellcheck disable=SC2046
+  write_plan_tasks feature 2026-11-01 $(repeat_task 20 10:6/3/1)
   output=$(calibrate --files 2,2)
-  assert_contains '"estimate":{"files":4,"minutes":6,' "$output"
-  assert_contains '"estimates":[{"files":2,"minutes":3,' "$output"
+  assert_contains '"estimate":{"files":4,"minutes":22,' "$output"
+  assert_contains '"estimates":[{"files":2,"minutes":11,' "$output"
 }
 
 run_test() {
@@ -407,19 +374,16 @@ run_test() {
 
 echo "time-calibrate.sh"
 run_test test_uses_reference_values_without_measure "prend les valeurs de référence sans mesure du projet"
-run_test test_returns_fixed_costs_and_branch_threshold "rend les coûts fixes et le seuil de branche, sans recopier les bornes"
-run_test test_takes_fixed_costs_from_measured_branches "tire les coûts fixes d'une branche des mesures du projet"
-run_test test_keeps_reference_merge_cost_without_merge_measure "garde le coût de fusion de référence sans fusion mesurée"
+run_test test_returns_check_cost_and_branch_threshold "rend le coût de vérification et le seuil de branche, aucun coût fixe de branche"
 run_test test_computes_swarm_gain_for_branches_spread_over_slots "calcule le gain d'un essaim réparti sur les délégués"
-run_test test_shows_no_gain_for_two_short_branches "ne montre aucun gain pour deux branches courtes"
 run_test test_queues_branches_beyond_available_slots "met en file les branches au-delà des délégués disponibles"
 run_test test_counts_check_cost_of_each_task_of_a_group "essaim : coût fixe de vérification de chaque tâche d'un groupe"
-run_test test_shows_loss_for_single_branch_without_parent_work "une branche seule sans travail du parent : perte affichée"
+run_test test_shows_no_gain_for_single_branch_without_parent_work "aucun gain pour une branche seule sans travail du parent"
 run_test test_counts_parent_work_as_parallel_lane_for_single_branch "une branche seule : travail du parent compté comme voie parallèle"
 run_test test_lets_longest_parent_lane_set_swarm_time "plusieurs branches : la voie du parent la plus longue fixe la durée"
 run_test test_rejects_parent_work_without_groups_or_malformed "refuse un travail du parent sans groupes ou mal formé"
 run_test test_rejects_malformed_groups_or_slots "refuse des groupes ou un nombre de délégués mal formés"
-run_test test_estimates_at_least_one_minute "une tâche d'un fichier : coût fixe de vérification compris, bornes au moins d'une minute"
+run_test test_estimates_at_least_one_minute "une tâche d'un fichier : une minute au moins, bornes comprises"
 run_test test_estimates_each_task_of_a_list_and_their_sum "estime chaque tâche d'une liste et leur somme en un appel"
 run_test test_gives_no_list_for_a_single_value "ne rend pas de liste pour une seule valeur"
 run_test test_estimates_files_with_range "estime un nombre de fichiers avec sa fourchette"
@@ -437,12 +401,11 @@ run_test test_ignores_file_error_within_tolerance "n'applique pas l'erreur de pr
 run_test test_uses_reference_rates_below_twenty_tasks_even_with_measured_branches "prend les ratios de référence sous vingt tâches, branches mesurées ou non"
 run_test test_is_reliable_once_rates_and_range_come_from_tasks "est fiable quand ratios et fourchette viennent des tâches"
 run_test test_is_indicative_while_rates_come_from_reference "reste indicative tant que les ratios viennent de la référence"
-run_test test_ignores_partial_branch_for_fixed_costs "écarte une branche mesurée en partie des coûts fixes"
 run_test test_rejects_non_numeric_files "refuse un nombre de fichiers non entier"
 run_test test_rejects_malformed_files_list "refuse une liste de fichiers mal formée"
 run_test test_rejects_unknown_argument "refuse un argument inconnu"
 run_test test_takes_check_cost_from_tasks_and_rate_without_checks "coût fixe tiré des vérifications des tâches, minutes par fichier hors vérifications"
-run_test test_keeps_reference_check_cost_below_twenty_tasks "coût fixe de référence sous vingt tâches qui portent leurs vérifications"
+run_test test_keeps_reference_check_cost_below_twenty_tasks "aucune vérification estimée sous vingt tâches qui portent leurs vérifications"
 run_test test_list_estimate_counts_check_cost_once_per_task "estimation d'une liste : un coût fixe par tâche"
 
 echo "$PASSED passed, $FAILED failed"

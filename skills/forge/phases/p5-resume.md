@@ -85,7 +85,7 @@
 3. Le hook écrit sous `**Estimated time:**` de la tâche, à défaut sous `**Effort:**` : `**Actual time:** ≈ <agent_minutes> min agent (incl. <check_minutes> min checks) · human <human_minutes> min (<questions> questions) · <actual_files> files · total ≈ <agent + human> min`, sans la partie fichiers quand `actual_files` est `null` ; sans mesure → `**Actual time:** —`. Premier nombre = temps d'agent, vérifications comprises, comparé à l'estimation ; total = agent + humain, vérifications jamais ajoutées. La part de vérifications nourrit le coût fixe de vérification de l'estimation.
 
 ⚠️ Jamais de `**Actual time:**` écrit à la main, jamais de durée estimée à la place d'une mesure absente. Hook signalé dans le contexte (`forge plan-hook: …`) → relire `plan.md` avant de l'éditer de nouveau.
-⚠️ Tâche-branche d'un essaim (titre `— Branch <X>`) et tâche déléguée à un projet lié (`**Linked branch:**` ou note `delegated to`) → aucune marque, jamais le temps de la session parente ; leur réel est écrit par le hook à la coche : `metrics.json` de la branche fille, ou délégués du seul projet lié (temps humain `—`, il est celui de la session parente). Sans mesure → `—`.
+⚠️ Tâche-branche d'un essaim (titre `— Branch <X>`) et tâche déléguée à un projet lié (`**Linked branch:**` ou note `delegated to`) → aucune marque, jamais le temps de la session parente ; leur réel est écrit par le hook à la coche : somme des réels des tâches de leur plan, vérifications comprises, même format qu'une tâche ordinaire. Plan absent ou tâche faite non mesurée → `—`.
 ⚠️ Plusieurs tâches cochées d'un même coup → tâches simultanées, `—` pour chacune : cocher chaque tâche à sa fin, une par édition.
 
 ---

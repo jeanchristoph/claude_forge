@@ -9,4 +9,4 @@
 - [2026-11-20 13:15] T2 : tour ou délégué sans Stop à la marque task_done compté jusqu'à elle, seul le plus récent (session interrompue écartée).
 - [2026-11-20 13:15] Plan validé (Validate and chain) ; T1 et T2 terminés.
 - [2026-11-20 12:54] Approche C retenue : marques d'un délégué dans le journal du parent ; écart noté dans ## Scope & rules du brief.
-- [2026-11-20 12:48] Opened from Pharmascope (saas-rebuild) : branche task-time créée depuis agent-swarm, forge délégué en worktree.
+- [2026-11-20 12:48] Opened by delegation : branche task-time créée depuis agent-swarm, forge délégué en worktree.

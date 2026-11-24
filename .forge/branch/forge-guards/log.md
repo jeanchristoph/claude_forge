@@ -1,3 +1,6 @@
+- [2026-11-24 18:33] Version 0.13.9 préparée — T29 essayée dans un vrai /forge par l'utilisateur, concluante ; suite complète 552 verts ; CHANGELOG daté, grave master et release demandés
+- [2026-11-24 18:27] T29 done — rewakeSummary et rewakeMessage sur le hook update-notice, lignes et ligne d'état en tête de la réponse finale ; tests update-notice 13, install 53 verts ; à essayer dans un vrai /forge après réinstallation
+- [2026-11-24 18:25] T29 ajoutée, enchaînée — annonce de nouvelle version visible telle quelle, « Stop hook feedback » remplacé par rewakeSummary, ligne d'état en tête de la réponse finale ; constat d'un vrai /forge
 - [2026-11-24 18:04] Version 0.13.8 préparée — CHANGELOG daté, publication demandée par l'utilisateur
 - [2026-11-24 18:01] T28 done — nouvelle version annoncée par le hook update-notice (asyncRewake) ; update.sh check supprimé, « mets à jour la forge » sans question, « ignore cette version » (choix de l'utilisateur)
 - [2026-11-24 17:33] T28 ajoutée, enchaînée — nouvelle version annoncée par un hook FileChanged, attente au lancement refusée par l'utilisateur ; essai réel avant le code

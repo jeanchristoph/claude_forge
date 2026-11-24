@@ -10,6 +10,16 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ## [Unreleased]
 
+## [0.13.9] — 2026-11-24
+
+### Changed
+
+- The new version notice shows its own line with both commands instead of "Stop hook feedback" (`rewakeSummary` and `rewakeMessage` on the hook, written by both installers — internal Claude Code fields, the default label comes back without them).
+
+### Fixed
+
+- The new version lines and the state line are no longer summarized on screen: Claude writes them at the top of the final response of the turn, or right before the question that ends it, never between two tool calls.
+
 ## [0.13.8] — 2026-11-24
 
 ### Added
@@ -499,7 +509,8 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 - Idempotent Unix and Windows installers, with `settings.json` merge and no duplicate entries on reinstall.
 - `main` / `master` guard: on a protected branch, forge asks for a ticket ID or a branch name before continuing.
 
-[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.8...HEAD
+[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.9...HEAD
+[0.13.9]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.8...v0.13.9
 [0.13.8]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.7...v0.13.8
 [0.13.7]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.6...v0.13.7
 [0.13.6]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.5...v0.13.6

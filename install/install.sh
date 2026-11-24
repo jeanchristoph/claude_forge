@@ -118,7 +118,13 @@ s.hooks.PreToolUse.push({ matcher: 'Edit|Write|MultiEdit|NotebookEdit', hooks: [
 
 // Hook de nouvelle version : retire toute entrée update-notice existante, puis l'ajoute à /forge et /forge-clickup.
 // asyncRewake : lancé en arrière-plan, il réveille Claude seulement quand une version plus récente existe.
-const noticeHook = { type: 'command', command: 'bash ~/.claude/skills/forge/hooks/update-notice.sh', shell: 'bash', asyncRewake: true, timeout: 30 };
+// rewakeSummary : ligne affichée à la place de « Stop hook feedback » ; rewakeMessage : préfixe du message reçu par Claude.
+// Champs internes de Claude Code : ignorés, le libellé et le préfixe par défaut reviennent.
+const noticeHook = {
+  type: 'command', command: 'bash ~/.claude/skills/forge/hooks/update-notice.sh', shell: 'bash', asyncRewake: true, timeout: 30,
+  rewakeSummary: 'forge: new version available — type \"update the forge\" or \"ignore this version\"',
+  rewakeMessage: 'Message from the forge hook:'
+};
 s.hooks.UserPromptExpansion = (s.hooks.UserPromptExpansion || []).filter(g =>
   !g.hooks || !g.hooks.some(h => h.command && h.command.includes('update-notice.sh'))
 );

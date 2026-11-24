@@ -1,8 +1,8 @@
 # Plan — forge-guards
 **Objective:** Ajouter au skill forge deux garde-fous (script de déploiement SQL toujours écrit et complet ; session parente qui n'écrit jamais dans un projet lié), nommer la branche liée d'après la tâche déléguée sans jamais nommer le parent, et documenter le hook `linked-write-guard.sh`.
 **Date:** 2026-11-23
-**Estimate:** ≈ 240 files · ≈ 161 min (44-301) · indicative
-**Actual:** ≈ 231.2 min agent (incl. 133.4 min checks) · human 406.5 min (54 questions, 227.0 min) · delegates 2.4 min in parallel · total ≈ 637.7 min · partial (log started after the branch, 13 unmeasured tasks)
+**Estimate:** ≈ 249 files · ≈ 169 min (48-319) · indicative
+**Actual:** ≈ 237.3 min agent (incl. 136.1 min checks) · human 416.2 min (55 questions, 227.6 min) · delegates 3.6 min in parallel · total ≈ 653.5 min · partial (log started after the branch, 13 unmeasured tasks)
 **Origin:** T7, T8, T9, T10
 
 ## Tasks
@@ -236,6 +236,14 @@
 **Description:** Hook `update-notice.sh` sur `/forge` et `/forge-clickup` (`UserPromptExpansion`, `asyncRewake`) : cherche le dernier tag à chaque lancement, en arrière-plan ; version plus récente et non ignorée → Claude écrit la ligne, avec les commandes « mets à jour la forge » et « ignore cette version » ; sinon, ou hors réseau, rien. `/forge` ne s'occupe plus des mises à jour : `update.sh check`, délai de 24 h et mention de la ligne d'état retirés. « mets à jour la forge » installe directement ; « ignore cette version » enregistre le refus (`update.sh dismiss`). Règle `SKILL.md` : message du hook écrit avant toute autre action, STOP compris. Essais réels faits avant le code : `asyncRewake` à l'arrêt et après une question, concluants ; `FileChanged` écarté (message d'une seconde).
 [x] Hook, bibliothèque `latest-version.sh`, `update.sh` réduit à `run` et `dismiss`, installeurs et textes ; tests update-notice 12, update 15, install 51 ; hook lancé sur le vrai dépôt : 0,9 s, sortie 2 ; `help.md` et `latest-version.sh` ajoutés aux fichiers ; pas encore essayé dans un vrai `/forge`
 
+### T29 — Annonce de nouvelle version : visible telle quelle, sans « Stop hook feedback »
+**Effort:** S
+**Estimated time:** ≈ 8 min (4-18)
+**Actual time:** ≈ 1.4 min agent (incl. 0.5 min checks) · human 0.0 min (0 questions) · 9 files · total ≈ 1.4 min
+**Files:** `install/install.sh`, `install/install.ps1`, `tests/install.test.sh`, `skills/forge/hooks/update-notice.sh`, `tests/update-notice.test.sh`, `skills/forge/SKILL.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Constat d'un vrai `/forge` : le texte écrit entre deux appels d'outils est résumé par le serveur ; les trois lignes de l'annonce et la ligne d'état n'apparaissent pas telles quelles, `ignore cette version` est perdu. Installeurs : `rewakeSummary` = `forge: new version available — type "update the forge" or "ignore this version"` à la place de « Stop hook feedback », `rewakeMessage` = `Message from the forge hook:` ; `forge update-notice` reste dans le message du hook, que la règle de `SKILL.md` reconnaît. `update-notice.sh` : les trois lignes en tête de la réponse finale du tour. `SKILL.md` : même règle pour « Message du hook update-notice » (consigne STOP comprise ; juste avant la question si le tour finit par `AskUserQuestion`), ligne d'état de « Détection d'état » en tête de la réponse finale. Tests : entrée complète du hook sans doublon dans `install.test.sh`, consigne « réponse finale » dans `update-notice.test.sh`. README fr/en, CHANGELOG `### Changed` et `### Fixed`. Limite : champs `@internal`, sans garantie de durée ; essai dans un vrai `/forge` après réinstallation par l'utilisateur.
+[x] Libellé et préfixe du hook dans les deux installeurs, lignes et ligne d'état en tête de la réponse finale ; tests update-notice 13, install 53 verts ; SKILL.md sans test qui le couvre ; essayé par l'utilisateur dans un vrai `/forge`, concluant
+
 ## Risks
 - `p5-resume.md` et `CHANGELOG.md` sont touchés par T1 et T2 : ils sont édités l'un après l'autre, dans le même plan, sans conflit.
 - Les noms de fichiers des installeurs diffèrent du mandat (`install/install.sh`, `install/install.ps1` au lieu des lanceurs racine) : même intention, fichiers où vit la fusion de `settings.json`.
@@ -277,5 +285,6 @@ None
 | T26 — Tests en parallèle | M | 24 | ≈ 11 min | ≈ 50.9 min agent (incl. 43.9 min checks) · human 32.0 min (9 questions) · 22 files · total ≈ 82.9 min | [x] |
 | T27 — Temps humain et nombre de questions rattachés à la branche du délégué | M | 10 | ≈ 4 min | ≈ 3.8 min agent (incl. 2.2 min checks) · human 0.0 min (0 questions) · 10 files · total ≈ 3.8 min | [x] |
 | T28 — Nouvelle version annoncée par un hook dès la réponse de GitHub | M | 15 | ≈ 9 min | ≈ 9.0 min agent (incl. 0.6 min checks) · human 18.7 min (9 questions) · 14 files · total ≈ 27.7 min | [x] |
-| **Total** (15/28 measured) | **7S, 7M, 1L** | **150** | **≈ 88 min** | **≈ 166.3 min** | |
-| **Unplanned** | | | | **≈ 67.3 min** | |
+| T29 — Annonce de nouvelle version : visible telle quelle, sans « Stop hook feedback » | S | 9 | ≈ 8 min | ≈ 1.4 min agent (incl. 0.5 min checks) · human 0.0 min (0 questions) · 9 files · total ≈ 1.4 min | [x] |
+| **Total** (16/29 measured) | **8S, 7M, 1L** | **159** | **≈ 96 min** | **≈ 167.7 min** | |
+| **Unplanned** | | | | **≈ 73.2 min** | |

@@ -70,6 +70,14 @@ test_wakes_claude_with_version_and_both_commands() {
   assert_contains 'ignore cette version' "$output"
 }
 
+test_asks_for_lines_in_final_response() {
+  local output
+  write_install_file '"v0.9.2"' '"v0.9.2"' null
+  output=$(notice)
+  assert_contains 'forge update-notice' "$output"
+  assert_contains 'at the top of its final response' "$output"
+}
+
 test_wakes_claude_again_when_version_is_already_known() {
   write_install_file '"v0.9.2"' '"v0.9.10"' null
   notice > /dev/null
@@ -144,6 +152,7 @@ test_converts_ssh_repository_to_https() {
 # ── Exécution ─────────────────────────────────────────────────────────────────
 
 run_test test_wakes_claude_with_version_and_both_commands "version plus récente : réveille Claude avec la version et les deux commandes, plus grand tag vX.Y.Z"
+run_test test_asks_for_lines_in_final_response "demande les lignes en tête de la réponse finale, jamais entre deux appels d'outils"
 run_test test_wakes_claude_again_when_version_is_already_known "version déjà connue, ni installée ni ignorée : annoncée de nouveau"
 run_test test_wakes_claude_for_version_newer_than_dismissed_one "version plus récente que celle ignorée : annoncée"
 run_test test_leaves_out_unknown_installed_version "sans install.json : annoncée, version installée omise"

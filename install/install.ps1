@@ -145,10 +145,17 @@ $s.hooks.PreToolUse = $guardGroups + [PSCustomObject]@{ matcher = "Edit|Write|Mu
 
 # Hook de nouvelle version : retire toute entrée update-notice existante, puis l'ajoute à /forge et /forge-clickup.
 # asyncRewake : lancé en arrière-plan, il réveille Claude seulement quand une version plus récente existe.
+# rewakeSummary : ligne affichée à la place de « Stop hook feedback » ; rewakeMessage : préfixe du message reçu par Claude.
+# Champs internes de Claude Code : ignorés, le libellé et le préfixe par défaut reviennent.
+# Tiret cadratin par son code : ce fichier est sans BOM, Windows PowerShell 5.1 le lirait mal.
 if (-not ($s.hooks.PSObject.Properties.Name -contains "UserPromptExpansion")) {
     $s.hooks | Add-Member -NotePropertyName UserPromptExpansion -NotePropertyValue @()
 }
-$noticeHook = [PSCustomObject]@{ type = "command"; command = "bash ~/.claude/skills/forge/hooks/update-notice.sh"; shell = "bash"; asyncRewake = $true; timeout = 30 }
+$noticeHook = [PSCustomObject]@{
+    type = "command"; command = "bash ~/.claude/skills/forge/hooks/update-notice.sh"; shell = "bash"; asyncRewake = $true; timeout = 30
+    rewakeSummary = "forge: new version available $([char]0x2014) type ""update the forge"" or ""ignore this version"""
+    rewakeMessage = "Message from the forge hook:"
+}
 $noticeGroups = @($s.hooks.UserPromptExpansion | Where-Object {
     -not (@($_.hooks) | Where-Object { $_.command -like "*update-notice.sh*" })
 })

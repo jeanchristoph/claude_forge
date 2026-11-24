@@ -163,7 +163,7 @@ Si BRANCH est `main` ou `master`, dans l'ordre :
 - Lire et exécuter intégralement : `commands/update.md`, section « Mise à jour » ou « Version ignorée »
 - STOP — ne pas continuer vers la détection d'état.
 
-**Nouvelle version :** aucune recherche au lancement — le hook `hooks/update-notice.sh` la fait en arrière-plan à chaque `/forge`. Message du hook `update-notice` reçu → écrire d'abord ses lignes, telles quelles, dans la langue de l'utilisateur, avant toute autre action du tour, consigne STOP comprise.
+**Nouvelle version :** aucune recherche au lancement — le hook `hooks/update-notice.sh` la fait en arrière-plan à chaque `/forge`. Message du hook `update-notice` reçu → écrire ses lignes, telles quelles, dans la langue de l'utilisateur, en tête de la réponse finale du tour, consigne STOP comprise ; tour terminé par `AskUserQuestion` → juste avant la question. Jamais entre deux appels d'outils : ce texte est résumé à l'écran.
 
 ---
 
@@ -178,7 +178,7 @@ Si BRANCH est `main` ou `master`, dans l'ordre :
 2. `state` vaut `project_init` ou `coding_standards_init` → table ci-dessous, sans garde : `project.md` et `coding-standards.md` sont communs à toutes les branches et ne résolvent jamais `<BRANCH>`.
 3. `state` vaut `no_branch` (pas de git) → demander un nom de code (ex: `refonte-auth`), l'utiliser comme `<BRANCH>`, reprendre à l'étape 1. Sans réponse : STOP.
 4. Exécuter la « Garde de sécurité » ci-dessus. `<BRANCH>` changée → reprendre à l'étape 1.
-5. Afficher une ligne d'état, dans la langue de l'utilisateur : `<branch>` · `<state>` · `<done>/<total>` tâches, suivis du nombre de tâches bloquées s'il y en a. Sans plan → `<branch>` · `<state>`.
+5. Retenir une ligne d'état, dans la langue de l'utilisateur : `<branch>` · `<state>` · `<done>/<total>` tâches, suivis du nombre de tâches bloquées s'il y en a. Sans plan → `<branch>` · `<state>`. L'écrire en tête de la réponse finale du tour, sous les lignes du hook `update-notice` s'il y en a ; tour terminé par `AskUserQuestion` → juste avant la question.
 
 Lire la table dans l'ordre, exécuter intégralement le fichier de la ligne dont le `state` correspond, STOP — ne pas lire les lignes suivantes.
 

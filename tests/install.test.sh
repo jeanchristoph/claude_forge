@@ -324,7 +324,15 @@ test_install_record_is_read_by_update() {
 
 test_adds_rewaking_notice_hook_to_forge_commands() {
   run_installer || exit 1
-  assert_contains '"matcher":"forge|forge-clickup","hooks":[{"type":"command","command":"bash ~/.claude/skills/forge/hooks/update-notice.sh","shell":"bash","asyncRewake":true,"timeout":30}]' "$(event_hooks UserPromptExpansion)"
+  assert_contains '"matcher":"forge|forge-clickup","hooks":[{"type":"command","command":"bash ~/.claude/skills/forge/hooks/update-notice.sh","shell":"bash","asyncRewake":true,"timeout":30,"rewakeSummary":"forge: new version available — type \"update the forge\" or \"ignore this version\"","rewakeMessage":"Message from the forge hook:"}]' "$(event_hooks UserPromptExpansion)"
+}
+
+test_install_replaces_notice_hook_without_label() {
+  mkdir -p "$CLAUDE_DIR"
+  printf '%s\n' '{"hooks":{"UserPromptExpansion":[{"matcher":"forge|forge-clickup","hooks":[{"type":"command","command":"bash ~/.claude/skills/forge/hooks/update-notice.sh","shell":"bash","asyncRewake":true,"timeout":30}]}]}}' > "$CLAUDE_DIR/settings.json"
+  run_installer || exit 1
+  assert_equals 1 "$(event_hooks UserPromptExpansion | grep -o 'update-notice' | wc -l | tr -d ' ')"
+  assert_contains '"rewakeSummary":"forge: new version available' "$(event_hooks UserPromptExpansion)"
 }
 
 test_second_install_adds_notice_hook_once() {
@@ -376,6 +384,7 @@ run_common_tests() {
   run_installer_test test_records_null_version_outside_git "enregistre une version et un dépôt nuls hors dépôt git"
   run_installer_test test_install_record_is_read_by_update "update.sh lit l'install.json produit"
   run_installer_test test_adds_rewaking_notice_hook_to_forge_commands "ajoute le hook de nouvelle version à /forge et /forge-clickup, en arrière-plan"
+  run_installer_test test_install_replaces_notice_hook_without_label "remplace le hook de nouvelle version installé sans libellé"
   run_installer_test test_second_install_adds_notice_hook_once "une seconde installation n'ajoute pas le hook de nouvelle version en double et garde un hook étranger"
   run_installer_test test_writes_settings_without_bom "écrit settings.json sans BOM UTF-8"
   run_installer_test test_keeps_unrelated_settings_from_file_with_bom "garde les réglages étrangers d'un settings.json écrit avec BOM"

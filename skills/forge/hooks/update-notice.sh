@@ -19,7 +19,7 @@ write_notice() {
   local installed=""
   [ -n "$INSTALLED_VERSION" ] && installed=" (installed: $INSTALLED_VERSION)"
   cat >&2 <<END
-forge update-notice — before any other action of this turn, write these three lines to the user, in their language, then go on:
+forge update-notice — go on with the turn, then write these three lines at the top of its final response, in the user's language, never between two tool calls (summarized on screen):
 New forge version available: $LATEST_VERSION$installed.
 To update, type: \`update the forge\` (French: \`mets à jour la forge\`)
 To stop seeing this message, type: \`ignore this version\` (French: \`ignore cette version\`)

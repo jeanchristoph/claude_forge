@@ -10,6 +10,10 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ## [Unreleased]
 
+### Removed
+
+- Test rules no longer live in the skill: no scoped tests imposed after a task, no full suite before engraving (`**Full check:**` line, CI detection and report lines included), no full suite run by a linked project's delegate (`full_check` dropped from `FORGE_DONE`, the parent note and the `Linked` question). What to run and when belongs to the project's `coding-standards.md` or `project.md`. An existing `**Full check:**` line is left as is and has no effect; `**Check pattern:**`, used for measurement only, stays.
+
 ## [0.13.5] — 2026-11-23
 
 ### Changed

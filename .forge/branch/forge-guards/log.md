@@ -1,3 +1,5 @@
+- [2026-11-24 12:02] T21 done — règles de tests retirées du skill (engrave, p5-resume, délégué lié, p0) ; celles du dépôt forge dans coding-standards.md et project.md
+- [2026-11-24 11:59] T21 ajoutée, enchaînée — règles de tests retirées du skill, portées par project.md / coding-standards.md (demande de l'utilisateur ; revient sur T12, T14, T19)
 - [2026-11-23 22:42] Release 0.13.5 : CHANGELOG daté, grave master et tag v0.13.5 demandés
 - [2026-11-23 21:48] T20 done — attente humaine de plus de 60 min (jusqu'à 6 h incluses) comptée 3 min, placées juste avant la réponse ; plus de 6 h toujours 0 (demande de l'utilisateur) ; réels déjà écrits inchangés
 - [2026-11-23 21:41] T19 done — suite complète d'un projet lié lancée une fois par son délégué avant FORGE_DONE (full_check), recopiée dans la note, échec rappelé dans la question Linked ; suite impossible à lancer dans le worktree = failed — not run

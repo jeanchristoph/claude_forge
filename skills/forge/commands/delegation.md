@@ -79,12 +79,11 @@ Pour chaque tâche parente du mandat, dans l'ordre du plan :
 - Toutes ses tâches enfant dans `done` → cocher `[x]`, note `delegated to <LINKED_REL> @ <LINKED_BRANCH> · done` ; `**Actual time:**` écrit par le hook à la coche, jamais par le modèle.
 - Au moins une dans `blocked` → marquer `[!] blocked — <raison de la première> · delegated to <LINKED_REL> @ <LINKED_BRANCH>`.
 - Absente de `done` et de `blocked` → marquer `[!] blocked — not addressed by the delegated run · delegated to <LINKED_REL> @ <LINKED_BRANCH>`.
-- `full_check` autre que `none` → ` · full check: <valeur>` en fin de chaque note ci-dessus. Note d'une autre tâche de la même branche liée, d'un retour précédent → même valeur : seule la dernière suite compte.
 
 ⚠️ La note conserve toujours `delegated to <LINKED_REL> @ <LINKED_BRANCH>` : la livraison relayée s'appuie dessus pour retrouver le projet lié et sa branche.
 - Une entrée LOG parent par tâche : `T3 delegated to <LINKED_REL> — done` / `— blocked: <raison>`.
 
-`out_of_mandate` non vide → présenter chaque besoin à l'utilisateur, puis appliquer la « Surveillance des demandes complémentaires » de `phases/p5-resume.md` à chacun. Rendre compte : tâches vertes, tâches bloquées avec leur raison, suite complète (`full_check`, échec compris), fichiers touchés dans `<LINKED_WORKTREE>`. Le worktree reste en place : il est retiré automatiquement une fois `<LINKED_BRANCH>` fusionnée (« Retrait du worktree lié » de `commands/engrave.md`).
+`out_of_mandate` non vide → présenter chaque besoin à l'utilisateur, puis appliquer la « Surveillance des demandes complémentaires » de `phases/p5-resume.md` à chacun. Rendre compte : tâches vertes, tâches bloquées avec leur raison, fichiers touchés dans `<LINKED_WORKTREE>`. Le worktree reste en place : il est retiré automatiquement une fois `<LINKED_BRANCH>` fusionnée (« Retrait du worktree lié » de `commands/engrave.md`).
 
 ⚠️ `<LINKED_WORKTREE>` ne porte que les fichiers versionnés : ni dépendances installées (`node_modules`, `vendor`), ni `.env`, ni configuration locale. Une tâche déléguée qui les exige → le sous-agent la remonte `blocked` avec sa raison.
 

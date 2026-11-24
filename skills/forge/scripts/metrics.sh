@@ -178,7 +178,7 @@ has_measure_log() {
 }
 
 # Temps d'agent hors tâche dans REPLY : agent de la branche moins les tâches mesurées, jamais négatif, « — » sans mesure.
-# BUSINESS_RULE: travail jamais mis au plan, conflits, livraison, suite complète, tâche en cours ou non mesurée
+# BUSINESS_RULE: travail jamais mis au plan, conflits, livraison, tâche en cours ou non mesurée
 unplanned_minutes() {
   local planned
   REPLY=$NO_MEASURE

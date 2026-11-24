@@ -20,3 +20,4 @@
 
 ## Scope & rules
 - Le projet lié peut être public et le parent privé : aucune donnée du parent dans ce dépôt, sauf une référence strictement nécessaire à une tâche, écrite dans la tâche.
+- Règles de tests (quoi lancer, quand) → `project.md` ou `coding-standards.md` du projet, jamais dans le skill.

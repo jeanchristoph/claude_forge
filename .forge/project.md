@@ -137,4 +137,4 @@ Fichiers générés dans **chaque projet cible** par le skill (pas dans ce dép�
 - MCPs disponibles : claude-in-chrome, datagrip, phpstorm, webstorm (non utilisés par ce dépôt en l'état)
 - Documentation externe : aucune référence externe identifiée dans le dépôt
 **Check pattern:** `bash tests/|tests/\*\.test\.sh`
-**Full check:** `failed=0; for t in tests/*.test.sh; do bash "$t" || failed=1; done; [ $failed -eq 0 ]`
+- Suite complète des tests (à la demande) : `failed=0; for t in tests/*.test.sh; do bash "$t" || failed=1; done; [ $failed -eq 0 ]`

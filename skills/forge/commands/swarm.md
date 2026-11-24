@@ -112,7 +112,7 @@ Boucle de relais de `commands/delegation.md`, avec ces règles en plus :
    - doublon créé par l'union (import, fonction utilitaire identique) → en garder un, celui déclaré avant son premier usage ;
    - conflit logique (même traitement modifié des deux côtés : gestionnaire d'événement, aiguillage d'une commande) → combiner les deux comportements, ordre des effets justifié ; doute → `git -C "<WORKTREE>" merge --abort`, question à l'utilisateur avec les deux versions ;
    - fichier généré → prendre un côté, le régénérer par la commande du projet ;
-   - plus aucun marqueur de conflit (recherche acceptant `\r?\n`), vérification complète verte → commit de fusion `Merge <PARENT_BRANCH> into <X>: <fichiers combinés>`, puis étape 3.
+   - plus aucun marqueur de conflit (recherche acceptant `\r?\n`), vérifications demandées par le projet vertes → commit de fusion `Merge <PARENT_BRANCH> into <X>: <fichiers combinés>`, puis étape 3.
 5. `bash <SKILL_DIR>/scripts/time-mark.sh --time-log <chemin absolu de TIME_LOG> --event merge_done --branch <X>` — fusion réussie seulement : une fusion abandonnée laisse sa marque de début sans fin, jamais comptée. PLAN : tâche `<X>` cochée `[x]`, note d'une ligne — hashes, `estimated ≈ <fichiers> files · <min> min · actual <fichiers> files · <min> min` tiré de `metrics.json`  ; `**Actual time:**` écrit par le hook à la coche, depuis le `metrics.json` de `<X>` fusionné avec elle. Vérification impossible dans le worktree → ajoutée à la tâche finale de vérification d'ensemble. LOG parent.
 6. Compte rendu : tableau des opérations au format du « Gabarit — compte rendu de livraison » de `commands/engrave.md`, conflits résolus, vérification, tâches débloquées.
 7. « Retrait d'un worktree de branche fille ». Réécrire SWARM.

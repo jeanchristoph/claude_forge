@@ -10,8 +10,8 @@
 #   manquantes (checks.sh), puis journal de mesure et fichiers input/ encore suivis retirés de l'index (git rm --cached,
 #   fichiers gardés sur disque) : ces fichiers locaux ne partent jamais avec un commit, quelle que soit la branche de
 #   démarrage de /forge
-#   Livraison réussie : nouveau point d'étape dans le journal de mesure, code commité — la livraison et la suite complète
-#   n'entrent pas dans la tâche suivante ; code modifié depuis la dernière coche (tâche en cours) → heure gardée, seule
+#   Livraison réussie : nouveau point d'étape dans le journal de mesure, code commité — la livraison n'entre pas
+#   dans la tâche suivante ; code modifié depuis la dernière coche (tâche en cours) → heure gardée, seule
 #   l'empreinte des fichiers repart. Sans journal ni point d'étape : rien
 # Sortie : 0 succès · 1 usage ou garde · 2 échec git (conflit, push rejeté) — le JSON de run est écrit dans les deux cas
 

@@ -1,8 +1,8 @@
 # Plan — forge-guards
 **Objective:** Ajouter au skill forge deux garde-fous (script de déploiement SQL toujours écrit et complet ; session parente qui n'écrit jamais dans un projet lié), nommer la branche liée d'après la tâche déléguée sans jamais nommer le parent, et documenter le hook `linked-write-guard.sh`.
 **Date:** 2026-11-23
-**Estimate:** ≈ 141 files · ≈ 109 min (28-194) · indicative
-**Actual:** ≈ 106.4 min agent (incl. 55.7 min checks) · human 216.8 min (19 questions, 89.5 min) · fixed — (delegate setup, merge) · delegates 0.0 min in parallel · total ≈ 323.2 min · partial (log started after the branch, 13 unmeasured tasks)
+**Estimate:** ≈ 154 files · ≈ 116 min (30-207) · indicative
+**Actual:** ≈ 112.4 min agent (incl. 58.5 min checks) · human 277.1 min (20 questions, 147.5 min) · fixed — (delegate setup, merge) · delegates 0.0 min in parallel · total ≈ 389.5 min · partial (log started after the branch, 13 unmeasured tasks)
 **Origin:** T7, T8, T9, T10
 
 ## Tasks
@@ -172,6 +172,14 @@
 **Description:** Écart avant un message humain, ou attente de réponse à une question : jusqu'à 60 min inclus → durée réelle ; plus de 60 min et jusqu'à 6 h incluses → 3 min ; plus de 6 h → 0 (règle actuelle gardée). Les 3 min sont placées juste avant la réponse : une pause à cheval sur deux tâches n'est comptée qu'une fois. Question : toujours comptée dans le nombre de questions, son attente toujours retirée en entier du temps d'agent. Même règle pour la branche et pour la tâche, écrite une seule fois. Les tests « plus de 6 h → 0 » restent inchangés ; seul le test « 6 h tout juste » change de résultat (360 → 3 min). Nouveaux tests : 60 min tout juste, plus de 60 min, question, pause à cheval sur deux tâches. README fr/en, CHANGELOG `### Changed`. Les réels déjà écrits dans le plan ne changent pas.
 [x] Plus de 60 min et jusqu'à 6 h → 3 min juste avant la réponse, plus de 6 h → 0 ; tests time-aggregate 104, metrics 25, plan-hook 54, time-mark 15
 
+### T21 — Règles de tests retirées du skill, portées par les fichiers du projet
+**Effort:** M
+**Estimated time:** ≈ 7 min (2-13)
+**Actual time:** ≈ 17.9 min agent (incl. 10.5 min checks) · human 165.5 min (3 questions) · 11 files · total ≈ 183.4 min
+**Files:** `skills/forge/commands/engrave.md`, `skills/forge/commands/delegated-mode.md`, `skills/forge/commands/delegation.md`, `skills/forge/commands/swarm.md`, `skills/forge/phases/p0-project.md`, `skills/forge/phases/p5-resume.md`, `skills/forge/scripts/engrave.sh`, `skills/forge/scripts/metrics.sh`, `README.md`, `README.fr.md`, `CHANGELOG.md`, `.forge/coding-standards.md`, `.forge/project.md`
+**Description:** Livraison : « Vérification complète » retirée de `engrave.md`, avec la détection de CI, la question sur la commande et les lignes du compte rendu ; `grave` ne lance plus aucun test. Tâche : « Tests d'une tâche » retirée de `p5-resume.md` ; le skill applique les règles du projet, lues au démarrage d'une tâche. Projet lié : « Suite complète du projet lié » retirée de `delegated-mode.md`, ainsi que `full_check` du `FORGE_DONE`, de la note parente et de la question `Linked`. Essaim : à la fusion avec conflit, « vérification complète verte » devient « vérifications demandées par le projet vertes ». `p0-project.md` : `**Full check:**` n'est plus détectée, demandée ni écrite ; une ligne existante reste, sans effet ; `**Check pattern:**` gardée (mesure seule). README fr/en alignés, commentaires de `engrave.sh` et `metrics.sh` mis à jour, CHANGELOG `### Removed` sous `[Unreleased]`, entrées publiées inchangées. Dépôt forge : section `## Tests` dans `.forge/coding-standards.md`, ligne `**Full check:**` de `.forge/project.md` remplacée par une puce « Suite complète des tests (à la demande) ».
+[x] Règles de tests retirées du skill, écrites dans coding-standards.md et project.md du dépôt forge ; tests engrave 50, metrics 25 ; fichiers .md du skill sans test qui les couvre
+
 ## Risks
 - `p5-resume.md` et `CHANGELOG.md` sont touchés par T1 et T2 : ils sont édités l'un après l'autre, dans le même plan, sans conflit.
 - Les noms de fichiers des installeurs diffèrent du mandat (`install/install.sh`, `install/install.ps1` au lieu des lanceurs racine) : même intention, fichiers où vit la fusion de `settings.json`.
@@ -205,5 +213,6 @@ None
 | T18 — Mesure : un message reçu pendant une commande ne coupe plus le tour | S | 3 | ≈ 3 min | ≈ 5.6 min agent (incl. 2.0 min checks) · human 157.7 min (1 questions) · 3 files · total ≈ 163.3 min | [x] |
 | T19 — Projet lié : le délégué lance la suite complète une fois, avant FORGE_DONE | S | 8 | ≈ 5 min | ≈ 0.8 min agent (incl. 0.0 min checks) · human 0.0 min (0 questions) · 8 files · total ≈ 0.8 min | [x] |
 | T20 — Mesure : pause humaine de plus de 60 min comptée 3 min, de plus de 6 h comptée 0 | S | 5 | ≈ 4 min | ≈ 2.9 min agent (incl. 1.5 min checks) · human 4.0 min (2 questions) · 5 files · total ≈ 6.9 min | [x] |
-| **Total** (7/20 measured) | **5S, 1M, 1L** | **51** | **≈ 36 min** | **≈ 44.4 min** | |
-| **Unplanned** | | | | **≈ 62.0 min** | |
+| T21 — Règles de tests retirées du skill, portées par les fichiers du projet | M | 13 | ≈ 7 min | ≈ 17.9 min agent (incl. 10.5 min checks) · human 165.5 min (3 questions) · 11 files · total ≈ 183.4 min | [x] |
+| **Total** (8/21 measured) | **5S, 2M, 1L** | **64** | **≈ 43 min** | **≈ 62.3 min** | |
+| **Unplanned** | | | | **≈ 50.1 min** | |

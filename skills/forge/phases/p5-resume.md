@@ -75,19 +75,6 @@
 
 ---
 
-## Tests d'une tâche
-
-**Déclencheur :** tâche du plan terminée, avant sa coche — dans tous les modes, enchaîné, tâche choisie ou délégué.
-
-**Réaction :**
-- Lancer les seuls tests qui couvrent les fichiers modifiés par la tâche : test du même nom que le fichier, puis tests des fichiers qui l'appellent (Grep de son nom).
-- Jamais la suite complète du projet pendant le développement : elle tourne une fois, à la Livraison (« Vérification complète » de `commands/engrave.md`) — pour un projet lié, à la fin du délégué (« Suite complète du projet lié » de `commands/delegated-mode.md`).
-- Test rouge → corriger avant la coche ; impossible → `[!]` avec la raison.
-
-⚠️ Fichier modifié sans test qui le couvre → le signaler dans la note de la tâche, jamais la suite complète à la place.
-
----
-
 ## Mesure d'une tâche
 
 **Déclencheur :** coche `[x]` d'une tâche du plan — dans tous les modes, enchaîné, tâche choisie ou délégué.

@@ -70,6 +70,9 @@ forge/
 │   ├── demo.gif               (généré — jamais édité à la main)
 │   └── README.md              (prérequis de régénération, WSL requis)
 ├── tests/
+│   ├── run-all.sh             (suite complète : chaque fichier de test l'un après l'autre, une ligne par fichier vert : bash tests/run-all.sh)
+│   ├── test-runner.sh         (lanceur commun sourcé par chaque fichier de test : 12 cas à la fois, TEST_JOBS pour régler le nombre)
+│   ├── test-runner.test.sh    (tests du lanceur et de la suite complète, fichiers jetables : bash tests/test-runner.test.sh)
 │   ├── engrave.test.sh        (tests du script de livraison, dépôts jetables : bash tests/engrave.test.sh)
 │   ├── forge-precompact.test.sh (tests du hook d'état, dépôts jetables : bash tests/forge-precompact.test.sh)
 │   ├── install.test.sh        (tests des deux installeurs, HOME jetable : bash tests/install.test.sh)
@@ -136,5 +139,5 @@ Fichiers générés dans **chaque projet cible** par le skill (pas dans ce dép�
 ## Tools & access
 - MCPs disponibles : claude-in-chrome, datagrip, phpstorm, webstorm (non utilisés par ce dépôt en l'état)
 - Documentation externe : aucune référence externe identifiée dans le dépôt
-**Check pattern:** `bash tests/|tests/\*\.test\.sh`
-- Suite complète des tests (à la demande) : `failed=0; for t in tests/*.test.sh; do bash "$t" || failed=1; done; [ $failed -eq 0 ]`
+**Check pattern:** `bash "?[^";|&]*tests/|tests/\*\.test\.sh`
+- Suite complète des tests (à chaque `grave`, ou à la demande) : `bash tests/run-all.sh`

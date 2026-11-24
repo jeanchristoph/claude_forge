@@ -4,8 +4,7 @@
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 METRICS_SCRIPT="$REPO_ROOT/skills/forge/scripts/metrics.sh"
-PASSED=0
-FAILED=0
+. "$REPO_ROOT/tests/test-runner.sh"
 
 readonly FIELD_ORDER="event,date,branch,mode,model,planned_files,actual_files,branch_files,lines_added,lines_deleted,agent_minutes,human_minutes,questions,check_minutes,tokens,partial"
 
@@ -283,16 +282,6 @@ test_linked_branch_task_without_note_is_not_an_unmeasured_task() {
   case $(grep '^\*\*Actual:\*\*' "$BRANCH_DIR/plan.md") in *"unmeasured tasks"*) echo "    linked task counted"; exit 1 ;; esac
 }
 
-run_test() {
-  setup_sandbox
-  if ( "$1" ); then
-    PASSED=$((PASSED + 1)); echo "  ok   $2"
-  else
-    FAILED=$((FAILED + 1)); echo "  FAIL $2"
-  fi
-  teardown_sandbox
-}
-
 run_test test_unplanned_row_holds_agent_time_outside_measured_tasks "ligne Unplanned : temps d'agent hors tâches mesurées, une seule ligne sous Total"
 run_test test_unplanned_row_is_never_negative "ligne Unplanned jamais négative"
 run_test test_unplanned_row_ignores_time_of_linked_tasks "ligne Unplanned : réel d'une tâche liée jamais retiré de la session"
@@ -319,6 +308,4 @@ run_test test_actual_line_goes_under_date_without_estimate "sans en-tête Estima
 run_test test_closure_writes_actual_line "la clôture écrit aussi la ligne Actual"
 run_test test_actual_line_keeps_crlf_line_endings "garde les fins de ligne CRLF du plan"
 
-echo ""
-echo "$PASSED passed, $FAILED failed"
-[ "$FAILED" -eq 0 ]
+report_results

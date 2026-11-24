@@ -4,8 +4,7 @@
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 MARK_SCRIPT="$REPO_ROOT/skills/forge/scripts/time-mark.sh"
-PASSED=0
-FAILED=0
+. "$REPO_ROOT/tests/test-runner.sh"
 
 # ── Bac à sable ───────────────────────────────────────────────────────────────
 
@@ -147,21 +146,6 @@ test_writes_nothing_on_stdout() {
 
 # ── Exécution ─────────────────────────────────────────────────────────────────
 
-run_test() {
-  local result
-  setup_sandbox
-  ( "$1" )
-  result=$?
-  teardown_sandbox
-  if [ $result -eq 0 ]; then
-    PASSED=$((PASSED + 1))
-    echo "  ok   $2"
-  else
-    FAILED=$((FAILED + 1))
-    echo "  FAIL $2"
-  fi
-}
-
 echo "time-mark.sh"
 run_test test_appends_start_then_done_to_branch_log "ajoute la marque de début puis de fin au journal de la branche"
 run_test test_keeps_existing_lines "garde les lignes déjà présentes du journal"
@@ -178,5 +162,4 @@ run_test test_exits_zero_and_writes_nothing_on_invalid_arguments "sort en 0 sans
 run_test test_exits_zero_and_writes_nothing_without_clock "sort en 0 sans rien écrire sans horloge EPOCHREALTIME (bash < 5)"
 run_test test_writes_nothing_on_stdout "n'écrit rien sur la sortie standard"
 
-echo "$PASSED passed, $FAILED failed"
-[ $FAILED -eq 0 ]
+report_results

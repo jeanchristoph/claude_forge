@@ -5,8 +5,7 @@
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ENGRAVE_SCRIPT="$REPO_ROOT/skills/forge/scripts/engrave.sh"
-PASSED=0
-FAILED=0
+. "$REPO_ROOT/tests/test-runner.sh"
 
 # ── Bac à sable ───────────────────────────────────────────────────────────────
 
@@ -585,19 +584,6 @@ test_failed_run_and_preview_leave_checkpoint_untouched() {
   assert_equals 1 "$(grep -c plan_checkpoint "$(ship_log)")"
 }
 
-run_test() {
-  local name=$1 label=$2
-  setup_sandbox
-  ( "$name" )
-  local status=$?
-  teardown_sandbox
-  if [ $status -eq 0 ]; then
-    PASSED=$((PASSED + 1)); echo "ok   $label"
-  else
-    FAILED=$((FAILED + 1)); echo "FAIL $label"
-  fi
-}
-
 run_test test_preview_without_target "aperçu sans branche citée : add, commit, push, sans retour final"
 run_test test_preview_with_one_target "aperçu avec une branche : checkout, merge et push de la cible, puis retour sur la branche de départ"
 run_test test_preview_with_three_targets "aperçu avec trois branches : un trio checkout, merge, push par branche, dans l'ordre cité"
@@ -650,5 +636,4 @@ run_test test_healthy_forge_branch_keeps_its_sequence "branche forge saine : sé
 run_test test_preview_lists_local_file_fixes_without_writing "aperçu : ignore et untrack prévus, rien écrit"
 run_test test_run_with_metrics_still_commits_metrics_file_after_local_file_fixes "metrics.json toujours commité après le retrait des fichiers locaux"
 
-echo "$PASSED passed, $FAILED failed"
-[ $FAILED -eq 0 ]
+report_results

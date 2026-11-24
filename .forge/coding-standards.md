@@ -46,4 +46,5 @@ Conventions de formulation pour les fichiers d'instructions du skill (`skill/SKI
 
 - Pendant une tâche → seuls les tests qui couvrent les fichiers modifiés : test du même nom, puis tests des fichiers qui les appellent. Test rouge → corriger avant de cocher la tâche.
 - Fichier modifié sans test qui le couvre → le signaler dans la note de la tâche.
-- Suite complète → à la demande seulement, jamais à la livraison ni à la fin d'un délégué. Commande dans `## Tools & access` de `.forge/project.md`.
+- Suite complète → une fois à chaque `grave`, avant la livraison, ou à la demande ; jamais pendant une tâche. Test rouge → livraison arrêtée, à corriger d'abord. Dispense : seulement si l'utilisateur la demande, pour ce `grave` seul. Commande dans `## Tools & access` de `.forge/project.md`.
+- Fichier de test → source `tests/test-runner.sh`, un `run_test` par cas, `report_results` en dernière ligne. Les cas tournent en parallèle : chacun n'écrit que dans son bac à sable.

@@ -4,8 +4,7 @@
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 HOOK_SCRIPT="$REPO_ROOT/skills/forge/hooks/plan-hook.sh"
-PASSED=0
-FAILED=0
+. "$REPO_ROOT/tests/test-runner.sh"
 
 # ── Bac à sable ───────────────────────────────────────────────────────────────
 
@@ -887,16 +886,6 @@ test_incomplete_deployment_script_names_only_unreferenced_file() {
 
 # ── Exécution ─────────────────────────────────────────────────────────────────
 
-run_test() {
-  setup_sandbox
-  if ( "$1" ); then
-    PASSED=$((PASSED + 1)); echo "  ok   $2"
-  else
-    FAILED=$((FAILED + 1)); echo "  FAIL $2"
-  fi
-  teardown_sandbox
-}
-
 run_test test_ignores_file_outside_plan "ignore tout fichier autre que .forge/branch/<branche>/plan.md"
 run_test test_first_pass_writes_checkpoint_without_marks "premier passage : point d'étape seul, aucune marque ni réel"
 run_test test_added_task_moves_checkpoint_when_no_code_is_in_progress "tâche ajoutée sans code modifié : le compteur repart, une seule fois"
@@ -961,6 +950,4 @@ run_test test_complete_deployment_script_reports_nothing "script de déploiement
 run_test test_unwritten_step_file_reports_nothing "fichier d'étape pas encore écrit : rien signalé"
 run_test test_incomplete_deployment_script_names_only_unreferenced_file "« incomplete » avec le seul fichier d'étape non cité"
 
-echo ""
-echo "$PASSED passed, $FAILED failed"
-[ "$FAILED" -eq 0 ]
+report_results

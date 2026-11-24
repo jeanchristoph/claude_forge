@@ -4,8 +4,7 @@
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ENTRY_SCRIPT="$REPO_ROOT/skills/forge/scripts/log-entry.sh"
-PASSED=0
-FAILED=0
+. "$REPO_ROOT/tests/test-runner.sh"
 
 # ── Bac à sable ───────────────────────────────────────────────────────────────
 
@@ -149,21 +148,6 @@ test_reports_error_on_stderr() {
 
 # ── Exécution ─────────────────────────────────────────────────────────────────
 
-run_test() {
-  local result
-  setup_sandbox
-  ( "$1" )
-  result=$?
-  teardown_sandbox
-  if [ $result -eq 0 ]; then
-    PASSED=$((PASSED + 1))
-    echo "  ok   $2"
-  else
-    FAILED=$((FAILED + 1))
-    echo "  FAIL $2"
-  fi
-}
-
 echo "log-entry.sh"
 run_test test_inserts_entry_above_existing_entries "insère l'entrée au-dessus des entrées existantes"
 run_test test_creates_missing_log_and_branch_folder "crée log.md et le dossier de branche absents"
@@ -181,5 +165,4 @@ run_test test_rejects_value_less_argument "refuse un argument sans valeur"
 run_test test_rejects_multiline_text "refuse un texte sur plusieurs lignes"
 run_test test_reports_error_on_stderr "signale l'erreur sur la sortie d'erreur"
 
-echo "$PASSED passed, $FAILED failed"
-[ $FAILED -eq 0 ]
+report_results

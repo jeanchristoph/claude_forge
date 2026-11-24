@@ -149,6 +149,9 @@ forge/
 │   ├── demo.tape
 │   └── README.md             (how to regenerate)
 ├── tests/
+│   ├── run-all.sh            → bash tests/run-all.sh, suite complète
+│   ├── test-runner.sh        → lanceur commun, 12 cas à la fois (TEST_JOBS)
+│   ├── test-runner.test.sh   → bash tests/test-runner.test.sh, fichiers de test jetables uniquement
 │   ├── engrave.test.sh       → bash tests/engrave.test.sh, dépôts jetables uniquement
 │   ├── forge-precompact.test.sh → bash tests/forge-precompact.test.sh, dépôts jetables uniquement
 │   ├── install.test.sh       → bash tests/install.test.sh, HOME jetable uniquement

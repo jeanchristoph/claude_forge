@@ -6,8 +6,7 @@
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 AGGREGATE_SCRIPT="$REPO_ROOT/skills/forge/scripts/time-aggregate.sh"
 MARK_SCRIPT="$REPO_ROOT/skills/forge/scripts/time-mark.sh"
-PASSED=0
-FAILED=0
+. "$REPO_ROOT/tests/test-runner.sh"
 
 # ── Bac à sable ───────────────────────────────────────────────────────────────
 
@@ -1005,21 +1004,6 @@ test_task_rejects_malformed_task_list() {
   assert_equals "1" "$?"
 }
 
-run_test() {
-  local result
-  setup_sandbox
-  ( "$1" )
-  result=$?
-  teardown_sandbox
-  if [ $result -eq 0 ]; then
-    PASSED=$((PASSED + 1))
-    echo "  ok   $2"
-  else
-    FAILED=$((FAILED + 1))
-    echo "  FAIL $2"
-  fi
-}
-
 echo "time-aggregate.sh"
 run_test test_measures_one_turn_of_main_session "mesure un tour de la session principale"
 run_test test_removes_question_wait_from_turn_and_counts_it_as_human "retire l'attente d'une question du tour et la compte en temps humain"
@@ -1122,5 +1106,4 @@ run_test test_task_sums_child_tasks_of_a_parent_task "tâche : additionne les t�
 run_test test_task_sum_unmeasured_when_one_child_is_unmeasured "tâche : somme non mesurée dès qu'une tâche enfant ne l'est pas"
 run_test test_task_rejects_malformed_task_list "tâche : refuse une liste de tâches mal formée"
 
-echo "$PASSED passed, $FAILED failed"
-[ $FAILED -eq 0 ]
+report_results

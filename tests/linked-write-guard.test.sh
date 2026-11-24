@@ -4,8 +4,7 @@
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 HOOK_SCRIPT="$REPO_ROOT/skills/forge/hooks/linked-write-guard.sh"
-PASSED=0
-FAILED=0
+. "$REPO_ROOT/tests/test-runner.sh"
 
 # ── Bac à sable ───────────────────────────────────────────────────────────────
 
@@ -83,16 +82,6 @@ test_allows_everything_when_session_is_not_forged() {
 
 # ── Exécution ─────────────────────────────────────────────────────────────────
 
-run_test() {
-  setup_sandbox
-  if ( "$1" ); then
-    PASSED=$((PASSED + 1)); echo "  ok   $2"
-  else
-    FAILED=$((FAILED + 1)); echo "  FAIL $2"
-  fi
-  teardown_sandbox
-}
-
 run_test test_denies_write_into_other_forged_project "refuse l'écriture dans un autre projet forgé, raison et marche à suivre données"
 run_test test_allows_brief_and_log_of_linked_project "autorise le brief et le log du projet lié, écrits par la délégation"
 run_test test_denies_plan_of_linked_project "refuse le plan du projet lié : seuls brief et log sont permis"
@@ -101,6 +90,4 @@ run_test test_allows_file_under_root "autorise un fichier sous ROOT"
 run_test test_allows_unforged_folder_outside_root "autorise un dossier hors ROOT non forgé"
 run_test test_allows_everything_when_session_is_not_forged "autorise tout quand la session n'est pas dans un projet forgé"
 
-echo ""
-echo "$PASSED passed, $FAILED failed"
-[ "$FAILED" -eq 0 ]
+report_results

@@ -1,3 +1,5 @@
+- [2026-11-24 16:31] T26 done — tests en parallèle, 12 cas à la fois (tests/test-runner.sh, tests/run-all.sh) ; 530 verts, trois passages complets sans échec
+- [2026-11-24 15:47] T26 ajoutée, enchaînée — tests en parallèle, 12 cas à la fois (choix de l'utilisateur : sans dépôt modèle) ; suite complète rétablie à chaque grave dans coding-standards.md et project.md
 - [2026-11-24 13:20] T25 done — vérifications estimées à partir de 0, médiane des mesures dès 20 tâches
 - [2026-11-24 13:17] T24 done — coûts fixes de branche retirés partout, mesure de lancement et de fusion arrêtée ; seuil de branche gardé à 15 min de travail d'agent
 - [2026-11-24 13:09] T23 done — l'entrée d'une tâche au plan et la livraison sans code non commité avancent le point d'étape (is_code_untouched, task-marks.sh)

@@ -151,6 +151,9 @@ forge/
 │   ├── demo.tape
 │   └── README.md             (how to regenerate)
 ├── tests/
+│   ├── run-all.sh            → bash tests/run-all.sh, full suite
+│   ├── test-runner.sh        → shared runner, 12 cases at once (TEST_JOBS)
+│   ├── test-runner.test.sh   → bash tests/test-runner.test.sh, throwaway test files only
 │   ├── engrave.test.sh       → bash tests/engrave.test.sh, throwaway repositories only
 │   ├── forge-precompact.test.sh → bash tests/forge-precompact.test.sh, throwaway repositories only
 │   ├── install.test.sh       → bash tests/install.test.sh, throwaway home only

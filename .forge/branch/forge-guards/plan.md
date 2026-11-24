@@ -1,8 +1,8 @@
 # Plan — forge-guards
 **Objective:** Ajouter au skill forge deux garde-fous (script de déploiement SQL toujours écrit et complet ; session parente qui n'écrit jamais dans un projet lié), nommer la branche liée d'après la tâche déléguée sans jamais nommer le parent, et documenter le hook `linked-write-guard.sh`.
 **Date:** 2026-11-23
-**Estimate:** ≈ 191 files · ≈ 137 min (35-250) · indicative
-**Actual:** ≈ 153.2 min agent (incl. 81.8 min checks) · human 316.0 min (26 questions, 176.4 min) · fixed — (delegate setup, merge) · delegates 0.0 min in parallel · total ≈ 469.2 min · partial (log started after the branch, 13 unmeasured tasks)
+**Estimate:** ≈ 215 files · ≈ 148 min (39-273) · indicative
+**Actual:** ≈ 204.5 min agent (incl. 127.7 min checks) · human 350.1 min (35 questions, 201.1 min) · fixed — (delegate setup, merge) · delegates 0.0 min in parallel · total ≈ 554.6 min · partial (log started after the branch, 13 unmeasured tasks)
 **Origin:** T7, T8, T9, T10
 
 ## Tasks
@@ -212,6 +212,14 @@
 **Description:** `check_minutes` de référence : 2 → 0 ; dès 20 tâches mesurées, la médiane des vérifications s'ajoute et suit les mesures. Estimations déjà figées inchangées.
 [x] `check_minutes` de référence à 0, médiane ajoutée dès 20 tâches mesurées ; tests time-calibrate 34, plan-hook 63
 
+### T26 — Tests en parallèle
+**Effort:** M
+**Estimated time:** ≈ 11 min (4-23)
+**Actual time:** ≈ 50.9 min agent (incl. 43.9 min checks) · human 32.0 min (9 questions) · 22 files · total ≈ 82.9 min
+**Files:** `tests/test-runner.sh`, `tests/run-all.sh`, `tests/test-runner.test.sh`, `tests/checks.test.sh`, `tests/engrave.test.sh`, `tests/forge-precompact.test.sh`, `tests/install.test.sh`, `tests/linked-worktree-cleanup.test.sh`, `tests/linked-write-guard.test.sh`, `tests/log-entry.test.sh`, `tests/metrics.test.sh`, `tests/plan-hook.test.sh`, `tests/status.test.sh`, `tests/swarm-status.test.sh`, `tests/time-aggregate.test.sh`, `tests/time-calibrate.test.sh`, `tests/time-hook.test.sh`, `tests/time-mark.test.sh`, `tests/update.test.sh`, `.forge/project.md`, `.forge/coding-standards.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Multiprocessus : les cas d'un même fichier tournent 12 à la fois, chacun dans son processus et son dossier jetable (`TEST_JOBS` pour régler le nombre). `tests/test-runner.sh` : un seul lanceur partagé remplace le `run_test` recopié dans chaque fichier, résultats affichés dans l'ordre, échec si le résultat d'un cas manque. Préparation des dépôts d'essai inchangée, aucun dépôt modèle. `tests/run-all.sh` : lance tous les fichiers l'un après l'autre, sort en échec si l'un est rouge ; devient la commande « Suite complète » de `project.md`. `Check pattern` élargi pour reconnaître `bash "tests/…"`. Contrôle : mêmes 519 tests, trois passages complets sans échec aléatoire, durée avant/après relevée.
+[x] Cas lancés 12 à la fois par `tests/test-runner.sh`, suite par `tests/run-all.sh` ; 530 tests verts (les 519 d'avant, tous retrouvés, et 11 du lanceur), trois passages complets sans échec ; 522 s → 110, 151 et 239 s, l'écart venant de la machine (36 à 99 ms par commande git selon le moment, cause non trouvée) ; `engrave` mesuré au même moment : 160 s en série, 34-37 s en parallèle
+
 ## Risks
 - `p5-resume.md` et `CHANGELOG.md` sont touchés par T1 et T2 : ils sont édités l'un après l'autre, dans le même plan, sans conflit.
 - Les noms de fichiers des installeurs diffèrent du mandat (`install/install.sh`, `install/install.ps1` au lieu des lanceurs racine) : même intention, fichiers où vit la fusion de `settings.json`.
@@ -250,5 +258,6 @@ None
 | T23 — Départ d'une tâche : plan et livraison n'y entrent plus | S | 7 | ≈ 5 min | ≈ 17.8 min agent (incl. 16.2 min checks) · human 0.0 min (0 questions) · 8 files · total ≈ 17.8 min | [x] |
 | T24 — Coûts fixes retirés partout, mesure de lancement et de fusion arrêtée | M | 15 | ≈ 7 min | ≈ 7.4 min agent (incl. 0.0 min checks) · human 0.0 min (0 questions) · 15 files · total ≈ 7.4 min | [x] |
 | T25 — Vérifications : départ à 0 | S | 6 | ≈ 4 min | ≈ 3.4 min agent (incl. 2.7 min checks) · human 0.0 min (0 questions) · 7 files · total ≈ 3.4 min | [x] |
-| **Total** (12/25 measured) | **7S, 4M, 1L** | **101** | **≈ 64 min** | **≈ 102.6 min** | |
-| **Unplanned** | | | | **≈ 50.6 min** | |
+| T26 — Tests en parallèle | M | 24 | ≈ 11 min | ≈ 50.9 min agent (incl. 43.9 min checks) · human 32.0 min (9 questions) · 22 files · total ≈ 82.9 min | [x] |
+| **Total** (13/26 measured) | **7S, 5M, 1L** | **125** | **≈ 75 min** | **≈ 153.5 min** | |
+| **Unplanned** | | | | **≈ 51.0 min** | |

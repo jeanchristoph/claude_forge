@@ -15,6 +15,7 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 - One time rule for every task: a branch task and a linked task are the sum of their plan's tasks — estimate (marked `· indicative` until that plan is written, then taken once) and actual time, checks included, in the same shape as any task. The delegate's whole time, plan writing and launch included, no longer enters their actual time.
 - A task's clock starts when it enters the plan (writing the task goes to `**Unplanned**`), unless uncommitted code is in progress.
 - Check time per task starts at 0 instead of 2 min: the median of the measured checks is added once twenty tasks carry it.
+- Repository tests: the cases of a test file run 12 at once (`TEST_JOBS`) through one shared runner, `tests/test-runner.sh`; `tests/run-all.sh` runs the full suite.
 
 ### Fixed
 

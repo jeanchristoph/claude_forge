@@ -5,8 +5,7 @@
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 HOOK_SCRIPT="$REPO_ROOT/skills/forge/hooks/time-hook.sh"
-PASSED=0
-FAILED=0
+. "$REPO_ROOT/tests/test-runner.sh"
 
 # ── Bac à sable ───────────────────────────────────────────────────────────────
 
@@ -286,21 +285,6 @@ test_logs_from_subfolder_of_forge_project() {
   [ -e "$SANDBOX/git-calls" ] || { echo "    spy never called"; exit 1; }
 }
 
-run_test() {
-  local result
-  setup_sandbox
-  ( "$1" )
-  result=$?
-  teardown_sandbox
-  if [ $result -eq 0 ]; then
-    PASSED=$((PASSED + 1))
-    echo "  ok   $2"
-  else
-    FAILED=$((FAILED + 1))
-    echo "  FAIL $2"
-  fi
-}
-
 echo "time-hook.sh"
 run_test test_logs_stop_with_timestamp_and_session "journalise Stop avec horodatage en millisecondes et session"
 run_test test_marks_human_prompt "marque human un prompt saisi par l'utilisateur"
@@ -333,5 +317,4 @@ run_test test_resolves_branch_containing_a_slash "résout une branche contenant 
 run_test test_exits_without_git_outside_forge_project "hors projet forgé : sort sans lancer git, rien écrit"
 run_test test_logs_from_subfolder_of_forge_project "journalise depuis un sous-dossier d'un projet forgé"
 
-echo "$PASSED passed, $FAILED failed"
-[ $FAILED -eq 0 ]
+report_results

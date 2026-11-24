@@ -5,8 +5,7 @@
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CALIBRATE_SCRIPT="$REPO_ROOT/skills/forge/scripts/time-calibrate.sh"
-PASSED=0
-FAILED=0
+. "$REPO_ROOT/tests/test-runner.sh"
 
 # ── Bac à sable ───────────────────────────────────────────────────────────────
 
@@ -357,21 +356,6 @@ test_list_estimate_counts_check_cost_once_per_task() {
   assert_contains '"estimates":[{"files":2,"minutes":11,' "$output"
 }
 
-run_test() {
-  local result
-  setup_sandbox
-  ( "$1" )
-  result=$?
-  teardown_sandbox
-  if [ $result -eq 0 ]; then
-    PASSED=$((PASSED + 1))
-    echo "  ok   $2"
-  else
-    FAILED=$((FAILED + 1))
-    echo "  FAIL $2"
-  fi
-}
-
 echo "time-calibrate.sh"
 run_test test_uses_reference_values_without_measure "prend les valeurs de référence sans mesure du projet"
 run_test test_returns_check_cost_and_branch_threshold "rend le coût de vérification et le seuil de branche, aucun coût fixe de branche"
@@ -408,5 +392,4 @@ run_test test_takes_check_cost_from_tasks_and_rate_without_checks "coût fixe ti
 run_test test_keeps_reference_check_cost_below_twenty_tasks "aucune vérification estimée sous vingt tâches qui portent leurs vérifications"
 run_test test_list_estimate_counts_check_cost_once_per_task "estimation d'une liste : un coût fixe par tâche"
 
-echo "$PASSED passed, $FAILED failed"
-[ $FAILED -eq 0 ]
+report_results

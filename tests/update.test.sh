@@ -8,8 +8,8 @@ UPDATE_SCRIPT="$REPO_ROOT/skills/forge/scripts/update.sh"
 MORE_THAN_ONE_DAY=$((25 * 3600))
 LESS_THAN_ONE_DAY=$((23 * 3600))
 SYSTEM_TMPDIR=${TMPDIR:-/tmp}
-PASSED=0
-FAILED=0
+. "$REPO_ROOT/tests/test-runner.sh"
+set -u
 
 # ── Bac à sable ───────────────────────────────────────────────────────────────
 
@@ -289,18 +289,6 @@ test_writes_nothing_on_stdout_for_usage_error() {
 
 # ── Exécution ─────────────────────────────────────────────────────────────────
 
-run_test() {
-  setup_sandbox
-  if ( set -u; $1 ); then
-    PASSED=$((PASSED + 1))
-    echo "  ok   $2"
-  else
-    FAILED=$((FAILED + 1))
-    echo "  FAIL $2"
-  fi
-  teardown_sandbox
-}
-
 run_test test_skips_remote_query_and_writes_nothing_when_check_is_recent "n'interroge pas le dépôt et n'écrit rien quand le contrôle date de moins de 24 heures"
 run_test test_reports_known_newer_version_without_querying "signale une version plus récente déjà connue sans interroger le dépôt"
 run_test test_skips_remote_query_when_check_is_less_than_one_day_old "n'interroge pas le dépôt quand le contrôle date de 23 heures"
@@ -331,5 +319,4 @@ run_test test_rejects_unknown_mode "refuse un mode inconnu"
 run_test test_rejects_force_outside_check "refuse --force hors du mode check"
 run_test test_writes_nothing_on_stdout_for_usage_error "n'écrit rien sur la sortie standard en erreur d'usage"
 
-echo "$PASSED passed, $FAILED failed"
-[ $FAILED -eq 0 ]
+report_results

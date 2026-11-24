@@ -7,9 +7,8 @@
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 UPDATE_SCRIPT="$REPO_ROOT/skills/forge/scripts/update.sh"
 SYSTEM_TMPDIR=${TMPDIR:-/tmp}
-PASSED=0
-FAILED=0
-SKIPPED=0
+. "$REPO_ROOT/tests/test-runner.sh"
+set -u
 
 # ── Bac à sable ───────────────────────────────────────────────────────────────
 
@@ -337,48 +336,38 @@ required_tool() {
   esac
 }
 
-run_test() {
-  local label="install.$INSTALLER — $2"
-  if ! command -v "$(required_tool)" > /dev/null 2>&1; then
-    SKIPPED=$((SKIPPED + 1))
-    echo "  skip $label ($(required_tool) absent)"
-    return
-  fi
-  setup_sandbox
-  if ( set -u; $1 ); then
-    PASSED=$((PASSED + 1))
-    echo "  ok   $label"
-  else
-    FAILED=$((FAILED + 1))
-    echo "  FAIL $label"
-  fi
-  teardown_sandbox
+skip_reason() {
+  command -v "$(required_tool)" > /dev/null 2>&1 || echo "$(required_tool) absent"
+}
+
+run_installer_test() {
+  run_test "$1" "install.$INSTALLER — $2"
 }
 
 run_common_tests() {
-  run_test test_copies_skills_and_hook_into_home "copie les skills et le hook dans le HOME jetable"
-  run_test test_adds_forge_rule_and_precompact_hook "ajoute la règle .forge et le hook PreCompact à settings.json"
-  run_test test_adds_state_hook_on_session_start_after_compact_or_resume "ajoute le hook d'état sur SessionStart, après compaction ou reprise"
-  run_test test_replaces_legacy_powershell_state_hook "remplace l'ancien hook d'état PowerShell par le hook bash"
-  run_test test_keeps_unrelated_settings "garde les réglages et règles étrangers à forge"
-  run_test test_allows_skill_scripts_quoted_and_unquoted "autorise les scripts du skill, chemin cité ou non"
-  run_test test_purges_dead_git_branch_rule "purge la règle morte git branch --show-current"
-  run_test test_second_install_adds_script_rules_once "une seconde installation n'ajoute pas les règles des scripts en double"
-  run_test test_second_install_adds_nothing_twice "une seconde installation n'ajoute ni règle ni hook en double"
-  run_test test_adds_time_hook_to_every_measured_event "ajoute le hook de mesure, asynchrone, à chaque événement écouté, avec ses filtres"
-  run_test test_second_install_adds_time_hook_once "une seconde installation n'ajoute pas le hook de mesure en double"
-  run_test test_keeps_foreign_hook_of_measured_event "garde un hook étranger d'un événement écouté"
-  run_test test_adds_synchronous_plan_hook_after_file_writes "ajoute le hook de coche du plan, synchrone, après chaque écriture de fichier"
-  run_test test_reinstall_over_0_13_1_moves_every_hook "réinstallation sur une 0.13.1 : hooks déplacés, anciennes entrées et ancien dossier retirés, sans doublon"
-  run_test test_keeps_legacy_hook_folder_holding_foreign_file "garde l'ancien dossier de hooks qui contient un fichier étranger à forge"
-  run_test test_second_install_adds_plan_hook_once "une seconde installation n'ajoute pas le hook de coche en double"
-  run_test test_adds_synchronous_linked_write_guard_before_file_writes "ajoute la garde d'écriture dans un projet lié, synchrone, avant chaque écriture de fichier"
-  run_test test_second_install_adds_linked_write_guard_once "une seconde installation n'ajoute pas la garde d'écriture en double"
-  run_test test_records_tag_and_origin_from_git_copy "enregistre le tag et le dépôt d'origine d'une copie git"
-  run_test test_records_null_version_outside_git "enregistre une version et un dépôt nuls hors dépôt git"
-  run_test test_install_record_is_read_by_update_check "update.sh check lit l'install.json produit"
-  run_test test_writes_settings_without_bom "écrit settings.json sans BOM UTF-8"
-  run_test test_keeps_unrelated_settings_from_file_with_bom "garde les réglages étrangers d'un settings.json écrit avec BOM"
+  run_installer_test test_copies_skills_and_hook_into_home "copie les skills et le hook dans le HOME jetable"
+  run_installer_test test_adds_forge_rule_and_precompact_hook "ajoute la règle .forge et le hook PreCompact à settings.json"
+  run_installer_test test_adds_state_hook_on_session_start_after_compact_or_resume "ajoute le hook d'état sur SessionStart, après compaction ou reprise"
+  run_installer_test test_replaces_legacy_powershell_state_hook "remplace l'ancien hook d'état PowerShell par le hook bash"
+  run_installer_test test_keeps_unrelated_settings "garde les réglages et règles étrangers à forge"
+  run_installer_test test_allows_skill_scripts_quoted_and_unquoted "autorise les scripts du skill, chemin cité ou non"
+  run_installer_test test_purges_dead_git_branch_rule "purge la règle morte git branch --show-current"
+  run_installer_test test_second_install_adds_script_rules_once "une seconde installation n'ajoute pas les règles des scripts en double"
+  run_installer_test test_second_install_adds_nothing_twice "une seconde installation n'ajoute ni règle ni hook en double"
+  run_installer_test test_adds_time_hook_to_every_measured_event "ajoute le hook de mesure, asynchrone, à chaque événement écouté, avec ses filtres"
+  run_installer_test test_second_install_adds_time_hook_once "une seconde installation n'ajoute pas le hook de mesure en double"
+  run_installer_test test_keeps_foreign_hook_of_measured_event "garde un hook étranger d'un événement écouté"
+  run_installer_test test_adds_synchronous_plan_hook_after_file_writes "ajoute le hook de coche du plan, synchrone, après chaque écriture de fichier"
+  run_installer_test test_reinstall_over_0_13_1_moves_every_hook "réinstallation sur une 0.13.1 : hooks déplacés, anciennes entrées et ancien dossier retirés, sans doublon"
+  run_installer_test test_keeps_legacy_hook_folder_holding_foreign_file "garde l'ancien dossier de hooks qui contient un fichier étranger à forge"
+  run_installer_test test_second_install_adds_plan_hook_once "une seconde installation n'ajoute pas le hook de coche en double"
+  run_installer_test test_adds_synchronous_linked_write_guard_before_file_writes "ajoute la garde d'écriture dans un projet lié, synchrone, avant chaque écriture de fichier"
+  run_installer_test test_second_install_adds_linked_write_guard_once "une seconde installation n'ajoute pas la garde d'écriture en double"
+  run_installer_test test_records_tag_and_origin_from_git_copy "enregistre le tag et le dépôt d'origine d'une copie git"
+  run_installer_test test_records_null_version_outside_git "enregistre une version et un dépôt nuls hors dépôt git"
+  run_installer_test test_install_record_is_read_by_update_check "update.sh check lit l'install.json produit"
+  run_installer_test test_writes_settings_without_bom "écrit settings.json sans BOM UTF-8"
+  run_installer_test test_keeps_unrelated_settings_from_file_with_bom "garde les réglages étrangers d'un settings.json écrit avec BOM"
 }
 
 INSTALLER=sh
@@ -386,7 +375,6 @@ run_common_tests
 
 INSTALLER=ps1
 run_common_tests
-run_test test_writes_install_record_without_bom "écrit install.json sans BOM UTF-8"
+run_installer_test test_writes_install_record_without_bom "écrit install.json sans BOM UTF-8"
 
-echo "$PASSED passed, $FAILED failed, $SKIPPED skipped"
-[ $FAILED -eq 0 ]
+report_results

@@ -7,8 +7,7 @@ CHECKS_SCRIPT="$REPO_ROOT/skills/forge/scripts/checks.sh"
 INPUT_RULE="/.forge/branch/*/input/"
 TIME_LOG_RULE="/.forge/branch/**/time-log.jsonl"
 RULES="$INPUT_RULE"$'\n'"$TIME_LOG_RULE"
-PASSED=0
-FAILED=0
+. "$REPO_ROOT/tests/test-runner.sh"
 
 # ── Bac à sable ───────────────────────────────────────────────────────────────
 
@@ -144,14 +143,6 @@ test_rejects_unknown_argument() {
 
 # ── Exécution ─────────────────────────────────────────────────────────────────
 
-run_test() {
-  setup_sandbox
-  if ( "$1" ); then PASSED=$((PASSED + 1)); echo "  ok   $2"
-  else FAILED=$((FAILED + 1)); echo "  FAIL $2"
-  fi
-  teardown_sandbox
-}
-
 run_test test_creates_gitignore_with_forge_block "crée le .gitignore avec le bloc forge"
 run_test test_inserts_rule_before_end_of_existing_block "insère la règle avant la fin du bloc existant"
 run_test test_appends_block_after_content_without_final_newline "ajoute le bloc après un contenu sans saut de ligne final"
@@ -169,5 +160,4 @@ run_test test_dry_run_reports_missing_rules_without_writing "--dry-run signale l
 run_test test_dry_run_reports_unchanged_when_rules_exist "--dry-run rend unchanged quand les règles sont là"
 run_test test_rejects_unknown_argument "refuse un argument inconnu"
 
-echo "$PASSED passed, $FAILED failed"
-[ $FAILED -eq 0 ]
+report_results

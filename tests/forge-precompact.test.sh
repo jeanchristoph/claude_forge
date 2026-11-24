@@ -5,9 +5,8 @@
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 HOOK_SCRIPT="$REPO_ROOT/skills/forge/hooks/forge-precompact.sh"
-PASSED=0
-FAILED=0
-SKIPPED=0
+. "$REPO_ROOT/tests/test-runner.sh"
+set -u
 
 # ── Bac à sable ───────────────────────────────────────────────────────────────
 
@@ -122,21 +121,9 @@ test_exits_zero_without_plan() {
 
 # ── Exécution ─────────────────────────────────────────────────────────────────
 
-run_test() {
-  if ! command -v node > /dev/null 2>&1; then
-    SKIPPED=$((SKIPPED + 1))
-    echo "  skip $2 (node absent)"
-    return
-  fi
-  setup_sandbox
-  if ( set -u; $1 ); then
-    PASSED=$((PASSED + 1))
-    echo "  ok   $2"
-  else
-    FAILED=$((FAILED + 1))
-    echo "  FAIL $2"
-  fi
-  teardown_sandbox
+# Les tests exigent node.
+skip_reason() {
+  command -v node > /dev/null 2>&1 || echo "node absent"
 }
 
 run_test test_injects_objective_plan_and_last_three_log_entries "injecte l'objectif, le plan et les trois dernières entrées LOG"
@@ -149,5 +136,4 @@ run_test test_writes_nothing_without_plan "n'écrit rien sans plan"
 run_test test_writes_nothing_outside_git "n'écrit rien hors dépôt git"
 run_test test_exits_zero_without_plan "sort en succès sans plan"
 
-echo "$PASSED passed, $FAILED failed, $SKIPPED skipped"
-[ $FAILED -eq 0 ]
+report_results

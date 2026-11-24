@@ -5,8 +5,7 @@
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CLEANUP_SCRIPT="$REPO_ROOT/skills/forge/scripts/linked-worktree-cleanup.sh"
 LINKED_BRANCH="export-csv"
-PASSED=0
-FAILED=0
+. "$REPO_ROOT/tests/test-runner.sh"
 
 # ── Bac à sable ───────────────────────────────────────────────────────────────
 
@@ -185,14 +184,6 @@ test_rejects_missing_branch() {
 
 # ── Exécution ─────────────────────────────────────────────────────────────────
 
-run_test() {
-  setup_sandbox
-  if ( "$1" ); then PASSED=$((PASSED + 1)); echo "  ok   $2"
-  else FAILED=$((FAILED + 1)); echo "  FAIL $2"
-  fi
-  teardown_sandbox
-}
-
 run_test test_removes_merged_and_clean_worktree "retire le worktree d'une branche fusionnée au working tree propre, branche gardée"
 run_test test_removes_worktree_merged_only_on_remote "retire le worktree d'une branche fusionnée seulement sur la branche distante"
 run_test test_keeps_unmerged_worktree "garde le worktree d'une branche non fusionnée"
@@ -205,5 +196,4 @@ run_test test_removes_worktree_merged_into_target_only_on_remote "retire le work
 run_test test_keeps_uncommitted_worktree_even_merged_into_target "garde un worktree non commité même fusionné dans la cible"
 run_test test_rejects_missing_branch "refuse un appel sans branche"
 
-echo "$PASSED passed, $FAILED failed"
-[ $FAILED -eq 0 ]
+report_results

@@ -6,8 +6,7 @@
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 STATUS_SCRIPT="$REPO_ROOT/skills/forge/scripts/status.sh"
 PLAN_WITH_ALL_STATUSES='# Plan\n\n## Tasks\n\n### T1 — Premier\n**Effort:** S\n[x] fait\n\n### T2 — Deuxième\n[ ]\n\n### T3 — Troisième\n[!] blocked — raison\n\n### T4 — Quatrième\n[ ]\n\n## Summary\n| T1 | S | [ ] |\n'
-PASSED=0
-FAILED=0
+. "$REPO_ROOT/tests/test-runner.sh"
 
 # ── Bac à sable ───────────────────────────────────────────────────────────────
 
@@ -312,21 +311,6 @@ test_writes_nothing_on_stdout_for_usage_error() {
 
 # ── Exécution ─────────────────────────────────────────────────────────────────
 
-run_test() {
-  local result
-  setup_sandbox
-  ( "$1" )
-  result=$?
-  teardown_sandbox
-  if [ $result -eq 0 ]; then
-    PASSED=$((PASSED + 1))
-    echo "  ok   $2"
-  else
-    FAILED=$((FAILED + 1))
-    echo "  FAIL $2"
-  fi
-}
-
 run_test test_reports_project_init_without_forge_folder "rend l'état project_init sans dossier .forge"
 run_test test_reports_coding_standards_init_when_only_project_exists "rend coding_standards_init quand seul project.md existe"
 run_test test_reports_brief_state_without_brief "rend l'état brief sans brief.md"
@@ -361,5 +345,4 @@ run_test test_reports_missing_target_branch "signale une branche visée absente"
 run_test test_omits_target_field_without_target "n'écrit pas target_exists sans --target"
 run_test test_writes_nothing_on_stdout_for_usage_error "n'écrit rien sur la sortie standard en erreur d'usage"
 
-echo "$PASSED passed, $FAILED failed"
-[ $FAILED -eq 0 ]
+report_results

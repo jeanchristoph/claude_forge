@@ -5,8 +5,7 @@
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SWARM_SCRIPT="$REPO_ROOT/skills/forge/scripts/swarm-status.sh"
-PASSED=0
-FAILED=0
+. "$REPO_ROOT/tests/test-runner.sh"
 
 # Plan type : socle ordinaire, deux branches filles dépendantes, vérification finale.
 PLAN='# Plan — parent
@@ -483,21 +482,6 @@ test_rejects_unknown_argument() {
   assert_equals "1" "$?"
 }
 
-run_test() {
-  local result
-  setup_sandbox
-  ( "$1" )
-  result=$?
-  teardown_sandbox
-  if [ $result -eq 0 ]; then
-    PASSED=$((PASSED + 1))
-    echo "  ok   $2"
-  else
-    FAILED=$((FAILED + 1))
-    echo "  FAIL $2"
-  fi
-}
-
 echo "swarm-status.sh"
 run_test test_reports_local_time_now "rend l'heure locale dans now"
 run_test test_launches_branch_whose_dependencies_are_done "rend lançable une branche dont les dépendances sont faites"
@@ -535,5 +519,4 @@ run_test test_rejects_parent_without_git_branch "refuse une parente sans branche
 run_test test_rejects_branch_without_plan "refuse une branche sans plan"
 run_test test_rejects_unknown_argument "refuse un argument inconnu"
 
-echo "$PASSED passed, $FAILED failed"
-[ $FAILED -eq 0 ]
+report_results

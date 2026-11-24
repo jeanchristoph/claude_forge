@@ -75,6 +75,34 @@ readonly AWK_HELPERS='
   function wait_start_in_turn(asked) {
     return ((session in turn_start) && turn_start[session] > asked) ? turn_start[session] : asked
   }
+  # Fenêtre de questions : champ « units », une unité déléguée par question, séparées par « | », vide pour la session
+  # principale ; absent (une question sans préfixe, ancien journal) → une question de la session principale.
+  function open_question(session, ts) { question_start[session] = ts; question_units[session] = field("units") }
+  # BUSINESS_RULE: une question compte une seule fois, temps et nombre, dans la branche déléguée qui la pose ; le temps
+  # d une fenêtre est partagé à parts égales entre ses questions.
+  function count_answer(session, answered,   asked, pieces, total, i, own, share) {
+    asked = question_start[session]; delete question_start[session]
+    total = split(question_units[session], pieces, "|")
+    if (!total) total = split(" ", pieces, "|")
+    for (i = 1; i <= total; i++) own += is_own_question(pieces[i])
+    if (window_end == "" || inside(asked, answered) > 0) questions += own
+    share = human_share(asked, answered) * own / total
+    question_time += share; human += share
+  }
+  # Journal de la parente : les seules questions de l unité mesurée. Journal de la branche : toutes sauf celles des
+  # unités déléguées connues — un préfixe qui n en désigne aucune reste à la session principale.
+  function is_own_question(unit) {
+    if (reading_parent) return unit == unit_name(branch, project)
+    return !(unit in delegated_units)
+  }
+  function unit_name(unit_branch, unit_project) { return unit_project == "" ? unit_branch : unit_project " @ " unit_branch }
+  # Question relayée, lue dans le journal de la parente ; 0 pour tout autre événement.
+  function read_relayed_question(event, ts) {
+    if (field("agent_id") != "" || field("tool") != "AskUserQuestion") return 0
+    if (event == "PreToolUse") open_question(field("session"), ts)
+    else if (field("session") in question_start) count_answer(field("session"), ts)
+    return 1
+  }
   # Part de [from, to] dans la fenêtre de la tâche ; sans fenêtre (mesure de la branche), l intervalle entier.
   function inside(from, to) {
     if (window_end != "" && from < window_start) from = window_start
@@ -102,6 +130,8 @@ readonly AWK_HELPERS='
 #   temps humain = Stop → prompt « origin: human » suivant, plus la durée des questions ;
 #   un écart ou une attente de plus de pause_ms compte pause_share_ms ; de plus de absence_ms, c'est une absence :
 #   zéro minute humaine. Question toujours comptée.
+#   Question d'une branche fille : dans la mesure de la fille (--parent-log), jamais dans celle de la parente ; question
+#   d'un projet lié : dans la mesure de la parente, seule à avoir un journal, et dans la tâche du délégué.
 #   Un prompt « origin: agent » (retour de délégué) ouvre un tour sans compter d'attente humaine.
 #   Un prompt qui arrive sur un tour encore ouvert (message tapé pendant le travail, Échap sans Stop, retour de
 #   délégué en plein tour) ferme ce tour à son dernier événement observé avant d'ouvrir le suivant ; l'écart jusqu'au
@@ -112,6 +142,7 @@ readonly DURATIONS_PROGRAM="$AWK_HELPERS"'
   reading_parent {
     id = field("agent_id"); event = field("event"); ts = field("ts") + 0
     if (event == "task_start" && field("branch") == branch && field("project") == project) next
+    if (read_relayed_question(event, ts)) next
     if (!(id in delegate)) next
     seen = 1
     if (event == "SubagentStart") agent_start[id] = ts
@@ -123,6 +154,7 @@ readonly DURATIONS_PROGRAM="$AWK_HELPERS"'
   field("event") == "delegate" && (field("branch") != branch || field("project") != "") {
     other_branch[field("agent_id")] = 1
     if (field("project") != "") linked[field("agent_id")] = 1
+    else delegated_units[field("branch")] = 1
     next
   }
   field("agent_id") != "" {
@@ -150,11 +182,10 @@ readonly DURATIONS_PROGRAM="$AWK_HELPERS"'
       gaps[session] = 0
       delete turn_start[session]; last_stop[session] = ts
     } else if (event == "PreToolUse" && field("tool") == "AskUserQuestion") {
-      question_start[session] = ts
+      open_question(session, ts)
     } else if (event == "PostToolUse" && field("tool") == "AskUserQuestion" && (session in question_start)) {
-      wait = ts - question_start[session]; delete question_start[session]
-      questions++; question_time += human_share(ts - wait, ts); human += human_share(ts - wait, ts)
-      turn_questions[session] += ts - wait_start_in_turn(ts - wait)
+      turn_questions[session] += ts - wait_start_in_turn(question_start[session])
+      count_answer(session, ts)
     } else if (event == "PostToolUse" && field("check") == "true") {
       checks += field("duration_ms")
     }
@@ -237,13 +268,17 @@ readonly TASK_DURATIONS_PROGRAM="$AWK_HELPERS"'
   reading_parent && field("event") == "delegate" && field("branch") == branch && field("project") == project { delegate[field("agent_id")] = 1; next }
   reading_parent {
     id = field("agent_id"); event = field("event"); ts = field("ts") + 0
+    if (read_relayed_question(event, ts)) next
     if (!(id in delegate)) next
     if (event == "SubagentStart") agent_start[id] = ts
     if (event == "SubagentStop" && (id in agent_start)) { delegated += inside(agent_start[id], ts); delete agent_start[id] }
     count_check(event, ts)
     next
   }
-  field("event") == "delegate" && (field("branch") != branch || field("project") != "") { other_branch[field("agent_id")] = 1; next }
+  field("event") == "delegate" && (field("branch") != branch || field("project") != "") {
+    other_branch[field("agent_id")] = 1; delegated_units[unit_name(field("branch"), field("project"))] = 1
+    next
+  }
   field("agent_id") != "" {
     id = field("agent_id"); event = field("event"); ts = field("ts") + 0
     if (id in other_branch) next
@@ -265,12 +300,10 @@ readonly TASK_DURATIONS_PROGRAM="$AWK_HELPERS"'
       gaps[session] = 0
       delete turn_start[session]; last_stop[session] = ts
     } else if (event == "PreToolUse" && field("tool") == "AskUserQuestion") {
-      question_start[session] = ts
+      open_question(session, ts)
     } else if (event == "PostToolUse" && field("tool") == "AskUserQuestion" && (session in question_start)) {
-      wait = inside(question_start[session], ts)
-      if (wait > 0) { questions++; turn_questions[session] += inside(wait_start_in_turn(question_start[session]), ts) }
-      human += human_share(question_start[session], ts)
-      delete question_start[session]
+      turn_questions[session] += inside(wait_start_in_turn(question_start[session]), ts)
+      count_answer(session, ts)
     }
     last_activity[session] = ts
   }

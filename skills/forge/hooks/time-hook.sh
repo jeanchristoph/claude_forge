@@ -3,7 +3,8 @@
 #   Déclaré dans settings.json par les installeurs (UserPromptSubmit, Stop, SubagentStart, SubagentStop,
 #   PreToolUse et PostToolUse sur AskUserQuestion|Bash), donc global : sans dossier .forge dans le cwd ou ses parents, il sort aussitôt, sans processus git
 #   Ne calcule rien, n'affiche rien, ne bloque jamais : sortie 0 dans tous les cas, rien sur la sortie standard
-#   Ne garde aucun contenu (prompt, commande, réponse d'outil) : seuls des identifiants, durées et marqueurs
+#   Ne garde aucun contenu (prompt, question, commande, réponse d'outil) : seuls des identifiants, durées et marqueurs
+#   Question : champ « units », l'unité déléguée de chaque question de la fenêtre (préfixe « [unité] »)
 #   Les événements d'un délégué arrivent avec le cwd du parent et un agent_id : ils tombent dans le journal du parent
 # Entrée : JSON du hook sur l'entrée standard
 # Écrit : <racine>/.forge/branch/<branche>/time-log.jsonl, une ligne par événement retenu ;
@@ -86,6 +87,18 @@ is_check_command() {
   [ -n "$REPLY" ] && [[ $REPLY =~ $pattern ]]
 }
 
+# Unité déléguée de chaque question ouverte, lue dans son préfixe « [unité] », séparées par « | » dans REPLY — vide sans
+# préfixe (session principale) ; REPLY vide pour une seule question sans préfixe. Le texte des questions n'est jamais écrit.
+read_question_units() {
+  local rest=$INPUT units=""
+  while [[ $rest == *'"question":"'* ]]; do
+    rest=${rest#*'"question":"'}
+    units+="|"
+    [[ $rest =~ ^\[([^]\[\|\"\\]+)\] ]] && units+=${BASH_REMATCH[1]}
+  done
+  REPLY=${units#|}
+}
+
 append_field() {
   json_escape "$2"
   LINE+=",\"$1\":$REPLY"
@@ -112,6 +125,10 @@ build_line() {
   [ -n "$TOOL" ] && append_field tool "$TOOL"
   if [ "$EVENT" = "UserPromptSubmit" ]; then
     if [[ $INPUT =~ $AGENT_PROMPT_PATTERN ]]; then append_field origin agent; else append_field origin human; fi
+  fi
+  if [ "$EVENT" = "PreToolUse" ] && [ "$TOOL" = "AskUserQuestion" ]; then
+    read_question_units
+    [ -n "$REPLY" ] && append_field units "$REPLY"
   fi
   [ "$EVENT" = "PostToolUse" ] || return
   read_number_field duration_ms

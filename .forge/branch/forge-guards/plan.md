@@ -1,8 +1,8 @@
 # Plan — forge-guards
 **Objective:** Ajouter au skill forge deux garde-fous (script de déploiement SQL toujours écrit et complet ; session parente qui n'écrit jamais dans un projet lié), nommer la branche liée d'après la tâche déléguée sans jamais nommer le parent, et documenter le hook `linked-write-guard.sh`.
 **Date:** 2026-11-23
-**Estimate:** ≈ 215 files · ≈ 148 min (39-273) · indicative
-**Actual:** ≈ 207.6 min agent (incl. 127.7 min checks) · human 350.5 min (36 questions, 201.2 min) · fixed — (delegate setup, merge) · delegates 0.0 min in parallel · total ≈ 558.1 min · partial (log started after the branch, 13 unmeasured tasks)
+**Estimate:** ≈ 225 files · ≈ 152 min (40-281) · indicative
+**Actual:** ≈ 216.0 min agent (incl. 132.8 min checks) · human 377.3 min (41 questions, 209.9 min) · delegates 0.0 min in parallel · total ≈ 593.3 min · partial (log started after the branch, 13 unmeasured tasks)
 **Origin:** T7, T8, T9, T10
 
 ## Tasks
@@ -220,6 +220,14 @@
 **Description:** Multiprocessus : les cas d'un même fichier tournent 12 à la fois, chacun dans son processus et son dossier jetable (`TEST_JOBS` pour régler le nombre). `tests/test-runner.sh` : un seul lanceur partagé remplace le `run_test` recopié dans chaque fichier, résultats affichés dans l'ordre, échec si le résultat d'un cas manque. Préparation des dépôts d'essai inchangée, aucun dépôt modèle. `tests/run-all.sh` : lance tous les fichiers l'un après l'autre, sort en échec si l'un est rouge ; devient la commande « Suite complète » de `project.md`. `Check pattern` élargi pour reconnaître `bash "tests/…"`. Contrôle : mêmes 519 tests, trois passages complets sans échec aléatoire, durée avant/après relevée.
 [x] Cas lancés 12 à la fois par `tests/test-runner.sh`, suite par `tests/run-all.sh` ; 530 tests verts (les 519 d'avant, tous retrouvés, et 11 du lanceur), trois passages complets sans échec ; 522 s → 110, 151 et 239 s, l'écart venant de la machine (36 à 99 ms par commande git selon le moment, cause non trouvée) ; `engrave` mesuré au même moment : 160 s en série, 34-37 s en parallèle
 
+### T27 — Temps humain et nombre de questions rattachés à la branche du délégué
+**Effort:** M
+**Estimated time:** ≈ 4 min (1-8)
+**Actual time:** ≈ 3.8 min agent (incl. 2.2 min checks) · human 0.0 min (0 questions) · 10 files · total ≈ 3.8 min
+**Files:** `skills/forge/hooks/time-hook.sh`, `skills/forge/scripts/time-aggregate.sh`, `skills/forge/commands/swarm.md`, `skills/forge/commands/delegation.md`, `tests/time-hook.test.sh`, `tests/time-aggregate.test.sh`, `tests/metrics.test.sh`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** `time-hook.sh` note dans le journal le nombre de questions de la fenêtre et l'unité déléguée de chacune, lue dans le préfixe `[…]`, jamais le texte. `time-aggregate.sh` : une question d'une branche déléguée compte (temps et nombre) dans cette branche et dans sa tâche en cours, plus jamais dans la branche parente ni dans sa tâche en parallèle. Fenêtre groupée : temps partagé à parts égales entre ses questions, chaque question comptée 1 ; la somme parente + filles reste exacte. Brief, plan et mode de la fille : dans sa ligne `**Actual:**`, hors de ses tâches. Message libre, question sans préfixe et ancien journal : inchangés. Préfixe ajouté à la délégation simple.
+[x] Champ `units` journalisé, questions des délégués comptées une seule fois ; écart : question d'un projet lié gardée dans la branche parente, seule à avoir un journal, mais comptée dans la tâche du délégué et non plus dans celle de la parente ; tests time-hook 35, time-aggregate 111, metrics 26, plan-hook 63 ; non essayé dans un essaim réel
+
 ## Risks
 - `p5-resume.md` et `CHANGELOG.md` sont touchés par T1 et T2 : ils sont édités l'un après l'autre, dans le même plan, sans conflit.
 - Les noms de fichiers des installeurs diffèrent du mandat (`install/install.sh`, `install/install.ps1` au lieu des lanceurs racine) : même intention, fichiers où vit la fusion de `settings.json`.
@@ -259,5 +267,6 @@ None
 | T24 — Coûts fixes retirés partout, mesure de lancement et de fusion arrêtée | M | 15 | ≈ 7 min | ≈ 7.4 min agent (incl. 0.0 min checks) · human 0.0 min (0 questions) · 15 files · total ≈ 7.4 min | [x] |
 | T25 — Vérifications : départ à 0 | S | 6 | ≈ 4 min | ≈ 3.4 min agent (incl. 2.7 min checks) · human 0.0 min (0 questions) · 7 files · total ≈ 3.4 min | [x] |
 | T26 — Tests en parallèle | M | 24 | ≈ 11 min | ≈ 50.9 min agent (incl. 43.9 min checks) · human 32.0 min (9 questions) · 22 files · total ≈ 82.9 min | [x] |
-| **Total** (13/26 measured) | **7S, 5M, 1L** | **125** | **≈ 75 min** | **≈ 153.5 min** | |
-| **Unplanned** | | | | **≈ 54.1 min** | |
+| T27 — Temps humain et nombre de questions rattachés à la branche du délégué | M | 10 | ≈ 4 min | ≈ 3.8 min agent (incl. 2.2 min checks) · human 0.0 min (0 questions) · 10 files · total ≈ 3.8 min | [x] |
+| **Total** (14/27 measured) | **7S, 6M, 1L** | **135** | **≈ 79 min** | **≈ 157.3 min** | |
+| **Unplanned** | | | | **≈ 58.7 min** | |

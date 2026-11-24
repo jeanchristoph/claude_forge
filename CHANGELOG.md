@@ -10,6 +10,12 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ## [Unreleased]
 
+## [0.13.7] — 2026-11-24
+
+### Changed
+
+- A delegate's questions are measured once, in the branch that asks them: the hook logs the unit named by each question's `[branch]` prefix (never its text), and answer time and question count go to the child branch and its current task instead of the parent branch and any parent task running meanwhile. A window of several questions is split equally between them, each counted as one. Questions of a linked project also count in the delegate's task; the branch measure keeps them in the parent, the only one with a log. Older logs are read as before.
+
 ## [0.13.6] — 2026-11-24
 
 ### Changed
@@ -479,7 +485,8 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 - Idempotent Unix and Windows installers, with `settings.json` merge and no duplicate entries on reinstall.
 - `main` / `master` guard: on a protected branch, forge asks for a ticket ID or a branch name before continuing.
 
-[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.6...HEAD
+[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.7...HEAD
+[0.13.7]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.6...v0.13.7
 [0.13.6]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.5...v0.13.6
 [0.13.5]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.4...v0.13.5
 [0.13.4]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.3...v0.13.4

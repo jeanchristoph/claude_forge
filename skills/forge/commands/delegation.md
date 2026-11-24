@@ -68,6 +68,7 @@ Demande hors plan qui vise le projet lié → d'abord « Demande hors périmètr
 
 À chaque rapport du sous-agent :
 - Rapport contenant `FORGE_QUESTION` → afficher `content` **intégralement** à l'utilisateur, tel quel, jamais résumé (`none` → rien à afficher), puis poser la question avec `AskUserQuestion`, `header` et options recopiés tels quels ; `header` `Plan` → `content` recopié en tête de `question` selon le « Gabarit — question `Plan` » ; `options: none` → question en texte libre. Renvoyer la réponse au même sous-agent par `SendMessage`, message `FORGE_ANSWER: <réponse>`. Reprendre la boucle.
+- **Préfixe :** le champ `question` de chaque `AskUserQuestion` relayée commence par `[<branche du délégué>]` — branche du même dépôt —, ou `[<LINKED_REL> @ <LINKED_BRANCH>]` — projet lié —, sans rien avant : le hook de mesure y lit la branche à laquelle comptent le temps de réponse et la question. Question de la session principale → aucun préfixe.
 - Rapport contenant `FORGE_DONE` → sortir de la boucle, appliquer le retour ci-dessous.
 - Rapport sans aucun des deux blocs → le renvoyer au sous-agent par `SendMessage` : `FORGE_ANSWER: end your turn with a FORGE_QUESTION or a FORGE_DONE block.` Deux rappels au maximum, puis marquer chaque tâche du mandat `[!] blocked — delegated run ended without report` et sortir.
 

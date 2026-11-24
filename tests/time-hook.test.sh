@@ -119,6 +119,38 @@ test_logs_question_open_and_close() {
   assert_contains '"tool":"AskUserQuestion","duration_ms":45000}' "$log"
 }
 
+# Fenêtre ouverte, une question par argument, au format JSON échappé de Claude Code.
+open_questions() {
+  local questions="" text
+  for text in "$@"; do questions+=",{\"question\":\"$text\",\"header\":\"Plan\",\"options\":[]}"; done
+  run_hook "$(event_json PreToolUse ",\"tool_name\":\"AskUserQuestion\",\"tool_input\":{\"questions\":[${questions#,}]}")"
+}
+
+test_logs_unit_of_each_relayed_question() {
+  open_questions '[export-csv] On valide ?' '[../my-api @ export-csv] On garde le nom ?' 'Question de la session'
+  assert_contains '"tool":"AskUserQuestion","units":"export-csv|../my-api @ export-csv|"}' "$(logged)"
+}
+
+test_logs_no_unit_for_a_single_question_without_prefix() {
+  open_questions 'On valide [export-csv] ?'
+  assert_contains '"tool":"AskUserQuestion"}' "$(logged)"
+}
+
+test_reads_unit_only_at_the_very_start_of_a_question() {
+  open_questions 'Voir \\"question\\":\\"[piege] texte' '[export-csv] Suite\nligne'
+  assert_contains '"units":"|export-csv"}' "$(logged)"
+}
+
+test_never_logs_question_text() {
+  open_questions '[export-csv] Contenu confidentiel'
+  assert_not_contains 'confidentiel' "$(logged)"
+}
+
+test_answer_carries_no_unit() {
+  run_hook "$(event_json PostToolUse ',"tool_name":"AskUserQuestion","tool_input":{"questions":[{"question":"[export-csv] On valide ?"}]},"tool_response":{"questions":[{"question":"[export-csv] On valide ?"}]},"duration_ms":1')"
+  assert_contains '"tool":"AskUserQuestion","duration_ms":1}' "$(logged)"
+}
+
 test_marks_check_command_matching_project_pattern() {
   printf '# Project\n**Check pattern:** `^bash tests/.*\\.test\\.sh`\n' > "$WORK/.forge/project.md"
   run_hook "$(event_json PostToolUse ',"tool_name":"Bash","tool_input":{"command":"bash tests/status.test.sh"},"duration_ms":3000')"
@@ -293,6 +325,11 @@ run_test test_marks_task_notification_prompt_as_agent "marque agent une notifica
 run_test test_logs_subagent_start_with_agent_id "journalise SubagentStart avec l'identifiant du délégué"
 run_test test_logs_delegate_tool_event_in_parent_log "range l'outil d'un délégué dans le journal du parent, avec sa durée"
 run_test test_logs_question_open_and_close "journalise l'ouverture et la réponse d'une question"
+run_test test_logs_unit_of_each_relayed_question "journalise la branche ou le projet lié de chaque question relayée, vide sans préfixe"
+run_test test_logs_no_unit_for_a_single_question_without_prefix "question seule sans préfixe : aucune unité journalisée"
+run_test test_reads_unit_only_at_the_very_start_of_a_question "unité lue au tout début de la question seulement, jamais dans un texte échappé"
+run_test test_never_logs_question_text "n'écrit jamais le texte d'une question"
+run_test test_answer_carries_no_unit "réponse : aucune unité journalisée"
 run_test test_marks_check_command_matching_project_pattern "marque check une commande conforme au motif du projet"
 run_test test_does_not_mark_other_command_as_check "ne marque pas check une autre commande"
 run_test test_marks_check_command_chained_after_cd "marque check une vérification enchaînée après un cd"

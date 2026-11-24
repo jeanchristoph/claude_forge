@@ -234,6 +234,16 @@ test_actual_line_counts_linked_delegates_apart_from_agent_and_total() {
   assert_matches '"agent_minutes":2\.0,' "$(cat "$BRANCH_DIR/metrics.json")"
 }
 
+test_actual_line_leaves_the_questions_of_a_child_branch_to_it() {
+  write_turn
+  local start
+  start=$(( $(date +%s) * 1000 - 600000 ))
+  printf '{"event":"delegate","agent_id":"a","branch":"child"}\n{"ts":%s,"event":"PreToolUse","session":"s9","tool":"AskUserQuestion","units":"child|"}\n{"ts":%s,"event":"PostToolUse","session":"s9","tool":"AskUserQuestion"}\n' \
+    "$start" $((start + 240000)) >> "$LOG"
+  metrics --event engrave >/dev/null
+  assert_matches '^\*\*Actual:\*\* .* · human 2\.0 min \(1 questions, 2\.0 min\)' "$(grep '^\*\*Actual:\*\*' "$BRANCH_DIR/plan.md")"
+}
+
 # Plan à une tâche cochée au réel <réel>, tableau récapitulatif avec sa ligne Total.
 write_measured_plan() {
   sed -i "s/^\*\*Effort:\*\* S\$/&\n**Actual time:** $1/" "$BRANCH_DIR/plan.md"
@@ -287,6 +297,7 @@ run_test test_unplanned_row_is_never_negative "ligne Unplanned jamais négative"
 run_test test_unplanned_row_ignores_time_of_linked_tasks "ligne Unplanned : réel d'une tâche liée jamais retiré de la session"
 run_test test_unplanned_row_is_a_dash_without_measure "ligne Unplanned : tiret sans mesure"
 run_test test_actual_line_counts_linked_delegates_apart_from_agent_and_total "en-tête Actual : délégués liés affichés, hors agent et hors total"
+run_test test_actual_line_leaves_the_questions_of_a_child_branch_to_it "en-tête Actual : questions d'une branche fille laissées à la fille"
 run_test test_linked_branch_task_without_note_is_not_an_unmeasured_task "tâche à branche liée sans note : jamais comptée non mesurée"
 run_test test_writes_one_line_with_fixed_field_order "écrit metrics.json sur une ligne, champs dans l'ordre figé"
 run_test test_agent_minutes_sum_parent_and_delegates "minutes d'agent : somme du parent et des délégués"

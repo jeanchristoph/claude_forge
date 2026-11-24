@@ -830,6 +830,99 @@ test_question_across_two_turns_never_makes_a_turn_negative() {
   assert_contains '"human_minutes":2.0' "$output"
 }
 
+# ── Questions relayées d'un délégué ──────────────────────────────────────────
+
+# Journal de la parente : question de 6 min ouverte à 1 min, une unité par question.
+relayed_question() {
+  printf '%s\n' '{"event":"delegate","agent_id":"a1","branch":"feature"}' \
+    '{"event":"delegate","agent_id":"a2","branch":"other"}' \
+    '{"event":"delegate","agent_id":"a3","branch":"export-csv","project":"../my-api"}' \
+    '{"ts":0,"event":"SubagentStart","session":"p","agent_id":"a1"}' \
+    "{\"ts\":60000,\"event\":\"PreToolUse\",\"session\":\"p\",\"tool\":\"AskUserQuestion\",\"units\":\"$1\"}" \
+    '{"ts":420000,"event":"PostToolUse","session":"p","tool":"AskUserQuestion","duration_ms":1}' \
+    '{"ts":480000,"event":"SubagentStop","session":"p","agent_id":"a1"}'
+}
+
+# Marques d'une tâche de la branche fille « feature », de 0 à 10 min sauf début donné.
+child_task_marks() {
+  printf '{"ts":%s,"event":"task_start","task":"T1","branch":"feature"}\n{"ts":600000,"event":"task_done","task":"T1","branch":"feature"}\n' "${1:-0}"
+}
+
+test_relayed_question_counts_in_the_child_branch_and_its_task() {
+  parent_events "$(relayed_question feature)" "$(child_task_marks)"
+  assert_contains '"human_minutes":6.0,"questions":1,"question_minutes":6.0' "$(aggregate --parent-log "$PARENT_LOG")"
+  assert_contains '"human_minutes":6.0,"questions":1,' "$(aggregate --parent-log "$PARENT_LOG" --task T1)"
+}
+
+test_relayed_question_of_another_branch_never_counts_in_the_child() {
+  parent_events "$(relayed_question other)" "$(child_task_marks)"
+  assert_contains '"human_minutes":0.0,"questions":0,' "$(aggregate --parent-log "$PARENT_LOG")"
+  assert_contains '"human_minutes":0.0,"questions":0,' "$(aggregate --parent-log "$PARENT_LOG" --task T1)"
+}
+
+test_question_before_the_first_task_counts_in_the_child_branch_only() {
+  parent_events "$(relayed_question feature)" "$(child_task_marks 420000)"
+  assert_contains '"human_minutes":6.0,"questions":1,' "$(aggregate --parent-log "$PARENT_LOG")"
+  assert_contains '"human_minutes":0.0,"questions":0,' "$(aggregate --parent-log "$PARENT_LOG" --task T1)"
+}
+
+test_window_of_several_questions_is_split_equally() {
+  parent_events "$(relayed_question 'feature|other|feature')"
+  assert_contains '"human_minutes":4.0,"questions":2,' "$(aggregate --parent-log "$PARENT_LOG")"
+}
+
+# Même fenêtre lue par la parente « feature », dont un délégué « other » et un projet lié posent des questions.
+parent_window() {
+  own_events '{"ts":0,"event":"task_start","task":"T1"}' '{"ts":0,"event":"UserPromptSubmit","session":"p","origin":"human"}' \
+    "$(relayed_question "$1" | grep -v '"agent_id":"a1"')" '{"ts":480000,"event":"Stop","session":"p"}' \
+    '{"ts":480000,"event":"task_done","task":"T1"}'
+}
+
+test_question_of_a_child_branch_leaves_the_parent_branch_and_its_task() {
+  parent_window other
+  assert_contains '"parent_minutes":2.0' "$(aggregate)"
+  assert_contains '"human_minutes":0.0,"questions":0,"question_minutes":0.0' "$(aggregate)"
+  assert_contains '"agent_minutes":2.0,"human_minutes":0.0,"questions":0,' "$(aggregate --task T1)"
+}
+
+test_parent_keeps_its_own_share_of_a_mixed_window() {
+  parent_window 'other||other'
+  assert_contains '"human_minutes":2.0,"questions":1,' "$(aggregate)"
+  assert_contains '"human_minutes":2.0,"questions":1,' "$(aggregate --task T1)"
+}
+
+test_parent_and_child_shares_add_up_to_the_whole_window() {
+  parent_window 'other|'
+  assert_contains '"human_minutes":3.0,"questions":1,' "$(aggregate)"
+  parent_events "$(relayed_question 'feature|')"
+  mv "$OWN_LOG" "$OWN_LOG.parent"
+  assert_contains '"human_minutes":3.0,"questions":1,' "$(aggregate --parent-log "$PARENT_LOG")"
+}
+
+test_question_of_a_linked_project_stays_in_the_branch_but_leaves_the_parent_task() {
+  parent_window '../my-api @ export-csv'
+  assert_contains '"human_minutes":6.0,"questions":1,' "$(aggregate)"
+  assert_contains '"human_minutes":0.0,"questions":0,' "$(aggregate --task T1)"
+}
+
+test_question_of_a_linked_project_counts_in_its_delegate_task() {
+  parent_events "$(relayed_question '../my-api @ feature')" \
+    '{"ts":0,"event":"task_start","task":"T1","branch":"feature","project":"../my-api"}' \
+    '{"ts":600000,"event":"task_done","task":"T1","branch":"feature","project":"../my-api"}'
+  assert_contains '"human_minutes":6.0,"questions":1,' "$(aggregate --parent-log "$PARENT_LOG" --project ../my-api --task T1)"
+}
+
+test_prefix_of_no_known_delegate_stays_in_the_parent() {
+  parent_window WIP
+  assert_contains '"human_minutes":6.0,"questions":1,' "$(aggregate)"
+  assert_contains '"human_minutes":6.0,"questions":1,' "$(aggregate --task T1)"
+}
+
+test_long_wait_of_a_split_window_keeps_the_pause_rule() {
+  parent_events "$(relayed_question 'feature|other' | sed 's/"ts":420000/"ts":7260000/; s/"ts":480000/"ts":7320000/')"
+  assert_contains '"human_minutes":1.5,"questions":1,' "$(aggregate --parent-log "$PARENT_LOG")"
+}
+
 test_task_question_across_two_turns_never_makes_it_negative() {
   question_across_two_turns
   assert_contains '"agent_minutes":1.1,"human_minutes":2.0,"questions":1' "$(aggregate --task T1)"
@@ -1087,6 +1180,17 @@ run_test test_old_delegate_line_without_project_is_never_given_to_a_project "anc
 run_test test_reports_linked_delegates_apart_even_on_a_branch_of_the_same_name "délégués liés rendus à part, même nom de branche que la parente"
 run_test test_reports_no_linked_delegate_as_null "sans délégué lié : null"
 run_test test_question_across_two_turns_never_makes_a_turn_negative "question à cheval sur deux tours : aucun tour négatif"
+run_test test_relayed_question_counts_in_the_child_branch_and_its_task "question d'un délégué : comptée dans sa branche et sa tâche"
+run_test test_relayed_question_of_another_branch_never_counts_in_the_child "question d'une autre branche : jamais comptée dans la fille"
+run_test test_question_before_the_first_task_counts_in_the_child_branch_only "question avant la première tâche : dans la branche fille, hors de ses tâches"
+run_test test_window_of_several_questions_is_split_equally "fenêtre groupée : temps partagé à parts égales, chaque question comptée une fois"
+run_test test_question_of_a_child_branch_leaves_the_parent_branch_and_its_task "question d'une fille : retirée de la parente et de sa tâche, temps d'agent inchangé"
+run_test test_parent_keeps_its_own_share_of_a_mixed_window "fenêtre mixte : la parente garde sa part"
+run_test test_parent_and_child_shares_add_up_to_the_whole_window "fenêtre mixte : parente et fille font la fenêtre entière"
+run_test test_question_of_a_linked_project_stays_in_the_branch_but_leaves_the_parent_task "question d'un projet lié : dans la branche parente, hors de sa tâche"
+run_test test_question_of_a_linked_project_counts_in_its_delegate_task "question d'un projet lié : dans la tâche de son délégué"
+run_test test_prefix_of_no_known_delegate_stays_in_the_parent "préfixe d'aucun délégué connu : question de la session principale"
+run_test test_long_wait_of_a_split_window_keeps_the_pause_rule "fenêtre groupée : règle de pause de 3 min, puis partage"
 run_test test_task_question_across_two_turns_never_makes_it_negative "tâche : question à cheval sur deux tours, aucune durée négative"
 run_test test_task_unmeasured_without_log "tâche : non mesurée sans journal"
 run_test test_task_counts_ordinary_subagent_inside_window "tâche : compte un sous-agent ordinaire dans la fenêtre"

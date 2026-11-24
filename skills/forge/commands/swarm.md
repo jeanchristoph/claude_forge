@@ -62,7 +62,7 @@ End every turn with a FORGE_QUESTION or a FORGE_DONE block.
 
 Boucle de relais de `commands/delegation.md`, avec ces règles en plus :
 - **Mesure :** chaque retour d'un délégué → « Mesure d'un délégué » de `commands/delegation.md`.
-- **Préfixe :** chaque question et chaque contenu affiché commencent par `[<X>]`.
+- **Préfixe :** règle « Préfixe » de la boucle de relais de `commands/delegation.md`, pour chaque question ; chaque contenu affiché commence par le même préfixe.
 - **Contexte de décision :** `FORGE_QUESTION` de choix — tout `header` autre que `Brief`, `Plan`, `Mode`, `Task`, `Promotion`, `Demote` — sans ce que fait l'existant, ce que chaque option change pour l'utilisateur final et ce qu'il faudrait refaire si le choix s'avère mauvais → renvoyée au délégué, `FORGE_ANSWER: add the decision context (current behaviour, effect of each option for the end user, cost of a wrong choice) and ask again.`, jamais posée.
 - **Questions groupées :** plusieurs `FORGE_QUESTION` en attente → afficher le `content` entier de chacune, dans l'ordre d'arrivée, chaque bloc titré `[<X>]`, puis une seule `AskUserQuestion` qui porte jusqu'à quatre questions, une par branche. Question arrivée pendant qu'une fenêtre est ouverte → attend la suivante. Chaque réponse renvoyée à son seul délégué.
 - **Note de coordination :** une autre branche en cours touche le même module ou les mêmes fichiers partagés → ajouter à la réponse « `<Y>` also changes `<module>`: separate files, minimal edits to shared files. », notée dans SWARM.

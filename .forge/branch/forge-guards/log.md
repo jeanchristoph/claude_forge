@@ -1,3 +1,6 @@
+- [2026-11-24 17:09] Version 0.13.7 préparée — CHANGELOG daté, publication demandée par l'utilisateur
+- [2026-11-24 17:09] T27 done — questions des délégués comptées une seule fois (champ units du journal) ; projet lié : branche parente gardée, tâche du délégué créditée
+- [2026-11-24 17:05] T27 ajoutée, enchaînée — questions des délégués : temps humain et nombre comptés une seule fois, dans la branche qui pose la question (choix de l'utilisateur)
 - [2026-11-24 16:36] Version 0.13.6 préparée — CHANGELOG daté, publication demandée par l'utilisateur
 - [2026-11-24 16:31] T26 done — tests en parallèle, 12 cas à la fois (tests/test-runner.sh, tests/run-all.sh) ; 530 verts, trois passages complets sans échec
 - [2026-11-24 15:47] T26 ajoutée, enchaînée — tests en parallèle, 12 cas à la fois (choix de l'utilisateur : sans dépôt modèle) ; suite complète rétablie à chaque grave dans coding-standards.md et project.md

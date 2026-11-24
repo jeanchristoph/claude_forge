@@ -101,7 +101,7 @@ test_copies_skills_and_hook_into_home() {
   assert_file_exists "$CLAUDE_DIR/skills/forge/SKILL.md"
   assert_file_exists "$CLAUDE_DIR/skills/forge-clickup/SKILL.md"
   local hook
-  for hook in forge-precompact time-hook plan-hook linked-write-guard; do assert_file_exists "$CLAUDE_DIR/skills/forge/hooks/$hook.sh"; done
+  for hook in forge-precompact time-hook plan-hook linked-write-guard update-notice; do assert_file_exists "$CLAUDE_DIR/skills/forge/hooks/$hook.sh"; done
 }
 
 # ── Fusion de settings.json ───────────────────────────────────────────────────
@@ -279,8 +279,6 @@ test_records_tag_and_origin_from_git_copy() {
   assert_contains '"version":"v1.2.3"' "$record"
   assert_contains '"repository":"git@example.com:owner/forge.git"' "$record"
   assert_contains '"latest":"v1.2.3"' "$record"
-  assert_contains '"last_check":' "$record"
-  assert_not_contains '"last_check":0' "$record"
 }
 
 test_writes_install_record_without_bom() {
@@ -313,17 +311,28 @@ test_records_null_version_outside_git() {
   record=$(install_record)
   assert_contains '"version":null' "$record"
   assert_contains '"repository":null' "$record"
-  assert_contains '"last_check":0' "$record"
   assert_contains '"latest":null' "$record"
 }
 
-test_install_record_is_read_by_update_check() {
+test_install_record_is_read_by_update() {
   make_tagged_git_copy
   run_installer || exit 1
-  local output
-  output=$(bash "$UPDATE_SCRIPT" check --install-dir "$CLAUDE_DIR/skills/forge")
-  assert_contains '"installed":"v1.2.3"' "$output"
-  assert_contains '"check":"skipped"' "$output"
+  assert_equals '{"dismissed":"v1.2.3"}' "$(bash "$UPDATE_SCRIPT" dismiss --install-dir "$CLAUDE_DIR/skills/forge")"
+}
+
+# ── Hook de nouvelle version ──────────────────────────────────────────────────
+
+test_adds_rewaking_notice_hook_to_forge_commands() {
+  run_installer || exit 1
+  assert_contains '"matcher":"forge|forge-clickup","hooks":[{"type":"command","command":"bash ~/.claude/skills/forge/hooks/update-notice.sh","shell":"bash","asyncRewake":true,"timeout":30}]' "$(event_hooks UserPromptExpansion)"
+}
+
+test_second_install_adds_notice_hook_once() {
+  mkdir -p "$CLAUDE_DIR"
+  printf '%s\n' '{"hooks":{"UserPromptExpansion":[{"matcher":"deploy","hooks":[{"type":"command","command":"bash mine.sh"}]}]}}' > "$CLAUDE_DIR/settings.json"
+  run_installer && run_installer || exit 1
+  assert_equals 1 "$(event_hooks UserPromptExpansion | grep -o 'update-notice' | wc -l | tr -d ' ')"
+  assert_contains 'bash mine.sh' "$(event_hooks UserPromptExpansion)"
 }
 
 # ── Exécution ─────────────────────────────────────────────────────────────────
@@ -365,7 +374,9 @@ run_common_tests() {
   run_installer_test test_second_install_adds_linked_write_guard_once "une seconde installation n'ajoute pas la garde d'écriture en double"
   run_installer_test test_records_tag_and_origin_from_git_copy "enregistre le tag et le dépôt d'origine d'une copie git"
   run_installer_test test_records_null_version_outside_git "enregistre une version et un dépôt nuls hors dépôt git"
-  run_installer_test test_install_record_is_read_by_update_check "update.sh check lit l'install.json produit"
+  run_installer_test test_install_record_is_read_by_update "update.sh lit l'install.json produit"
+  run_installer_test test_adds_rewaking_notice_hook_to_forge_commands "ajoute le hook de nouvelle version à /forge et /forge-clickup, en arrière-plan"
+  run_installer_test test_second_install_adds_notice_hook_once "une seconde installation n'ajoute pas le hook de nouvelle version en double et garde un hook étranger"
   run_installer_test test_writes_settings_without_bom "écrit settings.json sans BOM UTF-8"
   run_installer_test test_keeps_unrelated_settings_from_file_with_bom "garde les réglages étrangers d'un settings.json écrit avec BOM"
 }

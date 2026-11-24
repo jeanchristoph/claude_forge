@@ -20,7 +20,8 @@ While working (plain words, no slash)
   "launch an agent on branch X" / "do T3 in ../other-project"   delegate
   "rename the branch to X"
   "clean the forge"      review .forge/project.md
-  "update the forge"     check for a new forge version and install it
+  "update the forge"     install the latest forge version
+  "ignore this version"  stop announcing the new version
 
 Files — .forge/
   project.md, coding-standards.md     shared by every branch

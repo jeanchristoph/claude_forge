@@ -66,7 +66,7 @@ The skill scripts need bash 5 (Git Bash on Windows, a recent bash from Homebrew 
 
 The release archives ("Source code" zip / tar.gz on the [releases page](https://github.com/jeanchristoph/claude_forge/releases)) carry only what the installers need: `.forge/`, `docs/` and the `.git*` files are left out.
 
-The installers write `~/.claude/skills/forge/install.json` (installed version, repository URL, last update check), read by the skill update below.
+The installers write `~/.claude/skills/forge/install.json` (installed version, repository URL, latest known version, ignored version), read by the skill update below.
 
 The `/forge-clickup` extension additionally requires the ClickUp MCP connector to be authenticated (`/mcp` in Claude Code). No script can do this step for you: it is a browser OAuth flow.
 
@@ -106,7 +106,7 @@ forge/
 │   │   │   ├── rule-propagation.md    (rule propagation to CLAUDE.md)
 │   │   │   ├── swarm.md               (swarm of child branches: launch, relay, merge, resume)
 │   │   │   ├── teacher.md             (teacher mode)
-│   │   │   └── update.md              (skill update: manual check)
+│   │   │   └── update.md              (skill update: install, ignored version)
 │   │   ├── phases/
 │   │   │   ├── p0-project.md          (State 0 — Project Init)
 │   │   │   ├── p1-coding-standards.md (State 1 — Coding Standards Init)
@@ -119,12 +119,14 @@ forge/
 │   │   │   ├── forge-precompact.sh   (state hook: PreCompact, SessionStart after compaction or resume)
 │   │   │   ├── linked-write-guard.sh  (write guard, PreToolUse: the parent session never writes into a linked project, except the mandate's brief.md and log.md)
 │   │   │   ├── time-hook.sh           (time measurement hook: one line per event in the branch time-log.jsonl)
+│   │   │   ├── update-notice.sh       (new version hook: background search at each /forge, wakes Claude when a newer version exists)
 │   │   │   └── plan-hook.sh           (tick hook: task marks, actual time, estimates and summary table of plan.md)
 │   │   └── scripts/              (called by the model and by the hooks)
 │   │       ├── checks.sh              (startup checks, run detached, and again at engrave: input/ and time-log.jsonl lines in .gitignore)
 │   │       ├── engrave.sh             (shipping sequence: preview / run; run --model writes metrics.json first)
 │   │       ├── metrics.sh             (branch measure summary: writes metrics.json and the plan's **Actual:** line, reports the estimated vs actual line as JSON)
 │   │       ├── json.sh                (JSON rendering and hook JSON field reading, shared by the scripts)
+│   │       ├── latest-version.sh      (shared bash: install.json, latest published tag, version comparison)
 │   │       ├── linked-worktree-cleanup.sh (removes a linked worktree once its branch is merged, clean tree only, as JSON)
 │   │       ├── log-entry.sh           (log entry: timestamp read from the local clock, entry written at the top of log.md)
 │   │       ├── status.sh              (startup status: state, progress, resumable branches, as JSON)
@@ -134,7 +136,7 @@ forge/
 │   │       ├── time-mark.sh           (delegate and token marks in the time-log.jsonl)
 │   │       ├── task-marks.sh          (shared bash: clock, folder fingerprint, task mark line)
 │   │       ├── task-files.sh          (shared awk: task status, planned files of a task, files changed between two fingerprints)
-│   │       └── update.sh              (skill update: check / run, as JSON)
+│   │       └── update.sh              (skill update: run / dismiss, as JSON)
 │   └── forge-clickup/        → extension: ClickUp task kickoff
 │       └── SKILL.md
 ├── install/
@@ -169,6 +171,7 @@ forge/
 │   ├── time-mark.test.sh     → bash tests/time-mark.test.sh, throwaway folders only
 │   ├── metrics.test.sh       → bash tests/metrics.test.sh, throwaway repositories only
 │   ├── plan-hook.test.sh     → bash tests/plan-hook.test.sh, throwaway repositories only
+│   ├── update-notice.test.sh → bash tests/update-notice.test.sh, throwaway repositories only
 │   └── update.test.sh        → bash tests/update.test.sh, throwaway repositories only
 ├── .gitattributes
 └── .gitignore
@@ -433,14 +436,15 @@ Updates `project.md` — only what changed, after validation.
 ## Updating the skill
 
 ```
-"mettre à jour la forge" / "update the forge"
+"mets à jour la forge" / "update the forge"      → installs the latest version
+"ignore cette version" / "ignore this version"   → stops announcing the version just announced
 ```
 
-At most once every 24 hours, `/forge` asks the repository for its latest `vX.Y.Z` tag in the background, without waiting: startup costs a few milliseconds, offline stays silent. A newer version found this way is announced at the next `/forge`, at the end of the status line, with no question: work starts straight away.
+Each time you type `/forge` or `/forge-clickup`, the `update-notice.sh` hook asks the repository for its latest `vX.Y.Z` tag in the background: nothing waits for it. A newer version wakes Claude, which writes it in the terminal at once — right after your answer when a question is open — with both commands above. Up to date, ignored or offline: nothing is shown and Claude is not woken. `/forge` itself no longer checks anything.
 
-The phrase above checks right away, whatever the delay, and offers the install: on `Update now`, forge clones the tag in a temporary folder, runs the platform installer and asks you to relaunch `/forge`; `Later` skips that version, which is no longer announced at startup — only a newer one is. It also says when you are up to date or when the repository is unreachable.
+The message comes back at each `/forge` until you update or ignore that version; a newer one is announced again. `update the forge` asks no question: forge clones the tag in a temporary folder, runs the platform installer and asks you to relaunch `/forge`; it installs an ignored version too, and says when you are up to date or when the repository is unreachable.
 
-An install without `install.json` (older than this feature, or from an archive outside git) is checked at once and offered the latest version. Delegated runs never check.
+An install without `install.json` (from an archive outside git) is offered the latest version. Delegated runs never check. The hook needs Claude Code's `asyncRewake` hooks.
 
 ---
 

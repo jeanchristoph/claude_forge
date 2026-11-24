@@ -1,8 +1,8 @@
 # Plan — forge-guards
 **Objective:** Ajouter au skill forge deux garde-fous (script de déploiement SQL toujours écrit et complet ; session parente qui n'écrit jamais dans un projet lié), nommer la branche liée d'après la tâche déléguée sans jamais nommer le parent, et documenter le hook `linked-write-guard.sh`.
 **Date:** 2026-11-23
-**Estimate:** ≈ 225 files · ≈ 152 min (40-281) · indicative
-**Actual:** ≈ 216.0 min agent (incl. 132.8 min checks) · human 377.3 min (41 questions, 209.9 min) · delegates 0.0 min in parallel · total ≈ 593.3 min · partial (log started after the branch, 13 unmeasured tasks)
+**Estimate:** ≈ 240 files · ≈ 161 min (44-301) · indicative
+**Actual:** ≈ 231.2 min agent (incl. 133.4 min checks) · human 406.5 min (54 questions, 227.0 min) · delegates 2.4 min in parallel · total ≈ 637.7 min · partial (log started after the branch, 13 unmeasured tasks)
 **Origin:** T7, T8, T9, T10
 
 ## Tasks
@@ -228,6 +228,14 @@
 **Description:** `time-hook.sh` note dans le journal le nombre de questions de la fenêtre et l'unité déléguée de chacune, lue dans le préfixe `[…]`, jamais le texte. `time-aggregate.sh` : une question d'une branche déléguée compte (temps et nombre) dans cette branche et dans sa tâche en cours, plus jamais dans la branche parente ni dans sa tâche en parallèle. Fenêtre groupée : temps partagé à parts égales entre ses questions, chaque question comptée 1 ; la somme parente + filles reste exacte. Brief, plan et mode de la fille : dans sa ligne `**Actual:**`, hors de ses tâches. Message libre, question sans préfixe et ancien journal : inchangés. Préfixe ajouté à la délégation simple.
 [x] Champ `units` journalisé, questions des délégués comptées une seule fois ; écart : question d'un projet lié gardée dans la branche parente, seule à avoir un journal, mais comptée dans la tâche du délégué et non plus dans celle de la parente ; tests time-hook 35, time-aggregate 111, metrics 26, plan-hook 63 ; non essayé dans un essaim réel
 
+### T28 — Nouvelle version annoncée par un hook dès la réponse de GitHub
+**Effort:** M
+**Estimated time:** ≈ 9 min (4-20)
+**Actual time:** ≈ 9.0 min agent (incl. 0.6 min checks) · human 18.7 min (9 questions) · 14 files · total ≈ 27.7 min
+**Files:** `skills/forge/hooks/update-notice.sh`, `tests/update-notice.test.sh`, `skills/forge/scripts/latest-version.sh`, `skills/forge/scripts/update.sh`, `tests/update.test.sh`, `install/install.sh`, `install/install.ps1`, `tests/install.test.sh`, `skills/forge/SKILL.md`, `skills/forge/commands/update.md`, `skills/forge/commands/help.md`, `.forge/project.md`, `README.md`, `README.fr.md`, `CHANGELOG.md`
+**Description:** Hook `update-notice.sh` sur `/forge` et `/forge-clickup` (`UserPromptExpansion`, `asyncRewake`) : cherche le dernier tag à chaque lancement, en arrière-plan ; version plus récente et non ignorée → Claude écrit la ligne, avec les commandes « mets à jour la forge » et « ignore cette version » ; sinon, ou hors réseau, rien. `/forge` ne s'occupe plus des mises à jour : `update.sh check`, délai de 24 h et mention de la ligne d'état retirés. « mets à jour la forge » installe directement ; « ignore cette version » enregistre le refus (`update.sh dismiss`). Règle `SKILL.md` : message du hook écrit avant toute autre action, STOP compris. Essais réels faits avant le code : `asyncRewake` à l'arrêt et après une question, concluants ; `FileChanged` écarté (message d'une seconde).
+[x] Hook, bibliothèque `latest-version.sh`, `update.sh` réduit à `run` et `dismiss`, installeurs et textes ; tests update-notice 12, update 15, install 51 ; hook lancé sur le vrai dépôt : 0,9 s, sortie 2 ; `help.md` et `latest-version.sh` ajoutés aux fichiers ; pas encore essayé dans un vrai `/forge`
+
 ## Risks
 - `p5-resume.md` et `CHANGELOG.md` sont touchés par T1 et T2 : ils sont édités l'un après l'autre, dans le même plan, sans conflit.
 - Les noms de fichiers des installeurs diffèrent du mandat (`install/install.sh`, `install/install.ps1` au lieu des lanceurs racine) : même intention, fichiers où vit la fusion de `settings.json`.
@@ -268,5 +276,6 @@ None
 | T25 — Vérifications : départ à 0 | S | 6 | ≈ 4 min | ≈ 3.4 min agent (incl. 2.7 min checks) · human 0.0 min (0 questions) · 7 files · total ≈ 3.4 min | [x] |
 | T26 — Tests en parallèle | M | 24 | ≈ 11 min | ≈ 50.9 min agent (incl. 43.9 min checks) · human 32.0 min (9 questions) · 22 files · total ≈ 82.9 min | [x] |
 | T27 — Temps humain et nombre de questions rattachés à la branche du délégué | M | 10 | ≈ 4 min | ≈ 3.8 min agent (incl. 2.2 min checks) · human 0.0 min (0 questions) · 10 files · total ≈ 3.8 min | [x] |
-| **Total** (14/27 measured) | **7S, 6M, 1L** | **135** | **≈ 79 min** | **≈ 157.3 min** | |
-| **Unplanned** | | | | **≈ 58.7 min** | |
+| T28 — Nouvelle version annoncée par un hook dès la réponse de GitHub | M | 15 | ≈ 9 min | ≈ 9.0 min agent (incl. 0.6 min checks) · human 18.7 min (9 questions) · 14 files · total ≈ 27.7 min | [x] |
+| **Total** (15/28 measured) | **7S, 7M, 1L** | **150** | **≈ 88 min** | **≈ 166.3 min** | |
+| **Unplanned** | | | | **≈ 67.3 min** | |

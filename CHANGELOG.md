@@ -10,6 +10,20 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ## [Unreleased]
 
+## [0.13.8] — 2026-11-24
+
+### Added
+
+- A new version is announced as soon as the repository answers: the `update-notice.sh` hook, run in the background each time `/forge` or `/forge-clickup` is typed, wakes Claude only when a newer version exists, and Claude writes it in the terminal with the commands to update or to ignore it. "ignore this version" stops announcing that version.
+
+### Changed
+
+- "update the forge" installs the latest version without a question, an ignored one included.
+
+### Removed
+
+- `/forge` no longer checks for updates: `update.sh check`, its 24-hour delay and the status line mention are gone; `install.json` no longer holds `last_check` (an existing one is ignored).
+
 ## [0.13.7] — 2026-11-24
 
 ### Changed
@@ -485,7 +499,8 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 - Idempotent Unix and Windows installers, with `settings.json` merge and no duplicate entries on reinstall.
 - `main` / `master` guard: on a protected branch, forge asks for a ticket ID or a branch name before continuing.
 
-[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.7...HEAD
+[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.8...HEAD
+[0.13.8]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.7...v0.13.8
 [0.13.7]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.6...v0.13.7
 [0.13.6]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.5...v0.13.6
 [0.13.5]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.4...v0.13.5

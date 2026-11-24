@@ -157,11 +157,13 @@ Si BRANCH est `main` ou `master`, dans l'ordre :
 
 ## Mise à jour du skill
 
-**Déclencheur :** l'humain demande de "mettre à jour la forge" ou "update the forge".
+**Déclencheur :** l'humain demande de "mettre à jour la forge" / "update the forge", ou, après une annonce de version, "ignore cette version" / "ignore this version".
 
 **Réaction :**
-- Lire et exécuter intégralement : `commands/update.md`, section « Contrôle manuel »
+- Lire et exécuter intégralement : `commands/update.md`, section « Mise à jour » ou « Version ignorée »
 - STOP — ne pas continuer vers la détection d'état.
+
+**Nouvelle version :** aucune recherche au lancement — le hook `hooks/update-notice.sh` la fait en arrière-plan à chaque `/forge`. Message du hook `update-notice` reçu → écrire d'abord ses lignes, telles quelles, dans la langue de l'utilisateur, avant toute autre action du tour, consigne STOP comprise.
 
 ---
 
@@ -170,14 +172,13 @@ Si BRANCH est `main` ou `master`, dans l'ordre :
 **Étape préalable — dans l'ordre :**
 1. Exécuter, en un seul appel Bash :
    - `bash <SKILL_DIR>/scripts/status.sh --root <ROOT>` — ajouter `--branch <BRANCH>` quand `<BRANCH>` n'est pas la branche git courante (nom de code hors git) ;
-   - hors mode délégué, `bash <SKILL_DIR>/scripts/update.sh check` ;
    - hors mode délégué, `bash <SKILL_DIR>/scripts/checks.sh --root <ROOT> </dev/null >/dev/null 2>&1 &` — contrôles de démarrage détachés, jamais attendus ni lus, rien affiché, rien dans LOG.
 
-   Lire les JSON de `status.sh` et `update.sh` : contexte interne, jamais affichés bruts. `update_available` vrai → mention ajoutée à la ligne d'état de l'étape 5, aucune question au démarrage.
+   Lire le JSON de `status.sh` : contexte interne, jamais affiché brut.
 2. `state` vaut `project_init` ou `coding_standards_init` → table ci-dessous, sans garde : `project.md` et `coding-standards.md` sont communs à toutes les branches et ne résolvent jamais `<BRANCH>`.
 3. `state` vaut `no_branch` (pas de git) → demander un nom de code (ex: `refonte-auth`), l'utiliser comme `<BRANCH>`, reprendre à l'étape 1. Sans réponse : STOP.
 4. Exécuter la « Garde de sécurité » ci-dessus. `<BRANCH>` changée → reprendre à l'étape 1.
-5. Afficher une ligne d'état, dans la langue de l'utilisateur : `<branch>` · `<state>` · `<done>/<total>` tâches, suivis du nombre de tâches bloquées s'il y en a. Sans plan → `<branch>` · `<state>`. `update_available` vrai → ` · forge <latest> available — say "update the forge"` en fin de ligne, la commande dans la langue de l'utilisateur (« mets à jour la forge » en français).
+5. Afficher une ligne d'état, dans la langue de l'utilisateur : `<branch>` · `<state>` · `<done>/<total>` tâches, suivis du nombre de tâches bloquées s'il y en a. Sans plan → `<branch>` · `<state>`.
 
 Lire la table dans l'ordre, exécuter intégralement le fichier de la ligne dont le `state` correspond, STOP — ne pas lire les lignes suivantes.
 

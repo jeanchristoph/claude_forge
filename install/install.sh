@@ -18,15 +18,14 @@ for src in "$ROOT"/skills/*/; do
   echo "  $name"
 done
 
-# Version installée et dépôt d'origine, lus par skills/forge/scripts/update.sh.
-# Installation hors git → version et dépôt nuls : la mise à jour sera proposée au premier contrôle.
+# Version installée et dépôt d'origine, lus par skills/forge/scripts/latest-version.sh.
+# Installation hors git → version et dépôt nuls : la dernière version sera annoncée au premier /forge.
 echo "► Install record..."
 node -e "
 const [file, version, repository] = process.argv.slice(1);
 const record = {
   version: version || null,
   repository: repository || null,
-  last_check: version ? Math.floor(Date.now() / 1000) : 0,
   latest: version || null
 };
 require('fs').writeFileSync(file, JSON.stringify(record) + '\n');
@@ -116,6 +115,14 @@ s.hooks.PreToolUse = (s.hooks.PreToolUse || []).filter(g =>
   !g.hooks || !g.hooks.some(h => h.command && h.command.includes('linked-write-guard.sh'))
 );
 s.hooks.PreToolUse.push({ matcher: 'Edit|Write|MultiEdit|NotebookEdit', hooks: [guardHook] });
+
+// Hook de nouvelle version : retire toute entrée update-notice existante, puis l'ajoute à /forge et /forge-clickup.
+// asyncRewake : lancé en arrière-plan, il réveille Claude seulement quand une version plus récente existe.
+const noticeHook = { type: 'command', command: 'bash ~/.claude/skills/forge/hooks/update-notice.sh', shell: 'bash', asyncRewake: true, timeout: 30 };
+s.hooks.UserPromptExpansion = (s.hooks.UserPromptExpansion || []).filter(g =>
+  !g.hooks || !g.hooks.some(h => h.command && h.command.includes('update-notice.sh'))
+);
+s.hooks.UserPromptExpansion.push({ matcher: 'forge|forge-clickup', hooks: [noticeHook] });
 
 fs.writeFileSync(sp, JSON.stringify(s, null, 2));
 console.log('Settings OK.');

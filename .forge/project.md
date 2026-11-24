@@ -27,7 +27,7 @@ forge/
 │   │   │   ├── rule-propagation.md   (Correction ou choix d'infrastructure → propagation vers CLAUDE.md)
 │   │   │   ├── swarm.md              (Essaim de branches filles et de branches liées d'autres dépôts : lancement, relais, fin, fusion des seules branches filles, retrait, état, reprise, plan mixte)
 │   │   │   ├── teacher.md            (Mode professeur, déclencheur dans SKILL.md)
-│   │   │   └── update.md             (Mise à jour du skill : contrôle manuel et proposition ; au démarrage, simple mention dans la ligne d'état)
+│   │   │   └── update.md             (Mise à jour du skill : installation sans question, version ignorée)
 │   │   ├── phases/
 │   │   │   ├── p0-project.md         (État 0 — Project Init)
 │   │   │   ├── p1-coding-standards.md (État 1)
@@ -41,6 +41,7 @@ forge/
 │   │   │   ├── engrave.sh            (séquence git de la livraison : preview / run, appelée par p5-resume.md ; run --model écrit d'abord metrics.json par metrics.sh)
 │   │   │   ├── metrics.sh            (synthèse de mesure : écrit metrics.json, rend la ligne estimé / réel en JSON ; livraison, clôture, fusion d'essaim)
 │   │   │   ├── json.sh               (rendu JSON sans jq et lecture des champs du JSON des hooks, chargé par les scripts du skill)
+│   │   │   ├── latest-version.sh     (fonctions bash communes à update.sh et update-notice.sh : install.json, dernier tag publié, comparaison de versions)
 │   │   │   ├── log-entry.sh          (seule écriture d'une entrée LOG : horloge locale, entrée en tête de log.md, fins de ligne gardées ; règle « Entrée LOG » de SKILL.md)
 │   │   │   ├── status.sh             (état au lancement en JSON, lecture seule, appelé par SKILL.md ; peu de processus, Git Bash les paie cher)
 │   │   │   ├── task-files.sh         (fonctions awk communes, chargées par time-aggregate.sh, time-calibrate.sh, status.sh et plan-hook.sh : statut d'une tâche, fichiers prévus, fichiers changés entre deux empreintes)
@@ -49,11 +50,12 @@ forge/
 │   │   │   ├── time-aggregate.sh     (mesure d'une branche en JSON : journal du hook + git, lu par la synthèse metrics.json)
 │   │   │   ├── time-calibrate.sh     (ratios du projet et estimation d'un nombre de fichiers, en JSON ; références dans references/estimation.json)
 │   │   │   ├── time-mark.sh          (marques de délégué et de tokens dans time-log.jsonl ; marques de tâche à la main, le hook de coche les pose sinon)
-│   │   │   └── update.sh             (mise à jour du skill : check / run en JSON, appelé avec status.sh ; contrôle réseau détaché toutes les 24 heures)
+│   │   │   └── update.sh             (mise à jour du skill : run installe le dernier tag publié, dismiss ignore la version annoncée, en JSON)
 │   │   └── hooks/                 (hooks déclarés dans settings.json par les installeurs, copiés avec le skill ; bibliothèques chargées par ../scripts/)
 │   │       ├── forge-precompact.sh   (hook d'état : PreCompact, SessionStart compact|resume)
 │   │       ├── linked-write-guard.sh (garde d'écriture, PreToolUse sur Edit|Write|MultiEdit|NotebookEdit : écriture de la session parente dans un projet lié refusée, hors brief.md et log.md du mandat)
 │   │       ├── plan-hook.sh          (hook de coche, PostToolUse synchrone : marques de tâche, réel, estimations, ## Summary ; état = lignes plan_checkpoint du journal)
+│   │       ├── update-notice.sh      (hook de nouvelle version, UserPromptExpansion sur forge|forge-clickup, asyncRewake : recherche à chaque lancement, réveille Claude si une version plus récente et non ignorée existe)
 │   │       └── time-hook.sh          (hook de mesure : une ligne par événement dans time-log.jsonl)
 │   └── forge-clickup/
 │       └── SKILL.md               (guichet ClickUp : ouvre la tâche, crée la branche, passe la main à forge)
@@ -87,6 +89,7 @@ forge/
 │   ├── time-calibrate.test.sh (tests de la calibration, dossiers jetables : bash tests/time-calibrate.test.sh)
 │   ├── time-hook.test.sh      (tests du hook de mesure, dépôts jetables : bash tests/time-hook.test.sh)
 │   ├── time-mark.test.sh      (tests des marques de tâche, dossiers jetables : bash tests/time-mark.test.sh)
+│   ├── update-notice.test.sh  (tests du hook de nouvelle version, dépôts jetables : bash tests/update-notice.test.sh)
 │   └── update.test.sh         (tests de la mise à jour du skill, dépôts jetables : bash tests/update.test.sh)
 ├── README.md                  (documentation, anglais)
 └── README.fr.md               (même documentation, français)
@@ -117,7 +120,8 @@ Fichiers générés dans **chaque projet cible** par le skill (pas dans ce dép�
 - `skills/forge/phases/p5-resume.md` — reprise, règles de mise à jour, surveillance, et déclencheurs des commandes de `skills/forge/commands/` : Délégation, Livraison (`grave` / `engrave`, projets liés compris) et Clôture de tâche
 - `skills/forge/scripts/status.sh` — état de la branche en JSON, lu une fois par « Détection d'état » ; toute évolution passe par ce script et `tests/status.test.sh`
 - `skills/forge/scripts/checks.sh` — contrôles de démarrage lancés détachés, jamais attendus : ajoute `/.forge/branch/*/input/` et `/.forge/branch/**/time-log.jsonl` au `.gitignore` hors main / master ; toute évolution passe par ce script et `tests/checks.test.sh`
-- `skills/forge/scripts/update.sh` — mise à jour du skill : `check` (lecture de `~/.claude/skills/forge/install.json`, écrit par les installeurs ; interrogation détachée du dernier tag `vX.Y.Z` toutes les 24 heures, `--force` au premier plan) `run` (clone du tag, installeur de la plateforme) et `dismiss` (refus d'une version, retenu dans `install.json`) ; toute évolution passe par ce script et `tests/update.test.sh`
+- `skills/forge/hooks/update-notice.sh` — hook de nouvelle version, lancé par `/forge` et `/forge-clickup` en arrière-plan, sortie 2 pour réveiller Claude ; toute évolution passe par ce script et `tests/update-notice.test.sh`
+- `skills/forge/scripts/update.sh` — mise à jour du skill : `run` (dernier tag `vX.Y.Z` publié, clone, installeur de la plateforme) et `dismiss` (version annoncée ignorée, retenue dans `install.json`) ; toute évolution passe par ce script et `tests/update.test.sh`
 - `skills/forge/scripts/engrave.sh` — séquence git de la Livraison, `preview` puis `run`, tous deux en JSON mis en page par le skill (compte rendu : une ligne par opération git, statut `done` / `skipped` / `failed` / `not_run`) ; toute évolution de la séquence passe par ce script et `tests/engrave.test.sh`
 
 ## Detected conventions

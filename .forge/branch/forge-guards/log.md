@@ -1,3 +1,6 @@
+- [2026-11-24 18:04] Version 0.13.8 préparée — CHANGELOG daté, publication demandée par l'utilisateur
+- [2026-11-24 18:01] T28 done — nouvelle version annoncée par le hook update-notice (asyncRewake) ; update.sh check supprimé, « mets à jour la forge » sans question, « ignore cette version » (choix de l'utilisateur)
+- [2026-11-24 17:33] T28 ajoutée, enchaînée — nouvelle version annoncée par un hook FileChanged, attente au lancement refusée par l'utilisateur ; essai réel avant le code
 - [2026-11-24 17:09] Version 0.13.7 préparée — CHANGELOG daté, publication demandée par l'utilisateur
 - [2026-11-24 17:09] T27 done — questions des délégués comptées une seule fois (champ units du journal) ; projet lié : branche parente gardée, tâche du délégué créditée
 - [2026-11-24 17:05] T27 ajoutée, enchaînée — questions des délégués : temps humain et nombre comptés une seule fois, dans la branche qui pose la question (choix de l'utilisateur)

@@ -18,7 +18,7 @@ foreach ($d in Get-ChildItem "$root\skills" -Directory) {
 }
 
 # ── Install record ────────────────────────────────────────────────────────────
-# Version installée et dépôt d'origine, lus par skills/forge/scripts/update.sh.
+# Version installée et dépôt d'origine, lus par skills/forge/scripts/latest-version.sh.
 # Installation hors git → version et dépôt nuls : la mise à jour sera proposée au premier contrôle.
 Write-Host "Install record..."
 
@@ -34,7 +34,6 @@ $installedVersion = Read-GitValue @("describe", "--tags", "--abbrev=0", "--match
 $record = [ordered]@{
     version    = $installedVersion
     repository = Read-GitValue @("remote", "get-url", "origin")
-    last_check = if ($installedVersion) { [DateTimeOffset]::UtcNow.ToUnixTimeSeconds() } else { 0 }
     latest     = $installedVersion
 }
 $recordJson = ([PSCustomObject]$record | ConvertTo-Json -Compress) + "`n"
@@ -143,6 +142,17 @@ $guardGroups = @($s.hooks.PreToolUse | Where-Object {
     -not (@($_.hooks) | Where-Object { $_.command -like "*linked-write-guard.sh*" })
 })
 $s.hooks.PreToolUse = $guardGroups + [PSCustomObject]@{ matcher = "Edit|Write|MultiEdit|NotebookEdit"; hooks = @($guardHook) }
+
+# Hook de nouvelle version : retire toute entrée update-notice existante, puis l'ajoute à /forge et /forge-clickup.
+# asyncRewake : lancé en arrière-plan, il réveille Claude seulement quand une version plus récente existe.
+if (-not ($s.hooks.PSObject.Properties.Name -contains "UserPromptExpansion")) {
+    $s.hooks | Add-Member -NotePropertyName UserPromptExpansion -NotePropertyValue @()
+}
+$noticeHook = [PSCustomObject]@{ type = "command"; command = "bash ~/.claude/skills/forge/hooks/update-notice.sh"; shell = "bash"; asyncRewake = $true; timeout = 30 }
+$noticeGroups = @($s.hooks.UserPromptExpansion | Where-Object {
+    -not (@($_.hooks) | Where-Object { $_.command -like "*update-notice.sh*" })
+})
+$s.hooks.UserPromptExpansion = $noticeGroups + [PSCustomObject]@{ matcher = "forge|forge-clickup"; hooks = @($noticeHook) }
 
 # Sans BOM : install.sh et les autres lecteurs JSON le refusent.
 [IO.File]::WriteAllText($sp, ($s | ConvertTo-Json -Depth 10), (New-Object Text.UTF8Encoding $false))

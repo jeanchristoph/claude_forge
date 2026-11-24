@@ -64,7 +64,7 @@ Les scripts du skill demandent bash 5 (Git Bash sous Windows, un bash récent vi
 
 Les archives de release (« Source code » zip / tar.gz sur la [page des releases](https://github.com/jeanchristoph/claude_forge/releases)) ne contiennent que ce dont les installeurs ont besoin : `.forge/`, `docs/` et les fichiers `.git*` en sont exclus.
 
-Les installeurs écrivent `~/.claude/skills/forge/install.json` (version installée, URL du dépôt, dernier contrôle de mise à jour), lu par la mise à jour du skill ci-dessous.
+Les installeurs écrivent `~/.claude/skills/forge/install.json` (version installée, URL du dépôt, dernière version connue, version ignorée), lu par la mise à jour du skill ci-dessous.
 
 L'extension `/forge-clickup` requiert en plus le connecteur MCP ClickUp authentifié (`/mcp` dans Claude Code). Aucun script ne peut faire cette étape à ta place : c'est un OAuth navigateur.
 
@@ -104,7 +104,7 @@ forge/
 │   │   │   ├── rule-propagation.md    (propagation d'une règle vers CLAUDE.md)
 │   │   │   ├── swarm.md               (essaim de branches filles : lancement, relais, fusion, reprise)
 │   │   │   ├── teacher.md             (mode professeur)
-│   │   │   └── update.md              (mise à jour du skill : contrôle manuel)
+│   │   │   └── update.md              (mise à jour du skill : installation, version ignorée)
 │   │   ├── phases/
 │   │   │   ├── p0-project.md          (État 0 — Project Init)
 │   │   │   ├── p1-coding-standards.md (État 1 — Coding Standards Init)
@@ -117,12 +117,14 @@ forge/
 │   │   │   ├── forge-precompact.sh   (hook d'état : PreCompact, SessionStart après compaction ou reprise)
 │   │   │   ├── linked-write-guard.sh  (garde d'écriture, PreToolUse : la session parente n'écrit jamais dans un projet lié, hors brief.md et log.md du mandat)
 │   │   │   ├── time-hook.sh           (hook de mesure : une ligne par événement dans le time-log.jsonl de la branche)
+│   │   │   ├── update-notice.sh       (hook de nouvelle version : recherche en arrière-plan à chaque /forge, réveille Claude si une version plus récente existe)
 │   │   │   └── plan-hook.sh           (hook de coche : marques de tâche, réel, estimations et tableau récapitulatif de plan.md)
 │   │   └── scripts/              (appelés par le modèle et par les hooks)
 │   │       ├── checks.sh              (contrôles de démarrage, lancés détachés, et repris à la livraison : lignes input/ et time-log.jsonl dans le .gitignore)
 │   │       ├── engrave.sh             (séquence de livraison : preview / run ; run --model écrit d'abord metrics.json)
 │   │       ├── metrics.sh             (synthèse de mesure de la branche : écrit metrics.json et la ligne **Actual:** du plan, rend la ligne estimé / réel en JSON)
 │   │       ├── json.sh                (rendu JSON et lecture des champs du JSON des hooks, partagés par les scripts)
+│   │       ├── latest-version.sh      (bash commun : install.json, dernier tag publié, comparaison de versions)
 │   │       ├── linked-worktree-cleanup.sh (retire un worktree lié une fois sa branche fusionnée, working tree propre seulement, en JSON)
 │   │       ├── log-entry.sh           (entrée de LOG : horodatage lu sur l'horloge locale, entrée écrite en tête de log.md)
 │   │       ├── status.sh              (état au lancement : état, avancement, branches à reprendre, en JSON)
@@ -132,7 +134,7 @@ forge/
 │   │       ├── time-mark.sh           (marques de délégué et de tokens dans le time-log.jsonl)
 │   │       ├── task-marks.sh          (fonctions bash communes : horloge, empreinte du dossier, ligne de marque)
 │   │       ├── task-files.sh          (fonctions awk communes : statut d'une tâche, fichiers prévus d'une tâche, fichiers changés entre deux empreintes)
-│   │       └── update.sh              (mise à jour du skill : check / run, en JSON)
+│   │       └── update.sh              (mise à jour du skill : run / dismiss, en JSON)
 │   └── forge-clickup/        → extension : ouverture de tâche ClickUp
 │       └── SKILL.md
 ├── install/
@@ -167,6 +169,7 @@ forge/
 │   ├── time-mark.test.sh     → bash tests/time-mark.test.sh, dossiers jetables uniquement
 │   ├── metrics.test.sh       → bash tests/metrics.test.sh, dépôts jetables uniquement
 │   ├── plan-hook.test.sh     → bash tests/plan-hook.test.sh, dépôts jetables uniquement
+│   ├── update-notice.test.sh → bash tests/update-notice.test.sh, dépôts jetables uniquement
 │   └── update.test.sh        → bash tests/update.test.sh, dépôts jetables uniquement
 ├── .gitattributes
 └── .gitignore
@@ -432,14 +435,15 @@ Met à jour `project.md` — uniquement ce qui a changé, après validation.
 ## Mise à jour du skill
 
 ```
-"mettre à jour la forge" / "update the forge"
+"mets à jour la forge" / "update the forge"      → installe la dernière version
+"ignore cette version" / "ignore this version"   → n'annonce plus la version qui vient de l'être
 ```
 
-Au plus une fois toutes les 24 heures, `/forge` interroge le dépôt sur son dernier tag `vX.Y.Z` en arrière-plan, sans l'attendre : le démarrage coûte quelques millisecondes, hors réseau tout reste silencieux. Une version plus récente ainsi trouvée est annoncée au `/forge` suivant, en fin de ligne d'état, sans question : le travail commence sans détour.
+À chaque `/forge` ou `/forge-clickup` tapé, le hook `update-notice.sh` interroge le dépôt sur son dernier tag `vX.Y.Z` en arrière-plan : rien ne l'attend. Une version plus récente réveille Claude, qui l'écrit aussitôt dans le terminal — juste après ta réponse quand une question est ouverte — avec les deux commandes ci-dessus. À jour, version ignorée ou hors réseau : rien ne s'affiche, Claude n'est pas réveillé. `/forge` lui-même ne contrôle plus rien.
 
-La phrase ci-dessus contrôle tout de suite, quel que soit le délai, et propose l'installation : sur `Mettre à jour`, forge clone le tag dans un dossier temporaire, lance l'installeur de la plateforme et demande de relancer `/forge` ; `Plus tard` écarte cette version, qui n'est plus annoncée au démarrage — seule une version plus récente l'est. Elle signale aussi une version à jour ou un dépôt injoignable.
+Le message revient à chaque `/forge` jusqu'à la mise à jour ou jusqu'à ce que tu ignores cette version ; une plus récente est de nouveau annoncée. « mets à jour la forge » ne pose aucune question : forge clone le tag dans un dossier temporaire, lance l'installeur de la plateforme et demande de relancer `/forge` ; une version ignorée s'installe aussi, et une version à jour ou un dépôt injoignable est signalé.
 
-Une installation sans `install.json` (antérieure à cette fonction, ou depuis une archive hors git) est contrôlée aussitôt et se voit proposer la dernière version. Un forge délégué ne contrôle jamais.
+Une installation sans `install.json` (depuis une archive hors git) se voit proposer la dernière version. Un forge délégué ne contrôle jamais. Le hook exige les hooks `asyncRewake` de Claude Code.
 
 ---
 

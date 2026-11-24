@@ -10,6 +10,8 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ## [Unreleased]
 
+## [0.13.6] — 2026-11-24
+
 ### Changed
 
 - One time rule for every task: a branch task and a linked task are the sum of their plan's tasks — estimate (marked `· indicative` until that plan is written, then taken once) and actual time, checks included, in the same shape as any task. The delegate's whole time, plan writing and launch included, no longer enters their actual time.
@@ -477,7 +479,8 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 - Idempotent Unix and Windows installers, with `settings.json` merge and no duplicate entries on reinstall.
 - `main` / `master` guard: on a protected branch, forge asks for a ticket ID or a branch name before continuing.
 
-[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.5...HEAD
+[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.6...HEAD
+[0.13.6]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.5...v0.13.6
 [0.13.5]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.4...v0.13.5
 [0.13.4]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.3...v0.13.4
 [0.13.3]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.2...v0.13.3

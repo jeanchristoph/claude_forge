@@ -2,7 +2,7 @@
 **Objective:** Ajouter au skill forge deux garde-fous (script de déploiement SQL toujours écrit et complet ; session parente qui n'écrit jamais dans un projet lié), nommer la branche liée d'après la tâche déléguée sans jamais nommer le parent, et documenter le hook `linked-write-guard.sh`.
 **Date:** 2026-11-23
 **Estimate:** ≈ 215 files · ≈ 148 min (39-273) · indicative
-**Actual:** ≈ 204.5 min agent (incl. 127.7 min checks) · human 350.1 min (35 questions, 201.1 min) · fixed — (delegate setup, merge) · delegates 0.0 min in parallel · total ≈ 554.6 min · partial (log started after the branch, 13 unmeasured tasks)
+**Actual:** ≈ 207.6 min agent (incl. 127.7 min checks) · human 350.5 min (36 questions, 201.2 min) · fixed — (delegate setup, merge) · delegates 0.0 min in parallel · total ≈ 558.1 min · partial (log started after the branch, 13 unmeasured tasks)
 **Origin:** T7, T8, T9, T10
 
 ## Tasks
@@ -260,4 +260,4 @@ None
 | T25 — Vérifications : départ à 0 | S | 6 | ≈ 4 min | ≈ 3.4 min agent (incl. 2.7 min checks) · human 0.0 min (0 questions) · 7 files · total ≈ 3.4 min | [x] |
 | T26 — Tests en parallèle | M | 24 | ≈ 11 min | ≈ 50.9 min agent (incl. 43.9 min checks) · human 32.0 min (9 questions) · 22 files · total ≈ 82.9 min | [x] |
 | **Total** (13/26 measured) | **7S, 5M, 1L** | **125** | **≈ 75 min** | **≈ 153.5 min** | |
-| **Unplanned** | | | | **≈ 51.0 min** | |
+| **Unplanned** | | | | **≈ 54.1 min** | |

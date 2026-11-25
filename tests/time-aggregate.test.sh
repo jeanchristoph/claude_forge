@@ -167,6 +167,96 @@ test_ignores_turn_without_stop() {
 }
 
 # Message tapé pendant le travail : le prompt arrive avant le Stop du tour en cours, qui n'en reçoit jamais.
+test_turn_started_on_another_branch_counts_from_its_first_activity() {
+  own_events '{"ts":60000,"event":"PostToolUse","session":"s","tool":"Bash","duration_ms":400}' \
+             '{"ts":240000,"event":"Stop","session":"s"}'
+  local output
+  output=$(aggregate)
+  assert_contains '"parent_minutes":3.0' "$output"
+  assert_contains '"human_minutes":0.0' "$output"
+}
+
+test_turn_back_on_the_branch_after_a_stop_counts_from_its_first_activity() {
+  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":60000,"event":"Stop","session":"s"}' \
+             '{"ts":600000,"event":"PostToolUse","session":"s","tool":"Bash","duration_ms":400}' \
+             '{"ts":720000,"event":"Stop","session":"s"}'
+  local output
+  output=$(aggregate)
+  assert_contains '"parent_minutes":3.0' "$output"
+  assert_contains '"human_minutes":0.0' "$output"
+}
+
+test_interrupted_turn_without_start_is_not_human_time() {
+  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":60000,"event":"Stop","session":"s"}' \
+             '{"ts":600000,"event":"PostToolUse","session":"s","tool":"Bash","duration_ms":400}' \
+             '{"ts":720000,"event":"PostToolUse","session":"s","tool":"Bash","duration_ms":400}' \
+             '{"ts":1200000,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":1260000,"event":"Stop","session":"s"}'
+  local output
+  output=$(aggregate)
+  assert_contains '"parent_minutes":4.0' "$output"
+  assert_contains '"human_minutes":0.0' "$output"
+}
+
+test_question_of_a_turn_without_start_stays_human_time() {
+  own_events '{"ts":0,"event":"PreToolUse","session":"s","tool":"AskUserQuestion"}' \
+             '{"ts":120000,"event":"PostToolUse","session":"s","tool":"AskUserQuestion","duration_ms":1}' \
+             '{"ts":300000,"event":"Stop","session":"s"}'
+  local output
+  output=$(aggregate)
+  assert_contains '"parent_minutes":3.0' "$output"
+  assert_contains '"human_minutes":2.0' "$output"
+  assert_contains '"questions":1' "$output"
+}
+
+test_turn_without_start_forgets_the_questions_of_the_previous_turn() {
+  own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}' \
+             '{"ts":0,"event":"PreToolUse","session":"s","tool":"AskUserQuestion"}' \
+             '{"ts":60000,"event":"PostToolUse","session":"s","tool":"AskUserQuestion","duration_ms":1}' \
+             '{"ts":120000,"event":"Stop","session":"s"}' \
+             '{"ts":600000,"event":"PostToolUse","session":"s","tool":"Bash","duration_ms":400}' \
+             '{"ts":720000,"event":"Stop","session":"s"}'
+  assert_contains '"parent_minutes":3.0' "$(aggregate)"
+}
+
+test_task_ticked_in_a_turn_without_start_is_measured() {
+  own_events '{"ts":0,"event":"PostToolUse","session":"s","tool":"Bash","duration_ms":400}' \
+             '{"ts":60000,"event":"task_start","task":"T1"}' \
+             '{"ts":120000,"event":"PreToolUse","session":"s","tool":"AskUserQuestion"}' \
+             '{"ts":180000,"event":"PostToolUse","session":"s","tool":"AskUserQuestion","duration_ms":1}' \
+             '{"ts":360000,"event":"task_done","task":"T1"}'
+  local output
+  output=$(aggregate --task T1)
+  assert_contains '"agent_minutes":4.0' "$output"
+  assert_contains '"human_minutes":1.0' "$output"
+}
+
+test_marks_never_open_a_turn() {
+  own_events '{"ts":0,"event":"late_start"}' \
+             '{"ts":60000,"event":"task_start","task":"T1"}' \
+             '{"ts":360000,"event":"task_done","task":"T1"}'
+  assert_contains '"agent_minutes":0.0' "$(aggregate --task T1)"
+}
+
+test_stop_without_turn_counts_nothing() {
+  own_events '{"ts":0,"event":"Stop","session":"s"}' \
+             '{"ts":180000,"event":"Stop","session":"s"}'
+  assert_contains '"parent_minutes":0.0' "$(aggregate)"
+}
+
+test_subagent_activity_never_opens_a_turn_of_the_session() {
+  own_events '{"ts":0,"event":"SubagentStart","session":"s","agent_id":"x1"}' \
+             '{"ts":60000,"event":"PostToolUse","session":"s","agent_id":"x1","tool":"Bash","duration_ms":400}' \
+             '{"ts":120000,"event":"SubagentStop","session":"s","agent_id":"x1"}' \
+             '{"ts":300000,"event":"Stop","session":"s"}'
+  local output
+  output=$(aggregate)
+  assert_contains '"parent_minutes":0.0' "$output"
+  assert_contains '"delegated_minutes":2.0' "$output"
+}
+
 test_closes_turn_interrupted_by_queued_prompt_at_last_activity() {
   own_events '{"ts":0,"event":"UserPromptSubmit","session":"s","origin":"human"}'              '{"ts":10000,"event":"PreToolUse","session":"s","tool":"Bash"}'              '{"ts":60000,"event":"PostToolUse","session":"s","tool":"Bash","duration_ms":50000}'              '{"ts":90000,"event":"UserPromptSubmit","session":"s","origin":"human"}'              '{"ts":150000,"event":"Stop","session":"s"}'
   assert_contains '"parent_minutes":2.0' "$(aggregate)"
@@ -557,6 +647,18 @@ test_sums_task_files_and_their_planned_files_for_the_branch() {
   mark T1 start; printf 'a\n' > "$WORK/a.txt"; mark T1 done
   mark T2 start; printf 'a2\n' > "$WORK/a.txt"; mark T2 done
   assert_contains '"task_files":2,"task_planned_files":3,"measured_tasks":2}' "$(aggregate)"
+}
+
+test_tasks_of_a_burst_are_left_out_of_the_branch_files() {
+  printf '# Plan\n\n## Tasks\n\n### T1 — a\n**Files:** `a.txt`\n[x]\n\n### T2 — b\n**Files:** `b.txt`\n[x]\n\n### T3 — c\n**Files:** `c.txt`, `d.txt`\n[x]\n' \
+    > "$WORK/.forge/branch/feature/plan.md"
+  own_events '{"ts":1000,"event":"task_start","task":"T1","files":""}' \
+             '{"ts":60000,"event":"task_done","task":"T1","files":"a.txt\tabc\nb.txt\tdef"}' \
+             '{"ts":1000,"event":"task_start","task":"T2","files":""}' \
+             '{"ts":63000,"event":"task_done","task":"T2","files":"a.txt\tabc\nb.txt\tdef"}' \
+             '{"ts":63000,"event":"task_start","task":"T3","files":"a.txt\tabc\nb.txt\tdef"}' \
+             '{"ts":90000,"event":"task_done","task":"T3","files":"a.txt\tabc\nb.txt\tdef\nc.txt\tfff"}'
+  assert_contains '"task_files":1,"task_planned_files":2,"measured_tasks":1}' "$(aggregate)"
 }
 
 test_measures_files_of_a_delegate_in_its_worktree() {
@@ -1109,6 +1211,15 @@ run_test test_counts_gap_over_one_hour_as_a_three_minute_pause "compte 3 min un 
 run_test test_counts_question_left_over_one_hour_as_a_three_minute_pause "compte 3 min une question restée plus de 60 min sans réponse"
 run_test test_does_not_count_question_left_over_six_hours_as_human_time "ne compte pas en temps humain une question restée plus de 6 h sans réponse"
 run_test test_ignores_turn_without_stop "ignore un tour resté ouvert en fin de journal"
+run_test test_turn_started_on_another_branch_counts_from_its_first_activity "branche créée en cours de tour : le tour compte depuis sa première activité"
+run_test test_turn_back_on_the_branch_after_a_stop_counts_from_its_first_activity "retour sur la branche en cours de tour : le tour compte depuis sa première activité"
+run_test test_interrupted_turn_without_start_is_not_human_time "un tour sans début, interrompu, n'est jamais compté en temps humain"
+run_test test_question_of_a_turn_without_start_stays_human_time "question d'un tour sans début : retirée du temps d'agent, comptée en temps humain"
+run_test test_turn_without_start_forgets_the_questions_of_the_previous_turn "un tour sans début ne reprend pas les questions du tour précédent"
+run_test test_task_ticked_in_a_turn_without_start_is_measured "tâche cochée dans un tour sans début : mesurée, question retirée"
+run_test test_marks_never_open_a_turn "les marques du journal n'ouvrent jamais de tour"
+run_test test_stop_without_turn_counts_nothing "une fin de tour sans tour ouvert ne compte rien"
+run_test test_subagent_activity_never_opens_a_turn_of_the_session "l'activité d'un sous-agent n'ouvre jamais un tour de la session"
 run_test test_closes_turn_interrupted_by_queued_prompt_at_last_activity "ferme au dernier événement un tour interrompu par un prompt en file"
 run_test test_closes_turn_interrupted_by_escape_without_counting_the_pause "ferme un tour interrompu par Échap sans compter la pause"
 run_test test_closes_turn_interrupted_by_task_notification "ferme un tour interrompu par une notification de tâche de fond"
@@ -1154,6 +1265,7 @@ run_test test_ignores_file_left_unchanged_during_the_task "écarte un fichier re
 run_test test_counts_deleted_tracked_file_but_not_temporary_one "compte un fichier suivi supprimé, pas un fichier créé puis supprimé"
 run_test test_ignores_forge_files "écarte les fichiers de .forge"
 run_test test_sums_task_files_and_their_planned_files_for_the_branch "additionne fichiers réels et prévus des tâches mesurées de la branche"
+run_test test_tasks_of_a_burst_are_left_out_of_the_branch_files "tâches simultanées : hors des fichiers de la branche, la suivante gardée"
 run_test test_measures_files_of_a_delegate_in_its_worktree "mesure les fichiers d'un délégué dans son worktree"
 run_test test_task_measures_turn_part_inside_window "tâche : mesure la part d'un tour comprise dans la fenêtre"
 run_test test_task_counts_checks_finished_inside_window "tâche : compte les vérifications terminées dans la fenêtre, session et agents"

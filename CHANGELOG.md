@@ -10,6 +10,17 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 
 ## [Unreleased]
 
+## [0.13.10] — 2026-11-25
+
+### Added
+
+- Review tasks (`**Kind:** review`): documentation, overall check, audit or analysis, whose duration does not depend on the files written. Estimated by the median of the project's measured review tasks from two measures on, `—` before; never counted in the calibration of the other tasks. `time-calibrate.sh --files` accepts `review` as a value.
+
+### Fixed
+
+- Tasks worked on together, then ticked one after another, no longer give the whole time to the first one and almost nothing to the others: a task with planned files ticked less than a minute after the previous one, with no file changed in between, joins its group. The whole group is left unmeasured (`—`, the first one's written time included), its time stays in the branch measure and in `**Unplanned**`, and its files no longer count once per task in `metrics.json`. Plans already written are left as they are.
+- A turn whose prompt is in another branch's log (branch created or switched to mid-turn by `/forge`) now counts from its first activity on the branch: its tasks showed 0.0 min of agent time and the branch total left them out. Actual times already written are kept.
+
 ## [0.13.9] — 2026-11-24
 
 ### Changed
@@ -509,7 +520,8 @@ Since 0.10.0 no automatic migration ships with the skill: a project forged with 
 - Idempotent Unix and Windows installers, with `settings.json` merge and no duplicate entries on reinstall.
 - `main` / `master` guard: on a protected branch, forge asks for a ticket ID or a branch name before continuing.
 
-[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.9...HEAD
+[Unreleased]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.10...HEAD
+[0.13.10]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.9...v0.13.10
 [0.13.9]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.8...v0.13.9
 [0.13.8]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.7...v0.13.8
 [0.13.7]: https://github.com/jeanchristoph/claude_forge/compare/v0.13.6...v0.13.7

@@ -331,6 +331,67 @@ test_rejects_unknown_argument() {
 # ── Coût fixe de vérification ─────────────────────────────────────────────────
 
 # Vingt tâches : 6 min réelles dont 1 min de vérifications, 3 fichiers → coût fixe 1 min, (6 − 1) ÷ 3 min par fichier.
+# ── Tâches de relecture ───────────────────────────────────────────────────────
+
+# Plan d'une branche de tâches de relecture : nom, date, puis une durée réelle par tâche, estimation « — ».
+write_review_tasks() {
+  local branch=$1 date=$2 index=0 minutes
+  shift 2
+  mkdir -p "$WORK/.forge/branch/$branch"
+  {
+    printf '# Plan — %s\n**Date:** %s\n\n## Tasks\n' "$branch" "$date"
+    for minutes in "$@"; do
+      index=$((index + 1))
+      printf '\n### T%d — Relecture\n**Effort:** M\n**Kind:** review\n**Estimated time:** —\n**Actual time:** ≈ %s min agent (incl. 9.0 min checks) · human 0.0 min (0 questions) · 1 files · total ≈ %s min\n**Files:** `doc.md`\n[x]\n' \
+        "$index" "$minutes" "$minutes"
+    done
+  } > "$WORK/.forge/branch/$branch/plan.md"
+}
+
+test_review_task_has_no_estimate_below_two_measures() {
+  assert_contains '"estimate":null' "$(calibrate --files review)"
+  write_review_tasks docs 2026-11-01 17.7
+  assert_contains '"estimate":null' "$(calibrate --files review)"
+}
+
+test_review_task_is_estimated_by_the_median_from_two_measures() {
+  write_review_tasks docs 2026-11-01 20 40
+  assert_contains '"estimate":{"files":0,"minutes":30,"low":24,"high":36}' "$(calibrate --files review)"
+  write_review_tasks docs 2026-11-01 10 20 90
+  assert_contains '"estimate":{"files":0,"minutes":20,' "$(calibrate --files review)"
+}
+
+test_review_task_without_estimate_stays_out_of_the_sum() {
+  local output
+  output=$(calibrate --files 8,review,8)
+  assert_contains '"estimate":{"files":16,"minutes":8,"low":6,"high":10}' "$output"
+  assert_contains '"estimates":[{"files":8,"minutes":4,"low":3,"high":5},null,{"files":8,"minutes":4,"low":3,"high":5}]' "$output"
+}
+
+test_review_estimate_enters_the_sum_next_to_code_tasks() {
+  write_review_tasks docs 2026-11-01 20 40
+  assert_contains '"estimate":{"files":8,"minutes":34,"low":27,"high":41}' "$(calibrate --files 8,review)"
+}
+
+test_list_of_reviews_without_measure_has_no_sum() {
+  assert_contains '"estimate":null,"estimates":[null,null]' "$(calibrate --files review,review)"
+}
+
+test_review_tasks_never_change_the_calibration_of_code_tasks() {
+  local before
+  # shellcheck disable=SC2046
+  write_plan_tasks feature 2026-11-01 $(repeat_task 20 10:6/3/1)
+  before=$(calibrate --files 30)
+  # shellcheck disable=SC2046
+  write_review_tasks docs 2026-11-09 $(repeat_task 60 90)
+  assert_equals "$before" "$(calibrate --files 30)"
+}
+
+test_rejects_unknown_kind_in_files_list() {
+  calibrate --files 3,code >/dev/null 2>&1
+  assert_equals "1" "$?"
+}
+
 test_takes_check_cost_from_tasks_and_rate_without_checks() {
   # shellcheck disable=SC2046
   write_plan_tasks feature 2026-11-01 $(repeat_task 20 10:6/3/1)
@@ -391,5 +452,12 @@ run_test test_rejects_unknown_argument "refuse un argument inconnu"
 run_test test_takes_check_cost_from_tasks_and_rate_without_checks "coût fixe tiré des vérifications des tâches, minutes par fichier hors vérifications"
 run_test test_keeps_reference_check_cost_below_twenty_tasks "aucune vérification estimée sous vingt tâches qui portent leurs vérifications"
 run_test test_list_estimate_counts_check_cost_once_per_task "estimation d'une liste : un coût fixe par tâche"
+run_test test_review_task_has_no_estimate_below_two_measures "relecture : aucune estimation sous deux mesures"
+run_test test_review_task_is_estimated_by_the_median_from_two_measures "relecture : médiane des durées mesurées dès deux mesures"
+run_test test_review_task_without_estimate_stays_out_of_the_sum "relecture sans estimation : hors de la somme, null à son rang"
+run_test test_review_estimate_enters_the_sum_next_to_code_tasks "relecture estimée : additionnée aux tâches de code"
+run_test test_list_of_reviews_without_measure_has_no_sum "liste de relectures sans mesure : aucune somme"
+run_test test_review_tasks_never_change_the_calibration_of_code_tasks "relectures : calibrage des tâches de code inchangé, aucune place prise"
+run_test test_rejects_unknown_kind_in_files_list "refuse un type inconnu dans la liste de fichiers"
 
 report_results

@@ -1,0 +1,7 @@
+- [2026-11-25 22:09] Version 0.13.10 préparée ; suite complète verte (18 fichiers de test)
+- [2026-11-25 21:42] T7 terminée ; suite complète verte (18 fichiers de test), time-aggregate 121, plan-hook 84 ; données d'un test de plan-hook complétées d'une fin de tour, résultat attendu inchangé
+- [2026-11-25 21:31] T7 ajoutée et lancée (choix utilisateur) : un événement de la session principale sans tour ouvert ouvre un tour à son heure ; simulation sur les journaux du dépôt : T1 0,0 → 5,9, branche 16,0 → 28,3 min, temps humain inchangé
+- [2026-11-25 17:28] T4 à T6 terminées ; tests time-calibrate 41, plan-hook 84, time-aggregate 112, metrics 26, status 33, swarm-status 35 verts, conditions vérifiées par mutation
+- [2026-11-25 17:15] T4 à T6 ajoutées et enchaînées. Choix utilisateur : tâches longues à peu de fichiers typées Kind: review (option A), estimation — avant 2 mesures puis médiane, hors calibrage des autres tâches ; exclusion seule des durées aberrantes écartée (aucun gain mesuré)
+- [2026-11-25 16:05] T1 à T3 terminées ; tests plan-hook 74, time-aggregate 112, metrics, time-mark, engrave, time-hook et status verts. Défaut distinct constaté, non corrigé : premier tour d'une branche créée en cours de tour sans UserPromptSubmit au journal, réel agent à 0.0
+- [2026-11-25 15:57] Plan validé et enchaîné. Choix utilisateur : rafale de coches non mesurée (—) pour tout le groupe, formule d'estimation inchangée, sous-agents parallèles toujours additionnés. Constat : répartition par fichiers prévus trop fausse par tâche en simulation, écartée

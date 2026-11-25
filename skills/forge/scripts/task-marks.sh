@@ -125,6 +125,43 @@ read_last_checkpoint() {
   return 0
 }
 
+# Dernière tâche mesurée du journal : LAST_START_TS et LAST_START_FILES (sa marque task_start), LAST_DONE_TS (la dernière
+# marque task_done), LAST_GROUP (tâches de même départ, d'après la dernière marque de départ de chacune) ; rend 1 sans
+# marque. Usage : read_last_task_marks <journal> <branche, vide → celle du journal> <projet lié, vide → même dépôt>
+read_last_task_marks() {
+  local branch_key="" project_key="" line
+  if [ -n "$2" ]; then
+    json_escape "$2"
+    branch_key="\"branch\":$REPLY"
+  fi
+  if [ -n "$3" ]; then
+    json_escape "$3"
+    project_key="\"project\":$REPLY"
+  fi
+  LAST_START_TS=""; LAST_START_FILES=""; LAST_DONE_TS=""; LAST_GROUP=""
+  line=$(awk -v branch_key="$branch_key" -v project_key="$project_key" '
+    function ts_of(text) { return match(text, /"ts":[0-9]+/) ? substr(text, RSTART + 5, RLENGTH - 5) : "" }
+    function task_of(text) { return match(text, /"task":"[^"]*"/) ? substr(text, RSTART + 8, RLENGTH - 9) : "" }
+    function is_out_of_scope(text) {
+      if (branch_key == "" ? index(text, "\"branch\":") : !index(text, branch_key)) return 1
+      return project_key == "" ? index(text, "\"project\":") : !index(text, project_key)
+    }
+    !/"event":"task_(start|done)"/ || is_out_of_scope($0) { next }
+    index($0, "\"event\":\"task_start\"") { last = $0; start[task_of($0)] = ts_of($0); next }
+    { done = ts_of($0) }
+    END {
+      if (last == "" || done == "") exit
+      for (task in start) if (start[task] == ts_of(last)) group = group (group == "" ? "" : " ") task
+      printf "%s|%s|%s\n", done, group, last
+    }' "$1")
+  [[ $line =~ ^([0-9]+)\|([^|]*)\|\{\"ts\":([0-9]+) ]] || return 1
+  LAST_DONE_TS=${BASH_REMATCH[1]}
+  LAST_GROUP=${BASH_REMATCH[2]}
+  LAST_START_TS=${BASH_REMATCH[3]}
+  [[ $line =~ \"files\":(\"([^\"\\]|\\.)*\") ]] && LAST_START_FILES=${BASH_REMATCH[1]}
+  return 0
+}
+
 # Aucune tâche en cours : rien de non commité, ou code identique au dernier point d'étape lu (CHECKPOINT_FILES).
 # Usage : is_code_untouched <empreinte en chaîne JSON, vide hors git>
 is_code_untouched() {

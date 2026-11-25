@@ -224,9 +224,11 @@ test_sequential_tasks_are_not_overlapping() {
   seed_checkpoint 1700000000000 ""
   write_plan "[x]" "[ ]" "[ ]"
   run_hook "$PLAN" >/dev/null
+  printf 'x
+' > "$WORK/b.txt"
   write_plan "[x]" "[x]" "[ ]"
   run_hook "$PLAN" >/dev/null
-  assert_equals '**Actual time:** ≈ 0.0 min agent (incl. 0.0 min checks) · human 0.0 min (0 questions) · 0 files · total ≈ 0.0 min' "$(actual_line_of T2)"
+  assert_equals '**Actual time:** ≈ 0.0 min agent (incl. 0.0 min checks) · human 0.0 min (0 questions) · 1 files · total ≈ 0.0 min' "$(actual_line_of T2)"
 }
 
 test_skipped_tasks_get_no_mark() {
@@ -674,6 +676,251 @@ test_measured_actual_is_never_replaced_by_dash() {
   assert_equals '**Actual time:** ≈ 3.0 min · 1 files' "$(actual_line_of T2)"
 }
 
+# ── Rafale de coches ──────────────────────────────────────────────────────────
+
+# Tâche <tâche> déjà mesurée : départ et fin en secondes avant maintenant, point d'étape de sa coche.
+# Usage : seed_tick <tâche> <départ> <fin> <branche et projet en champs JSON, vide → aucun>
+seed_tick() {
+  local now=$(($(date +%s) * 1000))
+  printf '{"ts":%s,"event":"task_start","task":"%s"%s,"files":""}\n{"ts":%s,"event":"task_done","task":"%s"%s,"files":""}\n{"ts":%s,"event":"plan_checkpoint"%s,"done":"%s","files":""}\n' \
+    $((now - $2 * 1000)) "$1" "$4" $((now - $3 * 1000)) "$1" "$4" $((now - $3 * 1000)) "$4" "$1" >> "$OWN_LOG"
+}
+
+# Plan dont T1 porte le réel mesuré de sa coche.
+write_plan_with_measured_first_task() {
+  write_plan "[x]" "$1" "$2"
+  sed -i '0,/^\*\*Estimated time:\*\* ≈ 1 min (1-2)$/s//&\n**Actual time:** ≈ 48.7 min agent (incl. 7.1 min checks) · human 0.0 min (0 questions) · 104 files · total ≈ 48.7 min/' "$PLAN"
+}
+
+test_burst_of_two_ticks_is_not_measured() {
+  seed_tick T1 1200 5
+  write_plan_with_measured_first_task "[x]" "[ ]"
+  run_hook "$PLAN" >/dev/null
+  assert_equals '**Actual time:** —' "$(actual_line_of T1)"
+  assert_equals '**Actual time:** —' "$(actual_line_of T2)"
+}
+
+test_burst_starts_the_new_task_with_its_group() {
+  seed_tick T1 1200 5
+  write_plan_with_measured_first_task "[x]" "[ ]"
+  run_hook "$PLAN" >/dev/null
+  assert_equals "$(sed -n 1p "$OWN_LOG" | grep -oE '"ts":[0-9]+')" "$(grep '"event":"task_start","task":"T2"' "$OWN_LOG" | grep -oE '"ts":[0-9]+')"
+}
+
+test_burst_of_six_ticks_is_not_measured() {
+  local task
+  seed_tick T1 1200 5
+  {
+    printf '# Plan\n\n## Tasks\n\n'
+    for task in 1 2 3 4 5 6; do unit_task "$task" "Tâche" "$([ "$task" = 1 ] && echo '[x]' || echo '[ ]')" "≈ 1 min (1-2)" ""; done
+  } > "$PLAN"
+  for task in 2 3 4 5 6; do
+    sed -i '0,/^\[ \]$/s//[x]/' "$PLAN"
+    run_hook "$PLAN" >/dev/null
+  done
+  for task in 1 2 3 4 5 6; do assert_equals '**Actual time:** —' "$(actual_line_of "T$task")"; done
+}
+
+test_close_tick_with_changed_files_stays_measured() {
+  seed_tick T1 1200 5
+  write_plan_with_measured_first_task "[x]" "[ ]"
+  printf 'x\n' > "$WORK/b.txt"
+  run_hook "$PLAN" >/dev/null
+  assert_matches '≈ 48\.7 min agent' "$(actual_line_of T1)"
+  assert_matches '≈ [0-9.]+ min agent.*1 files' "$(actual_line_of T2)"
+}
+
+test_tick_more_than_a_minute_later_stays_measured() {
+  seed_tick T1 1200 90
+  write_plan_with_measured_first_task "[x]" "[ ]"
+  run_hook "$PLAN" >/dev/null
+  assert_matches '≈ 48\.7 min agent' "$(actual_line_of T1)"
+  assert_matches '≈ [0-9.]+ min agent' "$(actual_line_of T2)"
+}
+
+test_close_tick_of_a_task_without_planned_files_stays_measured() {
+  seed_tick T1 1200 5
+  write_plan_with_measured_first_task "[x]" "[ ]"
+  sed -i '/^\*\*Files:\*\* `b\.txt`$/d' "$PLAN"
+  run_hook "$PLAN" >/dev/null
+  assert_matches '≈ 48\.7 min agent' "$(actual_line_of T1)"
+  assert_matches '≈ [0-9.]+ min agent' "$(actual_line_of T2)"
+}
+
+test_tick_after_a_moved_checkpoint_is_not_a_burst() {
+  seed_tick T1 1200 20
+  printf '{"ts":%s,"event":"plan_checkpoint","done":"T1","files":""}\n' $((($(date +%s) - 5) * 1000)) >> "$OWN_LOG"
+  write_plan_with_measured_first_task "[x]" "[ ]"
+  run_hook "$PLAN" >/dev/null
+  assert_matches '≈ 48\.7 min agent' "$(actual_line_of T1)"
+}
+
+test_burst_leaves_tasks_of_an_earlier_window_measured() {
+  seed_tick T1 2400 1200
+  seed_tick T2 1200 5
+  sed -i 's/"done":"T2"/"done":"T1 T2"/' "$OWN_LOG"
+  write_plan_with_measured_first_task "[x]" "[x]"
+  run_hook "$PLAN" >/dev/null
+  assert_matches '≈ 48\.7 min agent' "$(actual_line_of T1)"
+  assert_equals '**Actual time:** —' "$(actual_line_of T2)"
+  assert_equals '**Actual time:** —' "$(actual_line_of T3)"
+}
+
+# Plan délégué <fichier> : T1 cochée et mesurée, T2 cochée à l'instant.
+write_delegate_burst_plan() {
+  { unit_task 1 Un "[x]" "≈ 1 min (1-2)" "≈ 9.0 min agent (incl. 0.0 min checks) · human 0.0 min (0 questions) · 4 files · total ≈ 9.0 min"
+    unit_task 2 Deux "[x]" "≈ 1 min (1-2)" ""; } | write_unit_plan "$1"
+}
+
+test_burst_of_a_child_branch_delegate_is_not_measured() {
+  local worktree="$SANDBOX/work.worktrees/child"
+  git -C "$WORK" worktree add -q -b child "$worktree" feature 2>/dev/null
+  seed_tick T1 1200 5 ',"branch":"child"'
+  PLAN="$worktree/.forge/branch/child/plan.md"
+  write_delegate_burst_plan "$PLAN"
+  run_hook "$PLAN" ',"agent_id":"a1"' >/dev/null
+  assert_equals '**Actual time:** —' "$(actual_line_of T1)"
+  assert_equals '**Actual time:** —' "$(actual_line_of T2)"
+}
+
+test_burst_of_a_linked_project_delegate_is_not_measured() {
+  create_linked_project api
+  seed_tick T1 1200 5 ',"branch":"php85","project":"../api"'
+  PLAN=$(linked_plan api)
+  write_delegate_burst_plan "$PLAN"
+  run_delegate_hook api a1 >/dev/null
+  assert_equals '**Actual time:** —' "$(actual_line_of T1)"
+  assert_equals '**Actual time:** —' "$(actual_line_of T2)"
+}
+
+test_tick_of_another_project_is_not_joined_to_a_burst() {
+  create_linked_project api
+  seed_tick T1 1200 5 ',"branch":"php85","project":"../pos"'
+  printf '{"ts":%s,"event":"plan_checkpoint","branch":"php85","project":"../api","done":"T1","files":""}\n' $((($(date +%s) - 5) * 1000)) >> "$OWN_LOG"
+  PLAN=$(linked_plan api)
+  write_delegate_burst_plan "$PLAN"
+  run_delegate_hook api a1 >/dev/null
+  assert_matches '≈ 9\.0 min agent' "$(actual_line_of T1)"
+}
+
+# ── Tâches de relecture ───────────────────────────────────────────────────────
+
+# T2 devient une relecture, ligne **Kind:** sous **Effort:**.
+make_second_task_a_review() {
+  sed -i '/^### T2 /,/^\*\*Files:/s/^\*\*Effort:\*\* M$/&\n**Kind:** review/' "$PLAN"
+}
+
+# Relectures mesurées d'une autre branche, une durée par argument.
+write_measured_reviews() {
+  local index=0 minutes
+  mkdir -p "$WORK/.forge/branch/docs"
+  {
+    printf '# Plan — docs\n**Date:** 2026-11-01\n\n## Tasks\n'
+    for minutes in "$@"; do
+      index=$((index + 1))
+      printf '\n### T%d — Relecture\n**Effort:** M\n**Kind:** review\n**Estimated time:** —\n**Actual time:** ≈ %s min agent (incl. 0.0 min checks) · human 0.0 min (0 questions) · 1 files · total ≈ %s min\n**Files:** `doc.md`\n[x]\n' "$index" "$minutes" "$minutes"
+    done
+  } > "$WORK/.forge/branch/docs/plan.md"
+}
+
+review_estimate() {
+  awk '/^### T/ { current = $2 } current == "T2" && /^\*\*Estimated time:\*\*/' "$PLAN"
+}
+
+test_review_task_without_measure_gets_a_dash_estimate() {
+  write_new_plan
+  make_second_task_a_review
+  run_hook "$PLAN" >/dev/null
+  assert_equals '**Estimated time:** —' "$(review_estimate)"
+  assert_equals '| T2 — Deuxième | M | 6 | — | — | [ ] |' "$(summary_row_of "T2 — Deuxième")"
+}
+
+test_review_dash_is_written_once_and_the_plan_then_stays_still() {
+  write_new_plan
+  make_second_task_a_review
+  run_hook "$PLAN" >/dev/null
+  assert_equals "" "$(run_hook "$PLAN")"
+  assert_equals 1 "$(review_estimate | wc -l | tr -d ' ')"
+}
+
+test_review_without_estimate_stays_out_of_header_and_remaining() {
+  write_new_plan
+  make_second_task_a_review
+  run_hook "$PLAN" >/dev/null
+  assert_matches '^\*\*Estimate:\*\* ≈ 8 files · ≈ 1 min \(1-1\)' "$(grep '^\*\*Estimate:\*\*' "$PLAN")"
+  assert_equals '| **Remaining** | | **8** | **≈ 1 min (1-1)** | | |' "$(summary_row_of '**Remaining**')"
+}
+
+test_plan_of_reviews_only_has_no_figure() {
+  write_new_plan
+  make_second_task_a_review
+  sed -i '/^### T1 /,/^\*\*Files:/s/^\*\*Effort:\*\* S$/&\n**Kind:** review/' "$PLAN"
+  run_hook "$PLAN" >/dev/null
+  assert_equals '| **Remaining** | | **8** | **—** | | |' "$(summary_row_of '**Remaining**')"
+  assert_equals "" "$(grep '^\*\*Estimate:\*\*' "$PLAN")"
+}
+
+test_review_dash_becomes_the_median_once_two_reviews_are_measured_then_freezes() {
+  write_new_plan
+  make_second_task_a_review
+  run_hook "$PLAN" >/dev/null
+  write_measured_reviews 20 40
+  run_hook "$PLAN" >/dev/null
+  assert_equals '**Estimated time:** ≈ 30 min (24-36)' "$(review_estimate)"
+  write_measured_reviews 90 90
+  run_hook "$PLAN" >/dev/null
+  assert_equals '**Estimated time:** ≈ 30 min (24-36)' "$(review_estimate)"
+}
+
+test_finished_review_is_never_estimated_afterwards() {
+  write_new_plan
+  make_second_task_a_review
+  run_hook "$PLAN" >/dev/null
+  sed -i '/^### T2 /,/^\[ \]$/s/^\[ \]$/[x]/' "$PLAN"
+  write_measured_reviews 20 40
+  run_hook "$PLAN" >/dev/null
+  assert_equals '**Estimated time:** —' "$(review_estimate)"
+}
+
+# Type ajouté à la main sur une tâche déjà faite d'un ancien plan, sans ligne d'estimation.
+test_review_done_before_its_kind_was_written_gets_a_dash() {
+  write_new_plan
+  make_second_task_a_review
+  sed -i '/^### T2 /,/^\[ \]$/s/^\[ \]$/[x]/' "$PLAN"
+  write_measured_reviews 20 40
+  run_hook "$PLAN" >/dev/null
+  assert_equals '**Estimated time:** —' "$(review_estimate)"
+}
+
+test_total_compares_the_same_tasks_without_a_review_at_dash() {
+  write_new_plan
+  make_second_task_a_review
+  sed -i '/^### T1 /,/^\[ \]$/s/^\[ \]$/[x]/; /^### T2 /,/^\[ \]$/s/^\[ \]$/[x]/' "$PLAN"
+  sed -i 's/^\*\*Effort:\*\* S$/&\n**Estimated time:** ≈ 3 min (1-5)\n**Actual time:** ≈ 4.0 min agent · total ≈ 4.0 min/; s/^\*\*Kind:\*\* review$/&\n**Estimated time:** —\n**Actual time:** ≈ 49.0 min agent · total ≈ 49.0 min/' "$PLAN"
+  run_hook "$PLAN" >/dev/null
+  assert_equals '| **Total** (1/2 measured) | **1S** | **2** | **≈ 3 min** | **≈ 4.0 min** | |' "$(summary_row_of '**Total**')"
+  assert_matches '≈ 49\.0 min agent' "$(summary_row_of "T2 — Deuxième")"
+}
+
+test_open_review_at_dash_never_restarts_the_clock() {
+  : > "$OWN_LOG"
+  write_new_plan
+  make_second_task_a_review
+  run_hook "$PLAN" >/dev/null
+  sed -i 's/"ts":[0-9]*/"ts":1700000000000/' "$OWN_LOG"
+  run_hook "$PLAN" >/dev/null
+  assert_equals 1700000000000 "$(last_checkpoint_ts)"
+}
+
+test_review_at_dash_does_not_block_the_estimate_of_its_unit() {
+  create_linked_project api
+  { unit_task 1 Un '[ ]' '≈ 4 min (2-6)' ''; unit_task 2 Deux '[ ]' '—' '' | sed 's/^\*\*Effort:\*\* S$/&\n**Kind:** review/'; } | write_unit_plan "$(linked_plan api)"
+  write_parent_plan "[ ]" "[ ]" "../api @ php85" ""
+  sed -i '0,/^\*\*Estimated time:\*\* .*/s//**Estimated time:** ≈ 9 min (5-12) · indicative/' "$PLAN"
+  run_hook "$PLAN" >/dev/null
+  assert_equals '**Estimated time:** ≈ 4 min (2-6)' "$(awk '/^### T/ { current = $2 } current == "T1" && /^\*\*Estimated time:\*\*/' "$PLAN")"
+}
+
 test_summary_cells_follow_task_fields() {
   : > "$OWN_LOG"
   seed_checkpoint 1700000000000 ""
@@ -721,6 +968,7 @@ test_actual_time_carries_checks_share() {
   : > "$OWN_LOG"
   seed_checkpoint $((now - 60000)) ""
   printf '{"ts":%s,"event":"PostToolUse","session":"s1","tool":"Bash","duration_ms":12000,"check":true}\n' $((now - 30000)) >> "$OWN_LOG"
+  printf '{"ts":%s,"event":"Stop","session":"s1"}\n' $((now - 30000)) >> "$OWN_LOG"
   write_plan "[x]" "[ ]" "[ ]"
   run_hook "$PLAN" >/dev/null
   assert_equals '**Actual time:** ≈ 0.0 min agent (incl. 0.2 min checks) · human 0.0 min (0 questions) · 0 files · total ≈ 0.0 min' "$(actual_line_of T1)"
@@ -818,7 +1066,7 @@ EOF
   assert_matches '^\*\*Actual time:\*\* ≈ 7\.[0-9] min agent \(incl\. 0\.5 min checks\) · human 3\.0 min \(1 questions\) · 0 files · total ≈ 10\.[0-9] min$' "$(actual_line_of T1)"
   local samples
   samples=$(source "$REPO_ROOT/skills/forge/scripts/task-files.sh"; eval "$(sed -n '/^readonly TASK_SAMPLES_PROGRAM=/,/^  END { flush() }'"'"'$/p' "$REPO_ROOT/skills/forge/scripts/time-calibrate.sh")"; awk "$TASK_SAMPLES_PROGRAM" "$PLAN")
-  assert_matches $'^2026-11-23\t0001\t[0-9.]+\t7(\\.[0-9])?\t0\t1\t0\\.5$' "$samples"
+  assert_matches $'^2026-11-23\t0001\t[0-9.]+\t7(\\.[0-9])?\t0\t1\t0\\.5\tcode$' "$samples"
 }
 
 # ── Script de déploiement SQL ─────────────────────────────────────────────────
@@ -932,6 +1180,17 @@ run_test test_added_task_gets_its_estimate_and_header_follows "tâche ajoutée :
 run_test test_summary_gets_new_columns_and_keeps_short_title "ancien tableau : colonnes Estimated et Actual ajoutées, titre court gardé"
 run_test test_total_counts_only_measured_tasks "ligne Total : seules les tâches au réel mesuré, estimé et réel comparables"
 run_test test_measured_actual_is_never_replaced_by_dash "un réel mesuré n'est jamais remplacé par « — »"
+run_test test_burst_of_two_ticks_is_not_measured "rafale de deux coches : réel « — » pour les deux, réel déjà écrit compris"
+run_test test_burst_starts_the_new_task_with_its_group "rafale : la nouvelle tâche reprend le départ du groupe"
+run_test test_burst_of_six_ticks_is_not_measured "rafale de six coches successives : « — » pour les six"
+run_test test_close_tick_with_changed_files_stays_measured "coche rapprochée avec fichiers changés : mesurée"
+run_test test_tick_more_than_a_minute_later_stays_measured "coche plus d'une minute après la précédente : mesurée"
+run_test test_close_tick_of_a_task_without_planned_files_stays_measured "coche rapprochée d'une tâche sans fichier prévu : mesurée"
+run_test test_tick_after_a_moved_checkpoint_is_not_a_burst "point d'étape avancé depuis la coche précédente : pas de rafale"
+run_test test_burst_leaves_tasks_of_an_earlier_window_measured "rafale : tâche d'une fenêtre antérieure toujours mesurée"
+run_test test_burst_of_a_child_branch_delegate_is_not_measured "rafale d'un délégué de branche fille : « — »"
+run_test test_burst_of_a_linked_project_delegate_is_not_measured "rafale d'un délégué de projet lié : « — »"
+run_test test_tick_of_another_project_is_not_joined_to_a_burst "coche d'un autre projet lié : jamais jointe à la rafale"
 run_test test_summary_cells_follow_task_fields "cellules recopiées des tâches : réel, statut, raison du blocage échappée"
 run_test test_total_and_remaining_rows "lignes Total et Remaining"
 run_test test_remaining_row_removed_when_nothing_is_open "ligne Remaining retirée quand plus rien n'est ouvert"
@@ -949,5 +1208,15 @@ run_test test_missing_deployment_script_is_reported_without_plan_rewrite "« mis
 run_test test_complete_deployment_script_reports_nothing "script de déploiement citant tous les fichiers écrits : rien signalé"
 run_test test_unwritten_step_file_reports_nothing "fichier d'étape pas encore écrit : rien signalé"
 run_test test_incomplete_deployment_script_names_only_unreferenced_file "« incomplete » avec le seul fichier d'étape non cité"
+run_test test_review_task_without_measure_gets_a_dash_estimate "relecture sans mesure : estimation « — »"
+run_test test_review_dash_is_written_once_and_the_plan_then_stays_still "relecture à « — » : écrite une fois, plan intact ensuite"
+run_test test_review_without_estimate_stays_out_of_header_and_remaining "relecture sans estimation : hors de l'en-tête et des minutes restantes"
+run_test test_plan_of_reviews_only_has_no_figure "plan de relectures seules : aucun chiffre inventé"
+run_test test_review_dash_becomes_the_median_once_two_reviews_are_measured_then_freezes "relecture ouverte : « — » remplacé par la médiane dès deux mesures, puis figé"
+run_test test_finished_review_is_never_estimated_afterwards "relecture terminée : jamais estimée après coup"
+run_test test_review_done_before_its_kind_was_written_gets_a_dash "relecture déjà faite sans estimation : « — », jamais une estimation après coup"
+run_test test_total_compares_the_same_tasks_without_a_review_at_dash "Total : relecture à « — » ni en estimé ni en réel, son réel reste affiché"
+run_test test_open_review_at_dash_never_restarts_the_clock "relecture à « — » : le point d'étape n'avance pas à chaque écriture"
+run_test test_review_at_dash_does_not_block_the_estimate_of_its_unit "tâche groupée : une relecture à « — » ne bloque pas la somme des autres"
 
 report_results

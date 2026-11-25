@@ -109,6 +109,12 @@ readonly AWK_HELPERS='
     if (window_end != "" && to > window_end) to = window_end
     return to > from ? to - from : 0
   }
+  # Activité sans tour ouvert : le prompt est dans le journal d une autre branche (branche créée ou rejointe en cours de
+  # tour) — le tour commence à cette activité. Une ligne sans session (marque, late_start) n en ouvre jamais.
+  function open_missing_turn(event, ts) {
+    if (session == "" || event == "UserPromptSubmit" || (session in turn_start)) return
+    delete last_stop[session]; turn_start[session] = ts; turn_questions[session] = 0
+  }
   # Prompt arrivé sur un tour ouvert : l écart depuis la dernière activité est mis de côté, perdu par défaut (Échap).
   # Question en attente : l écart est de l attente humaine, jamais mis de côté.
   function keep_gap_before_prompt(prompt) {
@@ -136,6 +142,7 @@ readonly AWK_HELPERS='
 #   Un prompt qui arrive sur un tour encore ouvert (message tapé pendant le travail, Échap sans Stop, retour de
 #   délégué en plein tour) ferme ce tour à son dernier événement observé avant d'ouvrir le suivant ; l'écart jusqu'au
 #   prompt est rendu quand une commande commencée avant lui se termine après : le tour continuait.
+#   Activité d'une session sans tour ouvert : elle ouvre un tour à son heure (open_missing_turn).
 readonly DURATIONS_PROGRAM="$AWK_HELPERS"'
   FNR == 1 { file_index++; reading_parent = (has_parent_log && file_index == 1) }
   reading_parent && field("event") == "delegate" && field("branch") == branch && field("project") == project { delegate[field("agent_id")] = 1; next }
@@ -173,6 +180,7 @@ readonly DURATIONS_PROGRAM="$AWK_HELPERS"'
   {
     seen = 1; event = field("event"); session = field("session"); ts = field("ts") + 0
     parent += crossed_gaps(event, ts)
+    open_missing_turn(event, ts)
     if (event == "UserPromptSubmit") {
       if (field("origin") == "human" && (session in last_stop)) human += human_share(last_stop[session], ts)
       if (session in turn_start) { parent += last_activity[session] - turn_start[session] - turn_questions[session]; keep_gap_before_prompt(ts) }
@@ -233,16 +241,22 @@ readonly TASK_WINDOW_PROGRAM="$AWK_HELPERS$TASK_FILES_AWK"'
   }'
 
 # Fichiers de toutes les tâches mesurées d'une branche : « tâche fichiers » par tâche, première task_done après la
-# dernière task_start ; tâche sans empreinte absente.
+# dernière task_start ; tâche sans empreinte absente, comme une tâche simultanée à une autre (règle de
+# TASK_WINDOW_PROGRAM) : ses fichiers, communs au groupe, compteraient une fois par tâche.
 readonly TASK_FILES_PROGRAM="$AWK_HELPERS$TASK_FILES_AWK"'
   field("branch") != mark_branch || field("project") != mark_project { next }
-  field("event") == "task_start" { task = field("task"); start_files[task] = raw_string_field("files"); open[task] = 1; next }
+  field("event") == "task_start" { task = field("task"); start_files[task] = raw_string_field("files"); start[task] = field("ts") + 0; delete finish[task]; open[task] = 1; next }
   field("event") == "task_done" && (field("task") in open) {
-    task = field("task"); delete open[task]
+    task = field("task"); delete open[task]; finish[task] = field("ts") + 0
     done_files = raw_string_field("files")
     if (start_files[task] != "<none>" && done_files != "<none>") measured[task] = changed_files(start_files[task], done_files)
   }
-  END { for (task in measured) printf "%s %d\n", task, measured[task] }'
+  function is_simultaneous(task,   other) {
+    for (other in start)
+      if (other != task && start[other] < finish[task] && (!(other in finish) || finish[other] > start[task])) return 1
+    return 0
+  }
+  END { for (task in measured) if (!is_simultaneous(task)) printf "%s %d\n", task, measured[task] }'
 
 # Fichiers prévus de chaque tâche d'un plan : « tâche fichiers ».
 readonly PLANNED_FILES_PROGRAM="$TASK_FILES_AWK"'
@@ -291,6 +305,7 @@ readonly TASK_DURATIONS_PROGRAM="$AWK_HELPERS"'
     event = field("event"); session = field("session"); ts = field("ts") + 0
     count_check(event, ts)
     parent += crossed_gaps(event, ts)
+    open_missing_turn(event, ts)
     if (event == "UserPromptSubmit") {
       if (field("origin") == "human" && (session in last_stop)) human += human_share(last_stop[session], ts)
       if (session in turn_start) { parent += inside(turn_start[session], last_activity[session]) - turn_questions[session]; keep_gap_before_prompt(ts) }

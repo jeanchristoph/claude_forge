@@ -87,6 +87,7 @@
 ⚠️ Jamais de `**Actual time:**` écrit à la main, jamais de durée estimée à la place d'une mesure absente. Hook signalé dans le contexte (`forge plan-hook: …`) → relire `plan.md` avant de l'éditer de nouveau.
 ⚠️ Tâche-branche d'un essaim (titre `— Branch <X>`) et tâche déléguée à un projet lié (`**Linked branch:**` ou note `delegated to`) → aucune marque, jamais le temps de la session parente ; leur réel est écrit par le hook à la coche : somme des réels des tâches de leur plan, vérifications comprises, même format qu'une tâche ordinaire. Plan absent ou tâche faite non mesurée → `—`.
 ⚠️ Plusieurs tâches cochées d'un même coup → tâches simultanées, `—` pour chacune : cocher chaque tâche à sa fin, une par édition.
+⚠️ Rafale — tâche à fichiers prévus cochée moins d'une minute après la précédente, sans fichier changé entre les deux → tâches simultanées elles aussi : `—` pour tout le groupe, réel déjà écrit de la première compris ; leur temps reste dans `**Unplanned**`.
 
 ---
 
@@ -175,7 +176,7 @@ Une demande complémentaire est toujours une tâche du plan — jamais de choix 
 
 1. **Formuler** la tâche telle qu'elle entre au plan — titre, effort, temps estimé, fichiers, description — précédée de :
    > "This request isn't in the current plan."
-   Temps estimé présenté : `bash <SKILL_DIR>/scripts/time-calibrate.sh --root <ROOT> --files <fichiers de la tâche>`, `estimate` au ratio du moment. Jamais écrit par le modèle : le hook `hooks/plan-hook.sh` écrit `**Estimated time:**` à l'écriture du plan et le fige.
+   Temps estimé présenté : `bash <SKILL_DIR>/scripts/time-calibrate.sh --root <ROOT> --files <fichiers de la tâche>` (`review` pour une tâche de relecture, « Tâche de relecture » de `phases/p4-plan.md`), `estimate` au ratio du moment, `null` → `—`. Jamais écrit par le modèle : le hook `hooks/plan-hook.sh` écrit `**Estimated time:**` à l'écriture du plan et le fige.
    Si la demande change durablement le périmètre → ajouter à la même présentation l'entrée proposée pour `## Scope & rules` du brief.
    Tâche qui vise un projet lié → champ `**Linked branch:**` et rédaction sans référence au parent, selon « Branche liée » de `phases/p4-plan.md`.
    Tâches formulées qui remplissent la « Règle de branche » de `phases/p4-plan.md` et plan qui remplit alors le déclencheur de son « Plan de branches », tâches-branches déjà au plan comprises → les présenter en tâche-branche (« Format d'une tâche-branche »), tableau des groupes en tête. Mode délégué → jamais : « Promotion d'une tâche » ci-dessous.

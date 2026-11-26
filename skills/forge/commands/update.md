@@ -9,7 +9,7 @@ Mode délégué → rien n'est fait : aucune écriture n'a lieu hors de ROOT. ST
 **Déclencheur :** "mettre à jour la forge" / "update the forge" (section « Mise à jour du skill » de `SKILL.md`). La demande vaut accord : aucune question.
 
 **Réaction :** exécuter `bash <SKILL_DIR>/scripts/update.sh run` — cherche le dernier tag publié, l'installe s'il est plus récent, version ignorée comprise. Lire le JSON : contexte interne, jamais affiché brut.
-- `status` vaut `done` → "Forge updated: `<from>` → `<to>`. Relaunch `/forge` to use it." STOP — ne pas continuer : les instructions chargées dans ce tour sont celles de l'ancienne version.
+- `status` vaut `done` → "Forge updated: `<from>` → `<to>`. Restart Claude Code to use it." STOP — ne pas continuer : les instructions chargées dans ce tour et les hooks lus au démarrage de la session sont ceux de l'ancienne version.
 - `status` vaut `up_to_date` → "Forge is up to date (`<from>`)." STOP — ne pas continuer.
 - Sortie `2` → "Update failed: `<reason>`.", suivi de `detail` en bloc de code quand il n'est pas `null`. STOP — ne pas continuer.
 - Sortie `1` → afficher l'erreur telle quelle. STOP — ne pas continuer.

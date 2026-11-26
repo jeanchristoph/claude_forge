@@ -1,3 +1,4 @@
+- [2026-11-26 11:54] Message de fin de mise à jour : redémarrer Claude Code au lieu de relancer /forge (update.md, README.md, README.fr.md)
 - [2026-11-25 22:09] Version 0.13.10 préparée ; suite complète verte (18 fichiers de test)
 - [2026-11-25 21:42] T7 terminée ; suite complète verte (18 fichiers de test), time-aggregate 121, plan-hook 84 ; données d'un test de plan-hook complétées d'une fin de tour, résultat attendu inchangé
 - [2026-11-25 21:31] T7 ajoutée et lancée (choix utilisateur) : un événement de la session principale sans tour ouvert ouvre un tour à son heure ; simulation sur les journaux du dépôt : T1 0,0 → 5,9, branche 16,0 → 28,3 min, temps humain inchangé

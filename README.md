@@ -443,7 +443,7 @@ Updates `project.md` — only what changed, after validation.
 
 Each time you type `/forge` or `/forge-clickup`, the `update-notice.sh` hook asks the repository for its latest `vX.Y.Z` tag in the background: nothing waits for it. A newer version shows one line at once with both commands, then wakes Claude, which writes the version number and the commands in your language at the top of its response — right before the question when the turn ends with one. Up to date, ignored or offline: nothing is shown and Claude is not woken. `/forge` itself no longer checks anything.
 
-The message comes back at each `/forge` until you update or ignore that version; a newer one is announced again. `update the forge` asks no question: forge clones the tag in a temporary folder, runs the platform installer and asks you to relaunch `/forge`; it installs an ignored version too, and says when you are up to date or when the repository is unreachable.
+The message comes back at each `/forge` until you update or ignore that version; a newer one is announced again. `update the forge` asks no question: forge clones the tag in a temporary folder, runs the platform installer and asks you to restart Claude Code; it installs an ignored version too, and says when you are up to date or when the repository is unreachable.
 
 An install without `install.json` (from an archive outside git) is offered the latest version. Delegated runs never check. The hook needs Claude Code's `asyncRewake` hooks.
 

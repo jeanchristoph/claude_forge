@@ -2,7 +2,7 @@
 **Objective:** Des tâches menées ensemble puis cochées à la suite s'affichent `—` pour tout le groupe, sans fausse durée ; formule d'estimation et somme des sous-agents inchangées.
 **Date:** 2026-11-25
 **Estimate:** ≈ 22 files · ≈ 39 min (16-83)
-**Actual:** ≈ 29.7 min agent (incl. 23.5 min checks) · human 165.4 min (14 questions, 124.9 min) · delegates 0.0 min in parallel · total ≈ 195.1 min
+**Actual:** ≈ 43.9 min agent (incl. 23.5 min checks) · human 165.8 min (14 questions, 124.9 min) · delegates 0.0 min in parallel · total ≈ 209.7 min
 
 ## Tasks
 
@@ -82,4 +82,4 @@ None
 | T6 — Règle du type et documentation | S | 5 | ≈ 6 min | ≈ 0.7 min agent (incl. 0.2 min checks) · human 0.0 min (0 questions) · 5 files · total ≈ 0.7 min | [x] |
 | T7 — Tour sans début dans le journal | S | 3 | ≈ 5 min | ≈ 10.9 min agent (incl. 9.1 min checks) · human 0.0 min (0 questions) · 4 files · total ≈ 10.9 min | [x] |
 | **Total** (7/7 measured) | **5S, 2M** | **22** | **≈ 39 min** | **≈ 23.8 min** | |
-| **Unplanned** | | | | **≈ 5.9 min** | |
+| **Unplanned** | | | | **≈ 20.1 min** | |

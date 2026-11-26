@@ -442,7 +442,7 @@ Met à jour `project.md` — uniquement ce qui a changé, après validation.
 
 À chaque `/forge` ou `/forge-clickup` tapé, le hook `update-notice.sh` interroge le dépôt sur son dernier tag `vX.Y.Z` en arrière-plan : rien ne l'attend. Une version plus récente affiche aussitôt une ligne avec les deux commandes, en anglais, puis réveille Claude, qui écrit le numéro de version et les commandes dans ta langue en tête de sa réponse — juste avant la question quand le tour se termine par une question. À jour, version ignorée ou hors réseau : rien ne s'affiche, Claude n'est pas réveillé. `/forge` lui-même ne contrôle plus rien.
 
-Le message revient à chaque `/forge` jusqu'à la mise à jour ou jusqu'à ce que tu ignores cette version ; une plus récente est de nouveau annoncée. « mets à jour la forge » ne pose aucune question : forge clone le tag dans un dossier temporaire, lance l'installeur de la plateforme et demande de relancer `/forge` ; une version ignorée s'installe aussi, et une version à jour ou un dépôt injoignable est signalé.
+Le message revient à chaque `/forge` jusqu'à la mise à jour ou jusqu'à ce que tu ignores cette version ; une plus récente est de nouveau annoncée. « mets à jour la forge » ne pose aucune question : forge clone le tag dans un dossier temporaire, lance l'installeur de la plateforme et demande de redémarrer Claude Code ; une version ignorée s'installe aussi, et une version à jour ou un dépôt injoignable est signalé.
 
 Une installation sans `install.json` (depuis une archive hors git) se voit proposer la dernière version. Un forge délégué ne contrôle jamais. Le hook exige les hooks `asyncRewake` de Claude Code.
 
